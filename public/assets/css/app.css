@@ -242,6 +242,25 @@ table.dataTable tfoot input {
 .company-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,.12); }
 .company-icon { font-size: 2.5rem; }
 
+/* ── Scrollbars (always visible in table-responsive) ── */
+.table-responsive {
+    overflow-x: auto;
+}
+.table-responsive::-webkit-scrollbar {
+    height: 7px;
+}
+.table-responsive::-webkit-scrollbar-track {
+    background: #e9ecef;
+    border-radius: 4px;
+}
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #adb5bd;
+    border-radius: 4px;
+}
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #6c757d;
+}
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
     .sidebar { transform: translateX(-100%); width: var(--sidebar-width) !important; }
