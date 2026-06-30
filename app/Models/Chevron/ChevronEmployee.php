@@ -7,9 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class ChevronEmployee extends Model
 {
     protected $fillable = [
-        'employee_prefix', 'employee_id', 'name', 'designation_id',
+        'employee_prefix', 'employee_id', 'name', 'designation_id', 'department_id',
         'joining_date', 'short_name', 'father_name', 'mother_name',
-        'current_status', 'branch_id', 'is_active',
+        'phone', 'email', 'address', 'current_status', 'status', 'branch_id', 'is_active',
     ];
 
     protected function casts(): array
@@ -23,6 +23,11 @@ class ChevronEmployee extends Model
     public function designation()
     {
         return $this->belongsTo(ChevronDesignation::class, 'designation_id');
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(ChevronDepartment::class, 'department_id');
     }
 
     public function branch()

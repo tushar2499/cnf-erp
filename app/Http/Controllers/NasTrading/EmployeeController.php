@@ -43,7 +43,7 @@ class EmployeeController extends Controller
                 'phone'       => $request->phone,
                 'email'       => $request->email,
                 'address'     => $request->address,
-                'join_date'   => $request->join_date ?: null,
+                'joining_date'   => $request->joining_date ?: null,
                 'status'      => $request->status ?? 'Active',
             ]);
         });
@@ -59,7 +59,7 @@ class EmployeeController extends Controller
             'phone'       => $request->phone,
             'email'       => $request->email,
             'address'     => $request->address,
-            'join_date'   => $request->join_date ?: null,
+            'joining_date'   => $request->joining_date ?: null,
             'status'      => $request->status ?? 'Active',
         ]);
         return response()->json(['message' => 'Employee updated successfully.']);

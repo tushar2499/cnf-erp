@@ -10,8 +10,23 @@ class NasTradingEmployee extends Model
     protected $table = 'nas_trading_employees';
 
     protected $fillable = [
-        'code', 'department_id', 'name', 'designation', 'phone', 'email', 'address', 'join_date', 'status',
+        'branch_id', 'designation_id', 'department_id', 'employee_prefix',
+        'code', 'name', 'short_name', 'father_name', 'mother_name',
+        'joining_date', 'designation', 'phone', 'email', 'address', 'status', 'is_active',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'joining_date' => 'date',
+            'is_active'    => 'boolean',
+        ];
+    }
+
+    public function designation()
+    {
+        return $this->belongsTo(NasTradingDesignation::class, 'designation_id');
+    }
 
     public function department()
     {

@@ -123,7 +123,7 @@ $(function () {
             $('#recId').val(r.id); $('#fCode').val(r.code); $('#fName').val(r.name);
             $('#fDesignation').val(r.designation||''); $('#fPhone').val(r.phone||'');
             $('#fEmail').val(r.email||''); $('#fAddress').val(r.address||'');
-            $('#fJoinDate').val(r.join_date||''); $('#fStatus').val(r.status);
+            $('#fJoinDate').val(r.joining_date||''); $('#fStatus').val(r.status);
             $('#formTitle').html('<i class="fa fa-edit me-2"></i> Edit Employee');
             $('#btnSave').html('<i class="fa fa-save me-1"></i> Update');
             $('html,body').animate({ scrollTop: 0 }, 200);
@@ -153,7 +153,7 @@ $(function () {
             _token: $('meta[name="csrf-token"]').attr('content'),
             name: $('#fName').val(), designation: $('#fDesignation').val(),
             phone: $('#fPhone').val(), email: $('#fEmail').val(),
-            address: $('#fAddress').val(), join_date: $('#fJoinDate').val(),
+            address: $('#fAddress').val(), joining_date: $('#fJoinDate').val(),
             status: $('#fStatus').val(),
         }})
         .done(function (r) {
