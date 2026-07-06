@@ -39,13 +39,14 @@ class ChevronBill extends Model
 
     public static function commissionOnOptions(): array
     {
-        return ['ASSESSABLE', 'INVOICE VALUE'];
+        return ['ASSESSABLE', 'INVOICE VALUE', 'MINIMUM', 'MAXIMUM'];
     }
 
     public static function generateBillNo(): string
     {
-        $last = static::lockForUpdate()->max(DB::raw("CAST(SUBSTRING(bill_no, 4) AS UNSIGNED)"));
-        return 'BIL' . str_pad(($last ?? 0) + 1, 6, '0', STR_PAD_LEFT);
+        $last = static::lockForUpdate()->max(DB::raw('CAST(SUBSTRING(bill_no, 4) AS UNSIGNED)'));
+
+        return 'BIL'.str_pad(($last ?? 0) + 1, 6, '0', STR_PAD_LEFT);
     }
 
     public function items()
