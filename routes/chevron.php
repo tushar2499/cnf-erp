@@ -125,6 +125,9 @@ Route::prefix('settings')->name('settings.')->group(function () {
     Route::post('/expense-categories',                         [ExpenseCategoryController::class, 'store'])->name('expense-categories.store');
     Route::put('/expense-categories/{expenseCategory}',        [ExpenseCategoryController::class, 'update'])->name('expense-categories.update');
     Route::delete('/expense-categories/{expenseCategory}',     [ExpenseCategoryController::class, 'destroy'])->name('expense-categories.destroy');
+    Route::get('/expense-categories/sample',                   [ExpenseCategoryController::class, 'sampleDownload'])->name('expense-categories.sample');
+    Route::post('/expense-categories/import/preview',          [ExpenseCategoryController::class, 'importPreview'])->name('expense-categories.import.preview');
+    Route::post('/expense-categories/import',                  [ExpenseCategoryController::class, 'import'])->name('expense-categories.import');
 });
 
 // Reports

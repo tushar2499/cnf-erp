@@ -5,9 +5,18 @@
 @section('content')
 <div class="page-header">
     <h4><i class="fa fa-tags me-2 text-success"></i> Expense Categories</h4>
-    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#expenseCategoryModal" id="btnAdd">
-        <i class="fa fa-plus me-1"></i> Add Category
-    </button>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{{ route('chevron.settings.expense-categories.sample') }}"
+           class="btn btn-sm btn-outline-success">
+            <i class="fa fa-file-excel me-1"></i> Sample File
+        </a>
+        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importModal">
+            <i class="fa fa-file-upload me-1"></i> Import Excel
+        </button>
+        <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#expenseCategoryModal" id="btnAdd">
+            <i class="fa fa-plus me-1"></i> Add Category
+        </button>
+    </div>
 </div>
 
 <div class="card">
@@ -45,7 +54,7 @@
     </div>
 </div>
 
-{{-- Modal --}}
+{{-- Add/Edit Modal --}}
 <div class="modal fade" id="expenseCategoryModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -84,13 +93,85 @@
         </div>
     </div>
 </div>
+
+{{-- Import Modal --}}
+<div class="modal fade" id="importModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title fw-600"><i class="fa fa-file-upload me-2"></i>Import Expense Categories</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" id="btnCloseImport"></button>
+            </div>
+            <div class="modal-body">
+
+                {{-- Step 1: Upload --}}
+                <div id="importStep1">
+                    <div class="alert alert-info d-flex gap-2 align-items-start" style="font-size:12px">
+                        <i class="fa fa-info-circle mt-1"></i>
+                        <div>
+                            Upload an Excel file (.xlsx / .xls) with columns: <strong>Name</strong>, <strong>Description</strong>, <strong>Status</strong> (Active/Inactive).<br>
+                            <a href="{{ route('chevron.settings.expense-categories.sample') }}" class="fw-semibold">
+                                <i class="fa fa-download me-1"></i>Download sample file
+                            </a>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Select Excel File</label>
+                        <input type="file" id="importFile" class="form-control" accept=".xlsx,.xls,.csv">
+                        <div class="invalid-feedback" id="importFileError"></div>
+                    </div>
+                    <button class="btn btn-primary btn-sm" id="btnPreview">
+                        <i class="fa fa-eye me-1"></i> Preview
+                    </button>
+                </div>
+
+                {{-- Step 2: Preview --}}
+                <div id="importStep2" style="display:none">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <span class="badge bg-success me-1" id="newCount">0 New</span>
+                            <span class="badge bg-warning text-dark" id="existCount">0 Already Exist</span>
+                        </div>
+                        <button class="btn btn-sm btn-outline-secondary" id="btnBackToUpload">
+                            <i class="fa fa-arrow-left me-1"></i> Back
+                        </button>
+                    </div>
+                    <div class="table-responsive" style="max-height:420px;overflow-y:auto">
+                        <table class="table table-sm table-bordered" style="font-size:12px">
+                            <thead class="table-dark sticky-top">
+                                <tr>
+                                    <th style="width:4%">#</th>
+                                    <th>Name</th>
+                                    <th>Description</th>
+                                    <th style="width:10%">Status</th>
+                                    <th style="width:12%">Result</th>
+                                </tr>
+                            </thead>
+                            <tbody id="previewBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="mt-2 text-muted" style="font-size:11px">Only <strong>New</strong> rows will be imported. Already existing categories will be skipped.</div>
+                </div>
+
+            </div>
+            <div class="modal-footer d-none" id="importFooter">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success btn-sm" id="btnConfirmImport">
+                    <i class="fa fa-check me-1"></i> Confirm Import
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
 <script>
 var table;
+var previewRows = [];
 
 $(function () {
+    // ── DataTable ────────────────────────────────────────────────────────────
     table = $('#expenseCategoriesTable').DataTable({
         processing: true,
         serverSide: true,
@@ -122,6 +203,7 @@ $(function () {
         language: { emptyTable: '<div class="text-center py-3 text-muted"><i class="fa fa-inbox fa-2x mb-2 d-block"></i>No expense categories yet.</div>' },
     });
 
+    // ── Add/Edit modal ───────────────────────────────────────────────────────
     $('#btnAdd').on('click', function () {
         $('#modalTitle').html('<i class="fa fa-plus me-2"></i>Add Expense Category');
         $('#categoryId').val('');
@@ -200,6 +282,130 @@ $(function () {
             $('#btnSave').prop('disabled', false).html('<i class="fa fa-save me-1"></i> Save');
         });
     });
+
+    // ── Import modal ─────────────────────────────────────────────────────────
+    $('#importModal').on('hidden.bs.modal', resetImport);
+
+    function resetImport() {
+        previewRows = [];
+        $('#importFile').val('');
+        $('#importFileError').text('');
+        $('#importFile').removeClass('is-invalid');
+        $('#importStep1').show();
+        $('#importStep2').hide();
+        $('#importFooter').addClass('d-none');
+        $('#previewBody').empty();
+    }
+
+    $('#btnBackToUpload').on('click', function () {
+        $('#importStep2').hide();
+        $('#importStep1').show();
+        $('#importFooter').addClass('d-none');
+    });
+
+    $('#btnPreview').on('click', function () {
+        const file = $('#importFile')[0].files[0];
+        if (!file) {
+            $('#importFile').addClass('is-invalid');
+            $('#importFileError').text('Please select an Excel file.');
+            return;
+        }
+        $('#importFile').removeClass('is-invalid');
+
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('_token', $('meta[name="csrf-token"]').attr('content'));
+
+        $('#btnPreview').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Loading...');
+
+        $.ajax({
+            url: '{{ route('chevron.settings.expense-categories.import.preview') }}',
+            method: 'POST',
+            data: fd,
+            processData: false,
+            contentType: false,
+        })
+        .done(function (r) {
+            previewRows = r.rows;
+            renderPreview(previewRows);
+            $('#importStep1').hide();
+            $('#importStep2').show();
+            $('#importFooter').removeClass('d-none');
+        })
+        .fail(function (xhr) {
+            Swal.fire({ icon: 'error', title: xhr.responseJSON?.message || 'Failed to parse file.' });
+        })
+        .always(function () {
+            $('#btnPreview').prop('disabled', false).html('<i class="fa fa-eye me-1"></i> Preview');
+        });
+    });
+
+    function renderPreview(rows) {
+        let html = '';
+        let newCnt = 0, existCnt = 0;
+
+        rows.forEach(function (row, i) {
+            if (row.exists) {
+                existCnt++;
+                html += `<tr class="table-warning">
+                    <td class="text-center">${i + 1}</td>
+                    <td>${escHtml(row.name)}</td>
+                    <td>${escHtml(row.description)}</td>
+                    <td class="text-center"><span class="badge bg-secondary">${escHtml(row.status)}</span></td>
+                    <td class="text-center"><span class="badge bg-warning text-dark"><i class="fa fa-clock me-1"></i>Exists</span></td>
+                </tr>`;
+            } else {
+                newCnt++;
+                html += `<tr>
+                    <td class="text-center">${i + 1}</td>
+                    <td>${escHtml(row.name)}</td>
+                    <td>${escHtml(row.description)}</td>
+                    <td class="text-center"><span class="badge ${row.status === 'Active' ? 'bg-success' : 'bg-danger'}">${escHtml(row.status)}</span></td>
+                    <td class="text-center"><span class="badge bg-success"><i class="fa fa-plus me-1"></i>New</span></td>
+                </tr>`;
+            }
+        });
+
+        if (rows.length === 0) {
+            html = '<tr><td colspan="5" class="text-center text-muted py-3">No valid rows found in file.</td></tr>';
+        }
+
+        $('#previewBody').html(html);
+        $('#newCount').text(newCnt + ' New');
+        $('#existCount').text(existCnt + ' Already Exist');
+
+        // Disable confirm if nothing new
+        $('#btnConfirmImport').prop('disabled', newCnt === 0);
+    }
+
+    $('#btnConfirmImport').on('click', function () {
+        const newRows = previewRows.filter(r => !r.exists);
+        if (newRows.length === 0) return;
+
+        $('#btnConfirmImport').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Importing...');
+
+        $.ajax({
+            url: '{{ route('chevron.settings.expense-categories.import') }}',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ _token: $('meta[name="csrf-token"]').attr('content'), rows: newRows }),
+        })
+        .done(function (r) {
+            $('#importModal').modal('hide');
+            Swal.fire({ icon: 'success', title: r.message, timer: 2000, showConfirmButton: false });
+            table.ajax.reload();
+        })
+        .fail(function (xhr) {
+            Swal.fire({ icon: 'error', title: xhr.responseJSON?.message || 'Import failed.' });
+        })
+        .always(function () {
+            $('#btnConfirmImport').prop('disabled', false).html('<i class="fa fa-check me-1"></i> Confirm Import');
+        });
+    });
+
+    function escHtml(s) {
+        return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
 });
 </script>
 @endpush
