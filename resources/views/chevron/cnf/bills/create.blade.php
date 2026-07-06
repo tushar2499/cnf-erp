@@ -17,7 +17,7 @@
 .totals-row:last-child { border-bottom:none; }
 .totals-label { font-weight:600; color:#374151; font-size:.68rem; letter-spacing:.03em; white-space:nowrap; width:120px; min-width:120px; text-transform:uppercase; }
 .totals-input { flex:1; min-width:0; font-size:.72rem; height:26px; padding:.15rem .45rem; border-radius:.25rem; background:#fff; border:1px solid #ced4da; }
-.totals-input[readonly] { background:#e9ecef; color:#6c757d; border-color:#dee2e6; cursor:default; pointer-events:none; font-style:italic; }
+.totals-input[readonly] { background:#e9ecef; color:#6c757d; border-color:#dee2e6; cursor:not-allowed; font-style:italic; }
 .totals-row-subtotal { background:#f1f5f9; }
 .totals-row-total   { background:#e8f5f0; }
 .totals-row-net     { background:#d1ece3; }
@@ -246,7 +246,7 @@
                 <div class="totals-row">
                     <span class="totals-label">Comm. Rate %</span>
                     <div class="d-flex gap-1" style="flex:1; min-width:0;">
-                        <input type="number" name="commission_rate" id="commissionRate" class="form-control totals-input text-end" step="0.01" value="{{ old('commission_rate', $bill?->commission_rate) }}" placeholder="0.00" style="width:90px; flex:0 0 90px;">
+                        <input type="number" name="commission_rate" id="commissionRate" class="form-control totals-input text-end" step="0.01" value="{{ in_array(old('commission_on', $bill?->commission_on ?? 'ASSESSABLE'), ['MINIMUM', 'MAXIMUM']) ? '0' : old('commission_rate', $bill?->commission_rate) }}" placeholder="0.00" style="width:90px; flex:0 0 90px;" {{ in_array(old('commission_on', $bill?->commission_on ?? 'ASSESSABLE'), ['MINIMUM', 'MAXIMUM']) ? 'readonly' : '' }}>
                         <input type="number" name="commission_amount" id="commissionAmount" class="form-control totals-input text-end" step="0.01" value="{{ old('commission_amount', $bill?->commission_amount ?? 0) }}" placeholder="Amount" style="flex:1; min-width:0;" {{ in_array(old('commission_on', $bill?->commission_on ?? 'ASSESSABLE'), ['MINIMUM', 'MAXIMUM']) ? '' : 'readonly' }}>
                     </div>
                 </div>
@@ -401,12 +401,16 @@ $(function () {
     $('#commissionRate, #commissionOn, #assessableValue, #invoiceValueBdt').on('input change', recalcAll);
     $('#commissionOn').on('change', function () {
         var manual = ['MINIMUM', 'MAXIMUM'].includes($(this).val());
-        $('#commissionAmount').prop('readonly', !manual);
-        if (!manual) { $('#commissionAmount').val(0); recalcAll(); }
+        if (manual) {
+            $('#commissionRate').attr('readonly', 'readonly').val(0);
+            $('#commissionAmount').removeAttr('readonly');
+        } else {
+            $('#commissionRate').removeAttr('readonly');
+            $('#commissionAmount').attr('readonly', 'readonly').val(0);
+        }
+        recalcAll();
     });
-    $('#commissionAmount').on('input', function () {
-        if (['MINIMUM', 'MAXIMUM'].includes($('#commissionOn').val())) { recalcAll(); }
-    });
+    $('#commissionAmount').on('input', recalcAll);
 
     // Less duty, income tax, advance change
     $('#lessDutyTax, #incomeTax, #advanceAmount').on('input', recalcAll);
@@ -414,6 +418,16 @@ $(function () {
     // Category filter heads
     $(document).on('change', '.cat-select', function () {
         filterHeads($(this).closest('tr'));
+    });
+
+    // Head select → fill default amount
+    $(document).on('change', '.head-select', function () {
+        var headId = parseInt($(this).val());
+        var head = allHeads.find(function (h) { return h.id === headId; });
+        if (head) {
+            $(this).closest('tr').find('.row-amount').val(parseFloat(head.amount) || 0);
+            recalcAll();
+        }
     });
 
     recalcAll();

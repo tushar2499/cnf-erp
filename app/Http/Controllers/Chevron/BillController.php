@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Chevron;
 
+use App\Enums\Chevron\ChevronExpenseCategoryType;
 use App\Http\Controllers\Controller;
 use App\Models\Chevron\ChevronBill;
 use App\Models\Chevron\ChevronExpenseCategory;
@@ -15,14 +16,17 @@ class BillController extends Controller
 {
     private function formData(): array
     {
-        $heads = ChevronExpenseHead::where('is_active', true)->orderBy('name')->get();
+        $heads = ChevronExpenseHead::where('is_active', true)
+            ->whereHas('expenseCategory', fn ($q) => $q->where('type', ChevronExpenseCategoryType::Bill))
+            ->orderBy('name')
+            ->get();
 
         return [
             'billTypes'           => ChevronBill::billTypes(),
             'commissionOnOptions' => ChevronBill::commissionOnOptions(),
-            'expenseCategories'   => ChevronExpenseCategory::where('is_active', true)->orderBy('name')->get(),
+            'expenseCategories'   => ChevronExpenseCategory::where('is_active', true)->where('type', ChevronExpenseCategoryType::Bill)->orderBy('name')->get(),
             'expenseHeads'        => $heads,
-            'expenseHeadsJson'    => $heads->map(fn ($h) => ['id' => $h->id, 'name' => $h->name, 'cat' => $h->expense_category_id])->values(),
+            'expenseHeadsJson'    => $heads->map(fn ($h) => ['id' => $h->id, 'name' => $h->name, 'cat' => $h->expense_category_id, 'amount' => (float) $h->amount])->values(),
             'today'               => now()->format('Y-m-d'),
         ];
     }
