@@ -151,10 +151,10 @@
                                 <button type="button" class="btn btn-sm btn-danger btn-remove-row p-0 px-1"><i class="fa fa-times"></i></button>
                             </td>
                             <td>
-                                <select name="rows[{{ $i }}][expense_head_id]" class="form-select form-select-sm">
+                                <select name="rows[{{ $i }}][expense_head_id]" class="form-select form-select-sm expense-head-select">
                                     <option value="">-- Select --</option>
                                     @foreach($expenseHeads as $head)
-                                        <option value="{{ $head->id }}" {{ $row?->expense_head_id == $head->id ? 'selected' : '' }}>{{ $head->name }}</option>
+                                        <option value="{{ $head->id }}" data-amount="{{ $head->amount ?? '' }}" {{ $row?->expense_head_id == $head->id ? 'selected' : '' }}>{{ $head->name }}</option>
                                     @endforeach
                                 </select>
                             </td>
@@ -195,10 +195,10 @@
             <button type="button" class="btn btn-sm btn-danger btn-remove-row p-0 px-1"><i class="fa fa-times"></i></button>
         </td>
         <td>
-            <select name="" class="form-select form-select-sm">
+            <select name="" class="form-select form-select-sm expense-head-select">
                 <option value="">-- Select --</option>
                 @foreach($expenseHeads as $head)
-                    <option value="{{ $head->id }}">{{ $head->name }}</option>
+                    <option value="{{ $head->id }}" data-amount="{{ $head->amount ?? '' }}">{{ $head->name }}</option>
                 @endforeach
             </select>
         </td>
@@ -324,6 +324,16 @@ $(function () {
         $('#hidTotalExp').val(exp.toFixed(2));
         $('#hidTotalApp').val(app.toFixed(2));
     }
+
+    // ── Auto-fill expense amount from head ──
+    $(document).on('change', '.expense-head-select', function () {
+        var amount = $(this).find(':selected').data('amount');
+        var $row   = $(this).closest('tr');
+        if (amount !== '' && amount !== undefined && amount !== null) {
+            $row.find('.expense-amt').val(parseFloat(amount));
+            recalcTotals();
+        }
+    });
 
     $(document).on('input', '.expense-amt, .approved-amt', recalcTotals);
 
