@@ -23,6 +23,7 @@ class CnfJobController extends Controller
             'ports'      => ChevronPort::where('is_active', true)->orderBy('name')->get(),
             'currencies' => ChevronJob::currencies(),
             'countries'  => ChevronJob::countries(),
+            'units'      => ChevronItem::units(),
         ];
     }
 

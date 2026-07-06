@@ -76,11 +76,14 @@ Route::prefix('stakeholders')->name('stakeholders.')->group(function () {
     Route::put('/customers/{customer}',       [CustomerController::class, 'update'])->name('customers.update');
     Route::delete('/customers/{customer}',    [CustomerController::class, 'destroy'])->name('customers.destroy');
 
-    Route::get('/employees/next-id',         [EmployeeController::class, 'nextId'])->name('employees.next-id');
-    Route::get('/employees',                 [EmployeeController::class, 'index'])->name('employees.index');
-    Route::post('/employees',                [EmployeeController::class, 'store'])->name('employees.store');
-    Route::put('/employees/{employee}',      [EmployeeController::class, 'update'])->name('employees.update');
-    Route::delete('/employees/{employee}',   [EmployeeController::class, 'destroy'])->name('employees.destroy');
+    Route::get('/employees/next-id',              [EmployeeController::class, 'nextId'])->name('employees.next-id');
+    Route::get('/employees/sample',               [EmployeeController::class, 'sampleDownload'])->name('employees.sample');
+    Route::post('/employees/import/preview',      [EmployeeController::class, 'importPreview'])->name('employees.import.preview');
+    Route::post('/employees/import',              [EmployeeController::class, 'import'])->name('employees.import');
+    Route::get('/employees',                      [EmployeeController::class, 'index'])->name('employees.index');
+    Route::post('/employees',                     [EmployeeController::class, 'store'])->name('employees.store');
+    Route::put('/employees/{employee}',           [EmployeeController::class, 'update'])->name('employees.update');
+    Route::delete('/employees/{employee}',        [EmployeeController::class, 'destroy'])->name('employees.destroy');
 });
 
 // Settings
@@ -102,6 +105,7 @@ Route::prefix('settings')->name('settings.')->group(function () {
 
     Route::get('/items',              [ItemController::class, 'index'])->name('items.index');
     Route::get('/items/{item}',       [ItemController::class, 'show'])->name('items.show');
+    Route::post('/items/quick',       [ItemController::class, 'quickStore'])->name('items.quick-store');
     Route::post('/items',             [ItemController::class, 'store'])->name('items.store');
     Route::post('/items/{item}',      [ItemController::class, 'update'])->name('items.update');
     Route::delete('/items/{item}',    [ItemController::class, 'destroy'])->name('items.destroy');

@@ -109,4 +109,32 @@ class ItemController extends Controller
         $item->delete();
         return response()->json(['message' => 'Item deleted.']);
     }
+
+    public function quickStore(Request $request)
+    {
+        $request->validate([
+            'item_code'     => ['required', 'string', 'max:100', 'unique:chevron_items,item_code'],
+            'item_name'     => ['required', 'string', 'max:255'],
+            'purchase_unit' => ['required', 'string'],
+            'item_price'    => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $item = ChevronItem::create([
+            'item_code'          => strtoupper($request->item_code),
+            'item_name'          => $request->item_name,
+            'purchase_unit'      => $request->purchase_unit,
+            'item_price'         => $request->item_price,
+            'status'             => 'Active',
+            'availability_in_po' => true,
+            'availability_in_so' => true,
+        ]);
+
+        return response()->json([
+            'id'            => $item->id,
+            'text'          => $item->item_code . ' — ' . $item->item_name,
+            'name'          => $item->item_name,
+            'purchase_unit' => $item->purchase_unit,
+            'message'       => 'Item "' . $item->item_name . '" created successfully.',
+        ]);
+    }
 }

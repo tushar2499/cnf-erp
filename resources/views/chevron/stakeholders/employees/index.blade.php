@@ -5,9 +5,17 @@
 @section('content')
 <div class="page-header">
     <h4><i class="fa fa-user-tie me-2 text-success"></i> Employees</h4>
-    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#employeeModal" id="btnAdd">
-        <i class="fa fa-plus me-1"></i> Add Employee
-    </button>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{{ route('chevron.stakeholders.employees.sample') }}" class="btn btn-sm btn-outline-success">
+            <i class="fa fa-file-excel me-1"></i> Sample File
+        </a>
+        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importModal">
+            <i class="fa fa-file-upload me-1"></i> Import Excel
+        </button>
+        <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#employeeModal" id="btnAdd">
+            <i class="fa fa-plus me-1"></i> Add Employee
+        </button>
+    </div>
 </div>
 
 <div class="card">
@@ -153,6 +161,88 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+{{-- Import Modal --}}
+<div class="modal fade" id="importModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title fw-600"><i class="fa fa-file-upload me-2"></i>Import Employees</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+
+                {{-- Step 1 --}}
+                <div id="importStep1">
+                    <div class="alert alert-info d-flex gap-2 align-items-start" style="font-size:12px">
+                        <i class="fa fa-info-circle mt-1"></i>
+                        <div>
+                            Upload an Excel file with columns:
+                            <strong>Employee Prefix</strong>, <strong>Employee ID</strong> (optional — auto-generated if blank),
+                            <strong>Name</strong>, <strong>Designation</strong>, <strong>Branch</strong>,
+                            <strong>Joining Date</strong> (YYYY-MM-DD), Short Name, Father Name, Mother Name,
+                            <strong>Status</strong> (Active/Inactive/Resigned/Terminated).<br>
+                            Exists check: by Employee ID if provided, otherwise by Name.<br>
+                            <a href="{{ route('chevron.stakeholders.employees.sample') }}" class="fw-semibold">
+                                <i class="fa fa-download me-1"></i>Download sample file
+                            </a>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Select Excel File</label>
+                        <input type="file" id="importFile" class="form-control" accept=".xlsx,.xls,.csv">
+                        <div class="invalid-feedback" id="importFileError"></div>
+                    </div>
+                    <button class="btn btn-primary btn-sm" id="btnPreview">
+                        <i class="fa fa-eye me-1"></i> Preview
+                    </button>
+                </div>
+
+                {{-- Step 2 --}}
+                <div id="importStep2" style="display:none">
+                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                        <div>
+                            <span class="badge bg-success me-1" id="newCount">0 New</span>
+                            <span class="badge bg-warning text-dark me-1" id="existCount">0 Already Exist</span>
+                            <span class="badge bg-danger" id="warnCount" style="display:none">0 Warnings</span>
+                        </div>
+                        <button class="btn btn-sm btn-outline-secondary" id="btnBackToUpload">
+                            <i class="fa fa-arrow-left me-1"></i> Back
+                        </button>
+                    </div>
+                    <div class="table-responsive" style="max-height:440px;overflow-y:auto">
+                        <table class="table table-sm table-bordered" style="font-size:11.5px">
+                            <thead class="table-dark sticky-top">
+                                <tr>
+                                    <th style="width:3%">#</th>
+                                    <th style="width:9%">Emp ID</th>
+                                    <th>Name</th>
+                                    <th style="width:15%">Designation</th>
+                                    <th style="width:13%">Branch</th>
+                                    <th style="width:10%">Joining Date</th>
+                                    <th style="width:8%">Status</th>
+                                    <th style="width:13%">Result</th>
+                                </tr>
+                            </thead>
+                            <tbody id="previewBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="mt-2 text-muted" style="font-size:11px">
+                        Only <strong>New</strong> rows will be imported. Rows with
+                        <span class="badge bg-danger" style="font-size:10px">Warning</span>
+                        will still import — check designation/branch names match existing records.
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer d-none" id="importFooter">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success btn-sm" id="btnConfirmImport">
+                    <i class="fa fa-check me-1"></i> Confirm Import
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -325,6 +415,134 @@ $(function () {
             $('#btnSave').prop('disabled', false).html('<i class="fa fa-save me-1"></i> Save');
         });
     });
+    // ── Import modal ─────────────────────────────────────────────────────────
+    var previewRows = [];
+
+    $('#importModal').on('hidden.bs.modal', function () {
+        previewRows = [];
+        $('#importFile').val('').removeClass('is-invalid');
+        $('#importFileError').text('');
+        $('#importStep1').show();
+        $('#importStep2').hide();
+        $('#importFooter').addClass('d-none');
+        $('#previewBody').empty();
+    });
+
+    $('#btnBackToUpload').on('click', function () {
+        $('#importStep2').hide();
+        $('#importStep1').show();
+        $('#importFooter').addClass('d-none');
+    });
+
+    $('#btnPreview').on('click', function () {
+        const file = $('#importFile')[0].files[0];
+        if (!file) {
+            $('#importFile').addClass('is-invalid');
+            $('#importFileError').text('Please select an Excel file.');
+            return;
+        }
+        $('#importFile').removeClass('is-invalid');
+
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('_token', $('meta[name="csrf-token"]').attr('content'));
+
+        $('#btnPreview').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Loading...');
+
+        $.ajax({
+            url: '{{ route('chevron.stakeholders.employees.import.preview') }}',
+            method: 'POST', data: fd, processData: false, contentType: false,
+        })
+        .done(function (r) {
+            previewRows = r.rows;
+            renderImportPreview(previewRows);
+            $('#importStep1').hide();
+            $('#importStep2').show();
+            $('#importFooter').removeClass('d-none');
+        })
+        .fail(function (xhr) {
+            Swal.fire({ icon: 'error', title: xhr.responseJSON?.message || 'Failed to parse file.' });
+        })
+        .always(function () {
+            $('#btnPreview').prop('disabled', false).html('<i class="fa fa-eye me-1"></i> Preview');
+        });
+    });
+
+    function renderImportPreview(rows) {
+        let html = '', newCnt = 0, existCnt = 0, warnCnt = 0;
+
+        rows.forEach(function (row, i) {
+            const hasWarn = row.warnings && row.warnings.length > 0;
+
+            if (row.exists) {
+                existCnt++;
+                html += `<tr class="table-warning">
+                    <td class="text-center">${i+1}</td>
+                    <td>${h(row.employee_id || '(auto)')}</td>
+                    <td>${h(row.name)}</td>
+                    <td>${h(row.designation_name)}</td>
+                    <td>${h(row.branch_name)}</td>
+                    <td class="text-center">${h(row.joining_date||'')}</td>
+                    <td class="text-center"><span class="badge bg-secondary">${h(row.status)}</span></td>
+                    <td class="text-center"><span class="badge bg-warning text-dark"><i class="fa fa-clock me-1"></i>Exists</span></td>
+                </tr>`;
+            } else {
+                newCnt++;
+                if (hasWarn) warnCnt++;
+                const warnTip = row.warnings.join(', ');
+                html += `<tr class="${hasWarn ? 'table-danger' : ''}">
+                    <td class="text-center">${i+1}</td>
+                    <td>${h(row.employee_id || '<em class="text-muted">auto</em>')}</td>
+                    <td>${h(row.name)}</td>
+                    <td>${h(row.designation_name)}${!row.designation_found && row.designation_name ? ' <span class="text-danger small">(not found)</span>' : ''}</td>
+                    <td>${h(row.branch_name)}</td>
+                    <td class="text-center">${h(row.joining_date||'')}</td>
+                    <td class="text-center"><span class="badge ${row.status==='Active'?'bg-success':'bg-secondary'}">${h(row.status)}</span></td>
+                    <td class="text-center">
+                        <span class="badge bg-success"><i class="fa fa-plus me-1"></i>New</span>
+                        ${hasWarn ? `<span class="badge bg-danger ms-1" title="${warnTip}"><i class="fa fa-exclamation-triangle"></i></span>` : ''}
+                    </td>
+                </tr>`;
+            }
+        });
+
+        if (!rows.length) html = '<tr><td colspan="8" class="text-center text-muted py-3">No valid rows found.</td></tr>';
+
+        $('#previewBody').html(html);
+        $('#newCount').text(newCnt + ' New');
+        $('#existCount').text(existCnt + ' Already Exist');
+        warnCnt > 0 ? $('#warnCount').text(warnCnt + ' Warnings').show() : $('#warnCount').hide();
+        $('#btnConfirmImport').prop('disabled', newCnt === 0);
+    }
+
+    $('#btnConfirmImport').on('click', function () {
+        const newRows = previewRows.filter(r => !r.exists);
+        if (!newRows.length) return;
+
+        $('#btnConfirmImport').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Importing...');
+
+        $.ajax({
+            url: '{{ route('chevron.stakeholders.employees.import') }}',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ _token: $('meta[name="csrf-token"]').attr('content'), rows: newRows }),
+        })
+        .done(function (r) {
+            $('#importModal').modal('hide');
+            Swal.fire({ icon: 'success', title: r.message, timer: 2000, showConfirmButton: false });
+            table.ajax.reload();
+        })
+        .fail(function (xhr) {
+            Swal.fire({ icon: 'error', title: xhr.responseJSON?.message || 'Import failed.' });
+        })
+        .always(function () {
+            $('#btnConfirmImport').prop('disabled', false).html('<i class="fa fa-check me-1"></i> Confirm Import');
+        });
+    });
+
+    function h(s) {
+        return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
 });
 </script>
 @endpush

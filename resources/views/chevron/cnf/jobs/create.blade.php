@@ -134,7 +134,12 @@
                     <textarea name="party_address" class="form-control form-control-sm" rows="1" placeholder="Party address">{{ old('party_address', $job?->party_address) }}</textarea>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Goods Name <span class="req">*</span></label>
+                    <label class="form-label d-flex justify-content-between align-items-center">
+                        <span>Goods Name <span class="req">*</span></span>
+                        <button type="button" class="btn btn-outline-success btn-sm py-0 px-2 ms-1" id="btnQuickItem" title="Create new item">
+                            <i class="fa fa-plus"></i> New
+                        </button>
+                    </label>
                     <select id="goodsNameSelect" class="form-select form-select-sm w-100">
                         @if($job?->goods_name)
                             <option value="{{ $job->item_id ?? $job->goods_name }}" selected>{{ $job->goods_name }}</option>
@@ -679,12 +684,62 @@
 </div>{{-- end col-md-4 right --}}
 </div>{{-- end row --}}
 </form>
+
+{{-- Quick-Create Item Modal --}}
+<div class="modal fade" id="quickItemModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header py-2" style="background:#1e293b;">
+                <h6 class="modal-title text-white mb-0"><i class="fa fa-box me-1"></i> New Item / Goods</h6>
+                <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-3">
+                <div class="mb-2">
+                    <label class="form-label">Item Code <span class="req">*</span></label>
+                    <input type="text" id="qi_code" class="form-control form-control-sm text-uppercase" placeholder="e.g. RICE-001">
+                    <div class="invalid-feedback" id="qi_code_err"></div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Item Name <span class="req">*</span></label>
+                    <input type="text" id="qi_name" class="form-control form-control-sm" placeholder="e.g. Rice (IRRI)">
+                    <div class="invalid-feedback" id="qi_name_err"></div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Unit <span class="req">*</span></label>
+                    <select id="qi_unit" class="form-select form-select-sm">
+                        <option value="">-- Select Unit --</option>
+                        @foreach($units as $group => $opts)
+                        <optgroup label="{{ $group }}">
+                            @foreach($opts as $val => $label)
+                            <option value="{{ $val }}">{{ $label }}</option>
+                            @endforeach
+                        </optgroup>
+                        @endforeach
+                    </select>
+                    <div class="invalid-feedback" id="qi_unit_err"></div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Price (BDT) <span class="req">*</span></label>
+                    <input type="number" id="qi_price" class="form-control form-control-sm text-end" step="0.01" min="0" placeholder="0.00" value="0">
+                    <div class="invalid-feedback" id="qi_price_err"></div>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-sm btn-success" id="btnSaveQuickItem">
+                    <i class="fa fa-save me-1"></i> Save & Select
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
 <script>
-var SEARCH_CUSTOMERS = '{{ route('chevron.cnf.jobs.search-customers') }}';
-var SEARCH_ITEMS     = '{{ route('chevron.cnf.jobs.search-items') }}';
+var SEARCH_CUSTOMERS   = '{{ route('chevron.cnf.jobs.search-customers') }}';
+var SEARCH_ITEMS       = '{{ route('chevron.cnf.jobs.search-items') }}';
+var QUICK_ITEM_STORE   = '{{ route('chevron.settings.items.quick-store') }}';
 
 $(function () {
     // ── Party Name Select2 AJAX ──
@@ -818,6 +873,69 @@ $(function () {
     $('#currencyType').on('change', onRateChange);
 
     onRateChange(); // init on edit
+
+    // ── Quick Create Item ──────────────────────────────────────────────────
+    $('#btnQuickItem').on('click', function () {
+        $('#qi_code').val('').removeClass('is-invalid');
+        $('#qi_name').val('').removeClass('is-invalid');
+        $('#qi_unit').val('').removeClass('is-invalid');
+        $('#qi_price').val('0').removeClass('is-invalid');
+        $('#quickItemModal').modal('show');
+    });
+
+    $('#btnSaveQuickItem').on('click', function () {
+        var code  = $('#qi_code').val().trim();
+        var name  = $('#qi_name').val().trim();
+        var unit  = $('#qi_unit').val();
+        var price = $('#qi_price').val();
+        var ok = true;
+
+        if (!code)  { $('#qi_code').addClass('is-invalid');  $('#qi_code_err').text('Required.');  ok = false; }
+        else          { $('#qi_code').removeClass('is-invalid'); }
+        if (!name)  { $('#qi_name').addClass('is-invalid');  $('#qi_name_err').text('Required.');  ok = false; }
+        else          { $('#qi_name').removeClass('is-invalid'); }
+        if (!unit)  { $('#qi_unit').addClass('is-invalid');  $('#qi_unit_err').text('Required.');  ok = false; }
+        else          { $('#qi_unit').removeClass('is-invalid'); }
+        if (price === '' || isNaN(price) || parseFloat(price) < 0) {
+            $('#qi_price').addClass('is-invalid'); $('#qi_price_err').text('Enter valid price.'); ok = false;
+        } else { $('#qi_price').removeClass('is-invalid'); }
+
+        if (!ok) return;
+
+        $('#btnSaveQuickItem').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Saving...');
+
+        $.ajax({
+            url: QUICK_ITEM_STORE, method: 'POST',
+            data: { _token: $('meta[name="csrf-token"]').attr('content'), item_code: code, item_name: name, purchase_unit: unit, item_price: price },
+        })
+        .done(function (r) {
+            // Add new option to Select2 and select it
+            var opt = new Option(r.text, r.id, true, true);
+            $('#goodsNameSelect').append(opt).trigger('change');
+
+            // Sync hidden fields
+            $('#goodsNameHidden').val(r.name);
+            $('#itemId').val(r.id);
+            $('[name="pack_unit"]').val(r.purchase_unit);
+
+            $('#quickItemModal').modal('hide');
+            Swal.fire({ icon: 'success', title: r.message, timer: 1800, showConfirmButton: false });
+        })
+        .fail(function (xhr) {
+            var errs = xhr.responseJSON?.errors;
+            if (errs) {
+                if (errs.item_code)     { $('#qi_code').addClass('is-invalid');  $('#qi_code_err').text(errs.item_code[0]); }
+                if (errs.item_name)     { $('#qi_name').addClass('is-invalid');  $('#qi_name_err').text(errs.item_name[0]); }
+                if (errs.purchase_unit) { $('#qi_unit').addClass('is-invalid');  $('#qi_unit_err').text(errs.purchase_unit[0]); }
+                if (errs.item_price)    { $('#qi_price').addClass('is-invalid'); $('#qi_price_err').text(errs.item_price[0]); }
+            } else {
+                Swal.fire({ icon: 'error', title: xhr.responseJSON?.message || 'Save failed.' });
+            }
+        })
+        .always(function () {
+            $('#btnSaveQuickItem').prop('disabled', false).html('<i class="fa fa-save me-1"></i> Save & Select');
+        });
+    });
 });
 </script>
 @endpush
