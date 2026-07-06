@@ -19,6 +19,9 @@ class ExpenseHeadController extends Controller
             return DataTables::of(ChevronExpenseHead::with('expenseCategory'))
                 ->addIndexColumn()
                 ->addColumn('category_name', fn($row) => $row->expenseCategory?->name ?? '-')
+                ->addColumn('category_type_badge', fn($row) => $row->expenseCategory
+                    ? $row->expenseCategory->type->badge()
+                    : '-')
                 ->addColumn('status_badge', fn($row) => $row->is_active
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')
@@ -37,7 +40,7 @@ class ExpenseHeadController extends Controller
                         data-name="' . e($row->name) . '">
                         <i class="fa fa-trash"></i>
                     </button>')
-                ->rawColumns(['status_badge', 'action'])
+                ->rawColumns(['category_type_badge', 'status_badge', 'action'])
                 ->make(true);
         }
 

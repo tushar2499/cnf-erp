@@ -36,12 +36,14 @@
                     <tr>
                         <th>#</th>
                         <th>Name</th>
+                        <th>Type</th>
                         <th>Description</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
                     <tr>
                         <th></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                         <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                         <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                         <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
@@ -70,6 +72,14 @@
                         <div class="col-12">
                             <label class="form-label">Name <span class="text-danger">*</span></label>
                             <input type="text" id="categoryName" class="form-control" placeholder="e.g. Port Charges" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Type <span class="text-danger">*</span></label>
+                            <select id="categoryType" class="form-select" required>
+                                @foreach($types as $type)
+                                    <option value="{{ $type->value }}">{{ $type->label() }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Description</label>
@@ -109,7 +119,7 @@
                     <div class="alert alert-info d-flex gap-2 align-items-start" style="font-size:12px">
                         <i class="fa fa-info-circle mt-1"></i>
                         <div>
-                            Upload an Excel file (.xlsx / .xls) with columns: <strong>Name</strong>, <strong>Description</strong>, <strong>Status</strong> (Active/Inactive).<br>
+                            Upload an Excel file (.xlsx / .xls) with columns: <strong>Name</strong>, <strong>Type</strong> (bill/job), <strong>Description</strong>, <strong>Status</strong> (Active/Inactive).<br>
                             <a href="{{ route('chevron.settings.expense-categories.sample') }}" class="fw-semibold">
                                 <i class="fa fa-download me-1"></i>Download sample file
                             </a>
@@ -142,6 +152,7 @@
                                 <tr>
                                     <th style="width:4%">#</th>
                                     <th>Name</th>
+                                    <th style="width:8%">Type</th>
                                     <th>Description</th>
                                     <th style="width:10%">Status</th>
                                     <th style="width:12%">Result</th>
@@ -179,6 +190,7 @@ $(function () {
         columns: [
             { data: 'DT_RowIndex',  name: 'DT_RowIndex', orderable: false, searchable: false, width: '50px' },
             { data: 'name',         name: 'name' },
+            { data: 'type_badge',   name: 'type' },
             { data: 'description',  name: 'description' },
             { data: 'status_badge', name: 'is_active', searchable: false },
             { data: 'action',       name: 'action', orderable: false, searchable: false, width: '90px' },
@@ -208,6 +220,7 @@ $(function () {
         $('#modalTitle').html('<i class="fa fa-plus me-2"></i>Add Expense Category');
         $('#categoryId').val('');
         $('#categoryName').val('').removeClass('is-invalid');
+        $('#categoryType').val('bill');
         $('#categoryDescription').val('');
         $('#categoryActive').prop('checked', true);
         $('.invalid-feedback').remove();
@@ -218,6 +231,7 @@ $(function () {
         $('#modalTitle').html('<i class="fa fa-edit me-2"></i>Edit Expense Category');
         $('#categoryId').val(d.id);
         $('#categoryName').val(d.name).removeClass('is-invalid');
+        $('#categoryType').val(d.type);
         $('#categoryDescription').val(d.description);
         $('#categoryActive').prop('checked', d.is_active == 1);
         $('.invalid-feedback').remove();
@@ -262,6 +276,7 @@ $(function () {
             data: {
                 _token:      $('meta[name="csrf-token"]').attr('content'),
                 name:        $('#categoryName').val(),
+                type:        $('#categoryType').val(),
                 description: $('#categoryDescription').val(),
                 is_active:   $('#categoryActive').is(':checked') ? 1 : 0,
             },
@@ -345,11 +360,15 @@ $(function () {
         let newCnt = 0, existCnt = 0;
 
         rows.forEach(function (row, i) {
+            const typeBadge = row.type === 'job'
+                ? '<span class="badge bg-primary">Job</span>'
+                : '<span class="badge text-white" style="background-color:#0891b2">Bill</span>';
             if (row.exists) {
                 existCnt++;
                 html += `<tr class="table-warning">
                     <td class="text-center">${i + 1}</td>
                     <td>${escHtml(row.name)}</td>
+                    <td class="text-center">${typeBadge}</td>
                     <td>${escHtml(row.description)}</td>
                     <td class="text-center"><span class="badge bg-secondary">${escHtml(row.status)}</span></td>
                     <td class="text-center"><span class="badge bg-warning text-dark"><i class="fa fa-clock me-1"></i>Exists</span></td>
@@ -359,6 +378,7 @@ $(function () {
                 html += `<tr>
                     <td class="text-center">${i + 1}</td>
                     <td>${escHtml(row.name)}</td>
+                    <td class="text-center">${typeBadge}</td>
                     <td>${escHtml(row.description)}</td>
                     <td class="text-center"><span class="badge ${row.status === 'Active' ? 'bg-success' : 'bg-danger'}">${escHtml(row.status)}</span></td>
                     <td class="text-center"><span class="badge bg-success"><i class="fa fa-plus me-1"></i>New</span></td>
@@ -367,7 +387,7 @@ $(function () {
         });
 
         if (rows.length === 0) {
-            html = '<tr><td colspan="5" class="text-center text-muted py-3">No valid rows found in file.</td></tr>';
+            html = '<tr><td colspan="6" class="text-center text-muted py-3">No valid rows found in file.</td></tr>';
         }
 
         $('#previewBody').html(html);
