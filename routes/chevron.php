@@ -115,6 +115,9 @@ Route::prefix('settings')->name('settings.')->group(function () {
     Route::post('/expense-heads',                          [ExpenseHeadController::class, 'store'])->name('expense-heads.store');
     Route::put('/expense-heads/{expenseHead}',             [ExpenseHeadController::class, 'update'])->name('expense-heads.update');
     Route::delete('/expense-heads/{expenseHead}',          [ExpenseHeadController::class, 'destroy'])->name('expense-heads.destroy');
+    Route::get('/expense-heads/sample',                    [ExpenseHeadController::class, 'sampleDownload'])->name('expense-heads.sample');
+    Route::post('/expense-heads/import/preview',           [ExpenseHeadController::class, 'importPreview'])->name('expense-heads.import.preview');
+    Route::post('/expense-heads/import',                   [ExpenseHeadController::class, 'import'])->name('expense-heads.import');
 
     Route::get('/accounts',               [AccountController::class, 'index'])->name('accounts.index');
     Route::post('/accounts',              [AccountController::class, 'store'])->name('accounts.store');

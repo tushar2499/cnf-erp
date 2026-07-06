@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Chevron\ChevronExpenseCategory;
 use App\Models\Chevron\ChevronExpenseHead;
 use Illuminate\Http\Request;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Yajra\DataTables\Facades\DataTables;
 
 class ExpenseHeadController extends Controller
@@ -86,5 +89,122 @@ class ExpenseHeadController extends Controller
     {
         $expenseHead->delete();
         return response()->json(['message' => 'Expense head deleted.']);
+    }
+
+    public function sampleDownload()
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Expense Heads');
+
+        $sheet->fromArray(['Name', 'Category', 'Type', 'Amount', 'Status'], null, 'A1');
+        $sheet->getStyle('A1:E1')->getFont()->setBold(true);
+        $sheet->getStyle('A1:E1')->getFill()
+            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+            ->getStartColor()->setARGB('FF1A4A6B');
+        $sheet->getStyle('A1:E1')->getFont()->getColor()->setARGB('FFFFFFFF');
+
+        // Sample rows — pull first 3 categories from DB
+        $cats = ChevronExpenseCategory::limit(3)->pluck('name')->all();
+        $sheet->fromArray([
+            ['PORT HANDLING FEE',   $cats[0] ?? 'CUSTOMS',      'External', '',       'Active'],
+            ['DOCUMENTATION CHARGE',$cats[1] ?? 'TRANSPORTATION','Internal', '500.00', 'Active'],
+            ['CUSTOMS DUTY',        $cats[2] ?? 'PORT & JETTY',  'External', '',       'Active'],
+        ], null, 'A2');
+
+        foreach (['A'=>36,'B'=>28,'C'=>12,'D'=>12,'E'=>10] as $col => $w) {
+            $sheet->getColumnDimension($col)->setWidth($w);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, 'expense-heads-sample.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    public function importPreview(Request $request)
+    {
+        $request->validate(['file' => 'required|file|mimes:xlsx,xls,csv|max:5120']);
+
+        $spreadsheet = IOFactory::load($request->file('file')->getPathname());
+        $rows        = $spreadsheet->getActiveSheet()->toArray(null, true, true, false);
+
+        // Existing head names (lowercase)
+        $existingHeads = ChevronExpenseHead::pluck('name')
+            ->map(fn($n) => strtolower(trim($n)))
+            ->flip()->all();
+
+        // Category name → id map (lowercase keys)
+        $catMap = ChevronExpenseCategory::pluck('id', 'name')
+            ->mapWithKeys(fn($id, $name) => [strtolower(trim($name)) => $id])
+            ->all();
+
+        $preview = [];
+        foreach ($rows as $i => $row) {
+            if ($i === 0) continue;
+
+            $name = trim($row[0] ?? '');
+            if ($name === '') continue;
+
+            $catName  = trim($row[1] ?? '');
+            $type     = trim($row[2] ?? '');
+            $amount   = trim($row[3] ?? '');
+            $status   = trim($row[4] ?? 'Active') ?: 'Active';
+
+            // Resolve category id
+            $catId    = $catMap[strtolower($catName)] ?? null;
+            $catFound = $catId !== null;
+
+            // Normalise type
+            $typeNorm = match(strtolower($type)) {
+                'internal' => 'Internal',
+                'external' => 'External',
+                default    => null,
+            };
+
+            $preview[] = [
+                'name'                => $name,
+                'category_name'       => $catName,
+                'expense_category_id' => $catId,
+                'category_found'      => $catFound,
+                'type'                => $typeNorm ?? $type,
+                'type_valid'          => $typeNorm !== null,
+                'amount'              => is_numeric($amount) ? $amount : null,
+                'status'              => $status,
+                'exists'              => isset($existingHeads[strtolower($name)]),
+            ];
+        }
+
+        return response()->json(['rows' => $preview]);
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate(['rows' => 'required|array|min:1']);
+
+        $inserted = 0;
+        foreach ($request->rows as $row) {
+            $name = trim($row['name'] ?? '');
+            if ($name === '') continue;
+
+            if (ChevronExpenseHead::whereRaw('LOWER(name) = ?', [strtolower($name)])->exists()) continue;
+
+            ChevronExpenseHead::create([
+                'name'                => $name,
+                'expense_category_id' => $row['expense_category_id'] ?? null,
+                'type'                => in_array($row['type'] ?? '', ['Internal','External']) ? $row['type'] : 'External',
+                'amount'              => is_numeric($row['amount'] ?? '') ? $row['amount'] : null,
+                'is_active'           => strtolower($row['status'] ?? 'active') === 'active',
+            ]);
+            $inserted++;
+        }
+
+        return response()->json([
+            'message'  => "{$inserted} expense head(s) imported successfully.",
+            'inserted' => $inserted,
+        ]);
     }
 }
