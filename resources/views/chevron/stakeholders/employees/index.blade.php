@@ -143,7 +143,7 @@
                                 <select id="empTeamLeader" class="form-select form-select-sm select2-team-leader">
                                     <option value="">-- Select Team Leader --</option>
                                     @foreach($teamLeaders as $tl)
-                                        <option value="{{ $tl->id }}">{{ $tl->name }} ({{ $tl->employee_id }})</option>
+                                        <option value="{{ $tl->id }}">{{ $tl->name }} ({{ $tl->employee_id }}){{ $tl->designation ? ' — ' . $tl->designation->name : '' }}</option>
                                     @endforeach
                                 </select>
                             </div>

@@ -43,6 +43,7 @@
                             <th>Category</th>
                             <th>Category Type</th>
                             <th>Amount</th>
+                            <th>Employees</th>
                             <th>Status</th>
                             <th>Action</th>
                         </tr>
@@ -53,6 +54,7 @@
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th></th>
                         </tr>
@@ -65,7 +67,7 @@
 
     {{-- Add/Edit Modal --}}
     <div class="modal fade" id="expenseHeadModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h6 class="modal-title fw-600" id="modalTitle"><i class="fa fa-plus me-2"></i>Add Expense Head</h6>
@@ -103,6 +105,34 @@
                                 <label class="form-label">Amount</label>
                                 <input type="number" id="headAmount" class="form-control" placeholder="0.00" min="0"
                                     step="0.01">
+                            </div>
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="form-label mb-0">
+                                        Employees
+                                        <span class="ms-1 text-muted" style="font-size:.7rem;font-weight:400;">(optional)</span>
+                                    </label>
+                                    <div class="d-flex gap-1">
+                                        <button type="button" id="btnSelectAllEmployees"
+                                            style="font-size:.7rem;padding:2px 9px;border-radius:4px;border:1px solid #0369A1;color:#0369A1;background:#EFF6FF;cursor:pointer;font-weight:600;transition:all .15s;">
+                                            <i class="fa fa-check me-1"></i>Select All
+                                        </button>
+                                        <button type="button" id="btnClearEmployees"
+                                            style="font-size:.7rem;padding:2px 9px;border-radius:4px;border:1px solid #dc2626;color:#dc2626;background:#FFF5F5;cursor:pointer;font-weight:600;transition:all .15s;">
+                                            <i class="fa fa-times me-1"></i>Clear
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="headEmployeesLoading" style="display:none" class="mb-1">
+                                    <span class="spinner-border spinner-border-sm text-secondary me-1"></span>
+                                    <span class="text-muted" style="font-size:12px">Loading assigned employees...</span>
+                                </div>
+                                <select id="headEmployees" class="form-select select2-head-employees" multiple style="width:100%"
+                                    aria-label="Assign employees to this expense head">
+                                    @foreach ($employees as $emp)
+                                        <option value="{{ $emp->id }}">{{ $emp->name }} ({{ $emp->employee_id }}) — {{ $emp->designation?->name ?? 'N/A' }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                             <div class="col-12">
                                 <div class="form-check form-switch">
@@ -226,6 +256,21 @@
                 dropdownParent: $('#expenseHeadModal'),
             });
 
+            $('.select2-head-employees').select2({
+                theme: 'bootstrap-5',
+                placeholder: '-- Select Employees --',
+                allowClear: true,
+                dropdownParent: $('#expenseHeadModal'),
+            });
+
+            $('#btnSelectAllEmployees').on('click', function () {
+                $('#headEmployees option').prop('selected', true);
+                $('#headEmployees').trigger('change');
+            });
+            $('#btnClearEmployees').on('click', function () {
+                $('#headEmployees').val([]).trigger('change');
+            });
+
             // ── DataTable ────────────────────────────────────────────────────────────
             table = $('#expenseHeadsTable').DataTable({
                 processing: true,
@@ -257,6 +302,12 @@
                     {
                         data: 'amount',
                         name: 'amount'
+                    },
+                    {
+                        data: 'employees_list',
+                        name: 'employees_list',
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: 'status_badge',
@@ -313,6 +364,7 @@
                 $('#headCategory').val('').trigger('change').removeClass('is-invalid');
                 $('#headType').val('').trigger('change').removeClass('is-invalid');
                 $('#headAmount').val('').removeClass('is-invalid');
+                $('#headEmployees').val(null).trigger('change');
                 $('#headActive').prop('checked', true);
                 $('.invalid-feedback').remove();
             });
@@ -325,9 +377,20 @@
                 $('#headCategory').val(d.expense_category_id).trigger('change').removeClass('is-invalid');
                 $('#headType').val(d.type).trigger('change').removeClass('is-invalid');
                 $('#headAmount').val(d.amount).removeClass('is-invalid');
+                $('#headEmployees').val(null).trigger('change');
                 $('#headActive').prop('checked', d.is_active == 1);
                 $('.invalid-feedback').remove();
                 $('#expenseHeadModal').modal('show');
+
+                $('#headEmployeesLoading').show();
+                $.get('{{ url('chevron/settings/expense-heads') }}/' + d.id + '/employees')
+                    .done(function(r) {
+                        const ids = r.employees.map(emp => String(emp.id));
+                        $('#headEmployees').val(ids).trigger('change');
+                    })
+                    .always(function() {
+                        $('#headEmployeesLoading').hide();
+                    });
             });
 
             $(document).on('click', '.btn-delete', function() {
@@ -411,6 +474,7 @@
                             type: $('#headType').val(),
                             amount: $('#headAmount').val(),
                             is_active: $('#headActive').is(':checked') ? 1 : 0,
+                            employee_ids: $('#headEmployees').val() || [],
                         },
                     })
                     .done(function(r) {

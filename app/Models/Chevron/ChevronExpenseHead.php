@@ -20,4 +20,9 @@ class ChevronExpenseHead extends Model
     {
         return $this->belongsTo(ChevronExpenseCategory::class, 'expense_category_id');
     }
+
+    public function employees()
+    {
+        return $this->belongsToMany(ChevronEmployee::class, 'chevron_expense_head_employees', 'expense_head_id', 'employee_id');
+    }
 }

@@ -68,7 +68,7 @@ class EmployeeController extends Controller
 
         $designations = ChevronDesignation::where('is_active', true)->orderBy('name')->get();
         $branches = ChevronBranch::where('is_active', true)->orderBy('name')->get();
-        $teamLeaders = ChevronEmployee::where('type', 'team_leader')->where('is_active', true)->orderBy('name')->get();
+        $teamLeaders = ChevronEmployee::with('designation')->where('type', 'team_leader')->where('is_active', true)->orderBy('name')->get();
         $customers = ChevronCustomer::where('status', 'Active')->orderBy('name')->get(['id', 'name', 'customer_id']);
 
         return view('chevron.stakeholders.employees.index', compact('designations', 'branches', 'teamLeaders', 'customers'));
