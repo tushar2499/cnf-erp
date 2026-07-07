@@ -122,6 +122,9 @@ Route::prefix('settings')->name('settings.')->group(function () {
     Route::get('/expense-heads/sample',                    [ExpenseHeadController::class, 'sampleDownload'])->name('expense-heads.sample');
     Route::post('/expense-heads/import/preview',           [ExpenseHeadController::class, 'importPreview'])->name('expense-heads.import.preview');
     Route::post('/expense-heads/import',                   [ExpenseHeadController::class, 'import'])->name('expense-heads.import');
+    Route::get('/expense-heads/employees/search',          [ExpenseHeadController::class, 'searchEmployees'])->name('expense-heads.employees.search');
+    Route::get('/expense-heads/{expenseHead}/employees',   [ExpenseHeadController::class, 'getEmployees'])->name('expense-heads.employees.get');
+    Route::post('/expense-heads/{expenseHead}/employees',  [ExpenseHeadController::class, 'syncEmployees'])->name('expense-heads.employees.sync');
 
     Route::get('/accounts',               [AccountController::class, 'index'])->name('accounts.index');
     Route::post('/accounts',              [AccountController::class, 'store'])->name('accounts.store');

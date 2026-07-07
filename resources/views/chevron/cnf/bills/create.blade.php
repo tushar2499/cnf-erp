@@ -9,15 +9,21 @@
 .section-card .section-body { padding:.6rem .75rem; }
 .bill-form-label { font-size:.7rem; font-weight:600; color:#495057; margin-bottom:.1rem; }
 .bill-input { font-size:.75rem; height:28px; padding:.18rem .4rem; }
+.input-group > .bill-input { height:28px; font-size:.75rem; padding:.18rem .4rem; }
 .bill-textarea { font-size:.75rem; padding:.18rem .4rem; resize:vertical; }
 #rowsTable th { background:#f1f3f5; font-size:.68rem; font-weight:700; padding:.25rem .4rem; white-space:nowrap; }
 #rowsTable td { padding:.2rem .3rem; vertical-align:middle; }
-.totals-row { display:flex; justify-content:space-between; align-items:center; padding:.22rem .5rem; font-size:.75rem; border-bottom:1px solid #f0f0f0; }
+.totals-row { display:flex; align-items:center; padding:.3rem .65rem; border-bottom:1px solid #eef0f2; gap:.5rem; }
 .totals-row:last-child { border-bottom:none; }
-.totals-label { font-weight:600; color:#374151; }
-.totals-val { min-width:110px; }
-.due-row { background:#fff5f5; }
+.totals-label { font-weight:600; color:#374151; font-size:.68rem; letter-spacing:.03em; white-space:nowrap; width:120px; min-width:120px; text-transform:uppercase; }
+.totals-input { flex:1; min-width:0; font-size:.72rem; height:26px; padding:.15rem .45rem; border-radius:.25rem; background:#fff; border:1px solid #ced4da; }
+.totals-input[readonly] { background:#e9ecef; color:#6c757d; border-color:#dee2e6; cursor:not-allowed; font-style:italic; }
+.totals-row-subtotal { background:#f1f5f9; }
+.totals-row-total   { background:#e8f5f0; }
+.totals-row-net     { background:#d1ece3; }
+.due-row { background:#fff0f0; }
 .due-row .totals-label { color:#dc2626; font-weight:700; }
+.totals-divider { border-top:2px solid #dee2e6; margin:0; }
 </style>
 @endpush
 
@@ -51,9 +57,9 @@
 <div class="section-card">
     <div class="form-header"><i class="fa fa-file-invoice me-1"></i> Bill Information</div>
     <div class="section-body">
-        {{-- Row 1 --}}
+        {{-- Row 1: Bill Type | Bill Date | Delivery Date --}}
         <div class="row g-2 mb-2">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="bill-form-label">Bill Type</div>
                 <select name="bill_type" class="form-select bill-input">
                     <option value="">-- Select --</option>
@@ -62,17 +68,17 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="bill-form-label">Bill Date <span class="text-danger">*</span></div>
                 <input type="date" name="bill_date" class="form-control bill-input" value="{{ old('bill_date', $bill?->bill_date?->format('Y-m-d') ?? $today) }}" required>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="bill-form-label">Delivery Date</div>
                 <input type="date" name="delivery_date" class="form-control bill-input" value="{{ old('delivery_date', $bill?->delivery_date?->format('Y-m-d')) }}">
             </div>
         </div>
 
-        {{-- Row 2: Job No + Party --}}
+        {{-- Row 2: Job No | Party Name | Address --}}
         <div class="row g-2 mb-2">
             <div class="col-md-4">
                 <div class="bill-form-label">Job No</div>
@@ -93,10 +99,10 @@
             </div>
         </div>
 
-        {{-- Row 3 --}}
+        {{-- Row 3: Goods Description | Mate Code | P.O. No --}}
         <div class="row g-2 mb-2">
             <div class="col-md-4">
-                <div class="bill-form-label">D. Goods (Description)</div>
+                <div class="bill-form-label">Goods Description</div>
                 <input type="text" name="goods_description" id="goodsDesc" class="form-control bill-input" value="{{ old('goods_description', $bill?->goods_description) }}">
             </div>
             <div class="col-md-4">
@@ -109,33 +115,33 @@
             </div>
         </div>
 
-        {{-- Row 4: Quantity + Gross Weight + LC No --}}
+        {{-- Row 4: Quantity | Gross Weight | L.C. No --}}
         <div class="row g-2 mb-2">
             <div class="col-md-4">
                 <div class="bill-form-label">Quantity</div>
-                <div class="input-group input-group-sm">
+                <div class="input-group">
                     <input type="number" name="quantity" id="quantity" class="form-control bill-input" step="0.001" value="{{ old('quantity', $bill?->quantity) }}" placeholder="0">
-                    <input type="text" name="quantity_unit" id="quantityUnit" class="form-control bill-input" style="max-width:55px;" value="{{ old('quantity_unit', $bill?->quantity_unit ?? 'KG') }}">
+                    <input type="text" name="quantity_unit" id="quantityUnit" class="form-control bill-input text-center" style="max-width:50px;" value="{{ old('quantity_unit', $bill?->quantity_unit ?? 'KG') }}">
                     <input type="text" name="quantity_remark" class="form-control bill-input" value="{{ old('quantity_remark', $bill?->quantity_remark) }}" placeholder="Remark">
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="bill-form-label">Gross Weight</div>
-                <div class="input-group input-group-sm">
+                <div class="input-group">
                     <input type="number" name="gross_weight" id="grossWeight" class="form-control bill-input" step="0.001" value="{{ old('gross_weight', $bill?->gross_weight) }}" placeholder="0">
-                    <input type="text" name="gross_weight_unit" id="grossWeightUnit" class="form-control bill-input" style="max-width:55px;" value="{{ old('gross_weight_unit', $bill?->gross_weight_unit) }}" placeholder="Unit">
+                    <input type="text" name="gross_weight_unit" id="grossWeightUnit" class="form-control bill-input text-center" style="max-width:55px;" value="{{ old('gross_weight_unit', $bill?->gross_weight_unit) }}" placeholder="Unit">
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="bill-form-label">L.C. No</div>
-                <div class="input-group input-group-sm">
+                <div class="input-group">
                     <input type="text" name="lc_no"  id="lcNo"  class="form-control bill-input" value="{{ old('lc_no',  $bill?->lc_no) }}" placeholder="LC No">
-                    <input type="text" name="lc_ref" id="lcRef" class="form-control bill-input" value="{{ old('lc_ref', $bill?->lc_ref) }}" placeholder="LCA No / Ref">
+                    <input type="text" name="lc_ref" id="lcRef" class="form-control bill-input" style="max-width:110px;" value="{{ old('lc_ref', $bill?->lc_ref) }}" placeholder="LCA No / Ref">
                 </div>
             </div>
         </div>
 
-        {{-- Row 5: B/E + B/E Date + Assessable --}}
+        {{-- Row 5: B/E No | B/E Date | Assessable Value --}}
         <div class="row g-2 mb-2">
             <div class="col-md-4">
                 <div class="bill-form-label">B/E No</div>
@@ -151,13 +157,13 @@
             </div>
         </div>
 
-        {{-- Row 6: Invoice + Invoice Date + Invoice BDT --}}
+        {{-- Row 6: Invoice No | Invoice Date | Invoice Value (BDT) --}}
         <div class="row g-2 mb-2">
             <div class="col-md-4">
                 <div class="bill-form-label">Invoice No</div>
-                <div class="input-group input-group-sm">
+                <div class="input-group">
                     <input type="text" name="invoice_no"  id="invoiceNo"  class="form-control bill-input" value="{{ old('invoice_no',  $bill?->invoice_no) }}" placeholder="Invoice No">
-                    <input type="text" name="invoice_ref" id="invoiceRef" class="form-control bill-input" style="max-width:80px;" value="{{ old('invoice_ref', $bill?->invoice_ref) }}" placeholder="HBL/HAWB">
+                    <input type="text" name="invoice_ref" id="invoiceRef" class="form-control bill-input text-center" style="max-width:85px;" value="{{ old('invoice_ref', $bill?->invoice_ref) }}" placeholder="HBL/HAWB">
                 </div>
             </div>
             <div class="col-md-4">
@@ -170,13 +176,13 @@
             </div>
         </div>
 
-        {{-- Row 7: B/L + Remarks --}}
+        {{-- Row 7: B/L No | Remarks --}}
         <div class="row g-2">
             <div class="col-md-4">
                 <div class="bill-form-label">B/L No</div>
-                <div class="input-group input-group-sm">
+                <div class="input-group">
                     <input type="text" name="bl_no"  id="blNo"  class="form-control bill-input" value="{{ old('bl_no',  $bill?->bl_no) }}" placeholder="B/L No">
-                    <input type="text" name="bl_ref" id="blRef" class="form-control bill-input" style="max-width:80px;" value="{{ old('bl_ref', $bill?->bl_ref) }}" placeholder="MBL/MAWB">
+                    <input type="text" name="bl_ref" id="blRef" class="form-control bill-input text-center" style="max-width:90px;" value="{{ old('bl_ref', $bill?->bl_ref) }}" placeholder="MBL/MAWB">
                 </div>
             </div>
             <div class="col-md-8">
@@ -221,50 +227,60 @@
         <div class="section-card">
             <div class="form-header"><i class="fa fa-calculator me-1"></i> Summary</div>
             <div class="section-body p-0">
-                <div class="totals-row">
-                    <span class="totals-label">SUB TOTAL</span>
-                    <input type="number" name="sub_total" id="subTotal" class="form-control form-control-sm totals-val text-end" step="0.01" value="{{ old('sub_total', $bill?->sub_total ?? 0) }}" readonly>
+                {{-- Sub Total --}}
+                <div class="totals-row totals-row-subtotal">
+                    <span class="totals-label">Sub Total</span>
+                    <input type="number" name="sub_total" id="subTotal" class="form-control totals-input text-end" step="0.01" value="{{ old('sub_total', $bill?->sub_total ?? 0) }}" readonly>
                 </div>
+                <hr class="totals-divider">
+                {{-- Commission On --}}
                 <div class="totals-row">
-                    <span class="totals-label">COMMISSION ON</span>
-                    <div class="d-flex gap-1 totals-val">
-                        <select name="commission_on" id="commissionOn" class="form-select form-select-sm" style="font-size:.7rem;">
-                            @foreach($commissionOnOptions as $opt)
-                            <option value="{{ $opt }}" {{ old('commission_on', $bill?->commission_on ?? 'ASSESSABLE') === $opt ? 'selected' : '' }}>{{ $opt }}</option>
-                            @endforeach
-                        </select>
+                    <span class="totals-label">Commission On</span>
+                    <select name="commission_on" id="commissionOn" class="form-select totals-input" style="font-size:.7rem;">
+                        @foreach($commissionOnOptions as $opt)
+                        <option value="{{ $opt }}" {{ old('commission_on', $bill?->commission_on ?? 'ASSESSABLE') === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                {{-- Comm Rate + Amount --}}
+                <div class="totals-row">
+                    <span class="totals-label">Comm. Rate %</span>
+                    <div class="d-flex gap-1" style="flex:1; min-width:0;">
+                        <input type="number" name="commission_rate" id="commissionRate" class="form-control totals-input text-end" step="0.01" value="{{ in_array(old('commission_on', $bill?->commission_on ?? 'ASSESSABLE'), ['MINIMUM', 'MAXIMUM']) ? '0' : old('commission_rate', $bill?->commission_rate) }}" placeholder="0.00" style="width:90px; flex:0 0 90px;" {{ in_array(old('commission_on', $bill?->commission_on ?? 'ASSESSABLE'), ['MINIMUM', 'MAXIMUM']) ? 'readonly' : '' }}>
+                        <input type="number" name="commission_amount" id="commissionAmount" class="form-control totals-input text-end" step="0.01" value="{{ old('commission_amount', $bill?->commission_amount ?? 0) }}" placeholder="Amount" style="flex:1; min-width:0;" {{ in_array(old('commission_on', $bill?->commission_on ?? 'ASSESSABLE'), ['MINIMUM', 'MAXIMUM']) ? '' : 'readonly' }}>
                     </div>
                 </div>
+                <hr class="totals-divider">
+                {{-- Total Payable --}}
+                <div class="totals-row totals-row-total">
+                    <span class="totals-label">Total Payable</span>
+                    <input type="number" name="total_payable" id="totalPayable" class="form-control totals-input text-end fw-semibold" step="0.01" value="{{ old('total_payable', $bill?->total_payable ?? 0) }}" readonly>
+                </div>
+                {{-- Deductions --}}
                 <div class="totals-row">
-                    <span class="totals-label">COMM. RATE %</span>
-                    <div class="d-flex gap-1 totals-val">
-                        <input type="number" name="commission_rate" id="commissionRate" class="form-control form-control-sm text-end" step="0.01" value="{{ old('commission_rate', $bill?->commission_rate) }}" placeholder="0.00" style="max-width:60px;">
-                        <input type="number" name="commission_amount" id="commissionAmount" class="form-control form-control-sm text-end" step="0.01" value="{{ old('commission_amount', $bill?->commission_amount ?? 0) }}" readonly>
-                    </div>
+                    <span class="totals-label">Less Duty &amp; Tax</span>
+                    <input type="number" name="less_customs_duty_tax" id="lessDutyTax" class="form-control totals-input text-end" step="0.01" value="{{ old('less_customs_duty_tax', $bill?->less_customs_duty_tax ?? 0) }}" placeholder="0.00">
                 </div>
                 <div class="totals-row">
-                    <span class="totals-label">TOTAL PAYABLE</span>
-                    <input type="number" name="total_payable" id="totalPayable" class="form-control form-control-sm totals-val text-end" step="0.01" value="{{ old('total_payable', $bill?->total_payable ?? 0) }}" readonly>
+                    <span class="totals-label">Income Tax C&amp;F</span>
+                    <input type="number" name="income_tax_cnf_com" id="incomeTax" class="form-control totals-input text-end" step="0.01" value="{{ old('income_tax_cnf_com', $bill?->income_tax_cnf_com ?? 0) }}" placeholder="0.00">
                 </div>
+                <hr class="totals-divider">
+                {{-- Net Payable --}}
+                <div class="totals-row totals-row-net">
+                    <span class="totals-label">Net Payable</span>
+                    <input type="number" name="net_payable" id="netPayable" class="form-control totals-input text-end fw-bold" step="0.01" value="{{ old('net_payable', $bill?->net_payable ?? 0) }}" readonly>
+                </div>
+                {{-- Advance --}}
                 <div class="totals-row">
-                    <span class="totals-label">LESS DUTY &amp; TAX</span>
-                    <input type="number" name="less_customs_duty_tax" id="lessDutyTax" class="form-control form-control-sm totals-val text-end" step="0.01" value="{{ old('less_customs_duty_tax', $bill?->less_customs_duty_tax ?? 0) }}" placeholder="0.00">
+                    <span class="totals-label">Advance Amount</span>
+                    <input type="number" name="advance_amount" id="advanceAmount" class="form-control totals-input text-end" step="0.01" value="{{ old('advance_amount', $bill?->advance_amount ?? 0) }}" placeholder="0.00">
                 </div>
-                <div class="totals-row">
-                    <span class="totals-label">INCOME TAX C&amp;F</span>
-                    <input type="number" name="income_tax_cnf_com" id="incomeTax" class="form-control form-control-sm totals-val text-end" step="0.01" value="{{ old('income_tax_cnf_com', $bill?->income_tax_cnf_com ?? 0) }}" placeholder="0.00">
-                </div>
-                <div class="totals-row">
-                    <span class="totals-label">NET PAYABLE</span>
-                    <input type="number" name="net_payable" id="netPayable" class="form-control form-control-sm totals-val text-end fw-bold" step="0.01" value="{{ old('net_payable', $bill?->net_payable ?? 0) }}" readonly>
-                </div>
-                <div class="totals-row">
-                    <span class="totals-label">ADVANCE AMOUNT</span>
-                    <input type="number" name="advance_amount" id="advanceAmount" class="form-control form-control-sm totals-val text-end" step="0.01" value="{{ old('advance_amount', $bill?->advance_amount ?? 0) }}" placeholder="0.00">
-                </div>
+                <hr class="totals-divider">
+                {{-- Due Amount --}}
                 <div class="totals-row due-row">
-                    <span class="totals-label">DUE AMOUNT</span>
-                    <input type="number" name="due_amount" id="dueAmount" class="form-control form-control-sm totals-val text-end fw-bold text-danger" step="0.01" value="{{ old('due_amount', $bill?->due_amount ?? 0) }}" readonly>
+                    <span class="totals-label">Due Amount</span>
+                    <input type="number" name="due_amount" id="dueAmount" class="form-control totals-input text-end fw-bold text-danger" step="0.01" value="{{ old('due_amount', $bill?->due_amount ?? 0) }}" readonly>
                 </div>
             </div>
         </div>
@@ -383,6 +399,18 @@ $(function () {
 
     // Commission rate / on change
     $('#commissionRate, #commissionOn, #assessableValue, #invoiceValueBdt').on('input change', recalcAll);
+    $('#commissionOn').on('change', function () {
+        var manual = ['MINIMUM', 'MAXIMUM'].includes($(this).val());
+        if (manual) {
+            $('#commissionRate').attr('readonly', 'readonly').val(0);
+            $('#commissionAmount').removeAttr('readonly');
+        } else {
+            $('#commissionRate').removeAttr('readonly');
+            $('#commissionAmount').attr('readonly', 'readonly').val(0);
+        }
+        recalcAll();
+    });
+    $('#commissionAmount').on('input', recalcAll);
 
     // Less duty, income tax, advance change
     $('#lessDutyTax, #incomeTax, #advanceAmount').on('input', recalcAll);
@@ -390,6 +418,16 @@ $(function () {
     // Category filter heads
     $(document).on('change', '.cat-select', function () {
         filterHeads($(this).closest('tr'));
+    });
+
+    // Head select → fill default amount
+    $(document).on('change', '.head-select', function () {
+        var headId = parseInt($(this).val());
+        var head = allHeads.find(function (h) { return h.id === headId; });
+        if (head) {
+            $(this).closest('tr').find('.row-amount').val(parseFloat(head.amount) || 0);
+            recalcAll();
+        }
     });
 
     recalcAll();
@@ -441,13 +479,18 @@ function recalcAll() {
     $('#subTotal').val(subTotal.toFixed(2));
 
     // Commission
-    var commOn   = $('#commissionOn').val();
-    var base     = commOn === 'INVOICE VALUE'
+    var commOn  = $('#commissionOn').val();
+    var commAmt;
+    if (['MINIMUM', 'MAXIMUM'].includes(commOn)) {
+        commAmt = parseFloat($('#commissionAmount').val()) || 0;
+    } else {
+        var base = commOn === 'INVOICE VALUE'
                    ? (parseFloat($('#invoiceValueBdt').val()) || 0)
                    : (parseFloat($('#assessableValue').val()) || 0);
-    var rate     = parseFloat($('#commissionRate').val()) || 0;
-    var commAmt  = base * rate / 100;
-    $('#commissionAmount').val(commAmt.toFixed(2));
+        var rate = parseFloat($('#commissionRate').val()) || 0;
+        commAmt  = base * rate / 100;
+        $('#commissionAmount').val(commAmt.toFixed(2));
+    }
 
     // Total payable
     var totalPayable = subTotal + commAmt;

@@ -4,13 +4,16 @@ namespace App\Http\Controllers\Chevron;
 
 use App\Http\Controllers\Controller;
 use App\Models\Chevron\ChevronBranch;
+use App\Models\Chevron\ChevronCustomer;
 use App\Models\Chevron\ChevronDesignation;
 use App\Models\Chevron\ChevronEmployee;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Yajra\DataTables\Facades\DataTables;
 
 class EmployeeController extends Controller
@@ -18,52 +21,63 @@ class EmployeeController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            return DataTables::of(ChevronEmployee::with('designation', 'branch'))
+            return DataTables::of(ChevronEmployee::with('designation', 'branch', 'teamLeader', 'customers'))
                 ->addIndexColumn()
-                ->addColumn('designation_name', fn($r) => $r->designation?->name ?? '-')
-                ->addColumn('branch_name',      fn($r) => $r->branch?->name ?? '-')
-                ->addColumn('status_badge', fn($r) => match($r->current_status) {
+                ->addColumn('designation_name', fn ($r) => $r->designation?->name ?? '-')
+                ->addColumn('branch_name', fn ($r) => $r->branch?->name ?? '-')
+                ->addColumn('type_badge', fn ($r) => $r->type === 'team_leader'
+                    ? '<span class="badge bg-primary">Team Leader</span>'
+                    : '<span class="badge bg-info text-dark">Prepare</span>')
+                ->addColumn('team_leader_name', fn ($r) => $r->teamLeader?->name ?? '-')
+                ->addColumn('status_badge', fn ($r) => match ($r->current_status) {
                     'Active'     => '<span class="badge bg-success">Active</span>',
                     'Inactive'   => '<span class="badge bg-secondary">Inactive</span>',
                     'Resigned'   => '<span class="badge bg-warning text-dark">Resigned</span>',
                     'Terminated' => '<span class="badge bg-danger">Terminated</span>',
-                    default      => '<span class="badge bg-secondary">' . $r->current_status . '</span>',
+                    default      => '<span class="badge bg-secondary">'.$r->current_status.'</span>',
                 })
-                ->addColumn('action', fn($r) => '
+                ->addColumn('customer_ids', fn ($r) => $r->customers->pluck('id')->join(','))
+                ->addColumn('action', fn ($r) => '
                     <button class="btn btn-sm btn-outline-primary btn-edit"
-                        data-id="'              . $r->id . '"
-                        data-employee_prefix="' . e($r->employee_prefix) . '"
-                        data-employee_id="'     . e($r->employee_id) . '"
-                        data-name="'            . e($r->name) . '"
-                        data-designation_id="'  . $r->designation_id . '"
-                        data-joining_date="'    . $r->joining_date?->format('Y-m-d') . '"
-                        data-short_name="'      . e($r->short_name) . '"
-                        data-father_name="'     . e($r->father_name) . '"
-                        data-mother_name="'     . e($r->mother_name) . '"
-                        data-current_status="'  . $r->current_status . '"
-                        data-branch_id="'       . $r->branch_id . '"
-                        data-is_active="'       . (int)$r->is_active . '">
+                        data-id="'.$r->id.'"
+                        data-employee_prefix="'.e($r->employee_prefix).'"
+                        data-employee_id="'.e($r->employee_id).'"
+                        data-name="'.e($r->name).'"
+                        data-designation_id="'.$r->designation_id.'"
+                        data-joining_date="'.$r->joining_date?->format('Y-m-d').'"
+                        data-short_name="'.e($r->short_name).'"
+                        data-father_name="'.e($r->father_name).'"
+                        data-mother_name="'.e($r->mother_name).'"
+                        data-current_status="'.$r->current_status.'"
+                        data-branch_id="'.$r->branch_id.'"
+                        data-is_active="'.(int) $r->is_active.'"
+                        data-type="'.$r->type.'"
+                        data-team_leader_id="'.$r->team_leader_id.'"
+                        data-customer_ids="'.$r->customers->pluck('id')->join(',').'">
                         <i class="fa fa-edit"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger btn-delete"
-                        data-url="' . route('chevron.stakeholders.employees.destroy', $r->id) . '"
-                        data-name="' . e($r->name) . '">
+                        data-url="'.route('chevron.stakeholders.employees.destroy', $r->id).'"
+                        data-name="'.e($r->name).'">
                         <i class="fa fa-trash"></i>
                     </button>')
-                ->editColumn('joining_date', fn($r) => $r->joining_date?->format('d M, Y'))
-                ->rawColumns(['status_badge', 'action'])
+                ->editColumn('joining_date', fn ($r) => $r->joining_date?->format('d M, Y'))
+                ->rawColumns(['type_badge', 'status_badge', 'action'])
                 ->make(true);
         }
 
         $designations = ChevronDesignation::where('is_active', true)->orderBy('name')->get();
-        $branches     = ChevronBranch::where('is_active', true)->orderBy('name')->get();
+        $branches = ChevronBranch::where('is_active', true)->orderBy('name')->get();
+        $teamLeaders = ChevronEmployee::with('designation')->where('type', 'team_leader')->where('is_active', true)->orderBy('name')->get();
+        $customers = ChevronCustomer::where('status', 'Active')->orderBy('name')->get(['id', 'name', 'customer_id']);
 
-        return view('chevron.stakeholders.employees.index', compact('designations', 'branches'));
+        return view('chevron.stakeholders.employees.index', compact('designations', 'branches', 'teamLeaders', 'customers'));
     }
 
     public function nextId(Request $request)
     {
         $prefix = $request->input('prefix', 'EMP-');
+
         return response()->json(['employee_id' => ChevronEmployee::generateEmployeeId($prefix)]);
     }
 
@@ -74,11 +88,15 @@ class EmployeeController extends Controller
             'name'            => ['required', 'string', 'max:255'],
             'designation_id'  => ['required', 'exists:chevron_designations,id'],
             'joining_date'    => ['required', 'date'],
+            'type'            => ['required', 'in:team_leader,prepare'],
+            'team_leader_id'  => ['nullable', 'required_if:type,prepare', 'exists:chevron_employees,id'],
+            'customer_ids'    => ['nullable', 'array'],
+            'customer_ids.*'  => ['exists:chevron_customers,id'],
         ]);
 
         DB::transaction(function () use ($request) {
             $employeeId = ChevronEmployee::generateEmployeeId($request->employee_prefix);
-            ChevronEmployee::create([
+            $employee = ChevronEmployee::create([
                 'employee_prefix' => $request->employee_prefix,
                 'employee_id'     => $employeeId,
                 'name'            => $request->name,
@@ -90,7 +108,13 @@ class EmployeeController extends Controller
                 'current_status'  => $request->current_status ?? 'Active',
                 'branch_id'       => $request->branch_id ?: null,
                 'is_active'       => $request->boolean('is_active', true),
+                'type'            => $request->type,
+                'team_leader_id'  => $request->type === 'prepare' ? $request->team_leader_id : null,
             ]);
+
+            if ($request->type === 'team_leader') {
+                $employee->customers()->sync($request->input('customer_ids', []));
+            }
         });
 
         return response()->json(['message' => 'Employee created successfully.']);
@@ -102,19 +126,33 @@ class EmployeeController extends Controller
             'name'           => ['required', 'string', 'max:255'],
             'designation_id' => ['required', 'exists:chevron_designations,id'],
             'joining_date'   => ['required', 'date'],
+            'type'           => ['required', 'in:team_leader,prepare'],
+            'team_leader_id' => ['nullable', 'required_if:type,prepare', 'exists:chevron_employees,id'],
+            'customer_ids'   => ['nullable', 'array'],
+            'customer_ids.*' => ['exists:chevron_customers,id'],
         ]);
 
-        $employee->update([
-            'name'           => $request->name,
-            'designation_id' => $request->designation_id,
-            'joining_date'   => $request->joining_date,
-            'short_name'     => $request->short_name,
-            'father_name'    => $request->father_name,
-            'mother_name'    => $request->mother_name,
-            'current_status' => $request->current_status ?? 'Active',
-            'branch_id'      => $request->branch_id ?: null,
-            'is_active'      => $request->boolean('is_active', true),
-        ]);
+        DB::transaction(function () use ($request, $employee) {
+            $employee->update([
+                'name'           => $request->name,
+                'designation_id' => $request->designation_id,
+                'joining_date'   => $request->joining_date,
+                'short_name'     => $request->short_name,
+                'father_name'    => $request->father_name,
+                'mother_name'    => $request->mother_name,
+                'current_status' => $request->current_status ?? 'Active',
+                'branch_id'      => $request->branch_id ?: null,
+                'is_active'      => $request->boolean('is_active', true),
+                'type'           => $request->type,
+                'team_leader_id' => $request->type === 'prepare' ? $request->team_leader_id : null,
+            ]);
+
+            if ($request->type === 'team_leader') {
+                $employee->customers()->sync($request->input('customer_ids', []));
+            } else {
+                $employee->customers()->detach();
+            }
+        });
 
         return response()->json(['message' => 'Employee updated successfully.']);
     }
@@ -122,23 +160,24 @@ class EmployeeController extends Controller
     public function destroy(ChevronEmployee $employee)
     {
         $employee->delete();
+
         return response()->json(['message' => 'Employee deleted.']);
     }
 
     public function sampleDownload()
     {
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet()->setTitle('Employees');
 
-        $headers = ['Employee Prefix','Employee ID','Name','Designation','Branch','Joining Date','Short Name','Father Name','Mother Name','Status'];
+        $headers = ['Employee Prefix', 'Employee ID', 'Name', 'Designation', 'Branch', 'Joining Date', 'Short Name', 'Father Name', 'Mother Name', 'Status'];
         $sheet->fromArray($headers, null, 'A1');
         $sheet->getStyle('A1:J1')->getFont()->setBold(true);
         $sheet->getStyle('A1:J1')->getFill()
-            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+            ->setFillType(Fill::FILL_SOLID)
             ->getStartColor()->setARGB('FF0D2626');
         $sheet->getStyle('A1:J1')->getFont()->getColor()->setARGB('FFFFFFFF');
 
-        $desig  = ChevronDesignation::first()?->name ?? 'Manager';
+        $desig = ChevronDesignation::first()?->name ?? 'Manager';
         $branch = ChevronBranch::first()?->name ?? 'Head Office';
 
         $sheet->fromArray([
@@ -147,12 +186,13 @@ class EmployeeController extends Controller
             ['MGT',      '',              'Mr. ABC Khan',   $desig, $branch, '2022-03-10', 'ABC',   '', '', 'Active'],
         ], null, 'A2');
 
-        $widths = ['A'=>16,'B'=>14,'C'=>28,'D'=>24,'E'=>20,'F'=>14,'G'=>16,'H'=>22,'I'=>22,'J'=>12];
+        $widths = ['A' => 16, 'B' => 14, 'C' => 28, 'D' => 24, 'E' => 20, 'F' => 14, 'G' => 16, 'H' => 22, 'I' => 22, 'J' => 12];
         foreach ($widths as $col => $w) {
             $spreadsheet->getActiveSheet()->getColumnDimension($col)->setWidth($w);
         }
 
         $writer = new Xlsx($spreadsheet);
+
         return response()->streamDownload(function () use ($writer) {
             $writer->save('php://output');
         }, 'employees-sample.xlsx', [
@@ -168,45 +208,50 @@ class EmployeeController extends Controller
         $rows = $spreadsheet->getActiveSheet()->toArray(null, true, true, false);
 
         // Lookup maps
-        $existingIds   = ChevronEmployee::pluck('employee_id')
-            ->map(fn($v) => strtolower(trim($v)))->flip()->all();
+        $existingIds = ChevronEmployee::pluck('employee_id')
+            ->map(fn ($v) => strtolower(trim($v)))->flip()->all();
         $existingNames = ChevronEmployee::pluck('name')
-            ->map(fn($v) => strtolower(trim($v)))->flip()->all();
+            ->map(fn ($v) => strtolower(trim($v)))->flip()->all();
 
-        $desigMap  = ChevronDesignation::pluck('id','name')
-            ->mapWithKeys(fn($id,$n) => [strtolower(trim($n)) => $id])->all();
-        $branchMap = ChevronBranch::pluck('id','name')
-            ->mapWithKeys(fn($id,$n) => [strtolower(trim($n)) => $id])->all();
+        $desigMap = ChevronDesignation::pluck('id', 'name')
+            ->mapWithKeys(fn ($id, $n) => [strtolower(trim($n)) => $id])->all();
+        $branchMap = ChevronBranch::pluck('id', 'name')
+            ->mapWithKeys(fn ($id, $n) => [strtolower(trim($n)) => $id])->all();
 
         $defaultBranchId = ChevronBranch::value('id');
 
         $preview = [];
         foreach ($rows as $i => $row) {
-            if ($i === 0) continue;
+            if ($i === 0) {
+                continue;
+            }
             $name = trim($row[2] ?? '');
-            if ($name === '') continue;
+            if ($name === '') {
+                continue;
+            }
 
-            $prefix     = trim($row[0] ?? 'EMP-') ?: 'EMP-';
-            $empId      = trim($row[1] ?? '');
-            $desigName  = trim($row[3] ?? '');
+            $prefix = trim($row[0] ?? 'EMP-') ?: 'EMP-';
+            $empId = trim($row[1] ?? '');
+            $desigName = trim($row[3] ?? '');
             $branchName = trim($row[4] ?? '');
             $joiningDate = trim($row[5] ?? '');
-            $shortName  = trim($row[6] ?? '');
+            $shortName = trim($row[6] ?? '');
             $fatherName = trim($row[7] ?? '');
             $motherName = trim($row[8] ?? '');
-            $status     = trim($row[9] ?? 'Active') ?: 'Active';
+            $status = trim($row[9] ?? 'Active') ?: 'Active';
 
-            $desigId   = $desigMap[strtolower($desigName)] ?? null;
-            $branchId  = $branchMap[strtolower($branchName)] ?? $defaultBranchId;
+            $desigId = $desigMap[strtolower($desigName)] ?? null;
+            $branchId = $branchMap[strtolower($branchName)] ?? $defaultBranchId;
 
             // Date validation
             $dateValid = false;
             $parsedDate = null;
             if ($joiningDate) {
                 try {
-                    $parsedDate = \Carbon\Carbon::parse($joiningDate)->format('Y-m-d');
+                    $parsedDate = Carbon::parse($joiningDate)->format('Y-m-d');
                     $dateValid = true;
-                } catch (\Exception $e) {}
+                } catch (\Exception $e) {
+                }
             }
 
             // Exists check: by employee_id if provided, else by name
@@ -215,26 +260,32 @@ class EmployeeController extends Controller
                 : isset($existingNames[strtolower($name)]);
 
             $warns = [];
-            if (!$desigId)    $warns[] = 'Designation not found';
-            if (!$branchName) $warns[] = 'No branch — default used';
-            if (!$dateValid && $joiningDate) $warns[] = 'Invalid date';
+            if (! $desigId) {
+                $warns[] = 'Designation not found';
+            }
+            if (! $branchName) {
+                $warns[] = 'No branch — default used';
+            }
+            if (! $dateValid && $joiningDate) {
+                $warns[] = 'Invalid date';
+            }
 
             $preview[] = [
-                'employee_prefix'  => $prefix,
-                'employee_id'      => $empId,
-                'name'             => $name,
-                'designation_name' => $desigName,
-                'designation_id'   => $desigId,
-                'designation_found'=> $desigId !== null,
-                'branch_name'      => $branchName,
-                'branch_id'        => $branchId,
-                'joining_date'     => $parsedDate ?? ($dateValid ? $joiningDate : null),
-                'short_name'       => $shortName,
-                'father_name'      => $fatherName,
-                'mother_name'      => $motherName,
-                'status'           => $status,
-                'exists'           => $exists,
-                'warnings'         => $warns,
+                'employee_prefix'   => $prefix,
+                'employee_id'       => $empId,
+                'name'              => $name,
+                'designation_name'  => $desigName,
+                'designation_id'    => $desigId,
+                'designation_found' => $desigId !== null,
+                'branch_name'       => $branchName,
+                'branch_id'         => $branchId,
+                'joining_date'      => $parsedDate ?? ($dateValid ? $joiningDate : null),
+                'short_name'        => $shortName,
+                'father_name'       => $fatherName,
+                'mother_name'       => $motherName,
+                'status'            => $status,
+                'exists'            => $exists,
+                'warnings'          => $warns,
             ];
         }
 
@@ -248,15 +299,21 @@ class EmployeeController extends Controller
         $inserted = 0;
         DB::transaction(function () use ($request, &$inserted) {
             foreach ($request->rows as $row) {
-                $name   = trim($row['name'] ?? '');
-                $empId  = trim($row['employee_id'] ?? '');
+                $name = trim($row['name'] ?? '');
+                $empId = trim($row['employee_id'] ?? '');
                 $prefix = trim($row['employee_prefix'] ?? 'EMP-') ?: 'EMP-';
 
-                if ($name === '') continue;
+                if ($name === '') {
+                    continue;
+                }
 
                 // Re-check exists
-                if ($empId !== '' && ChevronEmployee::where('employee_id', $empId)->exists()) continue;
-                if ($empId === '' && ChevronEmployee::whereRaw('LOWER(name) = ?', [strtolower($name)])->exists()) continue;
+                if ($empId !== '' && ChevronEmployee::where('employee_id', $empId)->exists()) {
+                    continue;
+                }
+                if ($empId === '' && ChevronEmployee::whereRaw('LOWER(name) = ?', [strtolower($name)])->exists()) {
+                    continue;
+                }
 
                 // Auto-generate ID if not provided
                 $finalId = $empId !== '' ? $empId : ChevronEmployee::generateEmployeeId($prefix);
