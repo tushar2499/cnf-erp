@@ -10,6 +10,7 @@ class ChevronEmployee extends Model
         'employee_prefix', 'employee_id', 'name', 'designation_id', 'department_id',
         'joining_date', 'short_name', 'father_name', 'mother_name',
         'phone', 'email', 'address', 'current_status', 'status', 'branch_id', 'is_active',
+        'type', 'team_leader_id',
     ];
 
     protected function casts(): array
@@ -18,6 +19,21 @@ class ChevronEmployee extends Model
             'joining_date' => 'date',
             'is_active'    => 'boolean',
         ];
+    }
+
+    public function teamLeader()
+    {
+        return $this->belongsTo(ChevronEmployee::class, 'team_leader_id');
+    }
+
+    public function prepareEmployees()
+    {
+        return $this->hasMany(ChevronEmployee::class, 'team_leader_id');
+    }
+
+    public function customers()
+    {
+        return $this->belongsToMany(ChevronCustomer::class, 'chevron_employee_customers', 'employee_id', 'customer_id');
     }
 
     public function designation()
@@ -38,8 +54,9 @@ class ChevronEmployee extends Model
     public static function generateEmployeeId(string $prefix): string
     {
         $last = static::where('employee_prefix', $prefix)->lockForUpdate()->max(
-            \DB::raw("CAST(SUBSTRING(employee_id, " . (strlen($prefix) + 1) . ") AS UNSIGNED)")
+            \DB::raw('CAST(SUBSTRING(employee_id, '.(strlen($prefix) + 1).') AS UNSIGNED)')
         );
-        return $prefix . str_pad(($last ?? 0) + 1, 6, '0', STR_PAD_LEFT);
+
+        return $prefix.str_pad(($last ?? 0) + 1, 6, '0', STR_PAD_LEFT);
     }
 }
