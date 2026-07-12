@@ -157,7 +157,7 @@
             </div>
         </div>
 
-        {{-- Row 6: Invoice No | Invoice Date | Invoice Value (BDT) --}}
+        {{-- Row 6: Invoice No | Invoice Date | Invoice Value (original) + BDT --}}
         <div class="row g-2 mb-2">
             <div class="col-md-4">
                 <div class="bill-form-label">Invoice No</div>
@@ -171,13 +171,25 @@
                 <input type="date" name="invoice_date" id="invoiceDate" class="form-control bill-input" value="{{ old('invoice_date', $bill?->invoice_date?->format('Y-m-d')) }}">
             </div>
             <div class="col-md-4">
-                <div class="bill-form-label">Invoice Value (BDT)</div>
-                <input type="number" name="invoice_value_bdt" id="invoiceValueBdt" class="form-control bill-input text-end" step="0.01" value="{{ old('invoice_value_bdt', $bill?->invoice_value_bdt) }}" placeholder="0.00">
+                <div class="bill-form-label">Invoice Value (Foreign)</div>
+                <input type="number" name="invoice_value" id="invoiceValue" class="form-control bill-input text-end" step="0.01" value="{{ old('invoice_value', $bill?->invoice_value) }}" placeholder="0.00">
             </div>
         </div>
 
-        {{-- Row 7: B/L No | Remarks --}}
-        <div class="row g-2">
+        {{-- Row 7: Currency | Invoice Value BDT | B/L No --}}
+        <div class="row g-2 mb-2">
+            <div class="col-md-4">
+                <div class="bill-form-label">Currency &amp; Rate</div>
+                <div class="input-group">
+                    <input type="text" name="currency_type" id="currencyType" class="form-control bill-input text-center" style="max-width:65px;" value="{{ old('currency_type', $bill?->currency_type) }}" placeholder="USD">
+                    <span class="input-group-text px-2" style="font-size:.72rem;">@</span>
+                    <input type="number" name="currency_rate" id="currencyRate" class="form-control bill-input text-end" step="0.0001" value="{{ old('currency_rate', $bill?->currency_rate) }}" placeholder="Rate">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="bill-form-label">Invoice Value (BDT)</div>
+                <input type="number" name="invoice_value_bdt" id="invoiceValueBdt" class="form-control bill-input text-end" step="0.01" value="{{ old('invoice_value_bdt', $bill?->invoice_value_bdt) }}" placeholder="0.00">
+            </div>
             <div class="col-md-4">
                 <div class="bill-form-label">B/L No</div>
                 <div class="input-group">
@@ -185,7 +197,15 @@
                     <input type="text" name="bl_ref" id="blRef" class="form-control bill-input text-center" style="max-width:90px;" value="{{ old('bl_ref', $bill?->bl_ref) }}" placeholder="MBL/MAWB">
                 </div>
             </div>
-            <div class="col-md-8">
+        </div>
+
+        {{-- Row 8: B/L Date | Remarks --}}
+        <div class="row g-2">
+            <div class="col-md-3">
+                <div class="bill-form-label">B/L Date</div>
+                <input type="date" name="bl_date" id="blDate" class="form-control bill-input" value="{{ old('bl_date', $bill?->bl_date?->format('Y-m-d')) }}">
+            </div>
+            <div class="col-md-9">
                 <div class="bill-form-label">Remarks</div>
                 <input type="text" name="remarks" class="form-control bill-input" value="{{ old('remarks', $bill?->remarks) }}">
             </div>
@@ -212,6 +232,8 @@
                             <th style="width:30px"></th>
                             <th>Expense Category</th>
                             <th>Particular Info (Head)</th>
+                            <th style="width:85px">Rate</th>
+                            <th style="width:75px">Qty</th>
                             <th style="width:110px">Amount</th>
                             <th>Note</th>
                         </tr>
@@ -323,6 +345,12 @@
         </select>
     </td>
     <td>
+        <input type="number" name="rows[0][rate]" class="form-control form-control-sm row-rate text-end" step="0.01" placeholder="—" style="font-size:.72rem;">
+    </td>
+    <td>
+        <input type="number" name="rows[0][qty]" class="form-control form-control-sm row-qty text-end" step="0.001" placeholder="—" style="font-size:.72rem;">
+    </td>
+    <td>
         <input type="number" name="rows[0][amount]" class="form-control form-control-sm row-amount text-end" step="0.01" value="0" style="font-size:.72rem;">
     </td>
     <td>
@@ -373,6 +401,10 @@ $(function () {
         $('#invoiceValueBdt').val(d.invoice_value_bdt || '');
         $('#blNo').val(d.bl_no || '');
         $('#blRef').val(d.bl_ref || '');
+        $('#blDate').val(d.bl_date || '');
+        $('#invoiceValue').val(d.invoice_value || '');
+        $('#currencyType').val(d.currency_type || '');
+        $('#currencyRate').val(d.currency_rate || '');
         recalcAll();
     });
 
@@ -391,6 +423,17 @@ $(function () {
         if ($('#rowsBody tr').length <= 1) return;
         $(this).closest('tr').remove();
         reindex();
+        recalcAll();
+    });
+
+    // Rate × Qty → auto-fill Amount
+    $(document).on('input', '.row-rate, .row-qty', function () {
+        var $tr  = $(this).closest('tr');
+        var rate = parseFloat($tr.find('.row-rate').val()) || 0;
+        var qty  = parseFloat($tr.find('.row-qty').val())  || 0;
+        if (rate > 0 && qty > 0) {
+            $tr.find('.row-amount').val((rate * qty).toFixed(2));
+        }
         recalcAll();
     });
 
@@ -443,6 +486,8 @@ function addRow(data) {
         $row.find('.cat-select').val(data.expense_category_id);
         filterHeads($row);
         $row.find('.head-select').val(data.expense_head_id);
+        $row.find('.row-rate').val(data.rate || '');
+        $row.find('.row-qty').val(data.qty || '');
         $row.find('.row-amount').val(data.amount);
         $row.find('input[type=text]').last().val(data.note);
     }

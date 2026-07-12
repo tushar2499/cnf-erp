@@ -51,6 +51,7 @@ Route::prefix('cnf')->name('cnf.')->group(function () {
     Route::get('/bills',               [BillController::class, 'index'])->name('bills.index');
     Route::get('/bills/create',        [BillController::class, 'create'])->name('bills.create');
     Route::post('/bills',              [BillController::class, 'store'])->name('bills.store');
+    Route::get('/bills/{bill}/print',  [BillController::class, 'print'])->name('bills.print');
     Route::get('/bills/{bill}/edit',   [BillController::class, 'edit'])->name('bills.edit');
     Route::put('/bills/{bill}',        [BillController::class, 'update'])->name('bills.update');
     Route::delete('/bills/{bill}',     [BillController::class, 'destroy'])->name('bills.destroy');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Chevron;
 
 use App\Enums\Chevron\ChevronExpenseCategoryType;
+use App\Helpers\BdtWords;
 use App\Http\Controllers\Controller;
 use App\Models\Chevron\ChevronBill;
 use App\Models\Chevron\ChevronExpenseCategory;
@@ -49,6 +50,7 @@ class BillController extends Controller
                     default     => '<span class="badge bg-primary">Active</span>',
                 })
                 ->addColumn('action', fn ($r) => '
+                    <a href="'.route('chevron.cnf.bills.print', $r->id).'" target="_blank" class="btn btn-sm btn-outline-secondary py-0 px-1" title="Print"><i class="fa fa-print"></i></a>
                     <a href="'.route('chevron.cnf.bills.edit', $r->id).'" class="btn btn-sm btn-outline-primary py-0 px-1"><i class="fa fa-edit"></i></a>
                     <button class="btn btn-sm btn-outline-danger py-0 px-1 btn-delete"
                         data-url="'.route('chevron.cnf.bills.destroy', $r->id).'"
@@ -95,6 +97,8 @@ class BillController extends Controller
             'expense_head_id'     => $i->expense_head_id,
             'amount'              => $i->amount,
             'note'                => $i->note,
+            'rate'                => $i->rate,
+            'qty'                 => $i->qty,
         ])->values();
 
         return view('chevron.cnf.bills.create', array_merge($this->formData(), [
@@ -127,6 +131,15 @@ class BillController extends Controller
         return response()->json(['message' => 'Bill deleted.']);
     }
 
+    public function print(ChevronBill $bill)
+    {
+        $bill->load(['items.expenseCategory', 'items.expenseHead', 'job']);
+        $grouped  = $bill->items->groupBy(fn ($i) => $i->expenseCategory?->name ?? 'OTHER');
+        $inWords  = BdtWords::convert((float) $bill->due_amount);
+
+        return view('chevron.cnf.bills.print', compact('bill', 'grouped', 'inWords'));
+    }
+
     public function searchJobs(Request $request)
     {
         $q = $request->input('q', '');
@@ -142,7 +155,8 @@ class BillController extends Controller
                 'be_no', 'be_date',
                 'hbi_hawb_no', 'invoice_no', 'invoice_date',
                 'mbl_mawb_no', 'bl_no', 'bl_date',
-                'assessable_value_bdt', 'invoice_value_2',
+                'assessable_value_bdt', 'invoice_value_1', 'invoice_value_2',
+                'currency_type', 'currency_rate',
             ]);
 
         return response()->json($jobs->map(fn ($j) => [
@@ -167,8 +181,12 @@ class BillController extends Controller
             'invoice_date'      => $j->invoice_date,
             'bl_no'             => $j->bl_no,
             'bl_ref'            => $j->mbl_mawb_no,
+            'bl_date'           => $j->bl_date,
             'assessable_value'  => $j->assessable_value_bdt,
+            'invoice_value'     => $j->invoice_value_1,
             'invoice_value_bdt' => $j->invoice_value_2,
+            'currency_type'     => $j->currency_type,
+            'currency_rate'     => $j->currency_rate,
         ]));
     }
 
@@ -217,8 +235,12 @@ class BillController extends Controller
             'invoice_date'          => $request->invoice_date ?: null,
             'bl_no'                 => $request->bl_no,
             'bl_ref'                => $request->bl_ref,
+            'bl_date'               => $request->bl_date ?: null,
             'assessable_value'      => $assessable ?: null,
             'invoice_value_bdt'     => $invoiceBdt ?: null,
+            'invoice_value'         => $request->invoice_value ?: null,
+            'currency_type'         => $request->currency_type ?: null,
+            'currency_rate'         => $request->currency_rate ?: null,
             'remarks'               => $request->remarks,
             'sub_total'             => $subTotal,
             'commission_on'         => $commOn,
@@ -238,11 +260,19 @@ class BillController extends Controller
     private function saveItems(ChevronBill $bill, array $rows): void
     {
         foreach ($rows as $row) {
+            $rate = is_numeric($row['rate'] ?? '') ? (float) $row['rate'] : null;
+            $qty  = is_numeric($row['qty']  ?? '') ? (float) $row['qty']  : null;
+            $amt  = ($rate !== null && $qty !== null && $qty > 0)
+                ? round($rate * $qty, 2)
+                : (float) ($row['amount'] ?? 0);
+
             $bill->items()->create([
                 'expense_category_id' => $row['expense_category_id'] ?: null,
                 'expense_head_id'     => $row['expense_head_id'] ?: null,
-                'amount'              => $row['amount'] ?? 0,
                 'note'                => $row['note'] ?? null,
+                'rate'                => $rate,
+                'qty'                 => $qty,
+                'amount'              => $amt,
             ]);
         }
     }

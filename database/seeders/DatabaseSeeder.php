@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         $this->call(CompanySeeder::class);
         $this->call(BranchSeeder::class);
         $this->call(ChevronExpenseSeeder::class);
+        $this->call(ChevronBillExpenseHeadSeeder::class);
 
         $admin = User::updateOrCreate(
             ['email' => 'admin@nasgroup.com'],

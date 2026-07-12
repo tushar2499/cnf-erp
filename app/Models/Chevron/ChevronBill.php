@@ -15,8 +15,9 @@ class ChevronBill extends Model
         'gross_weight', 'gross_weight_unit',
         'lc_no', 'lc_ref', 'be_no', 'be_date',
         'invoice_no', 'invoice_ref', 'invoice_date',
-        'bl_no', 'bl_ref',
-        'assessable_value', 'invoice_value_bdt', 'remarks',
+        'bl_no', 'bl_ref', 'bl_date',
+        'assessable_value', 'invoice_value_bdt', 'invoice_value',
+        'currency_type', 'currency_rate', 'remarks',
         'sub_total', 'commission_on', 'commission_rate', 'commission_amount',
         'total_payable', 'less_customs_duty_tax', 'income_tax_cnf_com',
         'net_payable', 'advance_amount', 'due_amount', 'status',
@@ -28,8 +29,14 @@ class ChevronBill extends Model
             'bill_date'      => 'date',
             'delivery_date'  => 'date',
             'be_date'        => 'date',
+            'bl_date'        => 'date',
             'invoice_date'   => 'date',
         ];
+    }
+
+    public function job()
+    {
+        return $this->belongsTo(\App\Models\Chevron\ChevronJob::class, 'job_id');
     }
 
     public static function billTypes(): array
