@@ -611,10 +611,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
             </div>
         </div>
     </div>
-    <div class="col-md-12">
-        <label class="form-label">Remarks</label>
-        <textarea name="remarks" class="form-control form-control-sm" rows="1" placeholder="Remarks">{{ old('remarks', $job?->remarks) }}</textarea>
-    </div>
 </div>
 {{-- end col-md-8 --}}
 
@@ -665,12 +661,11 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                         $taxRows = [
                             ['Duty/CD @', 'duty'],
                             ['R/D @',     'rd'],
-                            ['SD @',      'sd'],
+                            ['SD @',      'sup_tax'],
                             ['VAT @',     'vat'],
                             ['AIT @',     'ait'],
-                            ['AT @',      'at'],
+                            ['AT @',      'atv'],
                             ['DF VAT @',  'df_vat'],
-                            ['OTHER @',   'other'],
                         ];
                         @endphp
                         @foreach($taxRows as [$label, $key])
@@ -686,8 +681,8 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                     <table class="charge-tbl">
                         <tr>
                             <td class="fw-semibold" style="color:#374151;">Total Duty</td>
-                            <td><input type="number" name="total_duty_amount" id="totalDutyAmount" class="form-control form-control-sm ro-field text-end fw-semibold" readonly value="{{ old('total_duty_amount', $job?->total_duty_amount) }}" placeholder="0.00"></td>
-                            <td><input type="number" name="total_duty_amount_bdt" id="totalDutyAmountBdt" class="form-control form-control-sm ro-field text-end fw-semibold" readonly value="{{ old('total_duty_amount_bdt', $job?->total_duty_amount_bdt) }}"  placeholder="0.00"></td>
+                            <td><input type="number" id="totalDutyAmount" class="form-control form-control-sm ro-field text-end fw-semibold" readonly placeholder="0.00"></td>
+                            <td><input type="number" id="totalDutyAmountBdt" class="form-control form-control-sm ro-field text-end fw-semibold" readonly placeholder="0.00"></td>
                         </tr> 
                     </table>
                 </div>

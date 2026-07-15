@@ -3,13 +3,41 @@
 @push('styles')
 <style>
 .lc-card { background:#fff; border:1px solid #dee2e6; border-radius:.5rem; margin-bottom:1rem; overflow:hidden; }
-.lc-section-header { background:#1a6b60; color:#fff; padding:.5rem 1rem; font-size:.8rem; font-weight:700; }
+.lc-section-header { background:#1a6b60; color:#fff; padding:.5rem 1rem; font-size:.8rem; font-weight:700; letter-spacing:.03em; display:flex; align-items:center; }
 .lc-section-body { padding:1rem; }
 .form-label { font-size:.8rem; font-weight:600; color:#374151; margin-bottom:.2rem; }
 .form-control, .form-select { font-size:.82rem; }
 .items-table th { background:#e9ecef; font-size:.77rem; padding:.4rem .5rem; }
 .items-table td { padding:.3rem .5rem; vertical-align:middle; }
 .items-table .form-control-sm, .items-table .form-select-sm { font-size:.78rem; }
+
+/* Wizard */
+.wizard-wrap { background:#fff; border:1px solid #dee2e6; border-radius:.5rem; padding:1rem 1.25rem .75rem; margin-bottom:1rem; overflow-x:auto; }
+.wizard-steps { display:flex; align-items:flex-start; min-width:max-content; }
+.wz-step { display:flex; flex-direction:column; align-items:center; cursor:pointer; min-width:72px; }
+.wz-step .wz-num {
+    width:32px; height:32px; border-radius:50%;
+    background:#e9ecef; color:#6c757d;
+    display:flex; align-items:center; justify-content:center;
+    font-size:.78rem; font-weight:700; margin-bottom:3px;
+    transition:background .2s, color .2s;
+}
+.wz-step .wz-lbl { font-size:.65rem; color:#6c757d; text-align:center; line-height:1.2; white-space:nowrap; }
+.wz-step.active .wz-num  { background:#1a6b60; color:#fff; }
+.wz-step.active .wz-lbl  { color:#1a6b60; font-weight:700; }
+.wz-step.done .wz-num    { background:#198754; color:#fff; }
+.wz-step.done .wz-lbl    { color:#198754; }
+.wz-conn { flex:1; height:2px; background:#e9ecef; min-width:16px; margin:15px 4px 0; align-self:flex-start; transition:background .2s; }
+.wz-conn.done { background:#198754; }
+
+.wizard-section { display:none; }
+.wizard-section.active { display:block; }
+
+.all-unlocked .wz-step { cursor:pointer; }
+.all-unlocked .wz-step:not(.active) .wz-num { opacity:.85; }
+.all-unlocked .wz-step:not(.active):hover .wz-num { opacity:1; filter:brightness(1.1); }
+
+.wizard-nav { display:flex; justify-content:space-between; align-items:center; margin-top:.5rem; padding: .5rem 0; }
 </style>
 @endpush
 
@@ -19,11 +47,35 @@
     <a href="{{ route('nas-trading.lcs.show', $lc->id) }}" class="btn btn-sm btn-outline-secondary"><i class="fa fa-arrow-left me-1"></i> Back</a>
 </div>
 
+{{-- Step Indicator --}}
+<div class="wizard-wrap">
+    <div class="wizard-steps all-unlocked" id="wizardSteps">
+        <div class="wz-step active" data-step="1"><div class="wz-num">1</div><div class="wz-lbl">Identification</div></div>
+        <div class="wz-conn done" id="conn-1"></div>
+        <div class="wz-step done" data-step="2"><div class="wz-num">2</div><div class="wz-lbl">Supplier &amp;<br>Goods</div></div>
+        <div class="wz-conn done" id="conn-2"></div>
+        <div class="wz-step done" data-step="3"><div class="wz-num">3</div><div class="wz-lbl">Bank &amp;<br>Documents</div></div>
+        <div class="wz-conn done" id="conn-3"></div>
+        <div class="wz-step done" data-step="4"><div class="wz-num">4</div><div class="wz-lbl">LC Details</div></div>
+        <div class="wz-conn done" id="conn-4"></div>
+        <div class="wz-step done" data-step="5"><div class="wz-num">5</div><div class="wz-lbl">Doc<br>Retirement</div></div>
+        <div class="wz-conn done" id="conn-5"></div>
+        <div class="wz-step done" data-step="6"><div class="wz-num">6</div><div class="wz-lbl">Payment<br>Tracking</div></div>
+        <div class="wz-conn done" id="conn-6"></div>
+        <div class="wz-step done" data-step="7"><div class="wz-num">7</div><div class="wz-lbl">Duty &amp;<br>Clearance</div></div>
+        <div class="wz-conn done" id="conn-7"></div>
+        <div class="wz-step done" data-step="8"><div class="wz-num">8</div><div class="wz-lbl">VAT / Tax /<br>Sales</div></div>
+        <div class="wz-conn done" id="conn-8"></div>
+        <div class="wz-step done" data-step="9"><div class="wz-num">9</div><div class="wz-lbl">Product<br>Items</div></div>
+    </div>
+</div>
+
 <form id="lcForm">
     @csrf
     @method('PUT')
-    {{-- Reuse identical sections from create, pre-filled --}}
-    <div class="lc-card">
+
+    {{-- Step 1: Identification --}}
+    <div class="lc-card wizard-section active" data-step="1">
         <div class="lc-section-header"><i class="fa fa-id-card me-2"></i> Section 1 — Identification</div>
         <div class="lc-section-body">
             <div class="row g-2">
@@ -97,8 +149,8 @@
         </div>
     </div>
 
-    {{-- Sections 2-8 with pre-filled values --}}
-    <div class="lc-card">
+    {{-- Step 2: Supplier & Goods --}}
+    <div class="lc-card wizard-section" data-step="2">
         <div class="lc-section-header"><i class="fa fa-industry me-2"></i> Section 2 — Supplier & Goods</div>
         <div class="lc-section-body">
             <div class="row g-2">
@@ -137,66 +189,9 @@
         </div>
     </div>
 
-    <div class="lc-card">
-        <div class="lc-section-header"><i class="fa fa-dollar-sign me-2"></i> Section 3 — LC Financials</div>
-        <div class="lc-section-body">
-            <div class="row g-2">
-                @php $fin = [
-                    ['pfi_value','PFI Value','0.0001'],['lc_open_rate','LC OP Rate','0.0001'],
-                    ['margin_percent','Margin %','0.0001'],['lc_margin_amt','LC Margin Amt','0.01'],
-                    ['lc_open_cost_bdt','LC Opening Cost BDT','0.01'],['freight_value','Freight Value','0.0001'],
-                    ['lc_value','LC Value (calc)','0.0001'],['amount_bdt','Amount BDT (calc)','0.01'],
-                    ['total_lc_cost','Total LC Cost','0.01'],['landed_cost','Landed Cost','0.01'],
-                ] @endphp
-                <div class="col-md-2">
-                    <label class="form-label">Currency</label>
-                    <select name="currency" class="form-select form-select-sm">
-                        @foreach(['USD','EUR','GBP','CNY','BDT'] as $c)
-                        <option value="{{ $c }}" {{ $lc->currency === $c ? 'selected' : '' }}>{{ $c }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                @foreach($fin as [$name,$label,$step])
-                <div class="col-md-2">
-                    <label class="form-label">{{ $label }}</label>
-                    <input type="number" name="{{ $name }}" id="{{ Str::camel($name) }}" class="form-control form-control-sm {{ in_array($name,['lc_value','amount_bdt','lc_margin_amt']) ? 'bg-light' : '' }}" {{ in_array($name,['lc_value','amount_bdt','lc_margin_amt']) ? 'readonly' : '' }} step="{{ $step }}" value="{{ $lc->$name }}">
-                </div>
-                @endforeach
-            </div>
-        </div>
-    </div>
-
-    {{-- Remaining sections 4-8 abbreviated for edit --}}
-    <div class="lc-card">
-        <div class="lc-section-header"><i class="fa fa-file-alt me-2"></i> Sections 4-7 — Posting & Financial Details</div>
-        <div class="lc-section-body">
-            <div class="row g-2">
-                @php $misc = [
-                    'doc_rt_rate','lc_rt_value','lc_charge_posting',
-                    'advance_received_bdt','advance_date','advance_posting',
-                    'rest_amount_bdt','rest_amount_date','rest_amount_posting','total_received_bdt',
-                    'lc_closing_bill','lc_closing_bill_date',
-                    'duty_advance','duty_advance_date','duty_advance_posting',
-                    'bill_of_entry_no','bill_of_entry_date','customs_duty','customs_duty_posting',
-                    'cnf_party','cnf_total_cost','cnf_cost_posting',
-                    'payable_receivable','received_amount','received_date',
-                    'vat_return','vat_return_date','vat_return_posting',
-                    'income_tax','bank_statement_amt','lc_commission','lc_commission_date',
-                    'sales_amount','sales_posting','coss_amount','coss_posting',
-                ] @endphp
-                @foreach($misc as $fname)
-                @php $isDate = Str::contains($fname, ['_date']); $isNum = !$isDate && !Str::contains($fname, ['posting','party','no','status','types','mode','note']); @endphp
-                <div class="col-md-3">
-                    <label class="form-label" style="font-size:.75rem">{{ ucwords(str_replace('_',' ',$fname)) }}</label>
-                    <input type="{{ $isDate ? 'date' : ($isNum ? 'number' : 'text') }}" name="{{ $fname }}" class="form-control form-control-sm" value="{{ $isDate ? $lc->{$fname}?->format('Y-m-d') : $lc->{$fname} }}" {{ $isNum ? 'step=0.01' : '' }}>
-                </div>
-                @endforeach
-            </div>
-        </div>
-    </div>
-
-    <div class="lc-card">
-        <div class="lc-section-header"><i class="fa fa-university me-2"></i> Section 8 — Bank & Documents</div>
+    {{-- Step 3: Bank & Documents --}}
+    <div class="lc-card wizard-section" data-step="3">
+        <div class="lc-section-header"><i class="fa fa-university me-2"></i> Section 3 — Bank & Documents</div>
         <div class="lc-section-body">
             <div class="row g-2">
                 <div class="col-md-3">
@@ -213,9 +208,33 @@
                     <select name="port_of_dest_id" class="form-select form-select-sm">
                         <option value="">Select Port...</option>
                         @foreach($ports as $port)
-                        <option value="{{ $port->id }}" {{ $lc->port_of_dest_id == $port->id ? 'selected' : '' }}>{{ $port->name }}</option>
+                        <option value="{{ $port->id }}" {{ $lc->port_of_dest_id == $port->id ? 'selected' : '' }}>{{ $port->name }} ({{ $port->type }})</option>
                         @endforeach
                     </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Country of Origin</label>
+                    <input type="text" name="country_of_origin" class="form-control form-control-sm" value="{{ $lc->country_of_origin }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Payment Mode</label>
+                    <input type="text" name="payment_mode" class="form-control form-control-sm" value="{{ $lc->payment_mode }}" placeholder="e.g. SWIFT, TT">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Insurance Amount</label>
+                    <input type="number" name="insurance_amt" class="form-control form-control-sm" step="0.01" value="{{ $lc->insurance_amt }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Cover Note</label>
+                    <input type="text" name="cover_note" class="form-control form-control-sm" value="{{ $lc->cover_note }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Insurance Validity</label>
+                    <input type="date" name="insurance_validity" class="form-control form-control-sm" value="{{ $lc->insurance_validity?->format('Y-m-d') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">PSI No</label>
+                    <input type="text" name="psi_no" class="form-control form-control-sm" value="{{ $lc->psi_no }}">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">PSI Company</label>
@@ -227,6 +246,14 @@
                     </select>
                 </div>
                 <div class="col-md-3">
+                    <label class="form-label">Comm. Currency</label>
+                    <input type="text" name="comm_currency" class="form-control form-control-sm" value="{{ $lc->comm_currency }}" placeholder="USD">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Comm. Amount</label>
+                    <input type="number" name="comm_amount" class="form-control form-control-sm" step="0.01" value="{{ $lc->comm_amount }}">
+                </div>
+                <div class="col-md-3">
                     <label class="form-label">Doc Status</label>
                     <select name="doc_status" class="form-select form-select-sm">
                         @foreach(['Pending','Received','Complete'] as $s)
@@ -235,32 +262,12 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Country of Origin</label>
-                    <input type="text" name="country_of_origin" class="form-control form-control-sm" value="{{ $lc->country_of_origin }}">
+                    <label class="form-label">Sanction Types</label>
+                    <input type="text" name="sanction_types" class="form-control form-control-sm" value="{{ $lc->sanction_types }}">
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Payment Mode</label>
-                    <input type="text" name="payment_mode" class="form-control form-control-sm" value="{{ $lc->payment_mode }}">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Insurance Amt</label>
-                    <input type="number" name="insurance_amt" class="form-control form-control-sm" step="0.01" value="{{ $lc->insurance_amt }}">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Cover Note</label>
-                    <input type="text" name="cover_note" class="form-control form-control-sm" value="{{ $lc->cover_note }}">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">PSI No</label>
-                    <input type="text" name="psi_no" class="form-control form-control-sm" value="{{ $lc->psi_no }}">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Comm. Currency</label>
-                    <input type="text" name="comm_currency" class="form-control form-control-sm" value="{{ $lc->comm_currency }}">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Comm. Amount</label>
-                    <input type="number" name="comm_amount" class="form-control form-control-sm" step="0.01" value="{{ $lc->comm_amount }}">
+                    <label class="form-label">Third Party</label>
+                    <input type="text" name="third_party" class="form-control form-control-sm" value="{{ $lc->third_party }}">
                 </div>
                 <div class="col-12">
                     <label class="form-label">Remarks</label>
@@ -270,10 +277,250 @@
         </div>
     </div>
 
-    {{-- LC Line Items --}}
-    <div class="lc-card">
+    {{-- Step 4: LC Details --}}
+    <div class="lc-card wizard-section" data-step="4">
+        <div class="lc-section-header"><i class="fa fa-dollar-sign me-2"></i> Section 4 — LC Details</div>
+        <div class="lc-section-body">
+            <div class="row g-2">
+                <div class="col-md-2">
+                    <label class="form-label">PFI Value</label>
+                    <input type="number" name="pfi_value" id="pfiValue" class="form-control form-control-sm" step="0.0001" value="{{ $lc->pfi_value }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Currency</label>
+                    <select name="currency" id="currency" class="form-select form-select-sm">
+                        @foreach(['USD','EUR','GBP','CNY','BDT'] as $c)
+                        <option value="{{ $c }}" {{ $lc->currency === $c ? 'selected' : '' }}>{{ $c }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">LC OP Rate</label>
+                    <input type="number" name="lc_open_rate" id="lcOpRate" class="form-control form-control-sm" step="0.0001" value="{{ $lc->lc_open_rate }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Margin %</label>
+                    <input type="number" name="margin_percent" id="marginPct" class="form-control form-control-sm" step="0.0001" value="{{ $lc->margin_percent }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">LC Margin Amt</label>
+                    <input type="number" name="lc_margin_amt" id="lcMarginAmt" class="form-control form-control-sm bg-light" readonly step="0.01" value="{{ $lc->lc_margin_amt }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">LC Opening Cost BDT</label>
+                    <input type="number" name="lc_open_cost_bdt" class="form-control form-control-sm" step="0.01" value="{{ $lc->lc_open_cost_bdt }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Freight Value</label>
+                    <input type="number" name="freight_value" id="freightValue" class="form-control form-control-sm" step="0.0001" value="{{ $lc->freight_value }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">LC Value (calc)</label>
+                    <input type="number" name="lc_value" id="lcValue" class="form-control form-control-sm bg-light" readonly step="0.0001" value="{{ $lc->lc_value }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Amount BDT (calc)</label>
+                    <input type="number" name="amount_bdt" id="amountBdt" class="form-control form-control-sm bg-light" readonly step="0.01" value="{{ $lc->amount_bdt }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Total LC Cost</label>
+                    <input type="number" name="total_lc_cost" class="form-control form-control-sm" step="0.01" value="{{ $lc->total_lc_cost }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Landed Cost</label>
+                    <input type="number" name="landed_cost" class="form-control form-control-sm" step="0.01" value="{{ $lc->landed_cost }}">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Step 5: Document Retirement --}}
+    <div class="lc-card wizard-section" data-step="5">
+        <div class="lc-section-header"><i class="fa fa-file-alt me-2"></i> Section 5 — Document Retirement</div>
+        <div class="lc-section-body">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label">Doc RT Rate</label>
+                    <input type="number" name="doc_rt_rate" class="form-control form-control-sm" step="0.0001" value="{{ $lc->doc_rt_rate }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">LC RT Value</label>
+                    <input type="number" name="lc_rt_value" class="form-control form-control-sm" step="0.01" value="{{ $lc->lc_rt_value }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">LC Charge Posting</label>
+                    <input type="text" name="lc_charge_posting" class="form-control form-control-sm" value="{{ $lc->lc_charge_posting }}">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Step 6: Payment Tracking --}}
+    <div class="lc-card wizard-section" data-step="6">
+        <div class="lc-section-header"><i class="fa fa-money-check-alt me-2"></i> Section 6 — Payment Tracking</div>
+        <div class="lc-section-body">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label">Advance Received BDT</label>
+                    <input type="number" name="advance_received_bdt" class="form-control form-control-sm" step="0.01" value="{{ $lc->advance_received_bdt }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Advance Date</label>
+                    <input type="date" name="advance_date" class="form-control form-control-sm" value="{{ $lc->advance_date?->format('Y-m-d') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Advance Posting</label>
+                    <input type="text" name="advance_posting" class="form-control form-control-sm" value="{{ $lc->advance_posting }}">
+                </div>
+                <div class="col-md-3"></div>
+                <div class="col-md-3">
+                    <label class="form-label">Rest Amount BDT</label>
+                    <input type="number" name="rest_amount_bdt" class="form-control form-control-sm" step="0.01" value="{{ $lc->rest_amount_bdt }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Rest Amount Date</label>
+                    <input type="date" name="rest_amount_date" class="form-control form-control-sm" value="{{ $lc->rest_amount_date?->format('Y-m-d') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Rest Amount Posting</label>
+                    <input type="text" name="rest_amount_posting" class="form-control form-control-sm" value="{{ $lc->rest_amount_posting }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Total Received BDT</label>
+                    <input type="number" name="total_received_bdt" class="form-control form-control-sm bg-light" step="0.01" value="{{ $lc->total_received_bdt }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">LC Closing Bill</label>
+                    <input type="number" name="lc_closing_bill" class="form-control form-control-sm" step="0.01" value="{{ $lc->lc_closing_bill }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">LC Closing Bill Date</label>
+                    <input type="date" name="lc_closing_bill_date" class="form-control form-control-sm" value="{{ $lc->lc_closing_bill_date?->format('Y-m-d') }}">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Step 7: Duty & Clearance --}}
+    <div class="lc-card wizard-section" data-step="7">
+        <div class="lc-section-header"><i class="fa fa-clipboard-check me-2"></i> Section 7 — Duty & Clearance</div>
+        <div class="lc-section-body">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label">Duty Advance</label>
+                    <input type="number" name="duty_advance" class="form-control form-control-sm" step="0.01" value="{{ $lc->duty_advance }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Duty Advance Date</label>
+                    <input type="date" name="duty_advance_date" class="form-control form-control-sm" value="{{ $lc->duty_advance_date?->format('Y-m-d') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Duty Advance Posting</label>
+                    <input type="text" name="duty_advance_posting" class="form-control form-control-sm" value="{{ $lc->duty_advance_posting }}">
+                </div>
+                <div class="col-md-3"></div>
+                <div class="col-md-3">
+                    <label class="form-label">Bill of Entry No</label>
+                    <input type="text" name="bill_of_entry_no" class="form-control form-control-sm" value="{{ $lc->bill_of_entry_no }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Bill of Entry Date</label>
+                    <input type="date" name="bill_of_entry_date" class="form-control form-control-sm" value="{{ $lc->bill_of_entry_date?->format('Y-m-d') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Customs Duty</label>
+                    <input type="number" name="customs_duty" class="form-control form-control-sm" step="0.01" value="{{ $lc->customs_duty }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Customs Duty Posting</label>
+                    <input type="text" name="customs_duty_posting" class="form-control form-control-sm" value="{{ $lc->customs_duty_posting }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">CNF Party</label>
+                    <input type="text" name="cnf_party" class="form-control form-control-sm" value="{{ $lc->cnf_party }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">CNF Total Cost</label>
+                    <input type="number" name="cnf_total_cost" class="form-control form-control-sm" step="0.01" value="{{ $lc->cnf_total_cost }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">CNF Cost Posting</label>
+                    <input type="text" name="cnf_cost_posting" class="form-control form-control-sm" value="{{ $lc->cnf_cost_posting }}">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Step 8: VAT / Tax / Sales --}}
+    <div class="lc-card wizard-section" data-step="8">
+        <div class="lc-section-header"><i class="fa fa-percent me-2"></i> Section 8 — VAT / Tax / Sales</div>
+        <div class="lc-section-body">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label">Payable / Receivable</label>
+                    <input type="number" name="payable_receivable" class="form-control form-control-sm" step="0.01" value="{{ $lc->payable_receivable }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Received Amount</label>
+                    <input type="number" name="received_amount" class="form-control form-control-sm" step="0.01" value="{{ $lc->received_amount }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Received Date</label>
+                    <input type="date" name="received_date" class="form-control form-control-sm" value="{{ $lc->received_date?->format('Y-m-d') }}">
+                </div>
+                <div class="col-md-3"></div>
+                <div class="col-md-3">
+                    <label class="form-label">VAT Return</label>
+                    <input type="number" name="vat_return" class="form-control form-control-sm" step="0.01" value="{{ $lc->vat_return }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">VAT Return Date</label>
+                    <input type="date" name="vat_return_date" class="form-control form-control-sm" value="{{ $lc->vat_return_date?->format('Y-m-d') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">VAT Return Posting</label>
+                    <input type="text" name="vat_return_posting" class="form-control form-control-sm" value="{{ $lc->vat_return_posting }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Income Tax</label>
+                    <input type="number" name="income_tax" class="form-control form-control-sm" step="0.01" value="{{ $lc->income_tax }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Bank Statement Amt</label>
+                    <input type="number" name="bank_statement_amt" class="form-control form-control-sm" step="0.01" value="{{ $lc->bank_statement_amt }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">LC Commission</label>
+                    <input type="number" name="lc_commission" class="form-control form-control-sm" step="0.01" value="{{ $lc->lc_commission }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">LC Commission Date</label>
+                    <input type="date" name="lc_commission_date" class="form-control form-control-sm" value="{{ $lc->lc_commission_date?->format('Y-m-d') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Sales Amount</label>
+                    <input type="number" name="sales_amount" class="form-control form-control-sm" step="0.01" value="{{ $lc->sales_amount }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Sales Posting</label>
+                    <input type="text" name="sales_posting" class="form-control form-control-sm" value="{{ $lc->sales_posting }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">COSS Amount</label>
+                    <input type="number" name="coss_amount" class="form-control form-control-sm" step="0.01" value="{{ $lc->coss_amount }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">COSS Posting</label>
+                    <input type="text" name="coss_posting" class="form-control form-control-sm" value="{{ $lc->coss_posting }}">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Step 9: Product Line Items --}}
+    <div class="lc-card wizard-section" data-step="9">
         <div class="lc-section-header d-flex justify-content-between align-items-center">
-            <span><i class="fa fa-boxes me-2"></i> Product Line Items</span>
+            <span><i class="fa fa-boxes me-2"></i> Section 9 — Product Line Items</span>
             <button type="button" class="btn btn-sm btn-light py-0 px-2" id="btnAddItem" style="font-size:.75rem"><i class="fa fa-plus me-1"></i>Add Row</button>
         </div>
         <div class="lc-section-body p-0">
@@ -301,18 +548,73 @@
         </div>
     </div>
 
-    <div class="d-flex gap-2 mb-4">
-        <button type="submit" class="btn btn-success px-5" id="btnSave"><i class="fa fa-save me-1"></i> Update LC</button>
-        <a href="{{ route('nas-trading.lcs.show', $lc->id) }}" class="btn btn-outline-secondary px-4">Cancel</a>
+    {{-- Wizard Navigation --}}
+    <div class="wizard-nav mb-4">
+        <button type="button" class="btn btn-outline-secondary px-4" id="btnPrev" disabled>
+            <i class="fa fa-chevron-left me-1"></i> Previous
+        </button>
+        <span class="text-muted" id="stepInfo" style="font-size:.82rem;">Step 1 of 9</span>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-primary px-4" id="btnNext">
+                Next <i class="fa fa-chevron-right ms-1"></i>
+            </button>
+            <button type="submit" class="btn btn-success px-5 d-none" id="btnSave">
+                <i class="fa fa-save me-1"></i> Update LC
+            </button>
+        </div>
     </div>
 </form>
 @endsection
 
 @push('scripts')
 <script>
-var itemRowIdx = 0;
+var itemRowIdx   = 0;
+var currentStep  = 1;
+var totalSteps   = 9;
 var existingItems = @json($lc->items);
 
+// ── Wizard — all steps unlocked from start (editing existing record) ────
+function goToStep(step) {
+    if (step < 1 || step > totalSteps) return;
+
+    $('.wizard-section').removeClass('active');
+    $(`.wizard-section[data-step="${step}"]`).addClass('active');
+
+    $('#wizardSteps .wz-step').each(function () {
+        var s = parseInt($(this).data('step'));
+        $(this).removeClass('active done');
+        if (s === step) $(this).addClass('active');
+        else if (s < step) $(this).addClass('done');
+    });
+
+    for (var i = 1; i < totalSteps; i++) {
+        $('#conn-' + i).toggleClass('done', i < step);
+    }
+
+    currentStep = step;
+    $('#btnPrev').prop('disabled', step === 1);
+    $('#stepInfo').text('Step ' + step + ' of ' + totalSteps);
+
+    if (step === totalSteps) {
+        $('#btnNext').addClass('d-none');
+        $('#btnSave').removeClass('d-none');
+    } else {
+        $('#btnNext').removeClass('d-none');
+        $('#btnSave').addClass('d-none');
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+$('#btnNext').on('click', function () { goToStep(currentStep + 1); });
+$('#btnPrev').on('click', function () { goToStep(currentStep - 1); });
+
+$('#wizardSteps').on('click', '.wz-step', function () {
+    var target = parseInt($(this).data('step'));
+    if (target !== currentStep) goToStep(target);
+});
+
+// ── Line Items ──────────────────────────────────────────────────────────
 function addItemRow(data) {
     data = data || {};
     var idx = itemRowIdx++;
@@ -335,19 +637,23 @@ function addItemRow(data) {
         <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger btn-remove-row p-0" style="width:24px;height:24px"><i class="fa fa-times" style="font-size:.65rem"></i></button></td>
     </tr>`;
     $('#itemsBody').append(html);
-    initSelect2(idx, data.item_id);
+    initItemSelect(idx);
 }
 
-function initSelect2(idx, initialId) {
+function initItemSelect(idx) {
     $(`[name="items[${idx}][item_id]"]`).select2({
         width: '100%', placeholder: 'Search item...', allowClear: true, minimumInputLength: 1,
         ajax: { url: '{{ route('nas-trading.items.search') }}', dataType: 'json', delay: 300, data: p => ({q: p.term}), processResults: d => ({results: d}) }
     }).on('select2:select', function (e) {
         var d = e.params.data, row = $(this).closest('tr');
         row.find('.item-name').val(d.text.split(' | ')[1] || d.text);
-        row.find('.item-code').val(d.code||'');
-        row.find('[name*=hs_code]').val(d.hs_code||'');
-        row.find('.item-unit').val(d.unit||'');
+        row.find('.item-code').val(d.code || '');
+        row.find('[name*=hs_code]').val(d.hs_code || '');
+        row.find('.item-unit').val(d.unit || '');
+    }).on('select2:clear', function () {
+        var row = $(this).closest('tr');
+        row.find('.item-name,.item-code,.item-unit').val('');
+        row.find('[name*=hs_code]').val('');
     });
 }
 
@@ -365,6 +671,19 @@ $(function () {
         $('#supplierCountry, #supplierCountryDisplay').val(e.params.data.country || '');
     });
 
+    function calcFinancials() {
+        var pfi    = parseFloat($('[name=pfi_value]').val()) || 0;
+        var rate   = parseFloat($('[name=lc_open_rate]').val()) || 0;
+        var margin = parseFloat($('[name=margin_percent]').val()) || 0;
+        var freight= parseFloat($('[name=freight_value]').val()) || 0;
+        var lcVal  = pfi + freight;
+        var amtBdt = lcVal * rate;
+        $('#lcValue').val(lcVal.toFixed(4));
+        $('#amountBdt').val(amtBdt.toFixed(2));
+        $('#lcMarginAmt').val((amtBdt * margin / 100).toFixed(2));
+    }
+    $('[name=pfi_value],[name=lc_open_rate],[name=margin_percent],[name=freight_value]').on('input', calcFinancials);
+
     $(document).on('input', '.item-qty, .item-uprice', function () {
         var row = $(this).closest('tr');
         row.find('.item-amount').val(((parseFloat(row.find('.item-qty').val())||0) * (parseFloat(row.find('.item-uprice').val())||0)).toFixed(4));
@@ -376,7 +695,6 @@ $(function () {
         $('#itemsBody tr').each((i, tr) => $(tr).find('.row-num').text(i + 1));
     });
 
-    // Pre-fill existing items
     existingItems.forEach(item => addItemRow(item));
     if (!existingItems.length) addItemRow();
 
@@ -385,7 +703,15 @@ $(function () {
         $('#btnSave').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Saving...');
         $.ajax({ url: '{{ route('nas-trading.lcs.update', $lc->id) }}', method: 'POST', data: $('#lcForm').serialize() })
         .done(r => Swal.fire({ icon: 'success', title: r.message, timer: 1500, showConfirmButton: false }).then(() => { if (r.redirect) window.location.href = r.redirect; }))
-        .fail(xhr => { $('#btnSave').prop('disabled', false).html('<i class="fa fa-save me-1"></i> Update LC'); Swal.fire({ icon: 'error', title: xhr.responseJSON?.message || 'Error' }); });
+        .fail(xhr => {
+            $('#btnSave').prop('disabled', false).html('<i class="fa fa-save me-1"></i> Update LC');
+            if (xhr.status === 422) {
+                var msg = Object.values(xhr.responseJSON.errors).flat().join('<br>');
+                Swal.fire({ icon: 'error', title: 'Validation Error', html: msg });
+            } else {
+                Swal.fire({ icon: 'error', title: xhr.responseJSON?.message || 'Error' });
+            }
+        });
     });
 });
 </script>

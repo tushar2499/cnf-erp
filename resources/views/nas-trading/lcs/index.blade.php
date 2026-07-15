@@ -4,7 +4,7 @@
 <style>
 .panel { background:#fff; border:1px solid #dee2e6; border-radius:.5rem; overflow:hidden; }
 .panel-header { background:#0c2340; color:#fff; padding:.6rem 1rem; font-weight:600; font-size:.85rem; }
-.dt-table th { background:#1a6b60; color:#fff; font-size:.78rem; padding:.45rem .6rem; }
+.dt-table thead th { background:#1a6b60 !important; color:#fff !important; font-size:.78rem; padding:.45rem .6rem; }
 .dt-table td { font-size:.8rem; padding:.4rem .6rem; vertical-align:middle; }
 </style>
 @endpush

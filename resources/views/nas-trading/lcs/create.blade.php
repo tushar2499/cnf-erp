@@ -3,16 +3,41 @@
 @push('styles')
 <style>
 .lc-card { background:#fff; border:1px solid #dee2e6; border-radius:.5rem; margin-bottom:1rem; overflow:hidden; }
-.lc-section-header { background:#1a6b60; color:#fff; padding:.5rem 1rem; font-size:.8rem; font-weight:700; letter-spacing:.03em; cursor:pointer; display:flex; justify-content:between; align-items:center; }
-.lc-section-header:hover { background:#155a50; }
+.lc-section-header { background:#1a6b60; color:#fff; padding:.5rem 1rem; font-size:.8rem; font-weight:700; letter-spacing:.03em; display:flex; align-items:center; }
 .lc-section-body { padding:1rem; }
 .form-label { font-size:.8rem; font-weight:600; color:#374151; margin-bottom:.2rem; }
 .form-control, .form-select { font-size:.82rem; }
 .items-table th { background:#e9ecef; font-size:.77rem; padding:.4rem .5rem; }
 .items-table td { padding:.3rem .5rem; vertical-align:middle; }
 .items-table .form-control-sm, .items-table .form-select-sm { font-size:.78rem; }
-.section-title { flex:1; }
 .badge-auto { background:#0c2340; color:#fff; font-size:.72rem; padding:.2rem .5rem; border-radius:.25rem; }
+
+/* Wizard */
+.wizard-wrap { background:#fff; border:1px solid #dee2e6; border-radius:.5rem; padding:1rem 1.25rem .75rem; margin-bottom:1rem; overflow-x:auto; }
+.wizard-steps { display:flex; align-items:flex-start; min-width:max-content; }
+.wz-step { display:flex; flex-direction:column; align-items:center; cursor:pointer; min-width:72px; }
+.wz-step .wz-num {
+    width:32px; height:32px; border-radius:50%;
+    background:#e9ecef; color:#6c757d;
+    display:flex; align-items:center; justify-content:center;
+    font-size:.78rem; font-weight:700; margin-bottom:3px;
+    transition:background .2s, color .2s;
+}
+.wz-step .wz-lbl { font-size:.65rem; color:#6c757d; text-align:center; line-height:1.2; white-space:nowrap; }
+.wz-step.active .wz-num  { background:#1a6b60; color:#fff; }
+.wz-step.active .wz-lbl  { color:#1a6b60; font-weight:700; }
+.wz-step.done .wz-num    { background:#198754; color:#fff; }
+.wz-step.done .wz-lbl    { color:#198754; }
+.wz-conn { flex:1; height:2px; background:#e9ecef; min-width:16px; margin:15px 4px 0; align-self:flex-start; transition:background .2s; }
+.wz-conn.done { background:#198754; }
+.all-unlocked .wz-step { cursor:pointer; }
+.all-unlocked .wz-step:not(.active) .wz-num { opacity:.85; }
+.all-unlocked .wz-step:not(.active):hover .wz-num { opacity:1; filter:brightness(1.1); }
+
+.wizard-section { display:none; }
+.wizard-section.active { display:block; }
+
+.wizard-nav { display:flex; justify-content:space-between; align-items:center; margin-top:.5rem; }
 </style>
 @endpush
 
@@ -22,12 +47,36 @@
     <a href="{{ route('nas-trading.lcs.index') }}" class="btn btn-sm btn-outline-secondary"><i class="fa fa-arrow-left me-1"></i> Back</a>
 </div>
 
+{{-- Step Indicator --}}
+<div class="wizard-wrap">
+    <div class="wizard-steps" id="wizardSteps">
+        <div class="wz-step active" data-step="1"><div class="wz-num">1</div><div class="wz-lbl">Identification</div></div>
+        <div class="wz-conn" id="conn-1"></div>
+        <div class="wz-step" data-step="2"><div class="wz-num">2</div><div class="wz-lbl">Supplier &amp;<br>Goods</div></div>
+        <div class="wz-conn" id="conn-2"></div>
+        <div class="wz-step" data-step="3"><div class="wz-num">3</div><div class="wz-lbl">Bank &amp;<br>Documents</div></div>
+        <div class="wz-conn" id="conn-3"></div>
+        <div class="wz-step" data-step="4"><div class="wz-num">4</div><div class="wz-lbl">LC Details</div></div>
+        <div class="wz-conn" id="conn-4"></div>
+        <div class="wz-step" data-step="5"><div class="wz-num">5</div><div class="wz-lbl">Doc<br>Retirement</div></div>
+        <div class="wz-conn" id="conn-5"></div>
+        <div class="wz-step" data-step="6"><div class="wz-num">6</div><div class="wz-lbl">Payment<br>Tracking</div></div>
+        <div class="wz-conn" id="conn-6"></div>
+        <div class="wz-step" data-step="7"><div class="wz-num">7</div><div class="wz-lbl">Duty &amp;<br>Clearance</div></div>
+        <div class="wz-conn" id="conn-7"></div>
+        <div class="wz-step" data-step="8"><div class="wz-num">8</div><div class="wz-lbl">VAT / Tax /<br>Sales</div></div>
+        <div class="wz-conn" id="conn-8"></div>
+        <div class="wz-step" data-step="9"><div class="wz-num">9</div><div class="wz-lbl">Product<br>Items</div></div>
+    </div>
+</div>
+
 <form id="lcForm">
     @csrf
-    {{-- Section 1: Identification --}}
-    <div class="lc-card">
+
+    {{-- Step 1: Identification --}}
+    <div class="lc-card wizard-section active" data-step="1">
         <div class="lc-section-header">
-            <span class="section-title"><i class="fa fa-id-card me-2"></i> Section 1 — Identification</span>
+            <span><i class="fa fa-id-card me-2"></i> Section 1 — Identification</span>
         </div>
         <div class="lc-section-body">
             <div class="row g-2">
@@ -100,8 +149,8 @@
         </div>
     </div>
 
-    {{-- Section 2: Supplier & Goods --}}
-    <div class="lc-card">
+    {{-- Step 2: Supplier & Goods --}}
+    <div class="lc-card wizard-section" data-step="2">
         <div class="lc-section-header"><i class="fa fa-industry me-2"></i> Section 2 — Supplier & Goods</div>
         <div class="lc-section-body">
             <div class="row g-2">
@@ -138,247 +187,9 @@
         </div>
     </div>
 
-    {{-- Section 3: LC Financials --}}
-    <div class="lc-card">
-        <div class="lc-section-header"><i class="fa fa-dollar-sign me-2"></i> Section 3 — LC Financials</div>
-        <div class="lc-section-body">
-            <div class="row g-2">
-                <div class="col-md-2">
-                    <label class="form-label">PFI Value</label>
-                    <input type="number" name="pfi_value" id="pfiValue" class="form-control form-control-sm" step="0.0001" placeholder="0.0000">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Currency</label>
-                    <select name="currency" id="currency" class="form-select form-select-sm">
-                        <option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option><option value="CNY">CNY</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">LC OP Rate</label>
-                    <input type="number" name="lc_open_rate" id="lcOpRate" class="form-control form-control-sm" step="0.0001">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Margin %</label>
-                    <input type="number" name="margin_percent" id="marginPct" class="form-control form-control-sm" step="0.0001">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">LC Margin Amt</label>
-                    <input type="number" name="lc_margin_amt" id="lcMarginAmt" class="form-control form-control-sm bg-light" readonly step="0.01">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">LC Opening Cost BDT</label>
-                    <input type="number" name="lc_open_cost_bdt" class="form-control form-control-sm" step="0.01">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Freight Value</label>
-                    <input type="number" name="freight_value" id="freightValue" class="form-control form-control-sm" step="0.0001">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">LC Value (calc)</label>
-                    <input type="number" name="lc_value" id="lcValue" class="form-control form-control-sm bg-light" readonly step="0.0001">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Amount BDT (calc)</label>
-                    <input type="number" name="amount_bdt" id="amountBdt" class="form-control form-control-sm bg-light" readonly step="0.01">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Total LC Cost</label>
-                    <input type="number" name="total_lc_cost" class="form-control form-control-sm" step="0.01">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Landed Cost</label>
-                    <input type="number" name="landed_cost" class="form-control form-control-sm" step="0.01">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Section 4: Document Retirement --}}
-    <div class="lc-card">
-        <div class="lc-section-header"><i class="fa fa-file-alt me-2"></i> Section 4 — Document Retirement</div>
-        <div class="lc-section-body">
-            <div class="row g-2">
-                <div class="col-md-3">
-                    <label class="form-label">Doc RT Rate</label>
-                    <input type="number" name="doc_rt_rate" class="form-control form-control-sm" step="0.0001">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">LC RT Value</label>
-                    <input type="number" name="lc_rt_value" class="form-control form-control-sm" step="0.01">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">LC Charge Posting</label>
-                    <input type="text" name="lc_charge_posting" class="form-control form-control-sm">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Section 5: Payment Tracking --}}
-    <div class="lc-card">
-        <div class="lc-section-header"><i class="fa fa-money-check-alt me-2"></i> Section 5 — Payment Tracking</div>
-        <div class="lc-section-body">
-            <div class="row g-2">
-                <div class="col-md-3">
-                    <label class="form-label">Advance Received BDT</label>
-                    <input type="number" name="advance_received_bdt" class="form-control form-control-sm" step="0.01">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Advance Date</label>
-                    <input type="date" name="advance_date" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Advance Posting</label>
-                    <input type="text" name="advance_posting" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-3"></div>
-                <div class="col-md-3">
-                    <label class="form-label">Rest Amount BDT</label>
-                    <input type="number" name="rest_amount_bdt" class="form-control form-control-sm" step="0.01">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Rest Amount Date</label>
-                    <input type="date" name="rest_amount_date" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Rest Amount Posting</label>
-                    <input type="text" name="rest_amount_posting" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Total Received BDT</label>
-                    <input type="number" name="total_received_bdt" class="form-control form-control-sm bg-light" step="0.01">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">LC Closing Bill</label>
-                    <input type="number" name="lc_closing_bill" class="form-control form-control-sm" step="0.01">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">LC Closing Bill Date</label>
-                    <input type="date" name="lc_closing_bill_date" class="form-control form-control-sm">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Section 6: Duty & Clearance --}}
-    <div class="lc-card">
-        <div class="lc-section-header"><i class="fa fa-clipboard-check me-2"></i> Section 6 — Duty & Clearance</div>
-        <div class="lc-section-body">
-            <div class="row g-2">
-                <div class="col-md-3">
-                    <label class="form-label">Duty Advance</label>
-                    <input type="number" name="duty_advance" class="form-control form-control-sm" step="0.01">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Duty Advance Date</label>
-                    <input type="date" name="duty_advance_date" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Duty Advance Posting</label>
-                    <input type="text" name="duty_advance_posting" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-3"></div>
-                <div class="col-md-3">
-                    <label class="form-label">Bill of Entry No</label>
-                    <input type="text" name="bill_of_entry_no" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Bill of Entry Date</label>
-                    <input type="date" name="bill_of_entry_date" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Customs Duty</label>
-                    <input type="number" name="customs_duty" class="form-control form-control-sm" step="0.01">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Customs Duty Posting</label>
-                    <input type="text" name="customs_duty_posting" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">CNF Party</label>
-                    <input type="text" name="cnf_party" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">CNF Total Cost</label>
-                    <input type="number" name="cnf_total_cost" class="form-control form-control-sm" step="0.01">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">CNF Cost Posting</label>
-                    <input type="text" name="cnf_cost_posting" class="form-control form-control-sm">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Section 7: VAT / Tax / Sales --}}
-    <div class="lc-card">
-        <div class="lc-section-header"><i class="fa fa-percent me-2"></i> Section 7 — VAT / Tax / Sales</div>
-        <div class="lc-section-body">
-            <div class="row g-2">
-                <div class="col-md-3">
-                    <label class="form-label">Payable / Receivable</label>
-                    <input type="number" name="payable_receivable" class="form-control form-control-sm" step="0.01">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Received Amount</label>
-                    <input type="number" name="received_amount" class="form-control form-control-sm" step="0.01">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Received Date</label>
-                    <input type="date" name="received_date" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-3"></div>
-                <div class="col-md-3">
-                    <label class="form-label">VAT Return</label>
-                    <input type="number" name="vat_return" class="form-control form-control-sm" step="0.01">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">VAT Return Date</label>
-                    <input type="date" name="vat_return_date" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">VAT Return Posting</label>
-                    <input type="text" name="vat_return_posting" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Income Tax</label>
-                    <input type="number" name="income_tax" class="form-control form-control-sm" step="0.01">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Bank Statement Amt</label>
-                    <input type="number" name="bank_statement_amt" class="form-control form-control-sm" step="0.01">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">LC Commission</label>
-                    <input type="number" name="lc_commission" class="form-control form-control-sm" step="0.01">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">LC Commission Date</label>
-                    <input type="date" name="lc_commission_date" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Sales Amount</label>
-                    <input type="number" name="sales_amount" class="form-control form-control-sm" step="0.01">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Sales Posting</label>
-                    <input type="text" name="sales_posting" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">COSS Amount</label>
-                    <input type="number" name="coss_amount" class="form-control form-control-sm" step="0.01">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">COSS Posting</label>
-                    <input type="text" name="coss_posting" class="form-control form-control-sm">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Section 8: Bank & Docs --}}
-    <div class="lc-card">
-        <div class="lc-section-header"><i class="fa fa-university me-2"></i> Section 8 — Bank & Documents</div>
+    {{-- Step 3: Bank & Documents --}}
+    <div class="lc-card wizard-section" data-step="3">
+        <div class="lc-section-header"><i class="fa fa-university me-2"></i> Section 3 — Bank & Documents</div>
         <div class="lc-section-body">
             <div class="row g-2">
                 <div class="col-md-3">
@@ -464,10 +275,248 @@
         </div>
     </div>
 
-    {{-- LC Line Items --}}
-    <div class="lc-card">
+    {{-- Step 4: LC Details --}}
+    <div class="lc-card wizard-section" data-step="4">
+        <div class="lc-section-header"><i class="fa fa-dollar-sign me-2"></i> Section 4 — LC Details</div>
+        <div class="lc-section-body">
+            <div class="row g-2">
+                <div class="col-md-2">
+                    <label class="form-label">PFI Value</label>
+                    <input type="number" name="pfi_value" id="pfiValue" class="form-control form-control-sm" step="0.0001" placeholder="0.0000">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Currency</label>
+                    <select name="currency" id="currency" class="form-select form-select-sm">
+                        <option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option><option value="CNY">CNY</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">LC OP Rate</label>
+                    <input type="number" name="lc_open_rate" id="lcOpRate" class="form-control form-control-sm" step="0.0001">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Margin %</label>
+                    <input type="number" name="margin_percent" id="marginPct" class="form-control form-control-sm" step="0.0001">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">LC Margin Amt</label>
+                    <input type="number" name="lc_margin_amt" id="lcMarginAmt" class="form-control form-control-sm bg-light" readonly step="0.01">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">LC Opening Cost BDT</label>
+                    <input type="number" name="lc_open_cost_bdt" class="form-control form-control-sm" step="0.01">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Freight Value</label>
+                    <input type="number" name="freight_value" id="freightValue" class="form-control form-control-sm" step="0.0001">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">LC Value (calc)</label>
+                    <input type="number" name="lc_value" id="lcValue" class="form-control form-control-sm bg-light" readonly step="0.0001">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Amount BDT (calc)</label>
+                    <input type="number" name="amount_bdt" id="amountBdt" class="form-control form-control-sm bg-light" readonly step="0.01">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Total LC Cost</label>
+                    <input type="number" name="total_lc_cost" class="form-control form-control-sm" step="0.01">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Landed Cost</label>
+                    <input type="number" name="landed_cost" class="form-control form-control-sm" step="0.01">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Step 5: Document Retirement --}}
+    <div class="lc-card wizard-section" data-step="5">
+        <div class="lc-section-header"><i class="fa fa-file-alt me-2"></i> Section 5 — Document Retirement</div>
+        <div class="lc-section-body">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label">Doc RT Rate</label>
+                    <input type="number" name="doc_rt_rate" class="form-control form-control-sm" step="0.0001">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">LC RT Value</label>
+                    <input type="number" name="lc_rt_value" class="form-control form-control-sm" step="0.01">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">LC Charge Posting</label>
+                    <input type="text" name="lc_charge_posting" class="form-control form-control-sm">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Step 6: Payment Tracking --}}
+    <div class="lc-card wizard-section" data-step="6">
+        <div class="lc-section-header"><i class="fa fa-money-check-alt me-2"></i> Section 6 — Payment Tracking</div>
+        <div class="lc-section-body">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label">Advance Received BDT</label>
+                    <input type="number" name="advance_received_bdt" class="form-control form-control-sm" step="0.01">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Advance Date</label>
+                    <input type="date" name="advance_date" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Advance Posting</label>
+                    <input type="text" name="advance_posting" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-3"></div>
+                <div class="col-md-3">
+                    <label class="form-label">Rest Amount BDT</label>
+                    <input type="number" name="rest_amount_bdt" class="form-control form-control-sm" step="0.01">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Rest Amount Date</label>
+                    <input type="date" name="rest_amount_date" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Rest Amount Posting</label>
+                    <input type="text" name="rest_amount_posting" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Total Received BDT</label>
+                    <input type="number" name="total_received_bdt" class="form-control form-control-sm bg-light" step="0.01">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">LC Closing Bill</label>
+                    <input type="number" name="lc_closing_bill" class="form-control form-control-sm" step="0.01">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">LC Closing Bill Date</label>
+                    <input type="date" name="lc_closing_bill_date" class="form-control form-control-sm">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Step 7: Duty & Clearance --}}
+    <div class="lc-card wizard-section" data-step="7">
+        <div class="lc-section-header"><i class="fa fa-clipboard-check me-2"></i> Section 7 — Duty & Clearance</div>
+        <div class="lc-section-body">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label">Duty Advance</label>
+                    <input type="number" name="duty_advance" class="form-control form-control-sm" step="0.01">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Duty Advance Date</label>
+                    <input type="date" name="duty_advance_date" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Duty Advance Posting</label>
+                    <input type="text" name="duty_advance_posting" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-3"></div>
+                <div class="col-md-3">
+                    <label class="form-label">Bill of Entry No</label>
+                    <input type="text" name="bill_of_entry_no" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Bill of Entry Date</label>
+                    <input type="date" name="bill_of_entry_date" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Customs Duty</label>
+                    <input type="number" name="customs_duty" class="form-control form-control-sm" step="0.01">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Customs Duty Posting</label>
+                    <input type="text" name="customs_duty_posting" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">CNF Party</label>
+                    <input type="text" name="cnf_party" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">CNF Total Cost</label>
+                    <input type="number" name="cnf_total_cost" class="form-control form-control-sm" step="0.01">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">CNF Cost Posting</label>
+                    <input type="text" name="cnf_cost_posting" class="form-control form-control-sm">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Step 8: VAT / Tax / Sales --}}
+    <div class="lc-card wizard-section" data-step="8">
+        <div class="lc-section-header"><i class="fa fa-percent me-2"></i> Section 8 — VAT / Tax / Sales</div>
+        <div class="lc-section-body">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label">Payable / Receivable</label>
+                    <input type="number" name="payable_receivable" class="form-control form-control-sm" step="0.01">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Received Amount</label>
+                    <input type="number" name="received_amount" class="form-control form-control-sm" step="0.01">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Received Date</label>
+                    <input type="date" name="received_date" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-3"></div>
+                <div class="col-md-3">
+                    <label class="form-label">VAT Return</label>
+                    <input type="number" name="vat_return" class="form-control form-control-sm" step="0.01">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">VAT Return Date</label>
+                    <input type="date" name="vat_return_date" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">VAT Return Posting</label>
+                    <input type="text" name="vat_return_posting" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Income Tax</label>
+                    <input type="number" name="income_tax" class="form-control form-control-sm" step="0.01">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Bank Statement Amt</label>
+                    <input type="number" name="bank_statement_amt" class="form-control form-control-sm" step="0.01">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">LC Commission</label>
+                    <input type="number" name="lc_commission" class="form-control form-control-sm" step="0.01">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">LC Commission Date</label>
+                    <input type="date" name="lc_commission_date" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Sales Amount</label>
+                    <input type="number" name="sales_amount" class="form-control form-control-sm" step="0.01">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Sales Posting</label>
+                    <input type="text" name="sales_posting" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">COSS Amount</label>
+                    <input type="number" name="coss_amount" class="form-control form-control-sm" step="0.01">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">COSS Posting</label>
+                    <input type="text" name="coss_posting" class="form-control form-control-sm">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Step 9: Product Line Items --}}
+    <div class="lc-card wizard-section" data-step="9">
         <div class="lc-section-header d-flex justify-content-between align-items-center">
-            <span><i class="fa fa-boxes me-2"></i> Product Line Items</span>
+            <span><i class="fa fa-boxes me-2"></i> Section 9 — Product Line Items</span>
             <button type="button" class="btn btn-sm btn-light py-0 px-2" id="btnAddItem" style="font-size:.75rem"><i class="fa fa-plus me-1"></i>Add Row</button>
         </div>
         <div class="lc-section-body p-0">
@@ -495,9 +544,20 @@
         </div>
     </div>
 
-    <div class="d-flex gap-2 mb-4">
-        <button type="submit" class="btn btn-success px-5" id="btnSave"><i class="fa fa-save me-1"></i> Save LC</button>
-        <a href="{{ route('nas-trading.lcs.index') }}" class="btn btn-outline-secondary px-4">Cancel</a>
+    {{-- Wizard Navigation --}}
+    <div class="wizard-nav mb-4">
+        <button type="button" class="btn btn-outline-secondary px-4" id="btnPrev" disabled>
+            <i class="fa fa-chevron-left me-1"></i> Previous
+        </button>
+        <span class="text-muted" id="stepInfo" style="font-size:.82rem;">Step 1 of 9</span>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-primary px-4" id="btnNext">
+                Next <i class="fa fa-chevron-right ms-1"></i>
+            </button>
+            <button type="submit" class="btn btn-success px-5 d-none" id="btnSave">
+                <i class="fa fa-save me-1"></i> Save LC
+            </button>
+        </div>
     </div>
 </form>
 @endsection
@@ -505,7 +565,84 @@
 @push('scripts')
 <script>
 var itemRowIdx = 0;
+var currentStep = 1;
+var totalSteps  = 9;
 
+// ── Wizard ─────────────────────────────────────────────────────────────
+var step1Unlocked = false;
+
+function unlockAllSteps() {
+    step1Unlocked = true;
+    $('#wizardSteps').addClass('all-unlocked');
+}
+
+function validateStep1() {
+    var customerId = $('#customerSelect').val();
+    var pfiNo      = $('[name=pfi_no]').val().trim();
+    if (!customerId) {
+        Swal.fire({ icon: 'warning', title: 'Please select a customer.' });
+        return false;
+    }
+    if (!pfiNo) {
+        Swal.fire({ icon: 'warning', title: 'PFI No is required.' });
+        return false;
+    }
+    return true;
+}
+
+function goToStep(step) {
+    if (step < 1 || step > totalSteps) return;
+
+    $('.wizard-section').removeClass('active');
+    $(`.wizard-section[data-step="${step}"]`).addClass('active');
+
+    $('#wizardSteps .wz-step').each(function () {
+        var s = parseInt($(this).data('step'));
+        $(this).removeClass('active done');
+        if (s === step) $(this).addClass('active');
+        else if (s < step) $(this).addClass('done');
+    });
+
+    for (var i = 1; i < totalSteps; i++) {
+        $('#conn-' + i).toggleClass('done', i < step);
+    }
+
+    currentStep = step;
+    $('#btnPrev').prop('disabled', step === 1);
+    $('#stepInfo').text('Step ' + step + ' of ' + totalSteps);
+
+    if (step === totalSteps) {
+        $('#btnNext').addClass('d-none');
+        $('#btnSave').removeClass('d-none');
+    } else {
+        $('#btnNext').removeClass('d-none');
+        $('#btnSave').addClass('d-none');
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+$('#btnNext').on('click', function () {
+    if (currentStep === 1 && !step1Unlocked) {
+        if (!validateStep1()) return;
+        unlockAllSteps();
+    }
+    goToStep(currentStep + 1);
+});
+$('#btnPrev').on('click', function () { goToStep(currentStep - 1); });
+
+// Click any step to jump — free after step 1 unlocked
+$('#wizardSteps').on('click', '.wz-step', function () {
+    var target = parseInt($(this).data('step'));
+    if (target === currentStep) return;
+    if (!step1Unlocked && target > 1) {
+        if (!validateStep1()) return;
+        unlockAllSteps();
+    }
+    goToStep(target);
+});
+
+// ── Line Items ──────────────────────────────────────────────────────────
 function addItemRow(data) {
     data = data || {};
     var idx = itemRowIdx++;
@@ -617,7 +754,6 @@ $(function () {
         $('#itemsBody tr').each((i, tr) => $(tr).find('.row-num').text(i + 1));
     });
 
-    // Add first row
     addItemRow();
 
     // Form submit
