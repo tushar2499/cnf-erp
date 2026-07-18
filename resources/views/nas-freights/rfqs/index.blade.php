@@ -1,4 +1,4 @@
-@extends('chevron.layouts.app')
+@extends('nas-freights.layouts.app')
 
 @section('title', 'RFQ')
 
@@ -15,7 +15,7 @@
 @section('content')
 <div class="page-header">
     <h4><i class="fa fa-file-signature me-2 text-primary"></i> RFQ (Request for Quotation)</h4>
-    <a href="{{ route('chevron.cnf.rfqs.create') }}" class="btn btn-sm btn-primary">
+    <a href="{{ route('nas-freights.rfqs.create') }}" class="btn btn-sm btn-primary">
         <i class="fa fa-plus me-1"></i> New RFQ
     </a>
 </div>
@@ -74,7 +74,7 @@ $(function () {
         processing: true,
         serverSide: true,
         ajax: {
-            url: '{{ route('chevron.cnf.rfqs.index') }}',
+            url: '{{ route('nas-freights.rfqs.index') }}',
             data: function (d) {
                 d.status_filter = currentStatus;
             }

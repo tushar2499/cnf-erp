@@ -52,6 +52,7 @@ class StoreNasTradingLcRequest extends FormRequest
             'bank_charge'          => ['nullable', 'numeric', 'min:0'],
             'lc_amendment_charge'  => ['nullable', 'numeric', 'min:0'],
             'credit_report_charge' => ['nullable', 'numeric', 'min:0'],
+            'other_charges'        => ['nullable', 'numeric', 'min:0'],
             'doc_status'           => ['nullable', 'in:Pending,Received,Complete'],
             'sanction_types'       => ['nullable', 'string', 'max:255'],
             'third_party'          => ['nullable', 'string', 'max:255'],

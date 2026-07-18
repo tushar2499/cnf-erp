@@ -17,7 +17,6 @@ use App\Http\Controllers\Chevron\JobTypeController;
 use App\Http\Controllers\Chevron\MoneyReceiptController;
 use App\Http\Controllers\Chevron\PortController;
 use App\Http\Controllers\Chevron\ReportController;
-use App\Http\Controllers\Chevron\RfqController;
 use App\Http\Controllers\Chevron\ServiceController;
 use App\Http\Controllers\Chevron\UserController;
 use Illuminate\Support\Facades\Route;
@@ -30,19 +29,7 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 
 // C&F Jobs
 Route::prefix('cnf')->name('cnf.')->group(function () {
-    Route::get('/rfqs/search-customers', [RfqController::class, 'searchCustomers'])->name('rfqs.search-customers');
-    Route::get('/rfqs/search-ports', [RfqController::class, 'searchPorts'])->name('rfqs.search-ports');
-    Route::get('/rfqs/search-employees', [RfqController::class, 'searchEmployees'])->name('rfqs.search-employees');
-    Route::get('/rfqs', [RfqController::class, 'index'])->name('rfqs.index');
-    Route::get('/rfqs/create', [RfqController::class, 'create'])->name('rfqs.create');
-    Route::post('/rfqs', [RfqController::class, 'store'])->name('rfqs.store');
-    Route::get('/rfqs/{rfq}', [RfqController::class, 'show'])->name('rfqs.show');
-    Route::get('/rfqs/{rfq}/edit', [RfqController::class, 'edit'])->name('rfqs.edit');
-    Route::put('/rfqs/{rfq}', [RfqController::class, 'update'])->name('rfqs.update');
-    Route::patch('/rfqs/{rfq}/status', [RfqController::class, 'updateStatus'])->name('rfqs.update-status');
-    Route::post('/rfqs/{rfq}/convert-job', [RfqController::class, 'convertToJob'])->name('rfqs.convert-job');
-    Route::delete('/rfqs/{rfq}', [RfqController::class, 'destroy'])->name('rfqs.destroy');
-    Route::get('/jobs/search-customers', [CnfJobController::class,    'searchCustomers'])->name('jobs.search-customers');
+Route::get('/jobs/search-customers', [CnfJobController::class,    'searchCustomers'])->name('jobs.search-customers');
     Route::get('/jobs/search-items', [CnfJobController::class,    'searchItems'])->name('jobs.search-items');
     Route::get('/job-expenses/search-jobs', [JobExpenseController::class, 'searchJobs'])->name('job-expenses.search-jobs');
     Route::get('/job-expenses/search-employees', [JobExpenseController::class, 'searchEmployees'])->name('job-expenses.search-employees');

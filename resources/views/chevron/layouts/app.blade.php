@@ -13,11 +13,7 @@
     </a>
 
     <div class="nav-section">C&amp;F Operations</div>
-    <a href="{{ route('chevron.cnf.rfqs.index') }}"
-       class="nav-link {{ request()->routeIs('chevron.cnf.rfqs.*') ? 'active' : '' }}">
-        <i class="fa fa-file-signature"></i> RFQ
-    </a>
-    <a href="{{ route('chevron.cnf.jobs.index') }}"
+<a href="{{ route('chevron.cnf.jobs.index') }}"
        class="nav-link {{ request()->routeIs('chevron.cnf.jobs.*') ? 'active' : '' }}">
         <i class="fa fa-file-alt"></i> C&amp;F Jobs
     </a>

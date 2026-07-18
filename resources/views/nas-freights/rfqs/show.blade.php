@@ -1,4 +1,4 @@
-@extends('chevron.layouts.app')
+@extends('nas-freights.layouts.app')
 
 @section('title', 'RFQ — ' . $rfq->rfq_no)
 
@@ -21,13 +21,12 @@
 
 @section('content')
 
-{{-- Page header --}}
 <div class="d-flex align-items-center justify-content-between mb-3">
     <div class="d-flex align-items-center gap-2">
-        <a href="{{ route('chevron.cnf.rfqs.index') }}" class="btn btn-sm btn-outline-secondary">
+        <a href="{{ route('nas-freights.rfqs.index') }}" class="btn btn-sm btn-outline-secondary">
             <i class="fa fa-arrow-left me-1"></i> Back
         </a>
-        <a href="{{ route('chevron.cnf.rfqs.edit', $rfq->id) }}" class="btn btn-sm btn-outline-primary">
+        <a href="{{ route('nas-freights.rfqs.edit', $rfq->id) }}" class="btn btn-sm btn-outline-primary">
             <i class="fa fa-edit me-1"></i> Edit
         </a>
     </div>
@@ -53,7 +52,6 @@
     {{-- Left: RFQ Details --}}
     <div class="col-lg-8">
 
-        {{-- Header info --}}
         <div class="section-card">
             <div class="form-header"><i class="fa fa-file-signature me-1"></i> RFQ Information</div>
             <div class="section-body">
@@ -81,6 +79,28 @@
                         <div style="font-size:.7rem; color:#6b7280;">{{ $rfq->customer->customer_id }}</div>
                         @endif
                     </div>
+                    <div class="col-6 col-md-4">
+                        <div class="info-label">Overseas Agent</div>
+                        <div class="info-value">
+                            @if($rfq->overseasAgent)
+                                <span class="fw-semibold">{{ $rfq->overseasAgent->name }}</span>
+                                <div style="font-size:.7rem; color:#6b7280;">{{ $rfq->overseasAgent->agent_code }}@if($rfq->overseasAgent->country) &nbsp;·&nbsp;{{ $rfq->overseasAgent->country }}@endif</div>
+                            @else
+                                —
+                            @endif
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="info-label">Shipping Carrier</div>
+                        <div class="info-value">
+                            @if($rfq->shippingCarrier)
+                                <span class="fw-semibold">{{ $rfq->shippingCarrier->name }}</span>
+                                <div style="font-size:.7rem; color:#6b7280;">{{ $rfq->shippingCarrier->carrier_code }}@if($rfq->shippingCarrier->scac_code) &nbsp;·&nbsp;SCAC: {{ $rfq->shippingCarrier->scac_code }}@endif</div>
+                            @else
+                                —
+                            @endif
+                        </div>
+                    </div>
                     <div class="col-6 col-md-2">
                         <div class="info-label">Type</div>
                         <div class="info-value">
@@ -92,7 +112,7 @@
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="info-label">Service Type</div>
+                        <div class="info-label">MOD/Service Type</div>
                         <div class="info-value">{{ $rfq->service_type ?? '—' }}</div>
                     </div>
                     <div class="col-6 col-md-3">
@@ -105,11 +125,11 @@
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="info-label">Port of Loading (POL)</div>
-                        <div class="info-value">{{ $rfq->pol?->name ?? '—' }}</div>
+                        <div class="info-value">{{ $rfq->pol ?? '—' }}</div>
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="info-label">Port of Discharge (POD)</div>
-                        <div class="info-value">{{ $rfq->pod?->name ?? '—' }}</div>
+                        <div class="info-value">{{ $rfq->pod ?? '—' }}</div>
                     </div>
                     @if($rfq->place_of_receipt || $rfq->place_of_delivery)
                     <div class="col-6 col-md-3">
@@ -137,7 +157,6 @@
             </div>
         </div>
 
-        {{-- Cargo items --}}
         <div class="section-card">
             <div class="form-header"><i class="fa fa-boxes me-1"></i> Cargo / Shipment Details</div>
             <div class="section-body p-0">
@@ -156,7 +175,6 @@
                                 <th>Qty</th>
                                 <th>Weight</th>
                                 <th>CBM</th>
-                                <th>Cargo Value</th>
                                 <th>Origin</th>
                                 <th>DG</th>
                                 <th>Special</th>
@@ -181,7 +199,6 @@
                                     {{ $item->gross_weight ? number_format($item->gross_weight, 2).' '.$item->weight_unit : '—' }}
                                 </td>
                                 <td class="text-end">{{ $item->volume_cbm ? number_format($item->volume_cbm, 3) : '—' }}</td>
-                                <td class="text-end">{{ $item->cargo_value ? number_format($item->cargo_value, 2) : '—' }}</td>
                                 <td>{{ $item->country_of_origin ?? '—' }}</td>
                                 <td class="text-center">
                                     @if($item->is_dangerous_goods)
@@ -205,7 +222,6 @@
     {{-- Right: Status Panel --}}
     <div class="col-lg-4">
 
-        {{-- Current status --}}
         <div class="section-card">
             <div class="form-header"><i class="fa fa-tasks me-1"></i> Status</div>
             <div class="section-body text-center py-3">
@@ -213,20 +229,19 @@
                 @if($rfq->status === 'Lose' && $rfq->lost_reason)
                 <div style="font-size:.75rem; color:#6b7280; margin-top:.3rem;">Reason: {{ $rfq->lost_reason }}</div>
                 @endif
-                @if($rfq->status === 'Win' && $rfq->converted_job_id)
+                @if($rfq->status === 'Win' && $rfq->converted_booking_id)
                 <div class="mt-2" style="font-size:.75rem;">
                     <i class="fa fa-check-circle text-success me-1"></i>
-                    Job: <a href="{{ route('chevron.cnf.jobs.edit', $rfq->converted_job_id) }}" class="fw-semibold">{{ $rfq->convertedJob?->job_no }}</a>
+                    Booking: <a href="{{ route('nas-freights.bookings.edit', $rfq->converted_booking_id) }}" class="fw-semibold">{{ $rfq->convertedBooking?->job_no }}</a>
                 </div>
                 @endif
             </div>
         </div>
 
-        {{-- Update status --}}
         <div class="section-card">
             <div class="form-header"><i class="fa fa-exchange-alt me-1"></i> Update Status</div>
             <div class="section-body">
-                <form method="POST" action="{{ route('chevron.cnf.rfqs.update-status', $rfq->id) }}">
+                <form method="POST" action="{{ route('nas-freights.rfqs.update-status', $rfq->id) }}">
                     @csrf @method('PATCH')
 
                     <div class="mb-2">
@@ -263,25 +278,24 @@
             </div>
         </div>
 
-        {{-- Convert to Job --}}
         @if($rfq->status === 'Win')
         <div class="section-card">
-            <div class="form-header"><i class="fa fa-briefcase me-1"></i> Convert to Job</div>
+            <div class="form-header"><i class="fa fa-briefcase me-1"></i> Convert to Booking</div>
             <div class="section-body">
-                @if($rfq->converted_job_id)
+                @if($rfq->converted_booking_id)
                 <div class="text-success text-center" style="font-size:.8rem;">
                     <i class="fa fa-check-circle me-1"></i> Already converted to
-                    <a href="{{ route('chevron.cnf.jobs.edit', $rfq->converted_job_id) }}" class="fw-bold">{{ $rfq->convertedJob?->job_no }}</a>
+                    <a href="{{ route('nas-freights.bookings.edit', $rfq->converted_booking_id) }}" class="fw-bold">{{ $rfq->convertedBooking?->job_no }}</a>
                 </div>
                 @else
                 <p style="font-size:.75rem; color:#6b7280; margin-bottom:.6rem;">
-                    Create a C&amp;F Job from this RFQ. Customer, ports, and cargo description will be pre-filled.
+                    Create a Booking from this RFQ. Customer and cargo description will be pre-filled.
                 </p>
-                <form method="POST" action="{{ route('chevron.cnf.rfqs.convert-job', $rfq->id) }}">
+                <form method="POST" action="{{ route('nas-freights.rfqs.convert-booking', $rfq->id) }}">
                     @csrf
                     <button type="submit" class="btn btn-sm btn-success w-100"
-                        onclick="return confirm('Convert RFQ {{ $rfq->rfq_no }} to a C&F Job?')">
-                        <i class="fa fa-exchange-alt me-1"></i> Convert to C&amp;F Job
+                        onclick="return confirm('Convert RFQ {{ $rfq->rfq_no }} to a Booking?')">
+                        <i class="fa fa-exchange-alt me-1"></i> Convert to Booking
                     </button>
                 </form>
                 @endif
@@ -289,7 +303,6 @@
         </div>
         @endif
 
-        {{-- Meta --}}
         <div class="section-card">
             <div class="form-header"><i class="fa fa-info-circle me-1"></i> Record Info</div>
             <div class="section-body">
@@ -310,7 +323,6 @@
 
 @push('scripts')
 <script>
-// Keep lost reason visible if Lose is pre-selected on page load
 document.addEventListener('DOMContentLoaded', function () {
     var checked = document.querySelector('input[name="status"]:checked');
     if (checked && checked.value === 'Lose') {

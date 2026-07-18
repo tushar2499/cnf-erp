@@ -1,4 +1,4 @@
-@extends('chevron.layouts.app')
+@extends('nas-freights.layouts.app')
 
 @section('title', $rfq ? 'Edit RFQ' : 'New RFQ')
 
@@ -20,7 +20,7 @@
 @section('content')
 <div class="d-flex align-items-center justify-content-between mb-2">
     <div>
-        <a href="{{ route('chevron.cnf.rfqs.index') }}" class="btn btn-sm btn-outline-secondary">
+        <a href="{{ route('nas-freights.rfqs.index') }}" class="btn btn-sm btn-outline-secondary">
             <i class="fa fa-arrow-left me-1"></i> Back To List
         </a>
     </div>
@@ -38,7 +38,7 @@
 @endif
 
 <form method="POST"
-      action="{{ $rfq ? route('chevron.cnf.rfqs.update', $rfq->id) : route('chevron.cnf.rfqs.store') }}">
+      action="{{ $rfq ? route('nas-freights.rfqs.update', $rfq->id) : route('nas-freights.rfqs.store') }}">
 @csrf
 @if($rfq) @method('PUT') @endif
 
@@ -78,6 +78,29 @@
         </div>
 
         <div class="row g-2 mb-2">
+            <div class="col-md-6">
+                <div class="rfq-label">Overseas Agent</div>
+                <select name="overseas_agent_id" id="overseasAgentSelect" class="form-select rfq-input" style="width:100%">
+                    @if($rfq?->overseas_agent_id)
+                    <option value="{{ $rfq->overseas_agent_id }}" selected>
+                        {{ $rfq->overseasAgent?->agent_code }} — {{ $rfq->overseasAgent?->name }} ({{ $rfq->overseasAgent?->country }})
+                    </option>
+                    @endif
+                </select>
+            </div>
+            <div class="col-md-6">
+                <div class="rfq-label">Shipping Carrier</div>
+                <select name="shipping_carrier_id" id="shippingCarrierSelect" class="form-select rfq-input" style="width:100%">
+                    @if($rfq?->shipping_carrier_id)
+                    <option value="{{ $rfq->shipping_carrier_id }}" selected>
+                        {{ $rfq->shippingCarrier?->carrier_code }} — {{ $rfq->shippingCarrier?->name }}
+                    </option>
+                    @endif
+                </select>
+            </div>
+        </div>
+
+        <div class="row g-2 mb-2">
             <div class="col-md-3">
                 <div class="rfq-label">Type <span class="text-danger">*</span></div>
                 <select name="type" class="form-select rfq-input" required>
@@ -87,7 +110,7 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <div class="rfq-label">Service Type</div>
+                <div class="rfq-label">MOD / Service Type</div>
                 <select name="service_type" class="form-select rfq-input">
                     @foreach($serviceTypes as $st)
                     <option value="{{ $st }}" {{ old('service_type', $rfq?->service_type ?? 'FCL') === $st ? 'selected' : '' }}>{{ $st }}</option>
@@ -116,19 +139,11 @@
         <div class="row g-2 mb-2">
             <div class="col-md-3">
                 <div class="rfq-label">Port of Loading (POL)</div>
-                <select name="pol_id" id="polSelect" class="form-select rfq-input" style="width:100%">
-                    @if($rfq?->pol_id)
-                    <option value="{{ $rfq->pol_id }}" selected>{{ $rfq->pol?->name }}</option>
-                    @endif
-                </select>
+                <input type="text" name="pol" class="form-control rfq-input" value="{{ old('pol', $rfq?->pol) }}" placeholder="e.g. Chittagong">
             </div>
             <div class="col-md-3">
                 <div class="rfq-label">Port of Discharge (POD)</div>
-                <select name="pod_id" id="podSelect" class="form-select rfq-input" style="width:100%">
-                    @if($rfq?->pod_id)
-                    <option value="{{ $rfq->pod_id }}" selected>{{ $rfq->pod?->name }}</option>
-                    @endif
-                </select>
+                <input type="text" name="pod" class="form-control rfq-input" value="{{ old('pod', $rfq?->pod) }}" placeholder="e.g. Singapore">
             </div>
             <div class="col-md-3">
                 <div class="rfq-label">Place of Receipt</div>
@@ -169,16 +184,15 @@
                         <th style="width:35px">#</th>
                         <th style="width:30px"></th>
                         <th style="width:110px">Item Type</th>
+                        <th style="width:70px">Qty</th>
                         <th style="width:120px">Container Size / Package</th>
                         <th style="width:110px">HS Code</th>
                         <th>Commodity</th>
-                        <th style="width:70px">Qty</th>
                         <th style="width:100px">Weight</th>
                         <th style="width:70px">Unit</th>
                         <th style="width:80px">CBM</th>
-                        <th style="width:110px">Cargo Value</th>
                         <th style="width:130px">Country of Origin</th>
-                        <th style="width:50px">DG</th>
+                        <th style="width:90px">DG</th>
                         <th>Special Handling</th>
                     </tr>
                 </thead>
@@ -222,20 +236,16 @@
             </div>
             @if($rfq->status === 'Win')
             <div class="col-auto">
-                @if($rfq->converted_job_id)
+                @if($rfq->converted_booking_id)
                 <span class="d-inline-flex align-items-center gap-2" style="font-size:.8rem; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:.4rem; padding:.4rem .75rem; color:#166534;">
-                    <i class="fa fa-check-circle"></i> Converted to Job:
-                    <a href="{{ route('chevron.cnf.jobs.edit', $rfq->converted_job_id) }}" class="fw-bold text-success">{{ $rfq->convertedJob?->job_no }}</a>
+                    <i class="fa fa-check-circle"></i> Converted to Booking:
+                    <a href="{{ route('nas-freights.bookings.edit', $rfq->converted_booking_id) }}" class="fw-bold text-success">{{ $rfq->convertedBooking?->job_no }}</a>
                 </span>
                 @else
                 <label class="rfq-label d-block mb-1">&nbsp;</label>
-                <form method="POST" action="{{ route('chevron.cnf.rfqs.convert-job', $rfq->id) }}" class="d-inline">
-                    @csrf
-                    <button type="submit" class="btn btn-sm btn-success"
-                        onclick="return confirm('Convert this RFQ to a C&F Job?')">
-                        <i class="fa fa-exchange-alt me-1"></i> Convert to C&amp;F Job
-                    </button>
-                </form>
+                <button type="button" class="btn btn-sm btn-success" id="btnConvertBooking">
+                    <i class="fa fa-exchange-alt me-1"></i> Convert to Booking
+                </button>
                 @endif
             </div>
             @endif
@@ -246,7 +256,7 @@
 
 {{-- Submit --}}
 <div class="d-flex justify-content-end gap-2 mt-3 mb-4">
-    <a href="{{ route('chevron.cnf.rfqs.index') }}" class="btn btn-sm btn-outline-secondary">
+    <a href="{{ route('nas-freights.rfqs.index') }}" class="btn btn-sm btn-outline-secondary">
         <i class="fa fa-times me-1"></i> Cancel
     </a>
     <button type="submit" class="btn btn-sm btn-success px-4">
@@ -255,6 +265,13 @@
 </div>
 
 </form>
+
+{{-- Convert-to-booking form lives OUTSIDE the main form to avoid nested-form HTML violation --}}
+@if($rfq && $rfq->status === 'Win' && !$rfq->converted_booking_id)
+<form id="convertBookingForm" method="POST" action="{{ route('nas-freights.rfqs.convert-booking', $rfq->id) }}">
+    @csrf
+</form>
+@endif
 
 {{-- Item row template --}}
 <template id="itemTemplate">
@@ -268,6 +285,9 @@
             <option value="container">Container</option>
             <option value="package">Package</option>
         </select>
+    </td>
+    <td>
+        <input type="number" name="items[0][quantity]" class="form-control form-control-sm text-center" style="font-size:.72rem;" value="1" min="1">
     </td>
     <td>
         {{-- Container size (shown when type=container) --}}
@@ -292,9 +312,6 @@
         <input type="text" name="items[0][commodity]" class="form-control form-control-sm" style="font-size:.72rem;" placeholder="Commodity">
     </td>
     <td>
-        <input type="number" name="items[0][quantity]" class="form-control form-control-sm text-center" style="font-size:.72rem;" value="1" min="1">
-    </td>
-    <td>
         <input type="number" name="items[0][gross_weight]" class="form-control form-control-sm text-end" style="font-size:.72rem;" step="0.01" placeholder="0.00">
     </td>
     <td>
@@ -308,13 +325,13 @@
         <input type="number" name="items[0][volume_cbm]" class="form-control form-control-sm text-end" style="font-size:.72rem;" step="0.001" placeholder="0.000">
     </td>
     <td>
-        <input type="number" name="items[0][cargo_value]" class="form-control form-control-sm text-end" style="font-size:.72rem;" step="0.01" placeholder="0.00">
-    </td>
-    <td>
         <input type="text" name="items[0][country_of_origin]" class="form-control form-control-sm" style="font-size:.72rem;" placeholder="Country">
     </td>
-    <td class="text-center">
-        <input type="checkbox" name="items[0][is_dangerous_goods]" value="1" class="form-check-input">
+    <td>
+        <select name="items[0][is_dangerous_goods]" class="form-select form-select-sm" style="font-size:.72rem;">
+            <option value="0">No DG</option>
+            <option value="1">DG</option>
+        </select>
     </td>
     <td>
         <input type="text" name="items[0][special_handling]" class="form-control form-control-sm" style="font-size:.72rem;" placeholder="e.g. Fragile">
@@ -325,17 +342,24 @@
 
 @push('scripts')
 <script>
+// Auto-collapse sidebar for the wide RFQ form
+$(function () {
+    if (!$('body').hasClass('sidebar-collapsed')) {
+        $('body').addClass('sidebar-collapsed');
+        localStorage.setItem('sidebarCollapsed', '1');
+    }
+});
+
 var existingItems = @json($existingItems);
 
 $(function () {
-    // Customer Select2 AJAX
     $('#customerSelect').select2({
         theme: 'bootstrap-5',
         placeholder: 'Search customer...',
         allowClear: true,
         minimumInputLength: 1,
         ajax: {
-            url: '{{ route('chevron.cnf.rfqs.search-customers') }}',
+            url: '{{ route('nas-freights.rfqs.search-customers') }}',
             dataType: 'json',
             delay: 300,
             data: d => ({ q: d.term }),
@@ -343,14 +367,13 @@ $(function () {
         },
     });
 
-    // Salesperson Select2 AJAX
     $('#salespersonSelect').select2({
         theme: 'bootstrap-5',
         placeholder: 'Search salesperson...',
         allowClear: true,
         minimumInputLength: 1,
         ajax: {
-            url: '{{ route('chevron.cnf.rfqs.search-employees') }}',
+            url: '{{ route('nas-freights.rfqs.search-employees') }}',
             dataType: 'json',
             delay: 300,
             data: d => ({ q: d.term }),
@@ -358,14 +381,13 @@ $(function () {
         },
     });
 
-    // POL Select2 AJAX
-    $('#polSelect').select2({
+    $('#overseasAgentSelect').select2({
         theme: 'bootstrap-5',
-        placeholder: 'Search POL...',
+        placeholder: 'Search overseas agent...',
         allowClear: true,
         minimumInputLength: 1,
         ajax: {
-            url: '{{ route('chevron.cnf.rfqs.search-ports') }}',
+            url: '{{ route('nas-freights.rfqs.search-overseas-agents') }}',
             dataType: 'json',
             delay: 300,
             data: d => ({ q: d.term }),
@@ -373,14 +395,13 @@ $(function () {
         },
     });
 
-    // POD Select2 AJAX
-    $('#podSelect').select2({
+    $('#shippingCarrierSelect').select2({
         theme: 'bootstrap-5',
-        placeholder: 'Search POD...',
+        placeholder: 'Search shipping carrier...',
         allowClear: true,
         minimumInputLength: 1,
         ajax: {
-            url: '{{ route('chevron.cnf.rfqs.search-ports') }}',
+            url: '{{ route('nas-freights.rfqs.search-shipping-carriers') }}',
             dataType: 'json',
             delay: 300,
             data: d => ({ q: d.term }),
@@ -388,7 +409,6 @@ $(function () {
         },
     });
 
-    // Load existing cargo rows or start with 1 blank
     if (existingItems.length > 0) {
         existingItems.forEach(function (item) { addItemRow(item); });
     } else {
@@ -403,11 +423,15 @@ $(function () {
         reindexItems();
     });
 
-    // Toggle container/package fields on type change
     $(document).on('change', '.item-type-sel', function () {
         toggleItemTypeFields($(this).closest('tr'));
     });
 
+    $('#btnConvertBooking').on('click', function () {
+        if (confirm('Convert RFQ to a Booking? Customer and cargo details will be pre-filled.')) {
+            document.getElementById('convertBookingForm').submit();
+        }
+    });
 });
 
 function addItemRow(data) {
@@ -427,9 +451,8 @@ function addItemRow(data) {
         $row.find('[name$="[gross_weight]"]').val(data.gross_weight || '');
         $row.find('[name$="[weight_unit]"]').val(data.weight_unit || 'KG');
         $row.find('[name$="[volume_cbm]"]').val(data.volume_cbm || '');
-        $row.find('[name$="[cargo_value]"]').val(data.cargo_value || '');
         $row.find('[name$="[country_of_origin]"]').val(data.country_of_origin || '');
-        $row.find('[name$="[is_dangerous_goods]"]').prop('checked', data.is_dangerous_goods == '1');
+        $row.find('[name$="[is_dangerous_goods]"]').val(data.is_dangerous_goods == '1' ? '1' : '0');
         $row.find('[name$="[special_handling]"]').val(data.special_handling || '');
     }
     reindexItems();

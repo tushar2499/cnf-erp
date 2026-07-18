@@ -13,6 +13,10 @@
     </a>
 
     <div class="nav-section">Operations</div>
+    <a href="{{ route('nas-freights.rfqs.index') }}"
+       class="nav-link {{ request()->routeIs('nas-freights.rfqs.*') ? 'active' : '' }}">
+        <i class="fa fa-file-signature"></i> RFQs
+    </a>
     <a href="{{ route('nas-freights.bookings.index') }}"
        class="nav-link {{ request()->routeIs('nas-freights.bookings.*') ? 'active' : '' }}">
         <i class="fa fa-clipboard-list"></i> Bookings
@@ -90,6 +94,22 @@
     <a href="{{ route('nas-freights.settings.branches.index') }}"
        class="nav-link {{ request()->routeIs('nas-freights.settings.branches.*') ? 'active' : '' }}">
         <i class="fa fa-code-branch"></i> Branches
+    </a>
+    <a href="{{ route('nas-freights.settings.container-types.index') }}"
+       class="nav-link {{ request()->routeIs('nas-freights.settings.container-types.*') ? 'active' : '' }}">
+        <i class="fa fa-box"></i> Container Types
+    </a>
+    <a href="{{ route('nas-freights.settings.package-types.index') }}"
+       class="nav-link {{ request()->routeIs('nas-freights.settings.package-types.*') ? 'active' : '' }}">
+        <i class="fa fa-cube"></i> Package Types
+    </a>
+    <a href="{{ route('nas-freights.settings.overseas-agents.index') }}"
+       class="nav-link {{ request()->routeIs('nas-freights.settings.overseas-agents.*') ? 'active' : '' }}">
+        <i class="fa fa-globe"></i> Overseas Agents
+    </a>
+    <a href="{{ route('nas-freights.settings.shipping-carriers.index') }}"
+       class="nav-link {{ request()->routeIs('nas-freights.settings.shipping-carriers.*') ? 'active' : '' }}">
+        <i class="fa fa-ship"></i> Shipping Carriers
     </a>
 </div>
 @endsection
