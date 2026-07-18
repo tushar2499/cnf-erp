@@ -1,18 +1,23 @@
 <?php
 
-namespace App\Models\Chevron;
+namespace App\Models\NasFreights;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 
-class ChevronRfq extends Model
+class NasFreightsRfq extends Model
 {
+    protected $table = 'nas_freights_rfqs';
+
     protected $fillable = [
         'rfq_no', 'branch_id', 'customer_id', 'rfq_date', 'valid_until',
         'type', 'service_type', 'incoterms', 'currency',
-        'pol_id', 'pod_id', 'place_of_receipt', 'place_of_delivery',
+        'pol', 'pod', 'place_of_receipt', 'place_of_delivery',
         'commodity_description', 'remarks',
-        'status', 'lost_reason', 'converted_job_id', 'salesperson_id',
+        'status', 'lost_reason', 'converted_booking_id',
+        'salesperson_id', 'overseas_agent_id', 'shipping_carrier_id',
     ];
 
     protected function casts(): array
@@ -23,34 +28,34 @@ class ChevronRfq extends Model
         ];
     }
 
-    public function customer()
+    public function customer(): BelongsTo
     {
-        return $this->belongsTo(ChevronCustomer::class, 'customer_id');
+        return $this->belongsTo(NasFreightsCustomer::class, 'customer_id');
     }
 
-    public function pol()
+    public function salesperson(): BelongsTo
     {
-        return $this->belongsTo(ChevronPort::class, 'pol_id');
+        return $this->belongsTo(NasFreightsEmployee::class, 'salesperson_id');
     }
 
-    public function pod()
+    public function overseasAgent(): BelongsTo
     {
-        return $this->belongsTo(ChevronPort::class, 'pod_id');
+        return $this->belongsTo(NasFreightsOverseasAgent::class, 'overseas_agent_id');
     }
 
-    public function salesperson()
+    public function shippingCarrier(): BelongsTo
     {
-        return $this->belongsTo(ChevronEmployee::class, 'salesperson_id');
+        return $this->belongsTo(NasFreightsShippingCarrier::class, 'shipping_carrier_id');
     }
 
-    public function convertedJob()
+    public function convertedBooking(): BelongsTo
     {
-        return $this->belongsTo(ChevronJob::class, 'converted_job_id');
+        return $this->belongsTo(NasFreightsBooking::class, 'converted_booking_id');
     }
 
-    public function items()
+    public function items(): HasMany
     {
-        return $this->hasMany(ChevronRfqItem::class, 'rfq_id');
+        return $this->hasMany(NasFreightsRfqItem::class, 'rfq_id');
     }
 
     public static function generateRfqNo(): string
@@ -69,7 +74,7 @@ class ChevronRfq extends Model
 
     public static function serviceTypes(): array
     {
-        return ['FCL', 'LCL', 'Air', 'Truck'];
+        return ['FCL', 'LCL', 'Air', 'Truck', 'Road'];
     }
 
     public static function statuses(): array

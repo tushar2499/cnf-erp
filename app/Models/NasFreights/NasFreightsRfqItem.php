@@ -1,11 +1,14 @@
 <?php
 
-namespace App\Models\Chevron;
+namespace App\Models\NasFreights;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ChevronRfqItem extends Model
+class NasFreightsRfqItem extends Model
 {
+    protected $table = 'nas_freights_rfq_items';
+
     protected $fillable = [
         'rfq_id', 'item_type', 'container_size', 'package_type',
         'hs_code', 'commodity', 'quantity',
@@ -21,9 +24,9 @@ class ChevronRfqItem extends Model
         ];
     }
 
-    public function rfq()
+    public function rfq(): BelongsTo
     {
-        return $this->belongsTo(ChevronRfq::class, 'rfq_id');
+        return $this->belongsTo(NasFreightsRfq::class, 'rfq_id');
     }
 
     public static function containerSizes(): array

@@ -1,9 +1,14 @@
 <?php
 
 use App\Http\Controllers\NasFreights\UserController;
+use App\Http\Controllers\NasFreights\RfqController;
 use App\Http\Controllers\NasFreights\BookingController;
 use App\Http\Controllers\NasFreights\ReportController;
 use App\Http\Controllers\NasFreights\BranchController;
+use App\Http\Controllers\NasFreights\ContainerTypeController;
+use App\Http\Controllers\NasFreights\OverseasAgentController;
+use App\Http\Controllers\NasFreights\ShippingCarrierController;
+use App\Http\Controllers\NasFreights\PackageTypeController;
 use App\Http\Controllers\NasFreights\BranchSelectController;
 use App\Http\Controllers\NasFreights\CustomerBillController;
 use App\Http\Controllers\NasFreights\DueListController;
@@ -22,6 +27,23 @@ Route::get('/select-branch',  [BranchSelectController::class, 'show'])->name('se
 Route::post('/select-branch', [BranchSelectController::class, 'store'])->name('select-branch.store');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+// RFQs
+Route::prefix('rfqs')->name('rfqs.')->group(function () {
+    Route::get('/search-customers',       [RfqController::class, 'searchCustomers'])->name('search-customers');
+    Route::get('/search-employees',       [RfqController::class, 'searchEmployees'])->name('search-employees');
+    Route::get('/search-overseas-agents',  [RfqController::class, 'searchOverseasAgents'])->name('search-overseas-agents');
+    Route::get('/search-shipping-carriers', [RfqController::class, 'searchShippingCarriers'])->name('search-shipping-carriers');
+    Route::get('/',                       [RfqController::class, 'index'])->name('index');
+    Route::get('/create',                 [RfqController::class, 'create'])->name('create');
+    Route::post('/',                      [RfqController::class, 'store'])->name('store');
+    Route::get('/{rfq}',                  [RfqController::class, 'show'])->name('show');
+    Route::get('/{rfq}/edit',             [RfqController::class, 'edit'])->name('edit');
+    Route::put('/{rfq}',                  [RfqController::class, 'update'])->name('update');
+    Route::patch('/{rfq}/status',         [RfqController::class, 'updateStatus'])->name('update-status');
+    Route::post('/{rfq}/convert-booking', [RfqController::class, 'convertToBooking'])->name('convert-booking');
+    Route::delete('/{rfq}',               [RfqController::class, 'destroy'])->name('destroy');
+});
 
 // Bookings
 Route::prefix('bookings')->name('bookings.')->group(function () {
@@ -163,5 +185,33 @@ Route::prefix('settings')->name('settings.')->group(function () {
         Route::post('/',           [BranchController::class, 'store'])->name('store');
         Route::put('/{branch}',    [BranchController::class, 'update'])->name('update');
         Route::delete('/{branch}', [BranchController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('container-types')->name('container-types.')->group(function () {
+        Route::get('/',                    [ContainerTypeController::class, 'index'])->name('index');
+        Route::post('/',                   [ContainerTypeController::class, 'store'])->name('store');
+        Route::put('/{containerType}',     [ContainerTypeController::class, 'update'])->name('update');
+        Route::delete('/{containerType}',  [ContainerTypeController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('package-types')->name('package-types.')->group(function () {
+        Route::get('/',                  [PackageTypeController::class, 'index'])->name('index');
+        Route::post('/',                 [PackageTypeController::class, 'store'])->name('store');
+        Route::put('/{packageType}',     [PackageTypeController::class, 'update'])->name('update');
+        Route::delete('/{packageType}',  [PackageTypeController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('overseas-agents')->name('overseas-agents.')->group(function () {
+        Route::get('/',                    [OverseasAgentController::class, 'index'])->name('index');
+        Route::post('/',                   [OverseasAgentController::class, 'store'])->name('store');
+        Route::put('/{overseasAgent}',     [OverseasAgentController::class, 'update'])->name('update');
+        Route::delete('/{overseasAgent}',  [OverseasAgentController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('shipping-carriers')->name('shipping-carriers.')->group(function () {
+        Route::get('/',                     [ShippingCarrierController::class, 'index'])->name('index');
+        Route::post('/',                    [ShippingCarrierController::class, 'store'])->name('store');
+        Route::put('/{shippingCarrier}',    [ShippingCarrierController::class, 'update'])->name('update');
+        Route::delete('/{shippingCarrier}', [ShippingCarrierController::class, 'destroy'])->name('destroy');
     });
 });
