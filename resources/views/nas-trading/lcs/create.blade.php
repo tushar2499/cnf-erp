@@ -94,7 +94,7 @@
             <div class="lc-section-body">
                 <div class="row g-2">
                     <div class="col-md-3">
-                        <label class="form-label">LC No (System)</label>
+                        <label class="form-label">LC Entry No</label>
                         <input type="text" class="form-control form-control-sm bg-light fw-bold" value="Auto-generated"
                             readonly>
                     </div>
@@ -210,12 +210,16 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Importer</label>
-                            <select name="importer_id" class="form-select form-select-sm">
-                                <option value="">Select...</option>
-                                @foreach ($importers as $imp)
-                                    <option value="{{ $imp->id }}">{{ $imp->name }}</option>
-                                @endforeach
-                            </select>
+                            <div class="input-group input-group-sm">
+                                <select name="importer_id" id="importerSelect" class="form-select form-select-sm">
+                                    <option value="">Select...</option>
+                                    @foreach ($importers as $imp)
+                                        <option value="{{ $imp->id }}">{{ $imp->name }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btnAddImporter"
+                                    title="Add new importer"><i class="fa fa-plus"></i></button>
+                            </div>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Customer PO Date</label>
@@ -325,6 +329,14 @@
                             <label class="form-label">Credit Report Charge</label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="credit_report_charge" class="form-control form-control-sm"
+                                    step="0.01" placeholder="0.00">
+                                <span class="input-group-text">BDT</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Other Charges</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" name="other_charges" class="form-control form-control-sm"
                                     step="0.01" placeholder="0.00">
                                 <span class="input-group-text">BDT</span>
                             </div>
@@ -751,6 +763,44 @@
             </button>
         </div>
     </form>
+
+    {{-- Add Importer Modal --}}
+    <div class="modal fade" id="addImporterModal" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header py-2" style="background:#0c2340;color:#fff">
+                    <h6 class="modal-title mb-0"><i class="fa fa-plus me-2"></i>Add Importer</h6>
+                    <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addImporterForm">
+                        <div class="mb-2">
+                            <label class="form-label">Name <span class="text-danger">*</span></label>
+                            <input type="text" id="newImporterName" class="form-control form-control-sm"
+                                placeholder="Importer name">
+                            <div class="invalid-feedback">Name is required.</div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">BIN No</label>
+                            <input type="text" id="newImporterBin" class="form-control form-control-sm"
+                                placeholder="e.g. BIN-001">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Address</label>
+                            <input type="text" id="newImporterAddress" class="form-control form-control-sm"
+                                placeholder="Address">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success btn-sm" id="btnSaveImporter">
+                        <i class="fa fa-save me-1"></i>Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
@@ -1032,6 +1082,42 @@
                             });
                         }
                     });
+            });
+        });
+        // Add Importer modal
+        $('#btnAddImporter').on('click', function () {
+            $('#addImporterForm')[0].reset();
+            $('#addImporterModal').modal('show');
+        });
+
+        $('#btnSaveImporter').on('click', function () {
+            var name = $('#newImporterName').val().trim();
+            if (!name) {
+                $('#newImporterName').addClass('is-invalid').focus();
+                return;
+            }
+            $('#newImporterName').removeClass('is-invalid');
+            $('#btnSaveImporter').prop('disabled', true);
+
+            $.ajax({
+                url: '{{ route('nas-trading.importers.store') }}',
+                method: 'POST',
+                data: {
+                    _token: $('[name=_token]').val(),
+                    name: name,
+                    bin_no: $('#newImporterBin').val().trim(),
+                    address: $('#newImporterAddress').val().trim(),
+                    status: 'Active',
+                },
+            }).done(function (res) {
+                var opt = new Option(res.name, res.id, true, true);
+                $('#importerSelect').append(opt).trigger('change');
+                $('#addImporterModal').modal('hide');
+            }).fail(function (xhr) {
+                var msg = xhr.responseJSON?.message || 'Failed to save importer.';
+                Swal.fire({ icon: 'error', title: msg });
+            }).always(function () {
+                $('#btnSaveImporter').prop('disabled', false);
             });
         });
     </script>
