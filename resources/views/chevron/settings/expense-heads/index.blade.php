@@ -275,6 +275,7 @@
             table = $('#expenseHeadsTable').DataTable({
                 processing: true,
                 serverSide: true,
+        autoWidth: false,
                 ajax: '{{ route('chevron.settings.expense-heads.index') }}',
                 columns: [{
                         data: 'DT_RowIndex',

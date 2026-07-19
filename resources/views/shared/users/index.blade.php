@@ -139,6 +139,7 @@ $(function () {
 
     usersTable = $('#usersTable').DataTable({
         processing: true, serverSide: true,
+        autoWidth: false,
         ajax: indexRoute,
         columns: [
             { data: 'DT_RowIndex',  name: 'DT_RowIndex', orderable: false, searchable: false, width: '40px' },

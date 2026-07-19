@@ -59,7 +59,8 @@
 var table;
 $(function () {
     table = $('#mainTable').DataTable({
-        processing: true, serverSide: true, ajax: '{{ route('nas-trading.transport-companies.index') }}',
+        processing: true, serverSide: true,
+        autoWidth: false, ajax: '{{ route('nas-trading.transport-companies.index') }}',
         columns: [
             { data: 'DT_RowIndex', orderable: false, searchable: false, width: '40px' },
             { data: 'name', name: 'name' }, { data: 'phone', name: 'phone' }, { data: 'address', name: 'address' },

@@ -213,7 +213,8 @@ table.dataTable tfoot input {
 /* ── Forms ── */
 .form-label { font-weight: 500; font-size: .73rem; margin-bottom: .18rem; }
 .form-control, .form-select { font-size: .78rem; }
-.form-control-sm, .form-select-sm { font-size: .75rem; padding: .2rem .45rem; }
+.form-control-sm { font-size: .75rem; padding: .2rem .45rem; }
+.form-select-sm { font-size: .75rem; padding-top: .2rem; padding-bottom: .2rem; padding-left: .45rem; }
 .form-control:focus, .form-select:focus { border-color: #86b7fe; box-shadow: 0 0 0 .18rem rgba(13,110,253,.15); }
 .select2-container--bootstrap-5 .select2-selection { font-size: .75rem; min-height: 28px; }
 .select2-container--bootstrap-5 .select2-selection--single { padding: .18rem .45rem; }

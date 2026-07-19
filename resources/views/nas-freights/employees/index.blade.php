@@ -119,6 +119,7 @@ var table;
 $(function () {
     table = $('#employeesTable').DataTable({
         processing: true, serverSide: true,
+        autoWidth: false,
         ajax: '{{ route('nas-freights.employees.index') }}',
         columns: [
             { data: 'DT_RowIndex',  name: 'DT_RowIndex',  orderable: false, searchable: false, width: '45px' },

@@ -97,6 +97,7 @@ $(function () {
     var table = $('#bookingsTable').DataTable({
         processing: true,
         serverSide: true,
+        autoWidth: false,
         orderCellsTop: true,
         ajax: '{{ route('nas-freights.bookings.index') }}',
         columns: [

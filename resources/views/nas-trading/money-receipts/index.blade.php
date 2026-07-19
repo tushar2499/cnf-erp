@@ -33,6 +33,7 @@
 $(function () {
     $('#mrTable').DataTable({
         processing: true, serverSide: true,
+        autoWidth: false,
         ajax: '{{ route('nas-trading.money-receipts.index') }}',
         columns: [
             { data: 'DT_RowIndex',     orderable: false, searchable: false, width: '40px' },

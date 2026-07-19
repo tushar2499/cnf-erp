@@ -73,6 +73,7 @@ var table;
 $(function () {
     table = $('#branchesTable').DataTable({
         processing: true, serverSide: true,
+        autoWidth: false,
         ajax: '{{ route('nas-trading.settings.branches.index') }}',
         columns: [
             { data: 'DT_RowIndex', orderable: false, searchable: false, width: '50px' },

@@ -16,7 +16,7 @@ class NasFreightsRfq extends Model
         'type', 'service_type', 'incoterms', 'currency',
         'pol', 'pod', 'place_of_receipt', 'place_of_delivery',
         'commodity_description', 'remarks',
-        'status', 'lost_reason', 'converted_booking_id',
+        'status', 'lost_reason', 'converted_booking_id', 'converted_freight_booking_id',
         'salesperson_id', 'overseas_agent_id', 'shipping_carrier_id',
     ];
 
@@ -51,6 +51,11 @@ class NasFreightsRfq extends Model
     public function convertedBooking(): BelongsTo
     {
         return $this->belongsTo(NasFreightsBooking::class, 'converted_booking_id');
+    }
+
+    public function convertedFreightBooking(): BelongsTo
+    {
+        return $this->belongsTo(NasFreightsFreightBooking::class, 'converted_freight_booking_id');
     }
 
     public function items(): HasMany

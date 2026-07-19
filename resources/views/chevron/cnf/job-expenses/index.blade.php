@@ -77,6 +77,7 @@ $(function () {
     var table = $('#expTable').DataTable({
         processing: true,
         serverSide: true,
+        autoWidth: false,
         ajax: '{{ route('chevron.cnf.job-expenses.index') }}',
         columns: [
             { data: 'DT_RowIndex',               name: 'DT_RowIndex',            orderable: false, searchable: false, width: '40px', className: 'text-center' },

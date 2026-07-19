@@ -236,15 +236,15 @@
             </div>
             @if($rfq->status === 'Win')
             <div class="col-auto">
-                @if($rfq->converted_booking_id)
+                @if($rfq->converted_freight_booking_id)
                 <span class="d-inline-flex align-items-center gap-2" style="font-size:.8rem; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:.4rem; padding:.4rem .75rem; color:#166534;">
-                    <i class="fa fa-check-circle"></i> Converted to Booking:
-                    <a href="{{ route('nas-freights.bookings.edit', $rfq->converted_booking_id) }}" class="fw-bold text-success">{{ $rfq->convertedBooking?->job_no }}</a>
+                    <i class="fa fa-check-circle"></i> Converted to Freight Booking:
+                    <a href="{{ route('nas-freights.freight-bookings.show', $rfq->converted_freight_booking_id) }}" class="fw-bold text-success">{{ $rfq->convertedFreightBooking?->freight_booking_no }}</a>
                 </span>
                 @else
                 <label class="rfq-label d-block mb-1">&nbsp;</label>
                 <button type="button" class="btn btn-sm btn-success" id="btnConvertBooking">
-                    <i class="fa fa-exchange-alt me-1"></i> Convert to Booking
+                    <i class="fa fa-ship me-1"></i> Convert to Freight Booking
                 </button>
                 @endif
             </div>
@@ -267,8 +267,8 @@
 </form>
 
 {{-- Convert-to-booking form lives OUTSIDE the main form to avoid nested-form HTML violation --}}
-@if($rfq && $rfq->status === 'Win' && !$rfq->converted_booking_id)
-<form id="convertBookingForm" method="POST" action="{{ route('nas-freights.rfqs.convert-booking', $rfq->id) }}">
+@if($rfq && $rfq->status === 'Win' && !$rfq->converted_freight_booking_id)
+<form id="convertBookingForm" method="POST" action="{{ route('nas-freights.rfqs.convert-freight-booking', $rfq->id) }}">
     @csrf
 </form>
 @endif

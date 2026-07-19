@@ -115,6 +115,7 @@ var table;
 $(function () {
     table = $('#accountsTable').DataTable({
         processing: true, serverSide: true,
+        autoWidth: false,
         ajax: '{{ route('chevron.settings.accounts.index') }}',
         columns: [
             { data: 'DT_RowIndex',  name: 'DT_RowIndex',  orderable: false, searchable: false, width: '45px' },

@@ -17,9 +17,13 @@
        class="nav-link {{ request()->routeIs('nas-freights.rfqs.*') ? 'active' : '' }}">
         <i class="fa fa-file-signature"></i> RFQs
     </a>
+    <a href="{{ route('nas-freights.freight-bookings.index') }}"
+       class="nav-link {{ request()->routeIs('nas-freights.freight-bookings.*') ? 'active' : '' }}">
+        <i class="fa fa-ship"></i> Freight Bookings
+    </a>
     <a href="{{ route('nas-freights.bookings.index') }}"
        class="nav-link {{ request()->routeIs('nas-freights.bookings.*') ? 'active' : '' }}">
-        <i class="fa fa-clipboard-list"></i> Bookings
+        <i class="fa fa-truck"></i> Transport Bookings
     </a>
     <a href="{{ route('nas-freights.customer-bills.index') }}"
        class="nav-link {{ request()->routeIs('nas-freights.customer-bills.*') ? 'active' : '' }}">

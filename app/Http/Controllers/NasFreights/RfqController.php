@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
-use App\Models\NasFreights\NasFreightsBooking;
-use App\Models\NasFreights\NasFreightsBookingProduct;
 use App\Models\NasFreights\NasFreightsContainerType;
 use App\Models\NasFreights\NasFreightsCustomer;
 use App\Models\NasFreights\NasFreightsEmployee;
+use App\Models\NasFreights\NasFreightsFreightBooking;
+use App\Models\NasFreights\NasFreightsFreightBookingItem;
 use App\Models\NasFreights\NasFreightsOverseasAgent;
 use App\Models\NasFreights\NasFreightsPackageType;
 use App\Models\NasFreights\NasFreightsRfq;
@@ -100,7 +100,7 @@ class RfqController extends Controller
 
     public function show(NasFreightsRfq $rfq)
     {
-        $rfq->load(['customer', 'salesperson', 'convertedBooking', 'items', 'overseasAgent', 'shippingCarrier']);
+        $rfq->load(['customer', 'salesperson', 'convertedFreightBooking', 'items', 'overseasAgent', 'shippingCarrier']);
 
         return view('nas-freights.rfqs.show', [
             'rfq'         => $rfq,
@@ -145,7 +145,8 @@ class RfqController extends Controller
             $this->saveItems($rfq, $request->input('items', []));
         });
 
-        return back()->with('success', 'RFQ '.$rfq->rfq_no.' updated successfully.');
+        return redirect()->route('nas-freights.rfqs.index')
+            ->with('success', 'RFQ '.$rfq->rfq_no.' updated successfully.');
     }
 
     public function updateStatus(Request $request, NasFreightsRfq $rfq)
@@ -163,71 +164,68 @@ class RfqController extends Controller
         return back()->with('success', 'Status updated to '.$request->status.'.');
     }
 
-    public function convertToBooking(NasFreightsRfq $rfq)
+    public function convertToFreightBooking(NasFreightsRfq $rfq)
     {
         if ($rfq->status !== 'Win') {
-            return back()->with('error', 'Only Win RFQs can be converted to a booking.');
+            return back()->with('error', 'Only Win RFQs can be converted to a freight booking.');
         }
 
-        if ($rfq->converted_booking_id) {
-            return redirect()->route('nas-freights.bookings.edit', $rfq->converted_booking_id)
-                ->with('info', 'This RFQ was already converted to booking '.$rfq->convertedBooking?->job_no.'.');
+        if ($rfq->converted_freight_booking_id) {
+            return redirect()->route('nas-freights.freight-bookings.show', $rfq->converted_freight_booking_id)
+                ->with('info', 'This RFQ was already converted to '.$rfq->convertedFreightBooking?->freight_booking_no.'.');
         }
 
         $rfq->load(['customer', 'salesperson', 'items']);
 
-        $booking = DB::transaction(function () use ($rfq) {
-            $booking = NasFreightsBooking::create([
-                'job_no'            => NasFreightsBooking::generateJobNo(),
-                'branch_id'         => $rfq->branch_id,
-                'booking_prefix'    => 'CORPORATE_SALES',
-                'sales_type'        => strtoupper($rfq->type),
-                'sales_person_id'   => $rfq->salesperson_id,
-                'sales_person_name' => $rfq->salesperson?->name,
-                'job_date'          => now()->toDateString(),
-                'customer_id'       => $rfq->customer_id,
-                'customer_name'     => $rfq->customer?->name,
-                'delivery_address'  => $rfq->customer?->address,
-                'goods_name'        => $rfq->commodity_description ?? $rfq->items->first()?->commodity ?? '',
-                'note'              => implode(' | ', array_filter([
-                    $rfq->remarks,
-                    $rfq->pol && $rfq->pod ? 'POL: '.$rfq->pol.' / POD: '.$rfq->pod : null,
-                    'RFQ: '.$rfq->rfq_no,
-                ])),
-                'cover_van_no'      => 'TBD',
-                'delivery_date'     => now()->addDays(7)->toDateString(),
-                'tds_percent'       => 0,
-                'tds_amount'        => 0,
-                'vat_percent'       => 0,
-                'vat_amount'        => 0,
-                'ait_percent'       => 0,
-                'ait_amount'        => 0,
-                'total_amount'      => 0,
-                'discount'          => 0,
-                'forfeited_amount'  => 0,
-                'status'            => 'Draft',
-                'delivery_status'   => 'Pending',
-                'entry_by'          => auth()->user()?->name ?? 'System',
+        $freightBooking = DB::transaction(function () use ($rfq) {
+            $freightBooking = NasFreightsFreightBooking::create([
+                'freight_booking_no'    => NasFreightsFreightBooking::generateFreightBookingNo(),
+                'branch_id'             => $rfq->branch_id,
+                'rfq_id'                => $rfq->id,
+                'rfq_no'                => $rfq->rfq_no,
+                'customer_id'           => $rfq->customer_id,
+                'salesperson_id'        => $rfq->salesperson_id,
+                'overseas_agent_id'     => $rfq->overseas_agent_id,
+                'shipping_carrier_id'   => $rfq->shipping_carrier_id,
+                'booking_date'          => now()->toDateString(),
+                'type'                  => $rfq->type,
+                'service_type'          => $rfq->service_type,
+                'incoterms'             => $rfq->incoterms,
+                'currency'              => $rfq->currency,
+                'pol'                   => $rfq->pol,
+                'pod'                   => $rfq->pod,
+                'place_of_receipt'      => $rfq->place_of_receipt,
+                'place_of_delivery'     => $rfq->place_of_delivery,
+                'commodity_description' => $rfq->commodity_description,
+                'remarks'               => $rfq->remarks,
+                'status'                => 'Draft',
             ]);
 
             foreach ($rfq->items as $item) {
-                NasFreightsBookingProduct::create([
-                    'booking_id'  => $booking->id,
-                    'goods_name'  => $item->commodity ?? $item->container_size ?? $item->package_type ?? 'Cargo',
-                    'qty'         => $item->quantity,
-                    'qty_unit'    => 'PCS',
-                    'net_weight'  => $item->gross_weight ?? 0,
-                    'weight_unit' => $item->weight_unit ?? 'KG',
+                NasFreightsFreightBookingItem::create([
+                    'freight_booking_id' => $freightBooking->id,
+                    'item_type'          => $item->item_type,
+                    'container_size'     => $item->container_size,
+                    'package_type'       => $item->package_type,
+                    'hs_code'            => $item->hs_code,
+                    'commodity'          => $item->commodity,
+                    'quantity'           => $item->quantity,
+                    'gross_weight'       => $item->gross_weight,
+                    'weight_unit'        => $item->weight_unit,
+                    'volume_cbm'         => $item->volume_cbm,
+                    'country_of_origin'  => $item->country_of_origin,
+                    'is_dangerous_goods' => $item->is_dangerous_goods,
+                    'special_handling'   => $item->special_handling,
                 ]);
             }
 
-            $rfq->update(['converted_booking_id' => $booking->id]);
+            $rfq->update(['converted_freight_booking_id' => $freightBooking->id]);
 
-            return $booking;
+            return $freightBooking;
         });
 
-        return redirect()->route('nas-freights.bookings.edit', $booking->id)
-            ->with('success', 'Booking '.$booking->job_no.' created from RFQ '.$rfq->rfq_no.'. Please review and add transport details.');
+        return redirect()->route('nas-freights.freight-bookings.show', $freightBooking->id)
+            ->with('success', 'Freight Booking '.$freightBooking->freight_booking_no.' created from RFQ '.$rfq->rfq_no.'.');
     }
 
     public function destroy(NasFreightsRfq $rfq)

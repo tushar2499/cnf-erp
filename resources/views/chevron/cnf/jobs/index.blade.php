@@ -107,6 +107,7 @@ $(function () {
     var table = $('#jobsTable').DataTable({
         processing: true,
         serverSide: true,
+        autoWidth: false,
         ajax: '{{ route('chevron.cnf.jobs.index') }}',
         columns: [
             { data: 'DT_RowIndex',             name: 'DT_RowIndex',          orderable: false, searchable: false, width: '40px', className: 'text-center' },

@@ -232,6 +232,7 @@ $(function () {
     table = $('#itemsTable').DataTable({
         processing: true,
         serverSide: true,
+        autoWidth: false,
         ajax: '{{ route('chevron.settings.items.index') }}',
         columns: [
             { data: 'DT_RowIndex',  name: 'DT_RowIndex', orderable: false, searchable: false, width: '50px' },

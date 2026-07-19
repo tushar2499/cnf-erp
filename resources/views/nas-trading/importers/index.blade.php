@@ -59,7 +59,8 @@
 var table;
 $(function () {
     table = $('#mainTable').DataTable({
-        processing: true, serverSide: true, ajax: '{{ route('nas-trading.importers.index') }}',
+        processing: true, serverSide: true,
+        autoWidth: false, ajax: '{{ route('nas-trading.importers.index') }}',
         columns: [
             { data: 'DT_RowIndex', orderable: false, searchable: false, width: '40px' },
             { data: 'name', name: 'name' }, { data: 'bin_no', name: 'bin_no' },
