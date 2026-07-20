@@ -489,7 +489,7 @@
                                     class="form-control form-control-sm" step="0.0001" min="0" placeholder="0"
                                     title="Percentage of LC RT Value" style="width:60px;flex:0 0 auto">
                                 <span class="input-group-text">%</span>
-                                <input type="number" name="lc_commission" id="lcCommission"
+                                <input type="number" name="lc_commission_flat" id="lcCommission"
                                     class="form-control form-control-sm" step="0.01" placeholder="0.00"
                                     title="Auto-filled from % or enter flat amount directly">
                                 <span class="input-group-text">BDT</span>

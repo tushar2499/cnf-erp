@@ -384,7 +384,7 @@
                         <div class="input-group input-group-sm">
                             <input type="number" name="lc_commission_percent" id="lcCommissionPct" class="form-control form-control-sm" step="0.0001" min="0" value="{{ $lc->lc_commission_percent }}" placeholder="0" title="Percentage of LC RT Value" style="width:40px;flex:0 0 auto">
                             <span class="input-group-text">%</span>
-                            <input type="number" name="lc_commission" id="lcCommission" class="form-control form-control-sm" step="0.01" value="{{ $lc->lc_commission }}" placeholder="0.00" title="Auto-filled from % or enter flat amount directly">
+                            <input type="number" name="lc_commission_flat" id="lcCommission" class="form-control form-control-sm" step="0.01" value="{{ $lc->lc_commission_flat }}" placeholder="0.00" title="Auto-filled from % or enter flat amount directly">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
