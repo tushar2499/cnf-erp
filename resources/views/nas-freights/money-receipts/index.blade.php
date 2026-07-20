@@ -33,6 +33,7 @@
                 <tr>
                     <th>#</th>
                     <th>Receipt No</th>
+                    <th>Hard Copy No</th>
                     <th>Receipt Date</th>
                     <th>Customer</th>
                     <th>Bill No</th>
@@ -44,6 +45,7 @@
                 </tr>
                 <tr>
                     <th></th>
+                    <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                     <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                     <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                     <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
@@ -71,6 +73,7 @@ $(function () {
         columns: [
             { data: 'DT_RowIndex',     name: 'DT_RowIndex',     orderable: false, searchable: false, width: '45px' },
             { data: 'receipt_no',      name: 'receipt_no' },
+            { data: 'hard_copy_no',    name: 'hard_copy_no' },
             { data: 'receipt_date',    name: 'receipt_date' },
             { data: 'customer_name',   name: 'customer_name' },
             { data: 'bill_no',         name: 'bill_no' },

@@ -71,6 +71,7 @@ class MoneyReceiptController extends Controller
             NasFreightsMoneyReceipt::create([
                 'branch_id'       => session('nas_freights_branch_id'),
                 'receipt_no'      => NasFreightsMoneyReceipt::generateReceiptNo(),
+                'hard_copy_no'    => $request->hard_copy_no,
                 'receipt_date'    => $request->receipt_date,
                 'customer_id'     => $bill->customer_id,
                 'customer_name'   => $bill->customer_name,

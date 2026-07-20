@@ -33,6 +33,7 @@
                 <tr>
                     <th>#</th>
                     <th>Payment No</th>
+                    <th>Hard Copy No</th>
                     <th>Payment Date</th>
                     <th>Supplier</th>
                     <th>Bill No</th>
@@ -44,6 +45,7 @@
                 </tr>
                 <tr>
                     <th></th>
+                    <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                     <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                     <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                     <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
@@ -71,6 +73,7 @@ $(function () {
         columns: [
             { data: 'DT_RowIndex',   name: 'DT_RowIndex',   orderable: false, searchable: false, width: '45px' },
             { data: 'payment_no',    name: 'payment_no' },
+            { data: 'hard_copy_no',  name: 'hard_copy_no' },
             { data: 'payment_date',  name: 'payment_date' },
             { data: 'supplier_name', name: 'supplier_name' },
             { data: 'bill_no',       name: 'bill_no' },

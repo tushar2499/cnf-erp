@@ -25,6 +25,7 @@
             <div class="col-md-4">
                 <table class="table table-sm table-borderless" style="font-size:.82rem">
                     <tr><th class="text-muted w-50">Receipt No</th><td>{{ $moneyReceipt->receipt_no }}</td></tr>
+                    <tr><th class="text-muted">Hard Copy No</th><td>{{ $moneyReceipt->hard_copy_no ?: '—' }}</td></tr>
                     <tr><th class="text-muted">Receipt Date</th><td>{{ $moneyReceipt->receipt_date?->format('d-M-Y') }}</td></tr>
                     <tr><th class="text-muted">Customer</th><td>{{ $moneyReceipt->customer_name }}</td></tr>
                     <tr><th class="text-muted">Bill No</th><td>{{ $moneyReceipt->bill_no }}</td></tr>

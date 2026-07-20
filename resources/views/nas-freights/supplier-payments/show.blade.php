@@ -25,6 +25,7 @@
             <div class="col-md-4">
                 <table class="table table-sm table-borderless" style="font-size:.82rem">
                     <tr><th class="text-muted w-50">Payment No</th><td>{{ $supplierPayment->payment_no }}</td></tr>
+                    <tr><th class="text-muted">Hard Copy No</th><td>{{ $supplierPayment->hard_copy_no ?: '—' }}</td></tr>
                     <tr><th class="text-muted">Payment Date</th><td>{{ $supplierPayment->payment_date?->format('d-M-Y') }}</td></tr>
                     <tr><th class="text-muted">Supplier</th><td>{{ $supplierPayment->supplier_name }}</td></tr>
                     <tr><th class="text-muted">Pay Order No</th><td>{{ $supplierPayment->bill_no }}</td></tr>

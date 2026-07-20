@@ -10,7 +10,7 @@ class NasFreightsMoneyReceipt extends Model
     protected $table = 'nas_freights_money_receipts';
 
     protected $fillable = [
-        'branch_id', 'receipt_no', 'receipt_date', 'customer_id', 'customer_name',
+        'branch_id', 'receipt_no', 'hard_copy_no', 'receipt_date', 'customer_id', 'customer_name',
         'bill_id', 'bill_no', 'bill_amount', 'amount_received',
         'payment_mode', 'reference_no', 'note', 'entry_by',
     ];

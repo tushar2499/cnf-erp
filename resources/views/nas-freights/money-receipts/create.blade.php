@@ -98,6 +98,10 @@
                         <input type="date" name="receipt_date" class="form-control form-control-sm" value="{{ date('Y-m-d') }}" required>
                     </div>
                     <div class="col-md-2">
+                        <label class="form-label">Hard Copy Receipt No</label>
+                        <input type="text" name="hard_copy_no" class="form-control form-control-sm" placeholder="Paper book no">
+                    </div>
+                    <div class="col-md-2">
                         <label class="form-label">Amount Received <span class="text-danger">*</span></label>
                         <input type="number" id="fldAmountReceived" name="amount_received" class="form-control form-control-sm" step="0.01" min="0.01" required>
                     </div>

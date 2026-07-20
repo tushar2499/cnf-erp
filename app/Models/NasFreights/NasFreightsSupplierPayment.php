@@ -10,7 +10,7 @@ class NasFreightsSupplierPayment extends Model
     protected $table = 'nas_freights_supplier_payments';
 
     protected $fillable = [
-        'branch_id', 'payment_no', 'payment_date', 'supplier_id', 'supplier_name',
+        'branch_id', 'payment_no', 'hard_copy_no', 'payment_date', 'supplier_id', 'supplier_name',
         'bill_id', 'bill_no', 'bill_amount', 'amount_paid',
         'payment_mode', 'reference_no', 'note', 'entry_by',
     ];

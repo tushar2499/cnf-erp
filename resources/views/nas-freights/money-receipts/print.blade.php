@@ -140,6 +140,9 @@ $coName = $company?->name ?? 'NAS Freights And Logistics Ltd.';
             <td class="left"></td>
             <td class="right">
                 <strong>Receipt No:</strong> {{ $moneyReceipt->receipt_no }}<br>
+                @if($moneyReceipt->hard_copy_no)
+                <strong>Hard Copy No:</strong> {{ $moneyReceipt->hard_copy_no }}<br>
+                @endif
                 <strong>Date:</strong> {{ $moneyReceipt->receipt_date?->format('d/m/Y') }}
             </td>
         </tr>

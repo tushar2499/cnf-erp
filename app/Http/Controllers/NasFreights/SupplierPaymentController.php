@@ -70,6 +70,7 @@ class SupplierPaymentController extends Controller
             NasFreightsSupplierPayment::create([
                 'branch_id'     => session('nas_freights_branch_id'),
                 'payment_no'    => NasFreightsSupplierPayment::generatePaymentNo(),
+                'hard_copy_no'  => $request->hard_copy_no,
                 'payment_date'  => $request->payment_date,
                 'supplier_id'   => $bill->supplier_id,
                 'supplier_name' => $bill->supplier_name,
