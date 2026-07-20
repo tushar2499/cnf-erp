@@ -301,7 +301,6 @@
 $(function () {
     if (!$('body').hasClass('sidebar-collapsed')) {
         $('body').addClass('sidebar-collapsed');
-        localStorage.setItem('sidebarCollapsed', '1');
     }
 });
 
