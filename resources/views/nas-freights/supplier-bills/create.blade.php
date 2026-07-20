@@ -197,8 +197,9 @@ function addRow(item) {
     var dQty   = parseFloat(item.d_qty   || 0);
     var dueQty = parseFloat(item.due_qty != null ? item.due_qty : bQty - dQty);
     var price  = parseFloat(item.price   || 0);
-    var demDay = parseFloat(item.demurrage_day    || 0);
-    var demAmt = parseFloat(item.demurrage_amount || 0);
+    var demDay  = parseFloat(item.demurrage_day    || 0);
+    var demRate = parseFloat(item.demurrage_rate   || 0);
+    var demAmt  = parseFloat(item.demurrage_amount != null ? item.demurrage_amount : (demDay * demRate));
     var lineAmt= parseFloat(item.line_amount || (bQty * price + demAmt));
 
     var tr = `<tr>
@@ -213,8 +214,11 @@ function addRow(item) {
         <td><input type="number" class="form-control form-control-sm row-dqty text-end" value="${dQty}" min="0" step="0.01" style="width:65px" oninput="rowRecalc(this)"></td>
         <td><input type="number" class="form-control form-control-sm row-dueqty text-end bg-light" value="${dueQty.toFixed(2)}" readonly style="width:65px"></td>
         <td><input type="number" class="form-control form-control-sm row-price text-end" value="${price}" min="0" step="0.01" style="width:85px" oninput="rowRecalc(this)"></td>
-        <td><input type="number" class="form-control form-control-sm row-demday text-end" value="${demDay}" min="0" step="1" style="width:75px" oninput="rowRecalc(this)"></td>
-        <td><input type="number" class="form-control form-control-sm row-demamt text-end" value="${demAmt.toFixed(2)}" min="0" step="0.01" style="width:90px" oninput="rowRecalc(this)"></td>
+        <td>
+            <input type="number" class="form-control form-control-sm row-demday text-end" value="${demDay}" min="0" step="1" style="width:75px" oninput="rowRecalc(this)">
+            <input class="row-demrate" type="hidden" value="${demRate}">
+        </td>
+        <td><input type="number" class="form-control form-control-sm row-demamt text-end bg-light" value="${demAmt.toFixed(2)}" readonly style="width:90px"></td>
         <td><input type="number" class="form-control form-control-sm row-lineamt text-end bg-light fw-bold" value="${lineAmt.toFixed(2)}" readonly style="width:90px"></td>
         <td><input type="text"   class="form-control form-control-sm row-notes" value="${item.notes||''}" style="width:120px"></td>
         <td style="display:none">
@@ -233,8 +237,11 @@ function rowRecalc(el) {
     var dQty   = parseFloat($tr.find('.row-dqty').val()) || 0;
     var dueQty = Math.max(0, bQty - dQty);
     $tr.find('.row-dueqty').val(dueQty.toFixed(2));
-    var price  = parseFloat($tr.find('.row-price').val())  || 0;
-    var demAmt = parseFloat($tr.find('.row-demamt').val()) || 0;
+    var price   = parseFloat($tr.find('.row-price').val())   || 0;
+    var demDay  = parseFloat($tr.find('.row-demday').val())  || 0;
+    var demRate = parseFloat($tr.find('.row-demrate').val()) || 0;
+    var demAmt  = demDay * demRate;
+    $tr.find('.row-demamt').val(demAmt.toFixed(2));
     var lineAmt = bQty * price + demAmt;
     $tr.find('.row-lineamt').val(lineAmt.toFixed(2));
     recalcTotal();
@@ -307,7 +314,7 @@ $('#btnClearData').on('click', function () {
 
 /* ── Add Empty Row ── */
 $('#btnAddRow').on('click', function () {
-    addRow({ booking_date:'', entry_date:'', item_code:'', item_name:'', location:'', b_qty:1, d_qty:0, due_qty:1, price:0, demurrage_day:0, demurrage_amount:0, line_amount:0, notes:'' });
+    addRow({ booking_date:'', entry_date:'', item_code:'', item_name:'', location:'', b_qty:1, d_qty:0, due_qty:1, price:0, demurrage_day:0, demurrage_rate:0, demurrage_amount:0, line_amount:0, notes:'' });
 });
 
 /* ── Submit ── */

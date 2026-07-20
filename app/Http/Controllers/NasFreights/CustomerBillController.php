@@ -98,14 +98,15 @@ class CustomerBillController extends Controller
                     'item_name'       => $item->cover_van_no . ($item->location_from ? ' || ' . $item->location_from : ''),
                     'location'        => $loc,
                     'b_qty'           => (float) $item->qty,
-                    'd_qty'           => 0,
-                    'due_qty'         => (float) $item->qty,
+                    'd_qty'           => (float) $item->qty,
+                    'due_qty'         => 0,
                     'price'           => (float) $item->customer_rate,
                     'disc_percent'    => 0,
                     'discount'        => 0,
                     'ait_percent'     => (float) ($b->ait_percent ?? 0),
                     'demurrage_day'   => (float) ($item->demurrage_days ?: 0),
-                    'demurrage_amount'=> (float) ($item->cus_demurrage_charge ?: 0),
+                    'demurrage_rate'  => (float) ($item->cus_demurrage_charge ?: 0),
+                    'demurrage_amount'=> round((float) ($item->demurrage_days ?: 0) * (float) ($item->cus_demurrage_charge ?: 0), 2),
                     'line_amount'     => round((float)$item->qty * (float)$item->customer_rate, 2),
                 ];
             });

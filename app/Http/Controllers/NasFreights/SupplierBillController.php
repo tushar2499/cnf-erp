@@ -86,12 +86,13 @@ class SupplierBillController extends Controller
                     'item_name'       => $item->cover_van_no . ($item->location_from ? ' || ' . $item->location_from : ''),
                     'location'        => $loc,
                     'b_qty'           => (float) $item->qty,
-                    'd_qty'           => 0,
-                    'due_qty'         => (float) $item->qty,
+                    'd_qty'           => (float) $item->qty,
+                    'due_qty'         => 0,
                     'price'           => (float) $item->supplier_rate,
                     'demurrage_day'   => (float) ($item->demurrage_days ?? 0),
-                    'demurrage_amount'=> (float) ($item->sup_demurrage_charge ?? 0),
-                    'line_amount'     => round((float)$item->qty * (float)$item->supplier_rate + (float)($item->sup_demurrage_charge ?? 0), 2),
+                    'demurrage_rate'  => (float) ($item->sup_demurrage_charge ?? 0),
+                    'demurrage_amount'=> round((float) ($item->demurrage_days ?? 0) * (float) ($item->sup_demurrage_charge ?? 0), 2),
+                    'line_amount'     => round((float)$item->qty * (float)$item->supplier_rate + (float) ($item->demurrage_days ?? 0) * (float) ($item->sup_demurrage_charge ?? 0), 2),
                     'notes'           => '',
                 ];
             });
