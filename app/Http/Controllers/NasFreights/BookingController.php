@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
+use App\Models\NasFreights\NasFreightsBranch;
 use App\Models\NasFreights\NasFreightsBooking;
 use App\Models\NasFreights\NasFreightsBookingItem;
 use App\Models\NasFreights\NasFreightsBookingProduct;
@@ -19,13 +20,16 @@ class BookingController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
+            $branchMap = NasFreightsBranch::pluck('name', 'id')->all();
+
             $query = NasFreightsBooking::with(['items', 'products'])
                 ->where('branch_id', session('nas_freights_branch_id'))
-                ->latest();
+                ->orderBy('job_no', 'desc');
 
             return DataTables::of($query)
                 ->addIndexColumn()
-                ->addColumn('item_details', fn($r) => e($r->products->pluck('goods_name')->join(', ') ?: $r->goods_name))
+                ->addColumn('branch_name', fn($r) => e($branchMap[$r->branch_id] ?? '—'))
+                ->addColumn('item_details', fn($r) => e($r->items->pluck('cover_van_no')->filter()->join(', ')))
                 ->addColumn('t_qty', fn($r) => number_format($r->items->sum('qty'), 2))
                 ->addColumn('item_amount', fn($r) => number_format($r->items->sum('amount'), 2))
                 ->addColumn('status_badge', fn($r) => match($r->status) {
@@ -38,7 +42,7 @@ class BookingController extends Controller
                     $billed = \App\Models\NasFreights\NasFreightsCustomerBillItem::where('booking_id', $r->id)->exists();
                     return $billed
                         ? '<span class="badge bg-success">BILLED</span>'
-                        : '<span class="badge bg-secondary">NOT BILLED</span>';
+                        : '<span class="badge bg-warning text-dark">Submitted</span>';
                 })
                 ->addColumn('action', function ($r) {
                     $canAct = !in_array($r->status, ['Approved', 'Rejected']);
@@ -98,7 +102,7 @@ class BookingController extends Controller
             $firstProduct = $request->products[0] ?? [];
 
             $booking = NasFreightsBooking::create([
-                'job_no'            => NasFreightsBooking::generateJobNo(),
+                'job_no'            => NasFreightsBooking::generateJobNo(session('nas_freights_branch_id')),
                 'booking_prefix'    => $request->booking_prefix,
                 'sales_type'        => $request->sales_type,
                 'sales_person_id'   => $request->sales_person_id ?: null,

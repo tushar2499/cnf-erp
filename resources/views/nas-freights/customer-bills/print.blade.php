@@ -140,9 +140,9 @@ $amountInWords = $w.' Only';
                             @if($totalWeight > 0) &amp; {{ number_format($totalWeight,2) }} {{ $weightUnit }}@endif
                         </td>
                     </tr>
-                    <tr><td class="lbl">P/O No:</td><td>{{ $poNo }}</td></tr>
                     <tr><td class="lbl">L/C No:</td><td>{{ $lcNo }}{{ $lcNo && $lcDate ? ' DT: '.$lcDate : '' }}</td></tr>
                     <tr><td class="lbl">Invoice No:</td><td>{{ $invoiceNo }}{{ $invoiceNo && $invoiceDate ? ' DT: '.$invoiceDate : '' }}</td></tr>
+                    <tr><td class="lbl">P/O No:</td><td>{{ $poNo }}</td></tr>
                 </table>
             </td>
         </tr>
@@ -195,7 +195,7 @@ $amountInWords = $w.' Only';
         </tbody>
         <tfoot>
             <tr>
-                <td colspan="8" style="text-align:right">Total Amount (without VAT)</td>
+                <td colspan="8" style="text-align:right">Total Amount</td>
                 <td class="r">{{ number_format($subTotal, 2) }}</td>
                 <td class="c">{{ $totalDemDays }}</td>
                 <td class="r">{{ number_format($totalDem, 2) }}</td>
@@ -215,7 +215,7 @@ $amountInWords = $w.' Only';
                         <td class="amt">{{ number_format($tdsAmt, 2) }}</td>
                     </tr>
                     <tr>
-                        <td class="lbl">VAT ({{ number_format($vatPct, 2) }}%)</td>
+                        <td class="lbl">VAT Amount ({{ number_format($vatPct, 2) }}%)</td>
                         <td class="amt">{{ number_format($vatAmt, 2) }}</td>
                     </tr>
                     <tr class="gross">

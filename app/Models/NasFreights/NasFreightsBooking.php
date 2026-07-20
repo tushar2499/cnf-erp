@@ -4,6 +4,7 @@ namespace App\Models\NasFreights;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use App\Models\NasFreights\NasFreightsBranch;
 
 class NasFreightsBooking extends Model
 {
@@ -29,6 +30,11 @@ class NasFreightsBooking extends Model
         'delivery_date' => 'date',
     ];
 
+    public function branch()
+    {
+        return $this->belongsTo(NasFreightsBranch::class, 'branch_id');
+    }
+
     public function items()
     {
         return $this->hasMany(NasFreightsBookingItem::class, 'booking_id');
@@ -39,12 +45,18 @@ class NasFreightsBooking extends Model
         return $this->hasMany(NasFreightsBookingProduct::class, 'booking_id');
     }
 
-    public static function generateJobNo(): string
+    public static function generateJobNo(int $branchId): string
     {
-        $max = static::lockForUpdate()->max(
-            DB::raw("CAST(SUBSTRING(job_no, 5) AS UNSIGNED)")
-        );
-        return 'TMS-' . str_pad(($max ?? 0) + 1, 6, '0', STR_PAD_LEFT);
+        $branch = NasFreightsBranch::find($branchId);
+        $code   = $branch?->code ?? 'XX';
+        $year   = now()->year;
+        $prefix = "TMS-{$code}-{$year}-";
+
+        $max = static::where('job_no', 'like', $prefix . '%')
+            ->lockForUpdate()
+            ->max(DB::raw("CAST(SUBSTRING(job_no, " . (strlen($prefix) + 1) . ") AS UNSIGNED)"));
+
+        return $prefix . str_pad(($max ?? 0) + 1, 7, '0', STR_PAD_LEFT);
     }
 
     public static function bookingPrefixes(): array

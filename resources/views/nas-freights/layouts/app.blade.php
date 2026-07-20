@@ -90,6 +90,32 @@
         <i class="fa fa-users"></i> Customers
     </a>
 
+    <div class="nav-section">Import</div>
+    <a href="{{ route('nas-freights.import.supplier-payments') }}"
+       class="nav-link {{ request()->routeIs('nas-freights.import.supplier-payments*') ? 'active' : '' }}">
+        <i class="fa fa-file-import"></i> Supplier Payments
+    </a>
+    <a href="{{ route('nas-freights.import.customer-bills') }}"
+       class="nav-link {{ request()->routeIs('nas-freights.import.customer-bills*') ? 'active' : '' }}">
+        <i class="fa fa-file-import"></i> Customer Bills
+    </a>
+    <a href="{{ route('nas-freights.import.bookings') }}"
+       class="nav-link {{ request()->routeIs('nas-freights.import.bookings*') ? 'active' : '' }}">
+        <i class="fa fa-file-import"></i> Bookings
+    </a>
+    <a href="{{ route('nas-freights.import.vehicles') }}"
+       class="nav-link {{ request()->routeIs('nas-freights.import.vehicles*') ? 'active' : '' }}">
+        <i class="fa fa-file-import"></i> Vehicles
+    </a>
+    <a href="{{ route('nas-freights.import.booking-updates') }}"
+       class="nav-link {{ request()->routeIs('nas-freights.import.booking-updates*') ? 'active' : '' }}">
+        <i class="fa fa-file-import"></i> Booking Updates
+    </a>
+    <a href="{{ route('nas-freights.import.customer-bill-summary') }}"
+       class="nav-link {{ request()->routeIs('nas-freights.import.customer-bill-summary*') ? 'active' : '' }}">
+        <i class="fa fa-file-import"></i> Bill Summary
+    </a>
+
     <div class="nav-section">Settings</div>
     <a href="{{ route('nas-freights.users.index') }}"
        class="nav-link {{ request()->routeIs('nas-freights.users.*') ? 'active' : '' }}">

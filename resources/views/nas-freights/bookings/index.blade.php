@@ -9,6 +9,7 @@
 #bookingsTable thead tr:first-child th { background: #1a6b60; color: #fff; font-weight: 600; }
 #bookingsTable thead tr:last-child th  { background: #e9ecef; font-weight: normal; }
 #bookingsTable_wrapper { overflow-x: auto; }
+#bookingsTable td.cover-van-col { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: default; }
 </style>
 @endpush
 
@@ -42,7 +43,7 @@
                     <th>Entry</th>
                     <th>Branch</th>
                     <th>Customer</th>
-                    <th>Item Details</th>
+                    <th>Cover Van Details</th>
                     <th>T. Qty</th>
                     <th>Item Amount</th>
                     <th>AIT Amt</th>
@@ -106,9 +107,10 @@ $(function () {
             { data: 'job_date',        name: 'job_date',         render: fmtDate },
             { data: 'delivery_date',   name: 'delivery_date',    render: fmtDate },
             { data: 'entry_by',        name: 'entry_by' },
-            { data: 'branch',          name: 'branch' },
+            { data: 'branch_name',      name: 'branch' },
             { data: 'customer_name',   name: 'customer_name' },
-            { data: 'item_details',    name: 'item_details',     orderable: false, searchable: false },
+            { data: 'item_details',    name: 'item_details',     orderable: false, searchable: false, className: 'cover-van-col',
+              render: (d) => d ? `<span title="${d}">${d}</span>` : '—' },
             { data: 't_qty',           name: 't_qty',            orderable: false, searchable: false, className: 'text-end' },
             { data: 'item_amount',     name: 'item_amount',      orderable: false, searchable: false, className: 'text-end' },
             { data: 'ait_amount',      name: 'ait_amount',       className: 'text-end' },
@@ -124,6 +126,8 @@ $(function () {
         dom: "<'row mb-1'<'col-sm-6'l><'col-sm-6'f>>" +
              "<'row'<'col-12'tr>>" +
              "<'row mt-2'<'col-sm-5'i><'col-sm-7'p>>",
+        pageLength: 50,
+        order: [[1, 'desc']],
         buttons: [{ extend: 'csv' }, { extend: 'excel' }, { extend: 'pdf' }, { extend: 'print' }],
         language: {
             emptyTable: '<div class="text-center py-3 text-muted"><i class="fa fa-clipboard fa-2x mb-2 d-block"></i>No bookings yet.</div>',
