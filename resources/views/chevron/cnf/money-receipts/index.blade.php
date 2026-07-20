@@ -59,6 +59,7 @@
 $(function () {
     var table = $('#mrTable').DataTable({
         processing: true, serverSide: true,
+        autoWidth: false,
         ajax: '{{ route('chevron.cnf.money-receipts.index') }}',
         columns: [
             { data: 'DT_RowIndex',     name: 'DT_RowIndex',     orderable: false, searchable: false, width: '45px' },

@@ -33,6 +33,7 @@
 $(function () {
     var table = $('#dlvTable').DataTable({
         processing: true, serverSide: true,
+        autoWidth: false,
         ajax: '{{ route('nas-trading.deliveries.index') }}',
         columns: [
             { data: 'DT_RowIndex',   orderable: false, searchable: false, width: '40px' },

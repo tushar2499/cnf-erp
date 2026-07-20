@@ -108,7 +108,8 @@ $('#fldSupplier').select2({
   .on('select2:clear',  () => $('#fldSupplierId').val(''));
 
 var table = $('#dueTable').DataTable({
-    processing: true, serverSide: true, orderCellsTop: true,
+    processing: true, serverSide: true,
+        autoWidth: false, orderCellsTop: true,
     ajax: {
         url: '{{ route('nas-freights.due-lists.supplier') }}',
         data: d => {

@@ -60,7 +60,8 @@
 var table;
 $(function () {
     table = $('#mainTable').DataTable({
-        processing: true, serverSide: true, ajax: '{{ route('nas-trading.banks.index') }}',
+        processing: true, serverSide: true,
+        autoWidth: false, ajax: '{{ route('nas-trading.banks.index') }}',
         columns: [
             { data: 'DT_RowIndex', orderable: false, searchable: false, width: '40px' },
             { data: 'name', name: 'name' }, { data: 'branch', name: 'branch' },

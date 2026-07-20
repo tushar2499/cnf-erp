@@ -190,6 +190,7 @@ var table;
 $(function () {
     table = $('#suppliersTable').DataTable({
         processing: true, serverSide: true,
+        autoWidth: false,
         ajax: '{{ route('nas-freights.stakeholders.suppliers.index') }}',
         columns: [
             { data: 'DT_RowIndex',  name: 'DT_RowIndex',    orderable: false, searchable: false, width: '45px' },

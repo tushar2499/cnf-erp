@@ -155,6 +155,7 @@ $(function () {
     table = $('#agentsTable').DataTable({
         processing: true,
         serverSide: true,
+        autoWidth: false,
         ajax: '{{ route('nas-freights.settings.overseas-agents.index') }}',
         columns: [
             { data: 'DT_RowIndex',    orderable: false, searchable: false, width: '45px' },

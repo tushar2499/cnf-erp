@@ -73,6 +73,7 @@
 $(function () {
     var table = $('#billsTable').DataTable({
         processing: true, serverSide: true,
+        autoWidth: false,
         orderCellsTop: true,
         ajax: '{{ route('nas-freights.customer-bills.index') }}',
         columns: [

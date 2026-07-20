@@ -127,6 +127,7 @@ var table;
 $(function () {
     table = $('#customersTable').DataTable({
         processing: true, serverSide: true,
+        autoWidth: false,
         ajax: '{{ route('nas-freights.stakeholders.customers.index') }}',
         columns: [
             { data: 'DT_RowIndex',    name: 'DT_RowIndex',    orderable: false, searchable: false, width: '40px' },

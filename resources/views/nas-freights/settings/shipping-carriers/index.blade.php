@@ -90,6 +90,7 @@ $(function () {
     table = $('#carriersTable').DataTable({
         processing: true,
         serverSide: true,
+        autoWidth: false,
         ajax: '{{ route('nas-freights.settings.shipping-carriers.index') }}',
         columns: [
             { data: 'DT_RowIndex',  orderable: false, searchable: false, width: '45px' },

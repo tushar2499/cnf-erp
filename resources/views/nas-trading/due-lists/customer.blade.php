@@ -60,6 +60,7 @@ $(function () {
 
     var table = $('#dueTable').DataTable({
         processing: true, serverSide: true,
+        autoWidth: false,
         ajax: {
             url: '{{ route('nas-trading.due-lists.customer') }}',
             data: d => {

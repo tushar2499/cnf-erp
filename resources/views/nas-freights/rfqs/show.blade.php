@@ -229,10 +229,10 @@
                 @if($rfq->status === 'Lose' && $rfq->lost_reason)
                 <div style="font-size:.75rem; color:#6b7280; margin-top:.3rem;">Reason: {{ $rfq->lost_reason }}</div>
                 @endif
-                @if($rfq->status === 'Win' && $rfq->converted_booking_id)
+                @if($rfq->status === 'Win' && $rfq->converted_freight_booking_id)
                 <div class="mt-2" style="font-size:.75rem;">
                     <i class="fa fa-check-circle text-success me-1"></i>
-                    Booking: <a href="{{ route('nas-freights.bookings.edit', $rfq->converted_booking_id) }}" class="fw-semibold">{{ $rfq->convertedBooking?->job_no }}</a>
+                    Freight Booking: <a href="{{ route('nas-freights.freight-bookings.show', $rfq->converted_freight_booking_id) }}" class="fw-semibold">{{ $rfq->convertedFreightBooking?->freight_booking_no }}</a>
                 </div>
                 @endif
             </div>
@@ -280,22 +280,22 @@
 
         @if($rfq->status === 'Win')
         <div class="section-card">
-            <div class="form-header"><i class="fa fa-briefcase me-1"></i> Convert to Booking</div>
+            <div class="form-header"><i class="fa fa-ship me-1"></i> Convert to Freight Booking</div>
             <div class="section-body">
-                @if($rfq->converted_booking_id)
+                @if($rfq->converted_freight_booking_id)
                 <div class="text-success text-center" style="font-size:.8rem;">
                     <i class="fa fa-check-circle me-1"></i> Already converted to
-                    <a href="{{ route('nas-freights.bookings.edit', $rfq->converted_booking_id) }}" class="fw-bold">{{ $rfq->convertedBooking?->job_no }}</a>
+                    <a href="{{ route('nas-freights.freight-bookings.show', $rfq->converted_freight_booking_id) }}" class="fw-bold">{{ $rfq->convertedFreightBooking?->freight_booking_no }}</a>
                 </div>
                 @else
                 <p style="font-size:.75rem; color:#6b7280; margin-bottom:.6rem;">
-                    Create a Booking from this RFQ. Customer and cargo description will be pre-filled.
+                    Create a Freight Booking from this RFQ. All freight details and cargo items will be pre-filled.
                 </p>
-                <form method="POST" action="{{ route('nas-freights.rfqs.convert-booking', $rfq->id) }}">
+                <form method="POST" action="{{ route('nas-freights.rfqs.convert-freight-booking', $rfq->id) }}">
                     @csrf
                     <button type="submit" class="btn btn-sm btn-success w-100"
-                        onclick="return confirm('Convert RFQ {{ $rfq->rfq_no }} to a Booking?')">
-                        <i class="fa fa-exchange-alt me-1"></i> Convert to Booking
+                        onclick="return confirm('Convert RFQ {{ $rfq->rfq_no }} to a Freight Booking?')">
+                        <i class="fa fa-ship me-1"></i> Convert to Freight Booking
                     </button>
                 </form>
                 @endif

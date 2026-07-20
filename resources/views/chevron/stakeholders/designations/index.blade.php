@@ -88,6 +88,7 @@ $(function () {
     table = $('#designationsTable').DataTable({
         processing: true,
         serverSide: true,
+        autoWidth: false,
         ajax: '{{ route('chevron.stakeholders.designations.index') }}',
         columns: [
             { data: 'DT_RowIndex',  name: 'DT_RowIndex', orderable: false, searchable: false, width: '50px' },

@@ -65,7 +65,8 @@
 <script>
 $(function () {
     var table = $('#payTable').DataTable({
-        processing: true, serverSide: true, orderCellsTop: true,
+        processing: true, serverSide: true,
+        autoWidth: false, orderCellsTop: true,
         ajax: '{{ route('nas-freights.supplier-payments.index') }}',
         columns: [
             { data: 'DT_RowIndex',   name: 'DT_RowIndex',   orderable: false, searchable: false, width: '45px' },

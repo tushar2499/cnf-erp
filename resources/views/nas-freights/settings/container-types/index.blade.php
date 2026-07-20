@@ -82,6 +82,7 @@ $(function () {
     table = $('#containerTypesTable').DataTable({
         processing: true,
         serverSide: true,
+        autoWidth: false,
         ajax: '{{ route('nas-freights.settings.container-types.index') }}',
         columns: [
             { data: 'DT_RowIndex', orderable: false, searchable: false, width: '50px' },

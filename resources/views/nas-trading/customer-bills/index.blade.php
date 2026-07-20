@@ -32,6 +32,7 @@
 $(function () {
     var table = $('#billTable').DataTable({
         processing: true, serverSide: true,
+        autoWidth: false,
         ajax: '{{ route('nas-trading.customer-bills.index') }}',
         columns: [
             { data: 'DT_RowIndex',   orderable: false, searchable: false, width: '40px' },
