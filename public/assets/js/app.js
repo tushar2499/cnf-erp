@@ -66,7 +66,7 @@ $(function () {
 
     $(document)
         .on('mouseenter', '.sidebar .nav-item-group', function () {
-            if (!$('body').hasClass('sidebar-collapsed')) { return; }
+            if (!$('body').hasClass('sidebar-collapsed') || isMobile()) { return; }
             clearTimeout(flyoutHideTimer);
             var rect = this.getBoundingClientRect();
             $flyout.html(buildFlyout($(this))).css('top', rect.top).show();
@@ -74,6 +74,14 @@ $(function () {
         .on('mouseleave', '.sidebar .nav-item-group', function () {
             flyoutHideTimer = setTimeout(function () { $flyout.hide(); }, 120);
         });
+
+    // On resize to mobile: hide flyout and strip sidebar-collapsed so mobile nav is always full
+    $(window).on('resize', function () {
+        if (isMobile()) {
+            $flyout.hide();
+            $('body').removeClass('sidebar-collapsed');
+        }
+    });
 
     $flyout
         .on('mouseenter', function () { clearTimeout(flyoutHideTimer); })
