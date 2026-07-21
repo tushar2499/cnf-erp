@@ -79,7 +79,7 @@ class LcController extends Controller
 
     public function show(NasTradingLc $lc)
     {
-        $lc->load('items', 'expenses.expenseHead');
+        $lc->load('items', 'payments', 'expenses.expenseHead');
         $banks = NasTradingBank::where('status', 'Active')->get();
         $importers = NasTradingImporter::where('status', 'Active')->get();
         $psiCompanies = NasTradingPsiCompany::where('status', 'Active')->get();

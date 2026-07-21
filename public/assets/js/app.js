@@ -22,6 +22,10 @@ $(function () {
         $('body').addClass('sidebar-collapsed');
     }
 
+    // Collapsed sidebar: flyout submenu on hover
+    var $flyout = $('<div class="sidebar-flyout"></div>').appendTo('body');
+    var flyoutHideTimer;
+
     $('#sidebarToggle').on('click', function () {
         if (isMobile()) {
             $('.sidebar').toggleClass('open');
@@ -29,7 +33,59 @@ $(function () {
             $('body').toggleClass('sidebar-collapsed');
             localStorage.setItem('sidebarCollapsed', $('body').hasClass('sidebar-collapsed') ? '1' : '0');
         }
+        $flyout.hide();
     });
+
+    function buildFlyout($group) {
+        var $section  = $group.find('> .nav-section');
+        var $topLink  = $group.find('> .nav-link');
+        var $collapse = $group.find('> .collapse');
+        var html = '';
+
+        if ($section.length) {
+            html += '<div class="flyout-section-title">' + $section.text().trim() + '</div>';
+        }
+
+        if ($collapse.length) {
+            var parentText = $topLink.find('span').text().trim();
+            html += '<div class="flyout-parent-label">' + parentText + '</div>';
+            $collapse.find('.nav-link').each(function () {
+                var $sl = $(this);
+                html += '<a href="' + $sl.attr('href') + '" class="flyout-link' +
+                        ($sl.hasClass('active') ? ' active' : '') + '">' +
+                        $sl.text().trim() + '</a>';
+            });
+        } else {
+            html += '<a href="' + $topLink.attr('href') + '" class="flyout-link' +
+                    ($topLink.hasClass('active') ? ' active' : '') + '">' +
+                    $topLink.text().trim() + '</a>';
+        }
+
+        return html;
+    }
+
+    $(document)
+        .on('mouseenter', '.sidebar .nav-item-group', function () {
+            if (!$('body').hasClass('sidebar-collapsed') || isMobile()) { return; }
+            clearTimeout(flyoutHideTimer);
+            var rect = this.getBoundingClientRect();
+            $flyout.html(buildFlyout($(this))).css('top', rect.top).show();
+        })
+        .on('mouseleave', '.sidebar .nav-item-group', function () {
+            flyoutHideTimer = setTimeout(function () { $flyout.hide(); }, 120);
+        });
+
+    // On resize to mobile: hide flyout and strip sidebar-collapsed so mobile nav is always full
+    $(window).on('resize', function () {
+        if (isMobile()) {
+            $flyout.hide();
+            $('body').removeClass('sidebar-collapsed');
+        }
+    });
+
+    $flyout
+        .on('mouseenter', function () { clearTimeout(flyoutHideTimer); })
+        .on('mouseleave', function () { $flyout.hide(); });
 });
 
 // Generic AJAX form handler

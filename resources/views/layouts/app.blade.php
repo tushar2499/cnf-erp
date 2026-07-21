@@ -24,36 +24,37 @@
         <i class="fa fa-bars"></i>
     </button>
     <span class="brand">
-        <i class="fa fa-layer-group me-1 text-primary"></i> NAS Group ERP
+        <i class="fa fa-layer-group me-1 text-primary"></i>
+        <span class="d-inline">NAS Group ERP</span>
     </span>
     @if(isset($activeCompany))
-    <span class="badge company-badge
+    <span class="badge company-badge d-none d-md-inline-flex
         {{ $activeCompany->type === 'cnf' ? 'bg-success' : ($activeCompany->type === 'freight' ? 'bg-info text-dark' : 'bg-warning text-dark') }}">
         {{ $activeCompany->name }}
     </span>
     @endif
     @if(isset($activeBranch))
-    <span class="badge bg-primary bg-opacity-75 ms-1" style="font-size:.68rem">
+    <span class="badge bg-primary bg-opacity-75 ms-1 d-none d-md-inline-flex" style="font-size:.68rem">
         <i class="fa fa-code-branch me-1"></i>{{ $activeBranch->name }}
     </span>
     @endif
-    <div class="ms-auto d-flex align-items-center gap-3">
+    <div class="ms-auto d-flex align-items-center gap-2 gap-md-3">
         @if(isset($activeBranch))
         @php $switchRoute = match(session('active_company_slug')) {
             'nas-freights' => 'nas-freights.select-branch',
             'nas-trading'  => 'nas-trading.select-branch',
             default        => 'chevron.select-branch',
         }; @endphp
-        <a href="{{ route($switchRoute) }}" class="btn btn-sm btn-outline-secondary">
-            <i class="fa fa-code-branch me-1"></i> Switch Branch
+        <a href="{{ route($switchRoute) }}" class="btn btn-sm btn-outline-secondary" title="Switch Branch">
+            <i class="fa fa-code-branch"></i><span class="d-none d-md-inline ms-1">Switch Branch</span>
         </a>
         @endif
-        <a href="{{ route('company.select') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="fa fa-building me-1"></i> Switch Company
+        <a href="{{ route('company.select') }}" class="btn btn-sm btn-outline-secondary" title="Switch Company">
+            <i class="fa fa-building"></i><span class="d-none d-md-inline ms-1">Switch Company</span>
         </a>
         <div class="dropdown">
-            <button class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown">
-                <i class="fa fa-user-circle me-1"></i> {{ auth()->user()->name }}
+            <button class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown" title="{{ auth()->user()->name }}">
+                <i class="fa fa-user-circle"></i><span class="d-none d-sm-inline ms-1">{{ auth()->user()->name }}</span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
                 <li>
@@ -74,6 +75,21 @@
         </div>
     </div>
 </nav>
+
+{{-- Mobile context bar (company + branch — CSS shows only on ≤768px) --}}
+@if(isset($activeCompany))
+<div class="mobile-context-bar">
+    <span class="badge company-badge
+        {{ $activeCompany->type === 'cnf' ? 'bg-success' : ($activeCompany->type === 'freight' ? 'bg-info text-dark' : 'bg-warning text-dark') }}">
+        <i class="fa fa-building me-1"></i>{{ $activeCompany->name }}
+    </span>
+    @if(isset($activeBranch))
+    <span class="badge bg-primary bg-opacity-75">
+        <i class="fa fa-code-branch me-1"></i>{{ $activeBranch->name }}
+    </span>
+    @endif
+</div>
+@endif
 
 {{-- Sidebar --}}
 <aside class="sidebar">
