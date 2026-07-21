@@ -13,6 +13,10 @@
 /* Optional tabs */
 .lc-tabs .nav-link { font-size:.78rem; padding:.35rem .75rem; color:#495057; }
 .lc-tabs .nav-link.active { color:#1a6b60; font-weight:700; border-bottom:2px solid #1a6b60; }
+/* Hide number spinner arrows so compact inputs don't lose space to them */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+input[type="number"] { -moz-appearance:textfield; }
 </style>
 @endpush
 
@@ -381,9 +385,11 @@
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label">LC Commission</label>
-                        <div class="input-group input-group-sm">
-                            <input type="number" name="lc_commission_percent" id="lcCommissionPct" class="form-control form-control-sm" step="0.0001" min="0" value="{{ $lc->lc_commission_percent }}" placeholder="0" title="Percentage of LC RT Value" style="width:40px;flex:0 0 auto">
+                        <div class="input-group input-group-sm mb-1">
+                            <input type="number" name="lc_commission_percent" id="lcCommissionPct" class="form-control form-control-sm" step="0.0001" min="0" value="{{ $lc->lc_commission_percent }}" placeholder="0" title="Percentage of LC RT Value">
                             <span class="input-group-text">%</span>
+                        </div>
+                        <div class="input-group input-group-sm">
                             <input type="number" name="lc_commission_flat" id="lcCommission" class="form-control form-control-sm" step="0.01" value="{{ $lc->lc_commission_flat }}" placeholder="0.00" title="Auto-filled from % or enter flat amount directly">
                             <span class="input-group-text">BDT</span>
                         </div>
@@ -817,6 +823,15 @@ $(function () {
         var amt   = parseFloat($(this).val()) || 0;
         $('#lcCommissionPct').val(rtVal && amt ? (amt / rtVal * 100).toFixed(4) : '');
     });
+    $('#lcCommissionPct').on('blur', function () {
+        var v = parseFloat($(this).val());
+        if (!isNaN(v)) $(this).val(v);
+    });
+    // Strip trailing zeros from pre-filled value on load
+    (function () {
+        var v = parseFloat($('#lcCommissionPct').val());
+        if (!isNaN(v)) $('#lcCommissionPct').val(v);
+    })();
 
     $('#currency').on('change', function () { $('.fcy-label').text($(this).val()); }).trigger('change');
 
