@@ -148,7 +148,7 @@ class LcController extends Controller
 
     public function generateBill(NasTradingLc $lc)
     {
-        $lc->load('items', 'expenses.expenseHead');
+        $lc->load('items', 'expenses.expenseHead', 'payments');
         $expenseHeads = NasTradingExpenseHead::where('status', 'Active')->get();
 
         return view('nas-trading.customer-bills.generate', compact('lc', 'expenseHeads'));

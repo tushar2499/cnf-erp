@@ -144,6 +144,14 @@
     $dash = '—';
     function fmtDate($d) { return $d?->format('d-M-Y') ?? '—'; }
     function fmtAmt($v, $prefix = 'BDT', $dec = 2) { return $v ? $prefix . ' ' . number_format((float)$v, $dec) : '—'; }
+
+    $totalLcCost = (float)($lc->lc_rate_amount ?? 0)
+                 + (float)($lc->lc_amendment_charge ?? 0)
+                 + (float)($lc->insurance_amt ?? 0)
+                 + (float)($lc->credit_report_charge ?? 0)
+                 + (float)($lc->other_charges ?? 0)
+                 + (float)($lc->bank_charge ?? 0)
+                 + (float)($lc->lc_open_cost_bdt ?? 0);
 @endphp
 
 {{-- Letterhead — visible only when printing --}}
@@ -292,7 +300,7 @@
                         <div class="col-6 col-md-3"><div class="info-label">Freight Value</div><div class="info-value">{{ $lc->freight_value ? ($lc->currency ?? '') . ' ' . number_format((float)$lc->freight_value, 4) : $dash }}</div></div>
                         <div class="col-6 col-md-3"><div class="info-label">LC Value</div><div class="info-value">{{ $lc->lc_value ? ($lc->currency ?? '') . ' ' . number_format((float)$lc->lc_value, 4) : $dash }}</div></div>
                         <div class="col-6 col-md-3"><div class="info-label">Amount BDT</div><div class="info-value">{{ fmtAmt($lc->amount_bdt) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Total LC Cost</div><div class="info-value">{{ fmtAmt($lc->total_lc_cost) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Total LC Cost</div><div class="info-value">{{ fmtAmt($totalLcCost) }}</div></div>
                         <div class="col-6 col-md-3"><div class="info-label">Landed Cost</div><div class="info-value">{{ fmtAmt($lc->landed_cost) }}</div></div>
                         <div class="col-6 col-md-3"><div class="info-label">LC Rate Amount</div><div class="info-value">{{ fmtAmt($lc->lc_rate_amount) }}</div></div>
                         <div class="col-6 col-md-3"><div class="info-label">Doc RT Rate</div><div class="info-value">{{ $lc->doc_rt_rate ? 'BDT ' . number_format((float)$lc->doc_rt_rate, 4) : $dash }}</div></div>
@@ -564,7 +572,7 @@
                     @php
                         $totalExpenses      = $lc->expenses->sum('amount');
                         $totalOtherCharges  = $lc->otherChargeItems->sum('amount');
-                        $lcCost             = (float)($lc->total_lc_cost ?? 0);
+                        $lcCost             = $totalLcCost;
                         $cnfCost            = (float)($lc->cnf_total_cost ?? 0);
                         $advancePayment     = $lc->payments->where('payment_type', 'advance')->sum('amount');
                         $dutyAdvance        = (float)($lc->duty_advance ?? 0);

@@ -67,6 +67,11 @@ class NasTradingLc extends Model
         return $this->belongsTo(NasTradingCustomer::class, 'customer_id');
     }
 
+    public function openingBank()
+    {
+        return $this->belongsTo(NasTradingBank::class, 'opening_bank_id');
+    }
+
     public static function generateLcNo(): string
     {
         return DB::transaction(function () {
