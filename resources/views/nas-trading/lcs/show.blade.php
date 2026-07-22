@@ -133,21 +133,12 @@
                         <div class="col-md-2"><div class="info-label">Country of Origin</div><div class="info-value">{{ $lc->country_of_origin ?? $dash }}</div></div>
                         <div class="col-md-2"><div class="info-label">Payment Mode</div><div class="info-value">{{ $lc->payment_mode ?? $dash }}</div></div>
 
-                        <div class="col-md-2"><div class="info-label">Insurance Amt</div><div class="info-value">{{ fmtAmt($lc->insurance_amt) }}</div></div>
-                        <div class="col-md-2"><div class="info-label">Cover Note</div><div class="info-value">{{ $lc->cover_note ?? $dash }}</div></div>
-                        <div class="col-md-2"><div class="info-label">Insurance Validity</div><div class="info-value">{{ fmtDate($lc->insurance_validity) }}</div></div>
-                        <div class="col-md-2"><div class="info-label">PSI No</div><div class="info-value">{{ $lc->psi_no ?? $dash }}</div></div>
-                        <div class="col-md-4"><div class="info-label">PSI Company</div><div class="info-value">{{ $psiCompany?->name ?? $dash }}</div></div>
+                        <div class="col-md-3"><div class="info-label">Cover Note</div><div class="info-value">{{ $lc->cover_note ?? $dash }}</div></div>
+                        <div class="col-md-3"><div class="info-label">PSI No</div><div class="info-value">{{ $lc->psi_no ?? $dash }}</div></div>
+                        <div class="col-md-3"><div class="info-label">PSI Company</div><div class="info-value">{{ $psiCompany?->name ?? $dash }}</div></div>
+                        <div class="col-md-3"><div class="info-label">Doc Status</div><div class="info-value">{{ $lc->doc_status ?? $dash }}</div></div>
 
-                        <div class="col-md-2"><div class="info-label">Comm. Currency</div><div class="info-value">{{ $lc->comm_currency ?? $dash }}</div></div>
-                        <div class="col-md-2"><div class="info-label">Comm. Amount</div><div class="info-value">{{ fmtAmt($lc->comm_amount) }}</div></div>
-                        <div class="col-md-2"><div class="info-label">Bank Charge</div><div class="info-value">{{ fmtAmt($lc->bank_charge) }}</div></div>
-                        <div class="col-md-2"><div class="info-label">LC Amendment Charge</div><div class="info-value">{{ fmtAmt($lc->lc_amendment_charge) }}</div></div>
-                        <div class="col-md-2"><div class="info-label">Credit Report Charge</div><div class="info-value">{{ fmtAmt($lc->credit_report_charge) }}</div></div>
-                        <div class="col-md-2"><div class="info-label">Other Charges</div><div class="info-value">{{ fmtAmt($lc->other_charges) }}</div></div>
-
-                        <div class="col-md-2"><div class="info-label">Doc Status</div><div class="info-value">{{ $lc->doc_status ?? $dash }}</div></div>
-                        <div class="col-md-2"><div class="info-label">Sanction Types</div><div class="info-value">{{ $lc->sanction_types ?? $dash }}</div></div>
+                        <div class="col-md-4"><div class="info-label">Sanction Types</div><div class="info-value">{{ $lc->sanction_types ?? $dash }}</div></div>
                         <div class="col-md-4"><div class="info-label">Third Party</div><div class="info-value">{{ $lc->third_party ?? $dash }}</div></div>
                         <div class="col-12"><div class="info-label">Remarks</div><div class="info-value">{{ $lc->remarks ?? $dash }}</div></div>
                     </div>
@@ -191,6 +182,48 @@
                             </div>
                         </div>
                         <div class="col-6 col-md-3"><div class="info-label">LC Charge Posting</div><div class="info-value">{{ $lc->lc_charge_posting ?? $dash }}</div></div>
+
+                        <div class="col-6 col-md-3"><div class="info-label">Insurance Amount</div><div class="info-value">{{ fmtAmt($lc->insurance_amt) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Insurance Validity</div><div class="info-value">{{ fmtDate($lc->insurance_validity) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Comm. Currency</div><div class="info-value">{{ $lc->comm_currency ?? $dash }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Comm. Amount</div><div class="info-value">{{ fmtAmt($lc->comm_amount) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">LC Amendment Charge</div><div class="info-value">{{ fmtAmt($lc->lc_amendment_charge) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Credit Report Charge</div><div class="info-value">{{ fmtAmt($lc->credit_report_charge) }}</div></div>
+
+                        {{-- Other Charges --}}
+                        <div class="col-12 mt-1">
+                            <div class="info-label mb-1">Other Charges</div>
+                            @if($lc->otherChargeItems->count())
+                            <div style="overflow-x:auto">
+                                <table class="table table-sm table-bordered mb-1 w-100" style="font-size:.8rem">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center" style="width:32px;background:#e9ecef;padding:.3rem .5rem">#</th>
+                                            <th style="background:#e9ecef;padding:.3rem .5rem">Charge Name</th>
+                                            <th style="width:160px;background:#e9ecef;padding:.3rem .5rem">Amount (BDT)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($lc->otherChargeItems as $idx => $charge)
+                                        <tr>
+                                            <td class="text-center" style="padding:.3rem .5rem">{{ $idx + 1 }}</td>
+                                            <td style="padding:.3rem .5rem">{{ $charge->name }}</td>
+                                            <td style="padding:.3rem .5rem">{{ number_format((float)$charge->amount, 2) }}</td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="2" class="text-end fw-bold" style="padding:.3rem .5rem;font-size:.78rem">Total</td>
+                                            <td class="fw-bold" style="padding:.3rem .5rem">{{ number_format($lc->otherChargeItems->sum('amount'), 2) }}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            @else
+                            <div class="info-value">{{ $dash }}</div>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>
@@ -385,8 +418,9 @@
             <div class="collapse show" id="sec-summary">
                 <div class="info-body">
                     @php
-                        $totalExpenses = $lc->expenses->sum('amount');
-                        $lcCost = (float)($lc->total_lc_cost ?? 0);
+                        $totalExpenses   = $lc->expenses->sum('amount');
+                        $totalOtherCharges = $lc->otherChargeItems->sum('amount');
+                        $lcCost          = (float)($lc->total_lc_cost ?? 0);
                     @endphp
                     <div class="d-flex justify-content-between py-1 border-bottom">
                         <span style="font-size:.82rem">PFI Value</span>
@@ -400,13 +434,19 @@
                         <span style="font-size:.82rem">Total LC Cost</span>
                         <span style="font-size:.82rem">BDT {{ number_format($lcCost, 2) }}</span>
                     </div>
+                    @if($totalOtherCharges > 0)
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span style="font-size:.82rem">Other Charges</span>
+                        <span style="font-size:.82rem">BDT {{ number_format($totalOtherCharges, 2) }}</span>
+                    </div>
+                    @endif
                     <div class="d-flex justify-content-between py-1 border-bottom">
                         <span style="font-size:.82rem">Total Expenses</span>
                         <span style="font-size:.82rem">BDT {{ number_format($totalExpenses, 2) }}</span>
                     </div>
                     <div class="d-flex justify-content-between py-1">
                         <strong style="font-size:.85rem">Grand Total</strong>
-                        <strong style="font-size:.85rem; color:#1a6b60">BDT {{ number_format($lcCost + $totalExpenses, 2) }}</strong>
+                        <strong style="font-size:.85rem; color:#1a6b60">BDT {{ number_format($lcCost + $totalOtherCharges + $totalExpenses, 2) }}</strong>
                     </div>
                 </div>
             </div>

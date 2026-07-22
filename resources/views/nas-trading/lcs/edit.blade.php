@@ -192,19 +192,8 @@ input[type="number"] { -moz-appearance:textfield; }
                         <input type="text" name="payment_mode" class="form-control form-control-sm" value="{{ $lc->payment_mode }}" placeholder="e.g. SWIFT, TT">
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Insurance Amount</label>
-                        <div class="input-group input-group-sm">
-                            <input type="number" name="insurance_amt" class="form-control form-control-sm" step="0.01" value="{{ $lc->insurance_amt }}" placeholder="0.00">
-                            <span class="input-group-text">BDT</span>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
                         <label class="form-label">Cover Note</label>
                         <input type="text" name="cover_note" class="form-control form-control-sm" value="{{ $lc->cover_note }}" placeholder="e.g. CN-2025-001">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Insurance Validity</label>
-                        <input type="date" name="insurance_validity" class="form-control form-control-sm" value="{{ $lc->insurance_validity?->format('Y-m-d') }}">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">PSI No</label>
@@ -218,45 +207,6 @@ input[type="number"] { -moz-appearance:textfield; }
                                 <option value="{{ $psi->id }}" {{ $lc->psi_company_id == $psi->id ? 'selected' : '' }}>{{ $psi->name }}</option>
                             @endforeach
                         </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Comm. Currency</label>
-                        <input type="text" name="comm_currency" class="form-control form-control-sm" value="{{ $lc->comm_currency }}" placeholder="USD">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Comm. Amount</label>
-                        <div class="input-group input-group-sm">
-                            <input type="number" name="comm_amount" class="form-control form-control-sm" step="0.01" value="{{ $lc->comm_amount }}" placeholder="0.00">
-                            <span class="input-group-text">BDT</span>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Bank Charge</label>
-                        <div class="input-group input-group-sm">
-                            <input type="number" name="bank_charge" class="form-control form-control-sm" step="0.01" value="{{ $lc->bank_charge }}" placeholder="0.00">
-                            <span class="input-group-text">BDT</span>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">LC Amendment Charge</label>
-                        <div class="input-group input-group-sm">
-                            <input type="number" name="lc_amendment_charge" class="form-control form-control-sm" step="0.01" value="{{ $lc->lc_amendment_charge }}" placeholder="0.00">
-                            <span class="input-group-text">BDT</span>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Credit Report Charge</label>
-                        <div class="input-group input-group-sm">
-                            <input type="number" name="credit_report_charge" class="form-control form-control-sm" step="0.01" value="{{ $lc->credit_report_charge }}" placeholder="0.00">
-                            <span class="input-group-text">BDT</span>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Other Charges</label>
-                        <div class="input-group input-group-sm">
-                            <input type="number" name="other_charges" class="form-control form-control-sm" step="0.01" value="{{ $lc->other_charges }}" placeholder="0.00">
-                            <span class="input-group-text">BDT</span>
-                        </div>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Doc Status</label>
@@ -321,7 +271,7 @@ input[type="number"] { -moz-appearance:textfield; }
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <label class="form-label">LC Opening Cost</label>
+                        <label class="form-label">LC Opening Bank Cost</label>
                         <div class="input-group input-group-sm">
                             <input type="number" name="lc_open_cost_bdt" class="form-control form-control-sm" step="0.01" value="{{ $lc->lc_open_cost_bdt }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
@@ -397,6 +347,82 @@ input[type="number"] { -moz-appearance:textfield; }
                     <div class="col-6 col-md-3">
                         <label class="form-label">LC Charge Posting</label>
                         <input type="text" name="lc_charge_posting" class="form-control form-control-sm" value="{{ $lc->lc_charge_posting }}" placeholder="e.g. DR-001">
+                    </div>
+
+                    <div class="col-6 col-md-3">
+                        <label class="form-label">Insurance Amount</label>
+                        <div class="input-group input-group-sm">
+                            <input type="number" name="insurance_amt" class="form-control form-control-sm" step="0.01" value="{{ $lc->insurance_amt }}" placeholder="0.00">
+                            <span class="input-group-text">BDT</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label">Insurance Validity</label>
+                        <input type="date" name="insurance_validity" class="form-control form-control-sm" value="{{ $lc->insurance_validity?->format('Y-m-d') }}">
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label">Comm. Currency</label>
+                        <select name="comm_currency" class="form-select form-select-sm">
+                            @foreach(['USD','EUR','GBP','CNY','BDT'] as $c)
+                                <option value="{{ $c }}" {{ $lc->comm_currency === $c ? 'selected' : '' }}>{{ $c }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label">Comm. Amount</label>
+                        <div class="input-group input-group-sm">
+                            <input type="number" name="comm_amount" class="form-control form-control-sm" step="0.01" value="{{ $lc->comm_amount }}" placeholder="0.00">
+                            <span class="input-group-text">BDT</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label">LC Amendment Charge</label>
+                        <div class="input-group input-group-sm">
+                            <input type="number" name="lc_amendment_charge" class="form-control form-control-sm" step="0.01" value="{{ $lc->lc_amendment_charge }}" placeholder="0.00">
+                            <span class="input-group-text">BDT</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label">Credit Report Charge</label>
+                        <div class="input-group input-group-sm">
+                            <input type="number" name="credit_report_charge" class="form-control form-control-sm" step="0.01" value="{{ $lc->credit_report_charge }}" placeholder="0.00">
+                            <span class="input-group-text">BDT</span>
+                        </div>
+                    </div>
+
+                    {{-- Other Charges multi-row --}}
+                    <div class="col-12 mt-1">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label mb-0">Other Charges</label>
+                            <button type="button" class="btn btn-secondary btn-sm py-0 px-2"
+                                id="btnAddOtherCharge" style="font-size:.75rem">
+                                <i class="fa fa-plus me-1"></i>Add Charge
+                            </button>
+                        </div>
+                        <div style="overflow-x:auto">
+                            <table class="table table-sm table-bordered items-table mb-1 w-100" id="otherChargesTable">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center" style="width:32px">#</th>
+                                        <th>Charge Name</th>
+                                        <th style="width:180px">Amount</th>
+                                        <th style="width:32px"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="otherChargesBody"></tbody>
+                            </table>
+                        </div>
+                        <div id="otherChargesEmpty" class="text-center py-1"
+                            style="display:none;font-size:.78rem;color:#adb5bd">No other charges added yet.</div>
+                        <div class="d-flex justify-content-end align-items-center mt-1">
+                            <label class="form-label me-2 mb-0 fw-semibold" style="font-size:.78rem">Total Other Charges:</label>
+                            <div class="input-group input-group-sm" style="width:160px">
+                                <input type="number" name="other_charges" id="otherChargesTotal"
+                                    class="form-control form-control-sm bg-light fw-bold" readonly step="0.01"
+                                    placeholder="0.00">
+                                <span class="input-group-text">BDT</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -476,7 +502,7 @@ input[type="number"] { -moz-appearance:textfield; }
                     <div class="col-md-3"></div>
                     <div class="col-md-3">
                         <label class="form-label">Bill of Entry No</label>
-                        <input type="text" name="bill_of_entry_no" class="form-control form-control-sm" value="{{ $lc->bill_of_entry_no }}" placeholder="e.g. BE-001">
+                        <input type="text" name="bill_of_entry_no" class="form-control form-control-sm" value="{{ $lc->bill_of_entry_no }}" placeholder="e.g. BE-2025-001">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Bill of Entry Date</label>
@@ -495,7 +521,7 @@ input[type="number"] { -moz-appearance:textfield; }
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">CNF Party</label>
-                        <input type="text" name="cnf_party" class="form-control form-control-sm" value="{{ $lc->cnf_party }}" placeholder="e.g. CNF Agent Name">
+                        <input type="text" name="cnf_party" class="form-control form-control-sm" value="{{ $lc->cnf_party }}" placeholder="e.g. Party Name">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">CNF Total Cost</label>
@@ -593,19 +619,17 @@ input[type="number"] { -moz-appearance:textfield; }
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">COSS Posting</label>
-                        <input type="text" name="coss_posting" class="form-control form-control-sm" value="{{ $lc->coss_posting }}" placeholder="e.g. CS-001">
+                        <input type="text" name="coss_posting" class="form-control form-control-sm" value="{{ $lc->coss_posting }}" placeholder="e.g. CP-001">
                     </div>
                 </div>
             </div>
 
-            {{-- Tab: Product Items --}}
+            {{-- Tab: Product Line Items --}}
             <div class="tab-pane fade" id="tab-items">
                 <div class="lc-card mt-2" style="margin-bottom:0">
-                    <div class="lc-section-header" style="justify-content:space-between">
-                        <span><i class="fa fa-boxes me-2"></i>Product Items</span>
-                        <button type="button" class="btn btn-sm py-0 px-2" id="btnAddItem"
-                            style="font-size:.77rem;color:#fff;border:1px solid rgba(255,255,255,.5)"><i
-                                class="fa fa-plus me-1"></i>Add Row</button>
+                    <div class="d-flex justify-content-end mt-2 mb-1">
+                        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" id="btnAddItem"
+                            style="font-size:.75rem"><i class="fa fa-plus me-1"></i>Add Row</button>
                     </div>
                     <div class="p-0" style="overflow-x:auto">
                         <table class="table table-sm table-bordered items-table mb-0 w-100" id="itemsTable">
@@ -684,10 +708,48 @@ input[type="number"] { -moz-appearance:textfield; }
 
 @push('scripts')
 <script>
-var itemRowIdx     = 0;
-var paymentRowIdx  = 0;
-var existingItems    = @json($lc->items);
-var existingPayments = @json($lc->payments);
+var itemRowIdx          = 0;
+var paymentRowIdx       = 0;
+var otherChargeRowIdx   = 0;
+var existingItems          = @json($lc->items);
+var existingPayments       = @json($lc->payments);
+var existingOtherCharges   = @json($lc->otherChargeItems);
+
+// ── Other Charges ────────────────────────────────────────────────────────
+function addOtherChargeRow(data) {
+    data = data || {};
+    var idx    = otherChargeRowIdx++;
+    var rowNum = $('#otherChargesBody tr').length + 1;
+    var name   = (data.name || '').toString().replace(/"/g, '&quot;');
+    var html = `
+    <tr>
+        <td class="text-center other-charge-row-num" style="font-size:.75rem;vertical-align:middle">${rowNum}</td>
+        <td><input type="text" class="form-control form-control-sm" name="other_charge_items[${idx}][name]" value="${name}" placeholder="e.g. Port Charges"></td>
+        <td>
+            <div class="input-group input-group-sm">
+                <input type="number" class="form-control form-control-sm other-charge-amount" name="other_charge_items[${idx}][amount]" value="${data.amount || ''}" step="0.01" min="0" placeholder="0.00">
+                <span class="input-group-text">BDT</span>
+            </div>
+        </td>
+        <td class="text-center" style="vertical-align:middle">
+            <button type="button" class="btn btn-sm btn-danger btn-remove-other-charge p-0" style="width:24px;height:24px" title="Remove">
+                <i class="fa fa-times" style="font-size:.65rem"></i>
+            </button>
+        </td>
+    </tr>`;
+    $('#otherChargesBody').append(html);
+    syncOtherChargesEmpty();
+}
+
+function syncOtherChargesTotal() {
+    var total = 0;
+    $('.other-charge-amount').each(function () { total += parseFloat($(this).val()) || 0; });
+    $('#otherChargesTotal').val(total.toFixed(2));
+}
+
+function syncOtherChargesEmpty() {
+    $('#otherChargesEmpty').toggle($('#otherChargesBody tr').length === 0);
+}
 
 // ── Payment Receipts ─────────────────────────────────────────────────────
 function addPaymentRow(data) {
@@ -841,6 +903,17 @@ $(function () {
         row.find('.item-amount').val(((parseFloat(row.find('.item-qty').val())||0) * (parseFloat(row.find('.item-uprice').val())||0)).toFixed(4));
     });
 
+    // Other charge rows
+    syncOtherChargesEmpty();
+    $('#btnAddOtherCharge').on('click', () => addOtherChargeRow());
+    $(document).on('input', '.other-charge-amount', syncOtherChargesTotal);
+    $(document).on('click', '.btn-remove-other-charge', function () {
+        $(this).closest('tr').remove();
+        $('#otherChargesBody tr').each((i, tr) => $(tr).find('.other-charge-row-num').text(i + 1));
+        syncOtherChargesTotal();
+        syncOtherChargesEmpty();
+    });
+
     // Payment rows
     $('#btnAddPayment').on('click', () => addPaymentRow());
     $(document).on('input', '.payment-amount', syncPaymentTotal);
@@ -859,6 +932,9 @@ $(function () {
     });
 
     // Load existing data
+    existingOtherCharges.forEach(c => addOtherChargeRow(c));
+    syncOtherChargesTotal();
+
     existingPayments.forEach(p => addPaymentRow(p));
     syncPaymentTotal();
 

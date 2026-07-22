@@ -116,6 +116,11 @@ class StoreNasTradingLcRequest extends FormRequest
             'coss_amount'         => ['nullable', 'numeric', 'min:0'],
             'coss_posting'        => ['nullable', 'string', 'max:100'],
 
+            // Other Charge Items
+            'other_charge_items'           => ['nullable', 'array'],
+            'other_charge_items.*.name'    => ['required_with:other_charge_items', 'string', 'max:255'],
+            'other_charge_items.*.amount'  => ['nullable', 'numeric', 'min:0'],
+
             // Product Items
             'items'                => ['nullable', 'array'],
             'items.*.item_id'      => ['nullable', 'integer'],
