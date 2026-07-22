@@ -21,6 +21,9 @@ input[type="number"] { -moz-appearance:textfield; }
 @endpush
 
 @section('content')
+@php
+    function fmtNum($v) { return ($v !== null && $v !== '') ? (float)$v : ''; }
+@endphp
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0"><i class="fa fa-edit me-2 text-info"></i> Edit {{ $lc->lc_no_system }}</h4>
     <a href="{{ route('nas-trading.lcs.show', $lc->id) }}" class="btn btn-sm btn-outline-secondary"><i class="fa fa-arrow-left me-1"></i> Back</a>
@@ -237,7 +240,7 @@ input[type="number"] { -moz-appearance:textfield; }
                     <div class="col-6 col-md-3">
                         <label class="form-label">PFI Value</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="pfi_value" id="pfiValue" class="form-control form-control-sm" step="0.0001" value="{{ $lc->pfi_value }}" placeholder="0.00">
+                            <input type="number" name="pfi_value" id="pfiValue" class="form-control form-control-sm" step="0.0001" value="{{ fmtNum($lc->pfi_value) }}" placeholder="0.00">
                             <span class="input-group-text fcy-label">USD</span>
                         </div>
                     </div>
@@ -252,95 +255,95 @@ input[type="number"] { -moz-appearance:textfield; }
                     <div class="col-6 col-md-3">
                         <label class="form-label">LC OP Rate</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="lc_open_rate" id="lcOpRate" class="form-control form-control-sm" step="0.0001" value="{{ $lc->lc_open_rate }}" placeholder="0.00">
+                            <input type="number" name="lc_open_rate" id="lcOpRate" class="form-control form-control-sm" step="0.0001" value="{{ fmtNum($lc->lc_open_rate) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label">Margin %</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="margin_percent" id="marginPct" class="form-control form-control-sm" step="0.0001" value="{{ $lc->margin_percent }}" placeholder="0.00">
+                            <input type="number" name="margin_percent" id="marginPct" class="form-control form-control-sm" step="0.0001" value="{{ fmtNum($lc->margin_percent) }}" placeholder="0.00">
                             <span class="input-group-text">%</span>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label">LC Margin Amt</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="lc_margin_amt" id="lcMarginAmt" class="form-control form-control-sm bg-light" readonly step="0.01" value="{{ $lc->lc_margin_amt }}" placeholder="0.00">
+                            <input type="number" name="lc_margin_amt" id="lcMarginAmt" class="form-control form-control-sm bg-light" readonly step="0.01" value="{{ fmtNum($lc->lc_margin_amt) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label">LC Opening Bank Cost</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="lc_open_cost_bdt" class="form-control form-control-sm" step="0.01" value="{{ $lc->lc_open_cost_bdt }}" placeholder="0.00">
+                            <input type="number" name="lc_open_cost_bdt" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($lc->lc_open_cost_bdt) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label">Freight Value</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="freight_value" id="freightValue" class="form-control form-control-sm" step="0.0001" value="{{ $lc->freight_value }}" placeholder="0.00">
+                            <input type="number" name="freight_value" id="freightValue" class="form-control form-control-sm" step="0.0001" value="{{ fmtNum($lc->freight_value) }}" placeholder="0.00">
                             <span class="input-group-text fcy-label">USD</span>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label">LC Value (calc)</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="lc_value" id="lcValue" class="form-control form-control-sm bg-light" readonly step="0.0001" value="{{ $lc->lc_value }}" placeholder="0.00">
+                            <input type="number" name="lc_value" id="lcValue" class="form-control form-control-sm bg-light" readonly step="0.0001" value="{{ fmtNum($lc->lc_value) }}" placeholder="0.00">
                             <span class="input-group-text fcy-label">USD</span>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label">Amount (calc)</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="amount_bdt" id="amountBdt" class="form-control form-control-sm bg-light" readonly step="0.01" value="{{ $lc->amount_bdt }}" placeholder="0.00">
+                            <input type="number" name="amount_bdt" id="amountBdt" class="form-control form-control-sm bg-light" readonly step="0.01" value="{{ fmtNum($lc->amount_bdt) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label">Total LC Cost</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="total_lc_cost" class="form-control form-control-sm" step="0.01" value="{{ $lc->total_lc_cost }}" placeholder="0.00">
+                            <input type="number" name="total_lc_cost" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($lc->total_lc_cost) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label">Landed Cost</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="landed_cost" class="form-control form-control-sm" step="0.01" value="{{ $lc->landed_cost }}" placeholder="0.00">
+                            <input type="number" name="landed_cost" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($lc->landed_cost) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label">LC Rate Amount</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="lc_rate_amount" class="form-control form-control-sm" step="0.01" value="{{ $lc->lc_rate_amount }}" placeholder="0.00">
+                            <input type="number" name="lc_rate_amount" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($lc->lc_rate_amount) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label">Doc RT Rate</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="doc_rt_rate" class="form-control form-control-sm" step="0.0001" value="{{ $lc->doc_rt_rate }}" placeholder="0.00">
+                            <input type="number" name="doc_rt_rate" class="form-control form-control-sm" step="0.0001" value="{{ fmtNum($lc->doc_rt_rate) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label">LC RT Value</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="lc_rt_value" id="lcRtValue" class="form-control form-control-sm" step="0.01" value="{{ $lc->lc_rt_value }}" placeholder="0.00">
+                            <input type="number" name="lc_rt_value" id="lcRtValue" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($lc->lc_rt_value) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label">LC Commission</label>
                         <div class="input-group input-group-sm mb-1">
-                            <input type="number" name="lc_commission_percent" id="lcCommissionPct" class="form-control form-control-sm" step="0.0001" min="0" value="{{ $lc->lc_commission_percent }}" placeholder="0" title="Percentage of LC RT Value">
+                            <input type="number" name="lc_commission_percent" id="lcCommissionPct" class="form-control form-control-sm" step="0.0001" min="0" value="{{ fmtNum($lc->lc_commission_percent) }}" placeholder="0" title="Percentage of LC RT Value">
                             <span class="input-group-text">%</span>
                         </div>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="lc_commission_flat" id="lcCommission" class="form-control form-control-sm" step="0.01" value="{{ $lc->lc_commission_flat }}" placeholder="0.00" title="Auto-filled from % or enter flat amount directly">
+                            <input type="number" name="lc_commission_flat" id="lcCommission" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($lc->lc_commission_flat) }}" placeholder="0.00" title="Auto-filled from % or enter flat amount directly">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
@@ -352,7 +355,7 @@ input[type="number"] { -moz-appearance:textfield; }
                     <div class="col-6 col-md-3">
                         <label class="form-label">Insurance Amount</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="insurance_amt" class="form-control form-control-sm" step="0.01" value="{{ $lc->insurance_amt }}" placeholder="0.00">
+                            <input type="number" name="insurance_amt" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($lc->insurance_amt) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
@@ -371,21 +374,21 @@ input[type="number"] { -moz-appearance:textfield; }
                     <div class="col-6 col-md-3">
                         <label class="form-label">Comm. Amount</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="comm_amount" class="form-control form-control-sm" step="0.01" value="{{ $lc->comm_amount }}" placeholder="0.00">
+                            <input type="number" name="comm_amount" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($lc->comm_amount) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label">LC Amendment Charge</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="lc_amendment_charge" class="form-control form-control-sm" step="0.01" value="{{ $lc->lc_amendment_charge }}" placeholder="0.00">
+                            <input type="number" name="lc_amendment_charge" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($lc->lc_amendment_charge) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label">Credit Report Charge</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="credit_report_charge" class="form-control form-control-sm" step="0.01" value="{{ $lc->credit_report_charge }}" placeholder="0.00">
+                            <input type="number" name="credit_report_charge" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($lc->credit_report_charge) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
@@ -434,7 +437,7 @@ input[type="number"] { -moz-appearance:textfield; }
                     <div class="col-md-3">
                         <label class="form-label">LC Closing Bill</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="lc_closing_bill" class="form-control form-control-sm" step="0.01" value="{{ $lc->lc_closing_bill }}" placeholder="0.00">
+                            <input type="number" name="lc_closing_bill" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($lc->lc_closing_bill) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
@@ -487,7 +490,7 @@ input[type="number"] { -moz-appearance:textfield; }
                     <div class="col-md-3">
                         <label class="form-label">Duty Advance</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="duty_advance" class="form-control form-control-sm" step="0.01" value="{{ $lc->duty_advance }}" placeholder="0.00">
+                            <input type="number" name="duty_advance" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($lc->duty_advance) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
@@ -511,7 +514,7 @@ input[type="number"] { -moz-appearance:textfield; }
                     <div class="col-md-3">
                         <label class="form-label">Customs Duty</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="customs_duty" class="form-control form-control-sm" step="0.01" value="{{ $lc->customs_duty }}" placeholder="0.00">
+                            <input type="number" name="customs_duty" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($lc->customs_duty) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
@@ -526,7 +529,7 @@ input[type="number"] { -moz-appearance:textfield; }
                     <div class="col-md-3">
                         <label class="form-label">CNF Total Cost</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="cnf_total_cost" class="form-control form-control-sm" step="0.01" value="{{ $lc->cnf_total_cost }}" placeholder="0.00">
+                            <input type="number" name="cnf_total_cost" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($lc->cnf_total_cost) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
@@ -543,14 +546,14 @@ input[type="number"] { -moz-appearance:textfield; }
                     <div class="col-md-3">
                         <label class="form-label">Payable / Receivable</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="payable_receivable" class="form-control form-control-sm" step="0.01" value="{{ $lc->payable_receivable }}" placeholder="0.00">
+                            <input type="number" name="payable_receivable" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($lc->payable_receivable) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Received Amount</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="received_amount" class="form-control form-control-sm" step="0.01" value="{{ $lc->received_amount }}" placeholder="0.00">
+                            <input type="number" name="received_amount" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($lc->received_amount) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
@@ -562,7 +565,7 @@ input[type="number"] { -moz-appearance:textfield; }
                     <div class="col-md-3">
                         <label class="form-label">VAT Return</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="vat_return" class="form-control form-control-sm" step="0.01" value="{{ $lc->vat_return }}" placeholder="0.00">
+                            <input type="number" name="vat_return" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($lc->vat_return) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
@@ -577,21 +580,21 @@ input[type="number"] { -moz-appearance:textfield; }
                     <div class="col-md-3">
                         <label class="form-label">Income Tax</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="income_tax" class="form-control form-control-sm" step="0.01" value="{{ $lc->income_tax }}" placeholder="0.00">
+                            <input type="number" name="income_tax" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($lc->income_tax) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Bank Statement Amt</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="bank_statement_amt" class="form-control form-control-sm" step="0.01" value="{{ $lc->bank_statement_amt }}" placeholder="0.00">
+                            <input type="number" name="bank_statement_amt" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($lc->bank_statement_amt) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">LC Commission</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="lc_commission" class="form-control form-control-sm" step="0.01" value="{{ $lc->lc_commission }}" placeholder="0.00">
+                            <input type="number" name="lc_commission" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($lc->lc_commission) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
@@ -602,7 +605,7 @@ input[type="number"] { -moz-appearance:textfield; }
                     <div class="col-md-3">
                         <label class="form-label">Sales Amount</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="sales_amount" class="form-control form-control-sm" step="0.01" value="{{ $lc->sales_amount }}" placeholder="0.00">
+                            <input type="number" name="sales_amount" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($lc->sales_amount) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
@@ -613,7 +616,7 @@ input[type="number"] { -moz-appearance:textfield; }
                     <div class="col-md-3">
                         <label class="form-label">COSS Amount</label>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="coss_amount" class="form-control form-control-sm" step="0.01" value="{{ $lc->coss_amount }}" placeholder="0.00">
+                            <input type="number" name="coss_amount" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($lc->coss_amount) }}" placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
                     </div>
