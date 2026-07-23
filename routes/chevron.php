@@ -29,7 +29,7 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 
 // C&F Jobs
 Route::prefix('cnf')->name('cnf.')->group(function () {
-Route::get('/jobs/search-customers', [CnfJobController::class,    'searchCustomers'])->name('jobs.search-customers');
+    Route::get('/jobs/search-customers', [CnfJobController::class,    'searchCustomers'])->name('jobs.search-customers');
     Route::get('/jobs/search-items', [CnfJobController::class,    'searchItems'])->name('jobs.search-items');
     Route::get('/job-expenses/search-jobs', [JobExpenseController::class, 'searchJobs'])->name('job-expenses.search-jobs');
     Route::get('/job-expenses/search-employees', [JobExpenseController::class, 'searchEmployees'])->name('job-expenses.search-employees');

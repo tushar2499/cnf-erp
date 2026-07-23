@@ -145,13 +145,11 @@
     function fmtDate($d) { return $d?->format('d-M-Y') ?? '—'; }
     function fmtAmt($v, $prefix = 'BDT', $dec = 2) { return $v ? $prefix . ' ' . number_format((float)$v, $dec) : '—'; }
 
-    $totalLcCost = (float)($lc->lc_rate_amount ?? 0)
-                 + (float)($lc->lc_amendment_charge ?? 0)
+    $totalLcCost = (float)($lc->lc_rt_value ?? 0)
+                 + (float)($lc->bank_charge ?? 0)
                  + (float)($lc->insurance_amt ?? 0)
                  + (float)($lc->credit_report_charge ?? 0)
-                 + (float)($lc->other_charges ?? 0)
-                 + (float)($lc->bank_charge ?? 0)
-                 + (float)($lc->lc_open_cost_bdt ?? 0);
+                 + (float)($lc->other_charges ?? 0);
 @endphp
 
 {{-- Letterhead — visible only when printing --}}
@@ -580,7 +578,7 @@
                     @endphp
                     <div class="d-flex justify-content-between py-1 border-bottom">
                         <span style="font-size:.82rem">LC No</span>
-                        <span style="font-size:.82rem">{{ $lc->lc_no_system ?? '—' }}</span>
+                        <span style="font-size:.82rem">{{ $lc->lc_no ?? '—' }}</span>
                     </div>
                     <div class="d-flex justify-content-between py-1 border-bottom">
                         <span style="font-size:.82rem">PFI No</span>
@@ -589,6 +587,10 @@
                     <div class="d-flex justify-content-between py-1 border-bottom">
                         <span style="font-size:.82rem">PFI Value</span>
                         <span style="font-size:.82rem">{{ $lc->currency }} {{ number_format((float)($lc->pfi_value ?? 0), 4) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span style="font-size:.82rem">Customs Duty</span>
+                        <span style="font-size:.82rem">BDT {{ number_format((float)($lc->customs_duty ?? 0), 2) }}</span>
                     </div>
                     <div class="d-flex justify-content-between py-1 border-bottom">
                         <span style="font-size:.82rem">Total LC Cost</span>
@@ -610,7 +612,7 @@
                     </div>
                     <div class="d-flex justify-content-between py-1 border-bottom">
                         <strong style="font-size:.85rem">Grand Total</strong>
-                        <strong style="font-size:.85rem; color:#1a6b60">BDT {{ number_format($cnfCost + $lcCost + $totalExpenses, 2) }}</strong>
+                        <strong style="font-size:.85rem; color:#1a6b60">BDT {{ number_format($lcCost + $totalOtherCharges + $cnfCost + $totalExpenses, 2) }}</strong>
                     </div>
                     <div class="d-flex justify-content-between py-1 border-bottom">
                         <span style="font-size:.82rem">Advance Payment</span>
