@@ -58,7 +58,7 @@ class LcController extends Controller
         DB::transaction(function () use ($request) {
             $lc = NasTradingLc::create(array_merge(
                 ['lc_no_system' => NasTradingLc::generateLcNo(), 'created_by' => auth()->user()?->id],
-                $request->except(['_token', 'items', 'payments'])
+                $request->except(['_token', 'items', 'payments', 'other_charge_items'])
             ));
 
             foreach ($request->input('items', []) as $item) {
@@ -72,6 +72,12 @@ class LcController extends Controller
                     $lc->payments()->create($payment);
                 }
             }
+
+            foreach ($request->input('other_charge_items', []) as $charge) {
+                if (! empty($charge['name'])) {
+                    $lc->otherChargeItems()->create($charge);
+                }
+            }
         });
 
         return response()->json(['message' => 'LC created successfully.', 'redirect' => route('nas-trading.lcs.index')]);
@@ -79,7 +85,7 @@ class LcController extends Controller
 
     public function show(NasTradingLc $lc)
     {
-        $lc->load('items', 'payments', 'expenses.expenseHead');
+        $lc->load('items', 'payments', 'otherChargeItems', 'expenses.expenseHead');
         $banks = NasTradingBank::where('status', 'Active')->get();
         $importers = NasTradingImporter::where('status', 'Active')->get();
         $psiCompanies = NasTradingPsiCompany::where('status', 'Active')->get();
@@ -91,7 +97,7 @@ class LcController extends Controller
 
     public function edit(NasTradingLc $lc)
     {
-        $lc->load('items', 'payments');
+        $lc->load('items', 'payments', 'otherChargeItems');
         $banks = NasTradingBank::where('status', 'Active')->get();
         $importers = NasTradingImporter::where('status', 'Active')->get();
         $psiCompanies = NasTradingPsiCompany::where('status', 'Active')->get();
@@ -103,7 +109,7 @@ class LcController extends Controller
     public function update(StoreNasTradingLcRequest $request, NasTradingLc $lc)
     {
         DB::transaction(function () use ($request, $lc) {
-            $lc->update($request->except(['_token', '_method', 'items', 'payments']));
+            $lc->update($request->except(['_token', '_method', 'items', 'payments', 'other_charge_items']));
 
             $lc->items()->delete();
             foreach ($request->input('items', []) as $item) {
@@ -118,6 +124,13 @@ class LcController extends Controller
                     $lc->payments()->create($payment);
                 }
             }
+
+            $lc->otherChargeItems()->delete();
+            foreach ($request->input('other_charge_items', []) as $charge) {
+                if (! empty($charge['name'])) {
+                    $lc->otherChargeItems()->create($charge);
+                }
+            }
         });
 
         return response()->json(['message' => 'LC updated successfully.', 'redirect' => route('nas-trading.lcs.show', $lc->id)]);
@@ -127,6 +140,7 @@ class LcController extends Controller
     {
         $lc->items()->delete();
         $lc->expenses()->delete();
+        $lc->otherChargeItems()->delete();
         $lc->delete();
 
         return response()->json(['message' => 'LC deleted.']);
@@ -134,7 +148,7 @@ class LcController extends Controller
 
     public function generateBill(NasTradingLc $lc)
     {
-        $lc->load('items', 'expenses.expenseHead');
+        $lc->load('items', 'expenses.expenseHead', 'payments');
         $expenseHeads = NasTradingExpenseHead::where('status', 'Active')->get();
 
         return view('nas-trading.customer-bills.generate', compact('lc', 'expenseHeads'));

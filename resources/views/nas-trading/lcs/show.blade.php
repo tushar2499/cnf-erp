@@ -20,11 +20,101 @@
 .pay-table th { background:#17375e; color:#fff; font-size:.77rem; padding:.35rem .6rem; }
 .pay-table td { font-size:.8rem; padding:.3rem .6rem; vertical-align:middle; }
 .badge-posting { font-size:.7rem; }
+
+/* Print button inside section headers */
+.btn-print-section {
+    background:transparent; border:1px solid rgba(255,255,255,.4); color:#fff;
+    padding:2px 8px; font-size:.68rem; border-radius:.25rem; opacity:.75;
+    cursor:pointer; line-height:1.5; transition:opacity .15s, background .15s;
+}
+.btn-print-section:hover { opacity:1; background:rgba(255,255,255,.18); color:#fff; }
+
+/* Screen-hidden print elements */
+.print-doc-header { display:none; }
+
+/* ── Print letterhead styles (used only inside @media print) ── */
+.pdh-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:.55rem; }
+.pdh-brand .pdh-company { font-size:18pt; font-weight:800; color:#0c2340; line-height:1.1; letter-spacing:-.01em; }
+.pdh-brand .pdh-division { font-size:8pt; font-weight:700; color:#17375e; text-transform:uppercase; letter-spacing:.1em; margin-top:.1rem; }
+.pdh-docinfo { text-align:right; }
+.pdh-docinfo .pdh-doctitle { font-size:10pt; font-weight:700; color:#0c2340; text-transform:uppercase; letter-spacing:.08em; }
+.pdh-docinfo .pdh-docmeta { font-size:7.5pt; color:#4b5563; margin-top:.25rem; }
+.pdh-docinfo .pdh-docmeta span { margin-left:.75rem; }
+.pdh-customer-bar {
+    background:#f1f5f9; border-left:3px solid #0c2340;
+    padding:.3rem .7rem; font-size:8pt; color:#374151;
+    display:flex; gap:2rem; margin-bottom:.55rem;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+.pdh-rule { border-top:2px solid #0c2340; margin-bottom:.9rem; }
+
+@media print {
+    /* ── Page setup ── */
+    @page { size:A4; margin:12mm 10mm; }
+
+    /* ── Hide app chrome ── */
+    nav.top-navbar,
+    .mobile-context-bar,
+    aside.sidebar,
+    footer,
+    .no-print,
+    .btn-print-section,
+    .btn-del-exp,
+    #btnAddExpense,
+    .chevron,
+    .modal { display:none!important; }
+
+    /* ── Full-width content area; reset min-height so it never forces a blank page ── */
+    html, body { height:auto!important; min-height:0!important; }
+    main.main-content { margin-left:0!important; padding:.5rem 0!important; width:100%!important; min-height:0!important; height:auto!important; }
+
+    /* ── Show letterhead + footer ── */
+    .print-doc-header { display:block!important; }
+
+    /* ── Force all collapsed sections open ── */
+    .collapse { display:block!important; height:auto!important; overflow:visible!important; }
+
+    /* ── Flatten outer 2-col to single column ── */
+    .col-md-8, .col-md-4 { width:100%!important; flex:none!important; max-width:100%!important; padding:0!important; }
+    .row.g-3 { display:block!important; }
+
+    /* ── Section cards ── */
+    .info-card { page-break-inside:avoid; break-inside:avoid; margin-bottom:.6rem; border:1px solid #c8d3e0!important; }
+
+    /* ── Section headers ── */
+    .info-header {
+        background:#0c2340!important; color:#fff!important;
+        font-size:8.5pt!important; padding:.35rem .75rem!important;
+        border-radius:0!important;
+        -webkit-print-color-adjust:exact; print-color-adjust:exact;
+    }
+
+    /* ── Field label / value typography ── */
+    .info-label { font-size:6.5pt!important; color:#6b7280!important; }
+    .info-value { font-size:8.5pt!important; color:#111!important; }
+
+    /* ── Table borders (critical — tables look naked without them) ── */
+    .exp-table, .pay-table { border-collapse:collapse!important; width:100%!important; font-size:8pt!important; }
+    .exp-table th, .exp-table td,
+    .pay-table th, .pay-table td { border:1px solid #c8d3e0!important; padding:.28rem .5rem!important; }
+    .exp-table th { background:#1a6b60!important; color:#fff!important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .pay-table th { background:#17375e!important; color:#fff!important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+
+    /* ── Quick Summary — highlight as a summary document ── */
+    .info-card:has(#sec-summary) .info-body {
+        background:#f0f6ff!important;
+        -webkit-print-color-adjust:exact; print-color-adjust:exact;
+    }
+
+    /* ── Section-wise print mode ── */
+    body.lc-print-section .info-card { display:none!important; }
+    body.lc-print-section .info-card.lc-print-active { display:block!important; }
+}
 </style>
 @endpush
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex justify-content-between align-items-center mb-3 no-print">
     <h4 class="mb-0">
         <i class="fa fa-file-contract me-2 text-info"></i>
         {{ $lc->lc_no_system }}
@@ -39,6 +129,7 @@
     <div class="d-flex gap-2">
         <button class="btn btn-sm btn-outline-light" id="btnExpandAll" title="Expand all sections" style="font-size:.75rem"><i class="fa fa-expand-alt me-1"></i>Expand All</button>
         <button class="btn btn-sm btn-outline-light" id="btnCollapseAll" title="Collapse all sections" style="font-size:.75rem"><i class="fa fa-compress-alt me-1"></i>Collapse All</button>
+        <button class="btn btn-sm btn-outline-warning no-print" id="btnPrintAll" title="Print full LC" style="font-size:.75rem"><i class="fa fa-print me-1"></i>Print All</button>
         <a href="{{ route('nas-trading.lcs.edit', $lc->id) }}" class="btn btn-sm btn-outline-primary"><i class="fa fa-edit me-1"></i> Edit</a>
         <a href="{{ route('nas-trading.lcs.generate-bill', $lc->id) }}" class="btn btn-sm btn-success"><i class="fa fa-file-invoice-dollar me-1"></i> Generate Bill</a>
         <a href="{{ route('nas-trading.lcs.index') }}" class="btn btn-sm btn-outline-secondary"><i class="fa fa-arrow-left me-1"></i> Back</a>
@@ -53,7 +144,40 @@
     $dash = '—';
     function fmtDate($d) { return $d?->format('d-M-Y') ?? '—'; }
     function fmtAmt($v, $prefix = 'BDT', $dec = 2) { return $v ? $prefix . ' ' . number_format((float)$v, $dec) : '—'; }
+
+    $totalLcCost = (float)($lc->lc_rate_amount ?? 0)
+                 + (float)($lc->lc_amendment_charge ?? 0)
+                 + (float)($lc->insurance_amt ?? 0)
+                 + (float)($lc->credit_report_charge ?? 0)
+                 + (float)($lc->other_charges ?? 0)
+                 + (float)($lc->bank_charge ?? 0)
+                 + (float)($lc->lc_open_cost_bdt ?? 0);
 @endphp
+
+{{-- Letterhead — visible only when printing --}}
+<div class="print-doc-header">
+    <div class="pdh-top">
+        <div class="pdh-brand">
+            <div class="pdh-company">NAS Group</div>
+            <div class="pdh-division">NAS Trading</div>
+        </div>
+        <div class="pdh-docinfo">
+            <div class="pdh-doctitle">LC Detail Report</div>
+            <div class="pdh-docmeta">
+                <span>LC No:&nbsp;<strong>{{ $lc->lc_no_system }}</strong></span>
+                <span>PFI:&nbsp;<strong>{{ $lc->pfi_no ?? '—' }}</strong></span>
+                <span>Status:&nbsp;<strong>{{ $lc->lc_status }}</strong></span>
+            </div>
+        </div>
+    </div>
+    <div class="pdh-customer-bar">
+        <span>Customer:&nbsp;<strong>{{ $lc->customer_name ?? '—' }}</strong></span>
+        <span>Printed:&nbsp;<strong>{{ now()->format('d-M-Y H:i') }}</strong></span>
+        <span>By:&nbsp;<strong>{{ auth()->user()->name ?? '' }}</strong></span>
+    </div>
+    <div class="pdh-rule"></div>
+</div>
+
 
 <div class="row g-3">
     {{-- Left column --}}
@@ -61,9 +185,12 @@
 
         {{-- 1. Identification --}}
         <div class="info-card">
-            <div class="info-header" data-bs-toggle="collapse" data-bs-target="#sec-identification" data-section="identification">
+            <div class="info-header" data-bs-target="#sec-identification" data-section="identification">
                 <span><i class="fa fa-id-card me-2"></i> Identification</span>
-                <i class="fa fa-chevron-down chevron"></i>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn-print-section" data-print-target="sec-identification" title="Print this section" aria-label="Print Identification section"><i class="fa fa-print"></i></button>
+                    <i class="fa fa-chevron-down chevron"></i>
+                </div>
             </div>
             <div class="collapse show" id="sec-identification">
                 <div class="info-body">
@@ -96,9 +223,12 @@
 
         {{-- 2. Supplier & Goods --}}
         <div class="info-card">
-            <div class="info-header" data-bs-toggle="collapse" data-bs-target="#sec-supplier" data-section="supplier">
+            <div class="info-header" data-bs-target="#sec-supplier" data-section="supplier">
                 <span><i class="fa fa-industry me-2"></i> Supplier &amp; Goods</span>
-                <i class="fa fa-chevron-down chevron"></i>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn-print-section" data-print-target="sec-supplier" title="Print this section" aria-label="Print Supplier section"><i class="fa fa-print"></i></button>
+                    <i class="fa fa-chevron-down chevron"></i>
+                </div>
             </div>
             <div class="collapse show" id="sec-supplier">
                 <div class="info-body">
@@ -115,9 +245,12 @@
 
         {{-- 3. Bank & Documents --}}
         <div class="info-card">
-            <div class="info-header" data-bs-toggle="collapse" data-bs-target="#sec-bank" data-section="bank">
+            <div class="info-header" data-bs-target="#sec-bank" data-section="bank">
                 <span><i class="fa fa-university me-2"></i> Bank &amp; Documents</span>
-                <i class="fa fa-chevron-down chevron"></i>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn-print-section" data-print-target="sec-bank" title="Print this section" aria-label="Print Bank section"><i class="fa fa-print"></i></button>
+                    <i class="fa fa-chevron-down chevron"></i>
+                </div>
             </div>
             <div class="collapse show" id="sec-bank">
                 <div class="info-body">
@@ -133,21 +266,12 @@
                         <div class="col-md-2"><div class="info-label">Country of Origin</div><div class="info-value">{{ $lc->country_of_origin ?? $dash }}</div></div>
                         <div class="col-md-2"><div class="info-label">Payment Mode</div><div class="info-value">{{ $lc->payment_mode ?? $dash }}</div></div>
 
-                        <div class="col-md-2"><div class="info-label">Insurance Amt</div><div class="info-value">{{ fmtAmt($lc->insurance_amt) }}</div></div>
-                        <div class="col-md-2"><div class="info-label">Cover Note</div><div class="info-value">{{ $lc->cover_note ?? $dash }}</div></div>
-                        <div class="col-md-2"><div class="info-label">Insurance Validity</div><div class="info-value">{{ fmtDate($lc->insurance_validity) }}</div></div>
-                        <div class="col-md-2"><div class="info-label">PSI No</div><div class="info-value">{{ $lc->psi_no ?? $dash }}</div></div>
-                        <div class="col-md-4"><div class="info-label">PSI Company</div><div class="info-value">{{ $psiCompany?->name ?? $dash }}</div></div>
+                        <div class="col-md-3"><div class="info-label">Cover Note</div><div class="info-value">{{ $lc->cover_note ?? $dash }}</div></div>
+                        <div class="col-md-3"><div class="info-label">PSI No</div><div class="info-value">{{ $lc->psi_no ?? $dash }}</div></div>
+                        <div class="col-md-3"><div class="info-label">PSI Company</div><div class="info-value">{{ $psiCompany?->name ?? $dash }}</div></div>
+                        <div class="col-md-3"><div class="info-label">Doc Status</div><div class="info-value">{{ $lc->doc_status ?? $dash }}</div></div>
 
-                        <div class="col-md-2"><div class="info-label">Comm. Currency</div><div class="info-value">{{ $lc->comm_currency ?? $dash }}</div></div>
-                        <div class="col-md-2"><div class="info-label">Comm. Amount</div><div class="info-value">{{ fmtAmt($lc->comm_amount) }}</div></div>
-                        <div class="col-md-2"><div class="info-label">Bank Charge</div><div class="info-value">{{ fmtAmt($lc->bank_charge) }}</div></div>
-                        <div class="col-md-2"><div class="info-label">LC Amendment Charge</div><div class="info-value">{{ fmtAmt($lc->lc_amendment_charge) }}</div></div>
-                        <div class="col-md-2"><div class="info-label">Credit Report Charge</div><div class="info-value">{{ fmtAmt($lc->credit_report_charge) }}</div></div>
-                        <div class="col-md-2"><div class="info-label">Other Charges</div><div class="info-value">{{ fmtAmt($lc->other_charges) }}</div></div>
-
-                        <div class="col-md-2"><div class="info-label">Doc Status</div><div class="info-value">{{ $lc->doc_status ?? $dash }}</div></div>
-                        <div class="col-md-2"><div class="info-label">Sanction Types</div><div class="info-value">{{ $lc->sanction_types ?? $dash }}</div></div>
+                        <div class="col-md-4"><div class="info-label">Sanction Types</div><div class="info-value">{{ $lc->sanction_types ?? $dash }}</div></div>
                         <div class="col-md-4"><div class="info-label">Third Party</div><div class="info-value">{{ $lc->third_party ?? $dash }}</div></div>
                         <div class="col-12"><div class="info-label">Remarks</div><div class="info-value">{{ $lc->remarks ?? $dash }}</div></div>
                     </div>
@@ -157,32 +281,35 @@
 
         {{-- 4. LC Details --}}
         <div class="info-card">
-            <div class="info-header" data-bs-toggle="collapse" data-bs-target="#sec-lcdetails" data-section="lcdetails">
+            <div class="info-header" data-bs-target="#sec-lcdetails" data-section="lcdetails">
                 <span><i class="fa fa-dollar-sign me-2"></i> LC Details</span>
-                <i class="fa fa-chevron-down chevron"></i>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn-print-section" data-print-target="sec-lcdetails" title="Print this section" aria-label="Print LC Details section"><i class="fa fa-print"></i></button>
+                    <i class="fa fa-chevron-down chevron"></i>
+                </div>
             </div>
             <div class="collapse show" id="sec-lcdetails">
                 <div class="info-body">
                     <div class="row g-2">
                         <div class="col-6 col-md-3"><div class="info-label">PFI Value</div><div class="info-value">{{ ($lc->currency ?? '') . ' ' . number_format((float)$lc->pfi_value, 4) }}</div></div>
                         <div class="col-6 col-md-3"><div class="info-label">Currency</div><div class="info-value">{{ $lc->currency ?? $dash }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">LC OP Rate</div><div class="info-value">{{ $lc->lc_open_rate ? 'BDT ' . $lc->lc_open_rate : $dash }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Margin %</div><div class="info-value">{{ $lc->margin_percent ? $lc->margin_percent . '%' : $dash }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">LC OP Rate</div><div class="info-value">{{ $lc->lc_open_rate ? 'BDT ' . number_format((float)$lc->lc_open_rate, 4) : $dash }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Margin %</div><div class="info-value">{{ $lc->margin_percent ? number_format((float)$lc->margin_percent, 2) . '%' : $dash }}</div></div>
                         <div class="col-6 col-md-3"><div class="info-label">LC Margin Amt</div><div class="info-value">{{ fmtAmt($lc->lc_margin_amt) }}</div></div>
                         <div class="col-6 col-md-3"><div class="info-label">LC Opening Cost</div><div class="info-value">{{ fmtAmt($lc->lc_open_cost_bdt) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Freight Value</div><div class="info-value">{{ $lc->freight_value ? ($lc->currency ?? '') . ' ' . $lc->freight_value : $dash }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Freight Value</div><div class="info-value">{{ $lc->freight_value ? ($lc->currency ?? '') . ' ' . number_format((float)$lc->freight_value, 4) : $dash }}</div></div>
                         <div class="col-6 col-md-3"><div class="info-label">LC Value</div><div class="info-value">{{ $lc->lc_value ? ($lc->currency ?? '') . ' ' . number_format((float)$lc->lc_value, 4) : $dash }}</div></div>
                         <div class="col-6 col-md-3"><div class="info-label">Amount BDT</div><div class="info-value">{{ fmtAmt($lc->amount_bdt) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Total LC Cost</div><div class="info-value">{{ fmtAmt($lc->total_lc_cost) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Total LC Cost</div><div class="info-value">{{ fmtAmt($totalLcCost) }}</div></div>
                         <div class="col-6 col-md-3"><div class="info-label">Landed Cost</div><div class="info-value">{{ fmtAmt($lc->landed_cost) }}</div></div>
                         <div class="col-6 col-md-3"><div class="info-label">LC Rate Amount</div><div class="info-value">{{ fmtAmt($lc->lc_rate_amount) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Doc RT Rate</div><div class="info-value">{{ $lc->doc_rt_rate ? 'BDT ' . $lc->doc_rt_rate : $dash }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Doc RT Rate</div><div class="info-value">{{ $lc->doc_rt_rate ? 'BDT ' . number_format((float)$lc->doc_rt_rate, 4) : $dash }}</div></div>
                         <div class="col-6 col-md-3"><div class="info-label">LC RT Value</div><div class="info-value">{{ fmtAmt($lc->lc_rt_value) }}</div></div>
                         <div class="col-6 col-md-3">
                             <div class="info-label">LC Commission</div>
                             <div class="info-value">
                                 @if($lc->lc_commission_percent || $lc->lc_commission_flat)
-                                    {{ $lc->lc_commission_percent ? $lc->lc_commission_percent . '%' : '' }}
+                                    {{ $lc->lc_commission_percent ? number_format((float)$lc->lc_commission_percent, 4) . '%' : '' }}
                                     {{ $lc->lc_commission_percent && $lc->lc_commission_flat ? ' / ' : '' }}
                                     {{ $lc->lc_commission_flat ? 'BDT ' . number_format((float)$lc->lc_commission_flat, 2) : '' }}
                                 @else
@@ -191,6 +318,48 @@
                             </div>
                         </div>
                         <div class="col-6 col-md-3"><div class="info-label">LC Charge Posting</div><div class="info-value">{{ $lc->lc_charge_posting ?? $dash }}</div></div>
+
+                        <div class="col-6 col-md-3"><div class="info-label">Insurance Amount</div><div class="info-value">{{ fmtAmt($lc->insurance_amt) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Insurance Validity</div><div class="info-value">{{ fmtDate($lc->insurance_validity) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Comm. Currency</div><div class="info-value">{{ $lc->comm_currency ?? $dash }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Comm. Amount</div><div class="info-value">{{ fmtAmt($lc->comm_amount) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">LC Amendment Charge</div><div class="info-value">{{ fmtAmt($lc->lc_amendment_charge) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Credit Report Charge</div><div class="info-value">{{ fmtAmt($lc->credit_report_charge) }}</div></div>
+
+                        {{-- Other Charges --}}
+                        <div class="col-12 mt-1">
+                            <div class="info-label mb-1">Other Charges</div>
+                            @if($lc->otherChargeItems->count())
+                            <div style="overflow-x:auto">
+                                <table class="table table-sm table-bordered mb-1 w-100" style="font-size:.8rem">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center" style="width:32px;background:#e9ecef;padding:.3rem .5rem">#</th>
+                                            <th style="background:#e9ecef;padding:.3rem .5rem">Charge Name</th>
+                                            <th style="width:160px;background:#e9ecef;padding:.3rem .5rem">Amount (BDT)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($lc->otherChargeItems as $idx => $charge)
+                                        <tr>
+                                            <td class="text-center" style="padding:.3rem .5rem">{{ $idx + 1 }}</td>
+                                            <td style="padding:.3rem .5rem">{{ $charge->name }}</td>
+                                            <td style="padding:.3rem .5rem">{{ number_format((float)$charge->amount, 2) }}</td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="2" class="text-end fw-bold" style="padding:.3rem .5rem;font-size:.78rem">Total</td>
+                                            <td class="fw-bold" style="padding:.3rem .5rem">{{ number_format($lc->otherChargeItems->sum('amount'), 2) }}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            @else
+                            <div class="info-value">{{ $dash }}</div>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>
@@ -198,9 +367,12 @@
 
         {{-- 5. Payment Tracking --}}
         <div class="info-card">
-            <div class="info-header" data-bs-toggle="collapse" data-bs-target="#sec-payment" data-section="payment">
+            <div class="info-header" data-bs-target="#sec-payment" data-section="payment">
                 <span><i class="fa fa-money-check-alt me-2"></i> Payment Tracking</span>
-                <i class="fa fa-chevron-down chevron"></i>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn-print-section" data-print-target="sec-payment" title="Print this section" aria-label="Print Payment section"><i class="fa fa-print"></i></button>
+                    <i class="fa fa-chevron-down chevron"></i>
+                </div>
             </div>
             <div class="collapse show" id="sec-payment">
                 <div class="info-body">
@@ -241,9 +413,12 @@
 
         {{-- 6. Duty & Clearance --}}
         <div class="info-card">
-            <div class="info-header" data-bs-toggle="collapse" data-bs-target="#sec-duty" data-section="duty">
+            <div class="info-header" data-bs-target="#sec-duty" data-section="duty">
                 <span><i class="fa fa-clipboard-check me-2"></i> Duty &amp; Clearance</span>
-                <i class="fa fa-chevron-down chevron"></i>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn-print-section" data-print-target="sec-duty" title="Print this section" aria-label="Print Duty section"><i class="fa fa-print"></i></button>
+                    <i class="fa fa-chevron-down chevron"></i>
+                </div>
             </div>
             <div class="collapse show" id="sec-duty">
                 <div class="info-body">
@@ -266,9 +441,12 @@
 
         {{-- 7. VAT / Tax / Sales --}}
         <div class="info-card">
-            <div class="info-header" data-bs-toggle="collapse" data-bs-target="#sec-vat" data-section="vat">
+            <div class="info-header" data-bs-target="#sec-vat" data-section="vat">
                 <span><i class="fa fa-percent me-2"></i> VAT / Tax / Sales</span>
-                <i class="fa fa-chevron-down chevron"></i>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn-print-section" data-print-target="sec-vat" title="Print this section" aria-label="Print VAT section"><i class="fa fa-print"></i></button>
+                    <i class="fa fa-chevron-down chevron"></i>
+                </div>
             </div>
             <div class="collapse show" id="sec-vat">
                 <div class="info-body">
@@ -297,9 +475,12 @@
         {{-- 8. Product Line Items --}}
         @if($lc->items->count())
         <div class="info-card">
-            <div class="info-header" data-bs-toggle="collapse" data-bs-target="#sec-items" data-section="items">
+            <div class="info-header" data-bs-target="#sec-items" data-section="items">
                 <span><i class="fa fa-boxes me-2"></i> Product Line Items</span>
-                <i class="fa fa-chevron-down chevron"></i>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn-print-section" data-print-target="sec-items" title="Print this section" aria-label="Print Product Items section"><i class="fa fa-print"></i></button>
+                    <i class="fa fa-chevron-down chevron"></i>
+                </div>
             </div>
             <div class="collapse show" id="sec-items">
                 <div style="overflow-x:auto">
@@ -333,12 +514,13 @@
     {{-- Right column: Expenses + Summary --}}
     <div class="col-md-4">
         <div class="info-card">
-            <div class="info-header d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#sec-expenses" data-section="expenses" style="cursor:pointer">
+            <div class="info-header d-flex justify-content-between align-items-center" data-bs-target="#sec-expenses" data-section="expenses" style="cursor:pointer">
                 <span><i class="fa fa-receipt me-2"></i> LC Expenses</span>
                 <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-sm btn-light py-0 px-2" style="font-size:.72rem;z-index:1;position:relative" data-bs-toggle="modal" data-bs-target="#expenseModal" onclick="event.stopPropagation()">
+                    <button class="btn btn-sm btn-light py-0 px-2" id="btnAddExpense" style="font-size:.72rem;z-index:1;position:relative">
                         <i class="fa fa-plus me-1"></i>Add
                     </button>
+                    <button class="btn-print-section" data-print-target="sec-expenses" title="Print this section" aria-label="Print Expenses section"><i class="fa fa-print"></i></button>
                     <i class="fa fa-chevron-down chevron"></i>
                 </div>
             </div>
@@ -378,35 +560,69 @@
 
         {{-- Quick Summary --}}
         <div class="info-card">
-            <div class="info-header" data-bs-toggle="collapse" data-bs-target="#sec-summary" data-section="summary">
+            <div class="info-header" data-bs-target="#sec-summary" data-section="summary">
                 <span><i class="fa fa-chart-bar me-2"></i> Quick Summary</span>
-                <i class="fa fa-chevron-down chevron"></i>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn-print-section" data-print-target="sec-summary" title="Print this section" aria-label="Print Quick Summary section"><i class="fa fa-print"></i></button>
+                    <i class="fa fa-chevron-down chevron"></i>
+                </div>
             </div>
             <div class="collapse show" id="sec-summary">
                 <div class="info-body">
                     @php
-                        $totalExpenses = $lc->expenses->sum('amount');
-                        $lcCost = (float)($lc->total_lc_cost ?? 0);
+                        $totalExpenses      = $lc->expenses->sum('amount');
+                        $totalOtherCharges  = $lc->otherChargeItems->sum('amount');
+                        $lcCost             = $totalLcCost;
+                        $cnfCost            = (float)($lc->cnf_total_cost ?? 0);
+                        $advancePayment     = $lc->payments->where('payment_type', 'advance')->sum('amount');
+                        $dutyAdvance        = (float)($lc->duty_advance ?? 0);
+                        $totalAdvance       = $advancePayment + $dutyAdvance;
                     @endphp
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span style="font-size:.82rem">LC No</span>
+                        <span style="font-size:.82rem">{{ $lc->lc_no_system ?? '—' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span style="font-size:.82rem">PFI No</span>
+                        <span style="font-size:.82rem">{{ $lc->pfi_no ?? '—' }}</span>
+                    </div>
                     <div class="d-flex justify-content-between py-1 border-bottom">
                         <span style="font-size:.82rem">PFI Value</span>
                         <span style="font-size:.82rem">{{ $lc->currency }} {{ number_format((float)($lc->pfi_value ?? 0), 4) }}</span>
                     </div>
                     <div class="d-flex justify-content-between py-1 border-bottom">
-                        <span style="font-size:.82rem">Amount BDT</span>
-                        <span style="font-size:.82rem">BDT {{ number_format((float)($lc->amount_bdt ?? 0), 2) }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between py-1 border-bottom">
                         <span style="font-size:.82rem">Total LC Cost</span>
                         <span style="font-size:.82rem">BDT {{ number_format($lcCost, 2) }}</span>
+                    </div>
+                    @if($totalOtherCharges > 0)
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span style="font-size:.82rem">Other Charges</span>
+                        <span style="font-size:.82rem">BDT {{ number_format($totalOtherCharges, 2) }}</span>
+                    </div>
+                    @endif
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span style="font-size:.82rem">C&amp;F Cost</span>
+                        <span style="font-size:.82rem">BDT {{ number_format($cnfCost, 2) }}</span>
                     </div>
                     <div class="d-flex justify-content-between py-1 border-bottom">
                         <span style="font-size:.82rem">Total Expenses</span>
                         <span style="font-size:.82rem">BDT {{ number_format($totalExpenses, 2) }}</span>
                     </div>
-                    <div class="d-flex justify-content-between py-1">
+                    <div class="d-flex justify-content-between py-1 border-bottom">
                         <strong style="font-size:.85rem">Grand Total</strong>
-                        <strong style="font-size:.85rem; color:#1a6b60">BDT {{ number_format($lcCost + $totalExpenses, 2) }}</strong>
+                        <strong style="font-size:.85rem; color:#1a6b60">BDT {{ number_format($cnfCost + $lcCost + $totalExpenses, 2) }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span style="font-size:.82rem">Advance Payment</span>
+                        <span style="font-size:.82rem">BDT {{ number_format($advancePayment, 2) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span style="font-size:.82rem">Duty Advance</span>
+                        <span style="font-size:.82rem">BDT {{ number_format($dutyAdvance, 2) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1">
+                        <strong style="font-size:.85rem">Total Advance</strong>
+                        <strong style="font-size:.85rem; color:#17375e">BDT {{ number_format($totalAdvance, 2) }}</strong>
                     </div>
                 </div>
             </div>
@@ -487,44 +703,124 @@
 <script>
 var LC_STORAGE_KEY = 'lc_sections_{{ $lc->id }}';
 
-// Restore saved state then sync chevrons
+// ── Print helpers ─────────────────────────────────────────────────────────
+function forceOpen(el) {
+    // Override Bootstrap's CSS-class hiding with inline styles so the browser
+    // renders the content before window.print() captures the page.
+    el.style.display  = 'block';
+    el.style.height   = 'auto';
+    el.style.overflow = 'visible';
+}
+function restoreCollapsed(el) {
+    el.style.display  = '';
+    el.style.height   = '';
+    el.style.overflow = '';
+}
+
+function printSection(collapseId) {
+    var collapse  = document.getElementById(collapseId);
+    var card      = collapse.closest('.info-card');
+    var wasHidden = !collapse.classList.contains('show');
+    if (wasHidden) forceOpen(collapse);
+    document.body.classList.add('lc-print-section');
+    card.classList.add('lc-print-active');
+    // Give the browser one frame to render the forced-open state before printing
+    setTimeout(function () {
+        window.print();
+        document.body.classList.remove('lc-print-section');
+        card.classList.remove('lc-print-active');
+        if (wasHidden) restoreCollapsed(collapse);
+    }, 100);
+}
+
+function printAllSections() {
+    var toRestore = [];
+    document.querySelectorAll('.info-header[data-section]').forEach(function (h) {
+        var el = document.querySelector(h.getAttribute('data-bs-target'));
+        if (el && !el.classList.contains('show')) {
+            forceOpen(el);
+            toRestore.push(el);
+        }
+    });
+    setTimeout(function () {
+        window.print();
+        toRestore.forEach(restoreCollapsed);
+    }, 100);
+}
+
+// ── Collapse management (manual — Bootstrap delegation removed so print buttons
+//    inside headers can never accidentally trigger a toggle) ──────────────────
+function toggleSection(header) {
+    var targetId = header.getAttribute('data-bs-target');
+    var $collapse = $(targetId);
+    var $header   = $(header);
+    if ($collapse.hasClass('show')) {
+        $collapse.collapse('hide');
+    } else {
+        $collapse.collapse('show');
+    }
+}
+
 $(function () {
     var saved = {};
     try { saved = JSON.parse(localStorage.getItem(LC_STORAGE_KEY) || '{}'); } catch(e) {}
 
-    $('[data-bs-toggle="collapse"][data-section]').each(function () {
-        var key = $(this).data('section');
-        var targetId = $(this).data('bs-target');
-        // Default open unless explicitly saved as closed
+    // Restore saved collapsed/expanded state
+    $('.info-header[data-section]').each(function () {
+        var key      = $(this).data('section');
+        var targetId = $(this).attr('data-bs-target');
         if (saved[key] === false) {
             $(targetId).removeClass('show');
             $(this).addClass('collapsed');
         }
     });
 
-    // Persist on toggle
+    // Header click → toggle collapse (skip if click came from print button or any child of it)
+    $(document).on('click', '.info-header[data-section]', function (e) {
+        if ($(e.target).closest('[data-print-target]').length) return;
+        toggleSection(this);
+    });
+
+    // Sync chevron + persist on Bootstrap collapse events
     $(document).on('hide.bs.collapse', '.collapse', function () {
-        var header = $('[data-bs-target="#' + this.id + '"]');
-        var key = header.data('section');
+        var $header = $('[data-bs-target="#' + this.id + '"]');
+        var key = $header.data('section');
         if (key) { saved[key] = false; localStorage.setItem(LC_STORAGE_KEY, JSON.stringify(saved)); }
-        header.addClass('collapsed');
+        $header.addClass('collapsed');
     });
     $(document).on('show.bs.collapse', '.collapse', function () {
-        var header = $('[data-bs-target="#' + this.id + '"]');
-        var key = header.data('section');
+        var $header = $('[data-bs-target="#' + this.id + '"]');
+        var key = $header.data('section');
         if (key) { saved[key] = true; localStorage.setItem(LC_STORAGE_KEY, JSON.stringify(saved)); }
-        header.removeClass('collapsed');
+        $header.removeClass('collapsed');
+    });
+
+    // Add expense button
+    $('#btnAddExpense').on('click', function (e) {
+        e.stopPropagation();
+        $('#expenseModal').modal('show');
+    });
+
+    // Section print buttons
+    $('[data-print-target]').on('click', function (e) {
+        e.stopPropagation();
+        printSection($(this).data('print-target'));
+    });
+
+    // Print All button
+    $('#btnPrintAll').on('click', function () {
+        printAllSections();
     });
 
     // Expand / Collapse all
     $('#btnExpandAll').on('click', function () {
-        $('[data-bs-toggle="collapse"][data-section]').each(function () {
-            $($(this).data('bs-target')).collapse('show');
+        $('.info-header[data-section]').each(function () {
+            $($(this).attr('data-bs-target')).collapse('show');
         });
     });
     $('#btnCollapseAll').on('click', function () {
-        $('[data-bs-toggle="collapse"][data-section]').each(function () {
-            $($(this).data('bs-target')).collapse('hide');
+        $('.info-header[data-section]').each(function () {
+            $($(this).attr('data-bs-target')).collapse('hide');
         });
     });
 });

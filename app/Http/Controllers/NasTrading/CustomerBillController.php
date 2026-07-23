@@ -91,7 +91,7 @@ class CustomerBillController extends Controller
 
     public function show(NasTradingCustomerBill $customerBill)
     {
-        $customerBill->load('items');
+        $customerBill->load(['items', 'lc.openingBank']);
         return view('nas-trading.customer-bills.show', compact('customerBill'));
     }
 

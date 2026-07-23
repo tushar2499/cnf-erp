@@ -52,6 +52,11 @@ class NasTradingLc extends Model
         return $this->hasMany(NasTradingLcPayment::class, 'lc_id');
     }
 
+    public function otherChargeItems()
+    {
+        return $this->hasMany(NasTradingLcOtherCharge::class, 'lc_id');
+    }
+
     public function expenses()
     {
         return $this->hasMany(NasTradingLcExpense::class, 'lc_id');
@@ -60,6 +65,11 @@ class NasTradingLc extends Model
     public function customer()
     {
         return $this->belongsTo(NasTradingCustomer::class, 'customer_id');
+    }
+
+    public function openingBank()
+    {
+        return $this->belongsTo(NasTradingBank::class, 'opening_bank_id');
     }
 
     public static function generateLcNo(): string

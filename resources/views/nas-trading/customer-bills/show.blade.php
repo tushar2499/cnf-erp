@@ -9,11 +9,36 @@
 .info-value { font-size:.85rem; font-weight:600; }
 .bill-items th { background:#1a6b60; color:#fff; font-size:.77rem; padding:.4rem .5rem; }
 .bill-items td { font-size:.8rem; padding:.35rem .5rem; vertical-align:middle; }
+.print-header { display:none; }
+@media print {
+    .top-navbar, .sidebar, .d-print-none { display:none !important; }
+    .main-content { margin-left:0 !important; padding:1rem !important; }
+    body { background:#fff !important; }
+    .print-header { display:block; margin-bottom:1.25rem; padding-bottom:.75rem; border-bottom:2px solid #0c2340; }
+    .print-header .co-name { font-size:1.1rem; font-weight:700; color:#0c2340; margin:0; }
+    .print-header .co-meta { font-size:.75rem; color:#555; margin:0; }
+    .print-header .bill-title { font-size:.95rem; font-weight:700; color:#1a6b60; margin:.4rem 0 0; text-transform:uppercase; letter-spacing:.05em; }
+    .info-card { border:1px solid #ccc; border-radius:0; margin-bottom:.65rem; page-break-inside:avoid; }
+    .info-header { background:#0c2340 !important; color:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .bill-items th { background:#1a6b60 !important; color:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .table-success { background:#d1e7dd !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .col-md-8, .col-md-4 { width:100% !important; max-width:100% !important; flex:0 0 100% !important; }
+    .row { page-break-inside:avoid; }
+    a[href]::after { content:none !important; }
+}
 </style>
 @endpush
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-3">
+
+{{-- Print-only header (hidden on screen) --}}
+<div class="print-header">
+    <p class="co-name">{{ $activeCompany->name ?? 'NAS Trading' }}</p>
+    @if(isset($activeBranch))<p class="co-meta">{{ $activeBranch->name }}</p>@endif
+    <p class="bill-title">Customer Bill</p>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3 d-print-none">
     <div>
         <h4 class="mb-0"><i class="fa fa-file-invoice-dollar me-2 text-success"></i> {{ $customerBill->bill_no }}</h4>
         <small class="text-muted">{{ $customerBill->bill_date?->format('d-M-Y') }}</small>
@@ -27,6 +52,7 @@
         <a href="{{ route('nas-trading.money-receipts.create') }}?bill_id={{ $customerBill->id }}" class="btn btn-sm btn-success"><i class="fa fa-money-bill-wave me-1"></i>Receive Payment</a>
         <a href="{{ route('nas-trading.deliveries.create') }}?bill_id={{ $customerBill->id }}" class="btn btn-sm btn-outline-info"><i class="fa fa-truck me-1"></i>Create Delivery</a>
         @endif
+        <button class="btn btn-sm btn-outline-dark" onclick="window.print()"><i class="fa fa-print me-1"></i>Print</button>
         <a href="{{ route('nas-trading.customer-bills.index') }}" class="btn btn-sm btn-outline-secondary"><i class="fa fa-arrow-left me-1"></i>Back</a>
     </div>
 </div>
