@@ -44,6 +44,8 @@
                     <th>Branch</th>
                     <th>Customer</th>
                     <th>Cover Van Details</th>
+                    <th>Location From</th>
+                    <th>Location To</th>
                     <th>T. Qty</th>
                     <th>Item Amount</th>
                     <th>AIT Amt</th>
@@ -65,7 +67,9 @@
                     <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                     <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                     <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                    <th></th>
+                    <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                    <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                    <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                     <th></th>
                     <th></th>
                     <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
@@ -109,8 +113,10 @@ $(function () {
             { data: 'entry_by',        name: 'entry_by' },
             { data: 'branch_name',      name: 'branch' },
             { data: 'customer_name',   name: 'customer_name' },
-            { data: 'item_details',    name: 'item_details',     orderable: false, searchable: false, className: 'cover-van-col',
+            { data: 'item_details',    name: 'item_details',     orderable: false, searchable: true, className: 'cover-van-col',
               render: (d) => d ? `<span title="${d}">${d}</span>` : '—' },
+            { data: 'location_from',   name: 'location_from',    orderable: false, searchable: true },
+            { data: 'location_to',     name: 'location_to',      orderable: false, searchable: true },
             { data: 't_qty',           name: 't_qty',            orderable: false, searchable: false, className: 'text-end' },
             { data: 'item_amount',     name: 'item_amount',      orderable: false, searchable: false, className: 'text-end' },
             { data: 'ait_amount',      name: 'ait_amount',       className: 'text-end' },

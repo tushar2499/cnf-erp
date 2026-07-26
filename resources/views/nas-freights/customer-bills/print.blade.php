@@ -403,6 +403,7 @@
                             <td class="lbl">Goods Name:</td>
                             <td>{{ $goodsName }}</td>
                         </tr>
+                        @if ($allProducts->isNotEmpty())
                         <tr>
                             <td class="lbl">Qty &amp; N.Weight:</td>
                             <td>
@@ -412,6 +413,7 @@
                                 @endif
                             </td>
                         </tr>
+                        @endif
                         <tr>
                             <td class="lbl">L/C No:</td>
                             <td>{{ $lcNo }}{{ $lcNo && $lcDate ? ' DT: ' . $lcDate : '' }}</td>
@@ -450,7 +452,11 @@
             <tbody>
                 @foreach ($customerBill->items as $i => $item)
                     @php
-                        $bItem = $item->bookingItem;
+                        $bItem = $item->bookingItem
+                            ?? ($item->booking_id
+                                ? \App\Models\NasFreights\NasFreightsBookingItem::where('booking_id', $item->booking_id)
+                                    ->where('cover_van_no', $item->item_code)->first()
+                                : null);
                         $demDays = (float) ($item->demurrage_day ?? 0);
                         $demAmt = (float) ($item->demurrage_amount ?? 0);
                         $rowTot = $item->line_amount + $demAmt;

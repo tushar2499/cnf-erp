@@ -30,13 +30,36 @@ class NasFreightsCustomerBill extends Model
         return $this->hasMany(NasFreightsCustomerBillItem::class, 'bill_id');
     }
 
-    public static function generateBillNo(): string
+    public static function generateBillNo(int $branchId, string $deliveryType): string
     {
-        $max = static::lockForUpdate()->max(
-            DB::raw('CAST(SUBSTRING(bill_no, 6) AS UNSIGNED)')
-        );
+        $branch     = NasFreightsBranch::find($branchId);
+        $branchCode = $branch?->code ?? 'XX';
+        $typeCode   = match ($deliveryType) {
+            'EXPORT'       => 'EX',
+            'IMPORT'       => 'IM',
+            'DISTRIBUTION' => 'DS',
+            'LOCAL'        => 'LC',
+            default        => 'DS',
+        };
+        $year    = now()->year;
+        $prefix  = "NAS-L-{$branchCode}-{$typeCode}-{$year}-";
 
-        return 'BILL-'.str_pad(($max ?? 0) + 1, 6, '0', STR_PAD_LEFT);
+        // Legacy prefixes — kept so the running number stays continuous across the rename.
+        $legacyPrefixes = [
+            "NAS-F-{$branchCode}-{$typeCode}-{$year}-",
+            "NASF-{$branchCode}-{$typeCode}-{$year}-",
+            "BILL-{$branchCode}-{$typeCode}-{$year}-",
+        ];
+
+        $max = 0;
+        foreach ([$prefix, ...$legacyPrefixes] as $p) {
+            $n = static::where('bill_no', 'like', $p . '%')
+                ->lockForUpdate()
+                ->max(DB::raw("CAST(SUBSTRING(bill_no, " . (strlen($p) + 1) . ") AS UNSIGNED)"));
+            $max = max($max, (int) $n);
+        }
+
+        return $prefix . str_pad($max + 1, 7, '0', STR_PAD_LEFT);
     }
 
     public static function deliveryTypes(): array

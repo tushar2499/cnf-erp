@@ -31,6 +31,17 @@ class BookingController extends Controller
                 ->addIndexColumn()
                 ->addColumn('branch_name', fn ($r) => e($branchMap[$r->branch_id] ?? '—'))
                 ->addColumn('item_details', fn ($r) => e($r->items->pluck('cover_van_no')->filter()->join(', ')))
+                ->filterColumn('item_details', function ($q, $keyword) {
+                    $q->whereHas('items', fn ($qi) => $qi->where('cover_van_no', 'like', "%{$keyword}%"));
+                })
+                ->addColumn('location_from', fn ($r) => e($r->items->pluck('location_from')->filter()->unique()->join(', ')))
+                ->filterColumn('location_from', function ($q, $keyword) {
+                    $q->whereHas('items', fn ($qi) => $qi->where('location_from', 'like', "%{$keyword}%"));
+                })
+                ->addColumn('location_to', fn ($r) => e($r->items->pluck('location_to')->filter()->unique()->join(', ')))
+                ->filterColumn('location_to', function ($q, $keyword) {
+                    $q->whereHas('items', fn ($qi) => $qi->where('location_to', 'like', "%{$keyword}%"));
+                })
                 ->addColumn('t_qty', fn ($r) => number_format($r->items->sum('qty'), 2))
                 ->addColumn('item_amount', fn ($r) => number_format($r->items->sum('amount'), 2))
                 ->addColumn('status_badge', fn ($r) => match ($r->status) {

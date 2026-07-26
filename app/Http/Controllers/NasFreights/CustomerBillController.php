@@ -142,7 +142,7 @@ class CustomerBillController extends Controller
         ]);
 
         DB::transaction(function () use ($request) {
-            $billNo = NasFreightsCustomerBill::generateBillNo();
+            $billNo = NasFreightsCustomerBill::generateBillNo(session('nas_freights_branch_id'), $request->delivery_type);
             $subTotal = collect($request->items)->sum('line_amount');
             $totalDem = collect($request->items)->sum('demurrage_amount');
             $tdsAmt = round($subTotal * ($request->tds_percent ?? 0) / 100, 2);
