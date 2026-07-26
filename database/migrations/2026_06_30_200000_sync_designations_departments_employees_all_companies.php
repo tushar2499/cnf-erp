@@ -44,7 +44,7 @@ return new class extends Migration
 
         // ── 2. SEED SAME DATA INTO ALL DESIGNATION TABLES ─────────────────────
         $designations = DB::table('chevron_designations')->get();
-        $desigRows = $designations->map(fn($d) => [
+        $desigRows = $designations->map(fn ($d) => [
             'id'         => $d->id,
             'name'       => $d->name,
             'is_active'  => $d->is_active,
@@ -57,7 +57,7 @@ return new class extends Migration
 
         // ── 3. SEED SAME DATA INTO ALL DEPARTMENT TABLES ──────────────────────
         $departments = DB::table('nas_trading_departments')->get();
-        $deptRows = $departments->map(fn($d) => [
+        $deptRows = $departments->map(fn ($d) => [
             'id'         => $d->id,
             'name'       => $d->name,
             'status'     => $d->status,

@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Company;
 use Illuminate\Database\Seeder;
 
 class CompanySeeder extends Seeder
@@ -34,7 +34,7 @@ class CompanySeeder extends Seeder
         ];
 
         foreach ($companies as $company) {
-            \App\Models\Company::updateOrCreate(['slug' => $company['slug']], $company);
+            Company::updateOrCreate(['slug' => $company['slug']], $company);
         }
     }
 }

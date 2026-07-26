@@ -36,7 +36,7 @@ class ChevronBill extends Model
 
     public function job()
     {
-        return $this->belongsTo(\App\Models\Chevron\ChevronJob::class, 'job_id');
+        return $this->belongsTo(ChevronJob::class, 'job_id');
     }
 
     public static function billTypes(): array

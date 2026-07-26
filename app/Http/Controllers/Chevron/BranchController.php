@@ -14,22 +14,22 @@ class BranchController extends Controller
         if ($request->ajax()) {
             return DataTables::of(ChevronBranch::query())
                 ->addIndexColumn()
-                ->addColumn('status_badge', fn($row) => $row->is_active
+                ->addColumn('status_badge', fn ($row) => $row->is_active
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')
-                ->addColumn('action', fn($row) => '
+                ->addColumn('action', fn ($row) => '
                     <button class="btn btn-sm btn-outline-primary btn-edit"
-                        data-id="' . $row->id . '"
-                        data-name="' . e($row->name) . '"
-                        data-code="' . e($row->code) . '"
-                        data-address="' . e($row->address) . '"
-                        data-phone="' . e($row->phone) . '"
-                        data-is_active="' . (int)$row->is_active . '">
+                        data-id="'.$row->id.'"
+                        data-name="'.e($row->name).'"
+                        data-code="'.e($row->code).'"
+                        data-address="'.e($row->address).'"
+                        data-phone="'.e($row->phone).'"
+                        data-is_active="'.(int) $row->is_active.'">
                         <i class="fa fa-edit"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger btn-delete"
-                        data-url="' . route('chevron.settings.branches.destroy', $row->id) . '"
-                        data-name="' . e($row->name) . '">
+                        data-url="'.route('chevron.settings.branches.destroy', $row->id).'"
+                        data-name="'.e($row->name).'">
                         <i class="fa fa-trash"></i>
                     </button>')
                 ->rawColumns(['status_badge', 'action'])
@@ -49,6 +49,7 @@ class BranchController extends Controller
             'phone'     => $request->phone,
             'is_active' => $request->boolean('is_active', true),
         ]);
+
         return response()->json(['message' => 'Branch created successfully.']);
     }
 
@@ -62,12 +63,14 @@ class BranchController extends Controller
             'phone'     => $request->phone,
             'is_active' => $request->boolean('is_active', true),
         ]);
+
         return response()->json(['message' => 'Branch updated successfully.']);
     }
 
     public function destroy(ChevronBranch $branch)
     {
         $branch->delete();
+
         return response()->json(['message' => 'Branch deleted.']);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\NasTrading;
 
 use App\Http\Controllers\Controller;
+use App\Models\NasTrading\NasTradingExpenseHead;
 use App\Models\NasTrading\NasTradingLcExpense;
 use Illuminate\Http\Request;
 
@@ -18,7 +19,7 @@ class LcExpenseController extends Controller
 
         $expenseHead = null;
         if ($request->expense_head_id) {
-            $expenseHead = \App\Models\NasTrading\NasTradingExpenseHead::find($request->expense_head_id);
+            $expenseHead = NasTradingExpenseHead::find($request->expense_head_id);
         }
 
         $expense = NasTradingLcExpense::create([
@@ -43,7 +44,7 @@ class LcExpenseController extends Controller
 
         $expenseHead = null;
         if ($request->expense_head_id) {
-            $expenseHead = \App\Models\NasTrading\NasTradingExpenseHead::find($request->expense_head_id);
+            $expenseHead = NasTradingExpenseHead::find($request->expense_head_id);
         }
 
         $lcExpense->update([
@@ -63,6 +64,7 @@ class LcExpenseController extends Controller
     public function destroy(NasTradingLcExpense $lcExpense)
     {
         $lcExpense->delete();
+
         return response()->json(['message' => 'Expense deleted.']);
     }
 }

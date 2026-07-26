@@ -9,6 +9,7 @@ use App\Models\NasFreights\NasFreightsCustomerBill;
 use App\Models\NasFreights\NasFreightsCustomerBillItem;
 use App\Models\NasFreights\NasFreightsSupplierPayment;
 use App\Models\NasFreights\NasFreightsVehicle;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -18,51 +19,60 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 class ImportController extends Controller
 {
     private array $supplierMap = [];
+
     private array $customerMap = [];
 
     private function supplierId(string $name): ?int
     {
-        if (!$this->supplierMap) {
+        if (! $this->supplierMap) {
             $this->supplierMap = DB::table('nas_freights_suppliers')
-                ->pluck('id', 'company_name')->map(fn($id) => (int) $id)->toArray();
+                ->pluck('id', 'company_name')->map(fn ($id) => (int) $id)->toArray();
         }
         if (isset($this->supplierMap[$name])) {
             return $this->supplierMap[$name];
         }
         // Normalize: lowercase, strip trailing punctuation/spaces, collapse spaces
-        $norm = fn(string $s) => preg_replace('/\s+/', ' ', strtolower(rtrim(trim($s), '. ')));
+        $norm = fn (string $s) => preg_replace('/\s+/', ' ', strtolower(rtrim(trim($s), '. ')));
         $needle = $norm($name);
         foreach ($this->supplierMap as $key => $id) {
-            if ($norm($key) === $needle) return $id;
+            if ($norm($key) === $needle) {
+                return $id;
+            }
         }
+
         return null;
     }
 
     private function customerId(string $name): ?int
     {
-        if (!$this->customerMap) {
+        if (! $this->customerMap) {
             $this->customerMap = DB::table('nas_freights_customers')
-                ->pluck('id', 'name')->map(fn($id) => (int) $id)->toArray();
+                ->pluck('id', 'name')->map(fn ($id) => (int) $id)->toArray();
         }
         if (isset($this->customerMap[$name])) {
             return $this->customerMap[$name];
         }
-        $norm = fn(string $s) => preg_replace('/\s+/', ' ', strtolower(rtrim(trim($s), '. ')));
+        $norm = fn (string $s) => preg_replace('/\s+/', ' ', strtolower(rtrim(trim($s), '. ')));
         $needle = $norm($name);
         foreach ($this->customerMap as $key => $id) {
-            if ($norm($key) === $needle) return $id;
+            if ($norm($key) === $needle) {
+                return $id;
+            }
         }
+
         return null;
     }
 
     private function parseDate(mixed $val): ?string
     {
-        if (!$val) return null;
+        if (! $val) {
+            return null;
+        }
         if (is_numeric($val)) {
             return ExcelDate::excelToDateTimeObject((float) $val)->format('Y-m-d');
         }
         try {
-            return \Carbon\Carbon::parse($val)->format('Y-m-d');
+            return Carbon::parse($val)->format('Y-m-d');
         } catch (\Exception) {
             return null;
         }
@@ -72,6 +82,7 @@ class ImportController extends Controller
     {
         $path = Storage::path($storedPath);
         $reader = IOFactory::createReaderForFile($path);
+
         return $reader->load($path)->getActiveSheet()->toArray(null, true, true, true);
     }
 
@@ -90,8 +101,10 @@ class ImportController extends Controller
             $rows = $this->parseSupplierPaymentRows($this->loadRows($storedPath));
         } catch (\Throwable) {
             Storage::delete($storedPath);
+
             return back()->withErrors(['file' => 'Could not read this file. If it is a .xls file, open it in Excel, save as .xlsx, then upload the .xlsx version.']);
         }
+
         return view('nas-freights.import.supplier-payments', [
             'rows'       => $rows,
             'total'      => count($rows),
@@ -102,7 +115,7 @@ class ImportController extends Controller
     public function supplierPaymentsImport(Request $request)
     {
         $request->validate(['file_path' => 'required|string']);
-        $rows  = $this->parseSupplierPaymentRows($this->loadRows($request->file_path));
+        $rows = $this->parseSupplierPaymentRows($this->loadRows($request->file_path));
         $count = 0;
         DB::transaction(function () use ($rows, &$count) {
             foreach ($rows as $row) {
@@ -111,6 +124,7 @@ class ImportController extends Controller
             }
         });
         Storage::delete($request->file_path);
+
         return redirect()->route('nas-freights.import.supplier-payments')
             ->with('success', "Imported {$count} supplier payment(s) successfully.");
     }
@@ -120,9 +134,15 @@ class ImportController extends Controller
         $rows = [];
         $isFirst = true;
         foreach ($rawRows as $r) {
-            if ($isFirst) { $isFirst = false; continue; }
+            if ($isFirst) {
+                $isFirst = false;
+
+                continue;
+            }
             $paymentNo = trim($r['C'] ?? '');
-            if (!$paymentNo) continue;
+            if (! $paymentNo) {
+                continue;
+            }
             $supplierName = trim($r['D'] ?? '');
             $rows[] = [
                 'payment_date'  => $this->parseDate($r['B']) ?? now()->format('Y-m-d'),
@@ -134,6 +154,7 @@ class ImportController extends Controller
                 'entry_by'      => trim($r['K'] ?? '') ?: null,
             ];
         }
+
         return $rows;
     }
 
@@ -152,8 +173,10 @@ class ImportController extends Controller
             $rows = $this->parseCustomerBillRows($this->loadRows($storedPath));
         } catch (\Throwable) {
             Storage::delete($storedPath);
+
             return back()->withErrors(['file' => 'Could not read this file. If it is a .xls file, open it in Excel, save as .xlsx, then upload the .xlsx version.']);
         }
+
         return view('nas-freights.import.customer-bills', [
             'rows'       => $rows,
             'total'      => count($rows),
@@ -164,7 +187,7 @@ class ImportController extends Controller
     public function customerBillsImport(Request $request)
     {
         $request->validate(['file_path' => 'required|string']);
-        $rows  = $this->parseCustomerBillRows($this->loadRows($request->file_path));
+        $rows = $this->parseCustomerBillRows($this->loadRows($request->file_path));
         $count = 0;
         DB::transaction(function () use ($rows, &$count) {
             foreach ($rows as $row) {
@@ -173,6 +196,7 @@ class ImportController extends Controller
             }
         });
         Storage::delete($request->file_path);
+
         return redirect()->route('nas-freights.import.customer-bills')
             ->with('success', "Imported {$count} customer bill(s) successfully.");
     }
@@ -183,13 +207,19 @@ class ImportController extends Controller
         $rows = [];
         $isFirst = true;
         foreach ($rawRows as $r) {
-            if ($isFirst) { $isFirst = false; continue; }
+            if ($isFirst) {
+                $isFirst = false;
+
+                continue;
+            }
             $billNo = trim($r['D'] ?? '');
-            if (!$billNo) continue;
+            if (! $billNo) {
+                continue;
+            }
             $customerName = trim($r['E'] ?? '');
-            $amount       = is_numeric($r['I']) ? (float) $r['I'] : 0;
-            $rawStatus    = strtoupper(trim($r['K'] ?? ''));
-            $billDate     = $this->parseDate($r['C']) ?? now()->format('Y-m-d');
+            $amount = is_numeric($r['I']) ? (float) $r['I'] : 0;
+            $rawStatus = strtoupper(trim($r['K'] ?? ''));
+            $billDate = $this->parseDate($r['C']) ?? now()->format('Y-m-d');
             $rows[] = [
                 'bill_no'          => $billNo,
                 'delivery_no'      => $billNo,
@@ -206,6 +236,7 @@ class ImportController extends Controller
                 'entry_by'         => trim($r['M'] ?? '') ?: null,
             ];
         }
+
         return $rows;
     }
 
@@ -224,8 +255,10 @@ class ImportController extends Controller
             $rows = $this->parseVehicleRows($this->loadRows($storedPath));
         } catch (\Throwable) {
             Storage::delete($storedPath);
+
             return back()->withErrors(['file' => 'Could not read this file. If it is a .xls file, open it in Excel, save as .xlsx, then upload the .xlsx version.']);
         }
+
         return view('nas-freights.import.vehicles', [
             'rows'       => $rows,
             'total'      => count($rows),
@@ -236,7 +269,7 @@ class ImportController extends Controller
     public function vehiclesImport(Request $request)
     {
         $request->validate(['file_path' => 'required|string']);
-        $rows  = $this->parseVehicleRows($this->loadRows($request->file_path));
+        $rows = $this->parseVehicleRows($this->loadRows($request->file_path));
         $count = 0;
         DB::transaction(function () use ($rows, &$count) {
             foreach ($rows as $row) {
@@ -245,6 +278,7 @@ class ImportController extends Controller
             }
         });
         Storage::delete($request->file_path);
+
         return redirect()->route('nas-freights.import.vehicles')
             ->with('success', "Imported {$count} vehicle(s) successfully.");
     }
@@ -254,21 +288,28 @@ class ImportController extends Controller
         $rows = [];
         $isFirst = true;
         foreach ($rawRows as $r) {
-            if ($isFirst) { $isFirst = false; continue; }
+            if ($isFirst) {
+                $isFirst = false;
+
+                continue;
+            }
             $vehicleNumber = trim($r['A'] ?? '');
-            if (!$vehicleNumber) continue;
+            if (! $vehicleNumber) {
+                continue;
+            }
             $uom = trim($r['C'] ?? '');
             $rows[] = [
-                'vehicle_number'    => $vehicleNumber,
-                'vehicle_name'      => trim($r['B'] ?? '') ?: $vehicleNumber,
-                'purchase_unit'     => ($uom && strtolower($uom) !== 'null') ? $uom : null,
-                'price'             => is_numeric($r['D']) ? (float) $r['D'] : 0,
-                'availability_in_so'=> strtoupper(trim($r['E'] ?? '')) === 'YES',
-                'availability_in_po'=> strtoupper(trim($r['F'] ?? '')) === 'YES',
-                'status'            => 'Active',
-                'branch_id'         => 1,
+                'vehicle_number'     => $vehicleNumber,
+                'vehicle_name'       => trim($r['B'] ?? '') ?: $vehicleNumber,
+                'purchase_unit'      => ($uom && strtolower($uom) !== 'null') ? $uom : null,
+                'price'              => is_numeric($r['D']) ? (float) $r['D'] : 0,
+                'availability_in_so' => strtoupper(trim($r['E'] ?? '')) === 'YES',
+                'availability_in_po' => strtoupper(trim($r['F'] ?? '')) === 'YES',
+                'status'             => 'Active',
+                'branch_id'          => 1,
             ];
         }
+
         return $rows;
     }
 
@@ -285,12 +326,14 @@ class ImportController extends Controller
         $storedPath = $request->file('file')->store('imports');
         try {
             $parsed = $this->parseCustomerBillSummaryFile($this->loadRows($storedPath));
-        ['rows' => $rows, 'customer' => $customer, 'address' => $address, 'from_date' => $fromDate, 'to_date' => $toDate]
-                = $parsed;
+            ['rows' => $rows, 'customer' => $customer, 'address' => $address, 'from_date' => $fromDate, 'to_date' => $toDate]
+                    = $parsed;
         } catch (\Throwable) {
             Storage::delete($storedPath);
+
             return back()->withErrors(['file' => 'Could not read this file. If it is a .xls file, open it in Excel, save as .xlsx, then upload the .xlsx version.']);
         }
+
         return view('nas-freights.import.customer-bill-summary', [
             'rows'          => $rows,
             'total'         => count($rows),
@@ -306,8 +349,8 @@ class ImportController extends Controller
     {
         $request->validate(['file_path' => 'required|string']);
         $parsed = $this->parseCustomerBillSummaryFile($this->loadRows($request->file_path));
-        $rows   = $parsed['rows'];
-        $count  = 0;
+        $rows = $parsed['rows'];
+        $count = 0;
 
         DB::transaction(function () use ($rows, &$count) {
             foreach ($rows as $row) {
@@ -336,9 +379,13 @@ class ImportController extends Controller
                 $bill->items()->delete();
 
                 foreach ($row['_booking_matches'] as $jobNo => $bookingId) {
-                    if (!$bookingId) continue;
+                    if (! $bookingId) {
+                        continue;
+                    }
                     $booking = NasFreightsBooking::with('items')->find($bookingId);
-                    if (!$booking) continue;
+                    if (! $booking) {
+                        continue;
+                    }
                     foreach ($booking->items as $item) {
                         NasFreightsCustomerBillItem::create([
                             'bill_id'          => $bill->id,
@@ -348,7 +395,7 @@ class ImportController extends Controller
                             'delivery_date'    => $booking->delivery_date,
                             'item_code'        => $item->cover_van_no,
                             'item_name'        => $item->cover_van_no,
-                            'location'         => trim(($item->location_from ?? '') . ' - ' . ($item->location_to ?? ''), ' -'),
+                            'location'         => trim(($item->location_from ?? '').' - '.($item->location_to ?? ''), ' -'),
                             'price'            => $item->customer_rate,
                             'line_amount'      => $item->customer_rate,
                             'b_qty'            => 1,
@@ -370,64 +417,77 @@ class ImportController extends Controller
         });
 
         Storage::delete($request->file_path);
+
         return redirect()->route('nas-freights.import.customer-bill-summary')
             ->with('success', "Imported {$count} customer bill(s) successfully.");
     }
 
     private function parseCustomerBillSummaryFile(array $rawRows): array
     {
-        $customerName    = null;
+        $customerName = null;
         $customerAddress = null;
-        $fromDate        = null;
-        $toDate          = null;
-        $colMap          = null;
-        $rows            = [];
-        $addressLines    = [];
-        $foundTo         = false;
-        $toRowIndex      = -1;
-        $rowIndex        = 0;
+        $fromDate = null;
+        $toDate = null;
+        $colMap = null;
+        $rows = [];
+        $addressLines = [];
+        $foundTo = false;
+        $toRowIndex = -1;
+        $rowIndex = 0;
 
         foreach ($rawRows as $r) {
             $vals = array_values($r);
             $rowIndex++;
 
             // Build header from first non-null cell in row
-            $rowText = implode(' ', array_filter(array_map(fn($v) => trim((string) $v), $vals)));
+            $rowText = implode(' ', array_filter(array_map(fn ($v) => trim((string) $v), $vals)));
 
             if ($colMap === null) {
                 // Check for billing period
                 if (str_contains($rowText, 'Billing Period') || str_contains($rowText, 'From:')) {
                     if (preg_match('/From[:\s]+(\d{1,2}\s+\w+[,\s]+\d{4})/i', $rowText, $m1) &&
                         preg_match('/To[:\s]+(\d{1,2}\s+\w+[,\s]+\d{4})/i', $rowText, $m2)) {
-                        try { $fromDate = \Carbon\Carbon::parse(trim($m1[1], ', '))->format('Y-m-d'); } catch (\Exception) {}
-                        try { $toDate   = \Carbon\Carbon::parse(trim($m2[1], ', '))->format('Y-m-d'); } catch (\Exception) {}
+                        try {
+                            $fromDate = Carbon::parse(trim($m1[1], ', '))->format('Y-m-d');
+                        } catch (\Exception) {
+                        }
+                        try {
+                            $toDate = Carbon::parse(trim($m2[1], ', '))->format('Y-m-d');
+                        } catch (\Exception) {
+                        }
                     }
                 }
 
                 // Check for "To," marker — record which row it was on
-                if (!$foundTo) {
+                if (! $foundTo) {
                     foreach ($vals as $v) {
-                        if (trim((string) $v) === 'To,') { $foundTo = true; $toRowIndex = $rowIndex; break; }
+                        if (trim((string) $v) === 'To,') {
+                            $foundTo = true;
+                            $toRowIndex = $rowIndex;
+                            break;
+                        }
                     }
                 }
 
                 // Customer name: first non-empty, non-meta cell on rows AFTER the "To," row
-                if ($foundTo && $rowIndex > $toRowIndex && !$customerName) {
+                if ($foundTo && $rowIndex > $toRowIndex && ! $customerName) {
                     foreach ($vals as $v) {
                         $s = trim((string) $v);
                         if ($s
-                            && !str_contains($s, 'Total Bill')
-                            && !str_contains($s, 'Billing Period')
-                            && !is_numeric($s)
+                            && ! str_contains($s, 'Total Bill')
+                            && ! str_contains($s, 'Billing Period')
+                            && ! is_numeric($s)
                         ) {
                             $customerName = $s;
                             break;
                         }
                     }
-                } elseif ($foundTo && $customerName && !$fromDate) {
+                } elseif ($foundTo && $customerName && ! $fromDate) {
                     // Collect address lines
-                    $line = implode(', ', array_filter(array_map(fn($v) => trim((string) $v), $vals)));
-                    if ($line) $addressLines[] = $line;
+                    $line = implode(', ', array_filter(array_map(fn ($v) => trim((string) $v), $vals)));
+                    if ($line) {
+                        $addressLines[] = $line;
+                    }
                 }
 
                 // Detect header row by scanning for "bill no"
@@ -441,27 +501,30 @@ class ImportController extends Controller
                         break;
                     }
                 }
+
                 continue;
             }
 
-            $get = fn(string $k) => $vals[$colMap[$k] ?? PHP_INT_MAX] ?? null;
+            $get = fn (string $k) => $vals[$colMap[$k] ?? PHP_INT_MAX] ?? null;
 
             $billNo = trim((string) $get('bill no'));
-            if (!$billNo) continue;
+            if (! $billNo) {
+                continue;
+            }
 
             // Parse job numbers — may be multi-line merged cell, comma-separated
             $rawJobNos = trim((string) $get('job no'));
             $jobNos = array_filter(array_map('trim', explode(',', $rawJobNos)));
 
-            $num = fn($v) => is_numeric($clean = str_replace(',', '', (string) ($v ?? ''))) ? (float) $clean : 0;
+            $num = fn ($v) => is_numeric($clean = str_replace(',', '', (string) ($v ?? ''))) ? (float) $clean : 0;
 
-            $billDate   = $this->parseDate($get('bill date')) ?? now()->format('Y-m-d');
-            $netAmount  = $num($get('net amount'));
+            $billDate = $this->parseDate($get('bill date')) ?? now()->format('Y-m-d');
+            $netAmount = $num($get('net amount'));
             $tdsPercent = $num($get('tds %'));
-            $tdsAmount  = $num($get('tds amt'));
+            $tdsAmount = $num($get('tds amt'));
             $vatPercent = $num($get('vat %'));
-            $vatAmount  = $num($get('vat amt'));
-            $totalAmt   = $num($get('total amt'));
+            $vatAmount = $num($get('vat amt'));
+            $totalAmt = $num($get('total amt'));
 
             $customerId = $customerName ? $this->customerId($customerName) : null;
 
@@ -471,7 +534,7 @@ class ImportController extends Controller
                 $booking = NasFreightsBooking::select('id', 'customer_id')->where('job_no', $jn)->first();
                 $bookingMatches[$jn] = $booking?->id;
                 // Fallback: derive customer_id from booking if name lookup failed
-                if (!$customerId && $booking?->customer_id) {
+                if (! $customerId && $booking?->customer_id) {
                     $customerId = $booking->customer_id;
                 }
             }
@@ -480,7 +543,7 @@ class ImportController extends Controller
                 'bill_no'           => $billNo,
                 'bill_date'         => $billDate,
                 'from_date'         => $fromDate ?? $billDate,
-                'to_date'           => $toDate   ?? $billDate,
+                'to_date'           => $toDate ?? $billDate,
                 'customer_name'     => $customerName,
                 'customer_id'       => $customerId,
                 'customer_address'  => $customerAddress,
@@ -498,15 +561,17 @@ class ImportController extends Controller
 
         $customerAddress = implode(', ', array_filter($addressLines)) ?: null;
         // Backfill address into rows
-        foreach ($rows as &$row) { $row['customer_address'] = $customerAddress; }
+        foreach ($rows as &$row) {
+            $row['customer_address'] = $customerAddress;
+        }
         unset($row);
 
         return [
-            'rows'      => $rows,
-            'customer'  => $customerName,
-            'address'   => $customerAddress,
-            'from_date' => $fromDate,
-            'to_date'   => $toDate,
+            'rows'          => $rows,
+            'customer'      => $customerName,
+            'address'       => $customerAddress,
+            'from_date'     => $fromDate,
+            'to_date'       => $toDate,
             'debug_headers' => $colMap ? array_keys($colMap) : [],
         ];
     }
@@ -526,8 +591,10 @@ class ImportController extends Controller
             $rows = $this->parseBookingUpdateRows($this->loadRows($storedPath));
         } catch (\Throwable) {
             Storage::delete($storedPath);
+
             return back()->withErrors(['file' => 'Could not read this file. If it is a .xls file, open it in Excel, save as .xlsx, then upload the .xlsx version.']);
         }
+
         return view('nas-freights.import.booking-updates', [
             'rows'       => $rows,
             'total'      => count($rows),
@@ -538,7 +605,7 @@ class ImportController extends Controller
     public function bookingUpdatesImport(Request $request)
     {
         $request->validate(['file_path' => 'required|string']);
-        $rows  = $this->parseBookingUpdateRows($this->loadRows($request->file_path));
+        $rows = $this->parseBookingUpdateRows($this->loadRows($request->file_path));
         $count = 0;
         $skipped = 0;
         DB::transaction(function () use ($rows, &$count, &$skipped) {
@@ -550,6 +617,7 @@ class ImportController extends Controller
             }
         });
         Storage::delete($request->file_path);
+
         return redirect()->route('nas-freights.import.booking-updates')
             ->with('success', "Updated {$count} booking(s). {$skipped} job no(s) not found.");
     }
@@ -557,19 +625,25 @@ class ImportController extends Controller
     private function parseBookingUpdateRows(array $rawRows): array
     {
         $statusMap = ['SUBMITTED' => 'Submitted', 'APPROVED' => 'Approved', 'REJECTED' => 'Rejected', 'PAID' => 'Paid'];
-        $rows      = [];
-        $isFirst   = true;
+        $rows = [];
+        $isFirst = true;
         foreach ($rawRows as $r) {
-            if ($isFirst) { $isFirst = false; continue; }
+            if ($isFirst) {
+                $isFirst = false;
+
+                continue;
+            }
             $jobNo = trim($r['A'] ?? '');
-            if (!$jobNo) continue;
-            $deliveryMap    = ['PENDING' => 'Pending', 'PARTIALLY_DELIVERED' => 'Partially Delivered', 'FULLY_DELIVERED' => 'Fully Delivered'];
-            $rawStatus      = strtoupper(trim($r['P'] ?? ''));
-            $rawDelivery    = strtoupper(trim($r['Q'] ?? ''));
-            $baseAmount     = is_numeric($r['I']) ? (float) $r['I'] : 0;
-            $aitAmount      = is_numeric($r['J']) ? (float) $r['J'] : 0;
-            $tdsAmount      = is_numeric($r['K']) ? (float) $r['K'] : 0;
-            $vatAmount      = is_numeric($r['L']) ? (float) $r['L'] : 0;
+            if (! $jobNo) {
+                continue;
+            }
+            $deliveryMap = ['PENDING' => 'Pending', 'PARTIALLY_DELIVERED' => 'Partially Delivered', 'FULLY_DELIVERED' => 'Fully Delivered'];
+            $rawStatus = strtoupper(trim($r['P'] ?? ''));
+            $rawDelivery = strtoupper(trim($r['Q'] ?? ''));
+            $baseAmount = is_numeric($r['I']) ? (float) $r['I'] : 0;
+            $aitAmount = is_numeric($r['J']) ? (float) $r['J'] : 0;
+            $tdsAmount = is_numeric($r['K']) ? (float) $r['K'] : 0;
+            $vatAmount = is_numeric($r['L']) ? (float) $r['L'] : 0;
             $rows[] = [
                 'job_no'           => $jobNo,
                 'delivery_date'    => $this->parseDate($r['C']) ?? null,
@@ -589,6 +663,7 @@ class ImportController extends Controller
                 'sales_type'       => trim($r['S'] ?? '') ?: null,
             ];
         }
+
         return $rows;
     }
 
@@ -607,8 +682,10 @@ class ImportController extends Controller
             $rows = $this->parseBookingRows($this->loadRows($storedPath));
         } catch (\Throwable) {
             Storage::delete($storedPath);
+
             return back()->withErrors(['file' => 'Could not read this file. If it is a .xls file, open it in Excel, save as .xlsx, then upload the .xlsx version.']);
         }
+
         return view('nas-freights.import.bookings', [
             'rows'       => $rows,
             'total'      => count($rows),
@@ -631,7 +708,7 @@ class ImportController extends Controller
         $count = 0;
         DB::transaction(function () use ($grouped, &$count) {
             foreach ($grouped as $jobNo => $jobRows) {
-                $first       = $jobRows[0];
+                $first = $jobRows[0];
                 $totalAmount = array_sum(array_column($jobRows, '_customer_rate'));
 
                 $jobDate = $first['job_date'] ?? now()->format('Y-m-d');
@@ -662,12 +739,12 @@ class ImportController extends Controller
                     $item = $row['_item'];
 
                     // Auto-create vehicle if not already in master table; always sync supplier
-                    if (!empty($item['cover_van_no'])) {
+                    if (! empty($item['cover_van_no'])) {
                         $vehicle = NasFreightsVehicle::firstOrCreate(
                             ['vehicle_number' => $item['cover_van_no']],
                             ['vehicle_name' => $item['cover_van_no'], 'branch_id' => 1, 'status' => 'Active']
                         );
-                        if (!empty($item['supplier_id']) || !empty($item['supplier_name'])) {
+                        if (! empty($item['supplier_id']) || ! empty($item['supplier_name'])) {
                             $vehicle->update([
                                 'supplier_id'   => $item['supplier_id'],
                                 'supplier_name' => $item['supplier_name'],
@@ -684,6 +761,7 @@ class ImportController extends Controller
         });
 
         Storage::delete($request->file_path);
+
         return redirect()->route('nas-freights.import.bookings')
             ->with('success', "Imported {$count} booking(s) successfully.");
     }
@@ -692,7 +770,7 @@ class ImportController extends Controller
 
     private function parseBookingRows(array $rawRows): array
     {
-        $rows   = [];
+        $rows = [];
         $colMap = null; // built dynamically from header row
 
         foreach ($rawRows as $r) {
@@ -712,19 +790,22 @@ class ImportController extends Controller
                         break;
                     }
                 }
+
                 continue; // always skip the header row itself
             }
 
-            $get = fn(string $k) => $vals[$colMap[$k] ?? PHP_INT_MAX] ?? null;
+            $get = fn (string $k) => $vals[$colMap[$k] ?? PHP_INT_MAX] ?? null;
 
             $jobNo = trim((string) $get('job no'));
-            if (!$jobNo) continue;
+            if (! $jobNo) {
+                continue;
+            }
 
             $customerName = trim((string) $get('customer'));
             $supplierName = trim((string) ($get('supplier') ?? $get('supllier')));
-            $location     = trim((string) $get('location'));
-            $locParts     = explode(' - ', $location, 2);
-            $coverVan     = trim((string) $get('cover van details')) ?: null;
+            $location = trim((string) $get('location'));
+            $locParts = explode(' - ', $location, 2);
+            $coverVan = trim((string) $get('cover van details')) ?: null;
             $supplierRate = is_numeric($get('supplier rate')) ? (float) $get('supplier rate') : 0;
             $customerRate = is_numeric($get('customer rate')) ? (float) $get('customer rate') : 0;
 
@@ -738,7 +819,7 @@ class ImportController extends Controller
                 'note'              => trim((string) $get('remarks')) ?: null,
                 'entry_by'          => trim((string) $get('entry by')) ?: null,
                 '_customer_rate'    => $customerRate,
-                '_item' => [
+                '_item'             => [
                     'supplier_name' => $supplierName ?: null,
                     'supplier_id'   => $supplierName ? $this->supplierId($supplierName) : null,
                     'cover_van_no'  => $coverVan,
@@ -751,6 +832,7 @@ class ImportController extends Controller
                 ],
             ];
         }
+
         return $rows;
     }
 }

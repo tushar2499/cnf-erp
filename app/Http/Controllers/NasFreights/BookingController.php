@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
-use App\Models\NasFreights\NasFreightsBranch;
 use App\Models\NasFreights\NasFreightsBooking;
 use App\Models\NasFreights\NasFreightsBookingItem;
 use App\Models\NasFreights\NasFreightsBookingProduct;
+use App\Models\NasFreights\NasFreightsBranch;
 use App\Models\NasFreights\NasFreightsCustomer;
+use App\Models\NasFreights\NasFreightsCustomerBillItem;
 use App\Models\NasFreights\NasFreightsEmployee;
 use App\Models\NasFreights\NasFreightsSupplier;
 use App\Models\NasFreights\NasFreightsVehicle;
@@ -28,36 +29,38 @@ class BookingController extends Controller
 
             return DataTables::of($query)
                 ->addIndexColumn()
-                ->addColumn('branch_name', fn($r) => e($branchMap[$r->branch_id] ?? '—'))
-                ->addColumn('item_details', fn($r) => e($r->items->pluck('cover_van_no')->filter()->join(', ')))
-                ->addColumn('t_qty', fn($r) => number_format($r->items->sum('qty'), 2))
-                ->addColumn('item_amount', fn($r) => number_format($r->items->sum('amount'), 2))
-                ->addColumn('status_badge', fn($r) => match($r->status) {
+                ->addColumn('branch_name', fn ($r) => e($branchMap[$r->branch_id] ?? '—'))
+                ->addColumn('item_details', fn ($r) => e($r->items->pluck('cover_van_no')->filter()->join(', ')))
+                ->addColumn('t_qty', fn ($r) => number_format($r->items->sum('qty'), 2))
+                ->addColumn('item_amount', fn ($r) => number_format($r->items->sum('amount'), 2))
+                ->addColumn('status_badge', fn ($r) => match ($r->status) {
                     'Approved'  => '<span class="badge bg-success">APPROVED</span>',
                     'Submitted' => '<span class="badge bg-warning text-dark">SUBMITTED</span>',
                     'Rejected'  => '<span class="badge bg-danger">REJECTED</span>',
                     default     => '<span class="badge bg-secondary">DRAFT</span>',
                 })
                 ->addColumn('billed_badge', function ($r) {
-                    $billed = \App\Models\NasFreights\NasFreightsCustomerBillItem::where('booking_id', $r->id)->exists();
+                    $billed = NasFreightsCustomerBillItem::where('booking_id', $r->id)->exists();
+
                     return $billed
                         ? '<span class="badge bg-success">BILLED</span>'
                         : '<span class="badge bg-warning text-dark">Submitted</span>';
                 })
                 ->addColumn('action', function ($r) {
-                    $canAct = !in_array($r->status, ['Approved', 'Rejected']);
-                    $html   = '<div class="d-flex flex-nowrap gap-1">';
-                    $html  .= '<a href="' . route('nas-freights.bookings.edit', $r->id) . '" class="btn btn-xs btn-outline-dark" title="Print"><i class="fa fa-print"></i></a>';
+                    $canAct = ! in_array($r->status, ['Approved', 'Rejected']);
+                    $html = '<div class="d-flex flex-nowrap gap-1">';
+                    $html .= '<a href="'.route('nas-freights.bookings.edit', $r->id).'" class="btn btn-xs btn-outline-dark" title="Print"><i class="fa fa-print"></i></a>';
                     if ($canAct) {
-                        $html .= '<a href="' . route('nas-freights.bookings.edit', $r->id) . '" class="btn btn-xs btn-outline-primary" title="Edit"><i class="fa fa-edit"></i></a>';
+                        $html .= '<a href="'.route('nas-freights.bookings.edit', $r->id).'" class="btn btn-xs btn-outline-primary" title="Edit"><i class="fa fa-edit"></i></a>';
                         $html .= '<button class="btn btn-xs btn-success btn-confirm"
-                            data-url="' . route('nas-freights.bookings.confirm', $r->id) . '"
-                            data-no="' . e($r->job_no) . '">Confirm</button>';
+                            data-url="'.route('nas-freights.bookings.confirm', $r->id).'"
+                            data-no="'.e($r->job_no).'">Confirm</button>';
                         $html .= '<button class="btn btn-xs btn-danger btn-reject"
-                            data-url="' . route('nas-freights.bookings.reject', $r->id) . '"
-                            data-no="' . e($r->job_no) . '">Reject</button>';
+                            data-url="'.route('nas-freights.bookings.reject', $r->id).'"
+                            data-no="'.e($r->job_no).'">Reject</button>';
                     }
                     $html .= '</div>';
+
                     return $html;
                 })
                 ->rawColumns(['item_details', 'status_badge', 'billed_badge', 'action'])
@@ -70,13 +73,15 @@ class BookingController extends Controller
     public function confirm(NasFreightsBooking $booking)
     {
         $booking->update(['status' => 'Approved']);
-        return response()->json(['message' => 'Booking ' . $booking->job_no . ' confirmed.']);
+
+        return response()->json(['message' => 'Booking '.$booking->job_no.' confirmed.']);
     }
 
     public function reject(NasFreightsBooking $booking)
     {
         $booking->update(['status' => 'Rejected']);
-        return response()->json(['message' => 'Booking ' . $booking->job_no . ' rejected.']);
+
+        return response()->json(['message' => 'Booking '.$booking->job_no.' rejected.']);
     }
 
     public function create()
@@ -147,20 +152,20 @@ class BookingController extends Controller
 
             foreach ($request->items as $item) {
                 NasFreightsBookingItem::create([
-                    'booking_id'          => $booking->id,
-                    'cover_van_no'        => $item['cover_van_no'] ?? null,
-                    'capacity'            => $item['capacity'] ?? null,
-                    'supplier_id'         => $item['supplier_id'] ?: null,
-                    'supplier_name'       => $item['supplier_name'] ?? null,
-                    'qty'                 => $item['qty'] ?? 1,
-                    'supplier_rate'       => $item['supplier_rate'] ?? 0,
-                    'customer_rate'       => $item['customer_rate'] ?? 0,
-                    'demurrage_days'      => $item['demurrage_days'] ?? 0,
-                    'cus_demurrage_charge'=> $item['cus_demurrage_charge'] ?? 0,
-                    'sup_demurrage_charge'=> $item['sup_demurrage_charge'] ?? 0,
-                    'amount'              => $item['amount'] ?? 0,
-                    'location_from'       => $item['location_from'] ?? null,
-                    'location_to'         => $item['location_to'] ?? null,
+                    'booking_id'           => $booking->id,
+                    'cover_van_no'         => $item['cover_van_no'] ?? null,
+                    'capacity'             => $item['capacity'] ?? null,
+                    'supplier_id'          => $item['supplier_id'] ?: null,
+                    'supplier_name'        => $item['supplier_name'] ?? null,
+                    'qty'                  => $item['qty'] ?? 1,
+                    'supplier_rate'        => $item['supplier_rate'] ?? 0,
+                    'customer_rate'        => $item['customer_rate'] ?? 0,
+                    'demurrage_days'       => $item['demurrage_days'] ?? 0,
+                    'cus_demurrage_charge' => $item['cus_demurrage_charge'] ?? 0,
+                    'sup_demurrage_charge' => $item['sup_demurrage_charge'] ?? 0,
+                    'amount'               => $item['amount'] ?? 0,
+                    'location_from'        => $item['location_from'] ?? null,
+                    'location_to'          => $item['location_to'] ?? null,
                 ]);
             }
         });
@@ -171,6 +176,7 @@ class BookingController extends Controller
     public function edit(NasFreightsBooking $booking)
     {
         $booking->load(['items', 'products']);
+
         return view('nas-freights.bookings.edit', array_merge($this->formData(), compact('booking')));
     }
 
@@ -232,20 +238,20 @@ class BookingController extends Controller
             $booking->items()->delete();
             foreach ($request->items as $item) {
                 NasFreightsBookingItem::create([
-                    'booking_id'          => $booking->id,
-                    'cover_van_no'        => $item['cover_van_no'] ?? null,
-                    'capacity'            => $item['capacity'] ?? null,
-                    'supplier_id'         => $item['supplier_id'] ?: null,
-                    'supplier_name'       => $item['supplier_name'] ?? null,
-                    'qty'                 => $item['qty'] ?? 1,
-                    'supplier_rate'       => $item['supplier_rate'] ?? 0,
-                    'customer_rate'       => $item['customer_rate'] ?? 0,
-                    'demurrage_days'      => $item['demurrage_days'] ?? 0,
-                    'cus_demurrage_charge'=> $item['cus_demurrage_charge'] ?? 0,
-                    'sup_demurrage_charge'=> $item['sup_demurrage_charge'] ?? 0,
-                    'amount'              => $item['amount'] ?? 0,
-                    'location_from'       => $item['location_from'] ?? null,
-                    'location_to'         => $item['location_to'] ?? null,
+                    'booking_id'           => $booking->id,
+                    'cover_van_no'         => $item['cover_van_no'] ?? null,
+                    'capacity'             => $item['capacity'] ?? null,
+                    'supplier_id'          => $item['supplier_id'] ?: null,
+                    'supplier_name'        => $item['supplier_name'] ?? null,
+                    'qty'                  => $item['qty'] ?? 1,
+                    'supplier_rate'        => $item['supplier_rate'] ?? 0,
+                    'customer_rate'        => $item['customer_rate'] ?? 0,
+                    'demurrage_days'       => $item['demurrage_days'] ?? 0,
+                    'cus_demurrage_charge' => $item['cus_demurrage_charge'] ?? 0,
+                    'sup_demurrage_charge' => $item['sup_demurrage_charge'] ?? 0,
+                    'amount'               => $item['amount'] ?? 0,
+                    'location_from'        => $item['location_from'] ?? null,
+                    'location_to'          => $item['location_to'] ?? null,
                 ]);
             }
         });
@@ -257,42 +263,46 @@ class BookingController extends Controller
     {
         $booking->items()->delete();
         $booking->delete();
+
         return response()->json(['message' => 'Booking deleted.']);
     }
 
     public function searchEmployees(Request $request)
     {
         $term = $request->input('q', '');
+
         return response()->json(
             NasFreightsEmployee::where('status', 'Active')
                 ->where('branch_id', session('nas_freights_branch_id'))
-                ->where(fn($q) => $q->where('name', 'like', "%{$term}%")->orWhere('code', 'like', "%{$term}%"))
+                ->where(fn ($q) => $q->where('name', 'like', "%{$term}%")->orWhere('code', 'like', "%{$term}%"))
                 ->limit(15)->get(['id', 'code', 'name'])
-                ->map(fn($e) => ['id' => $e->id, 'text' => $e->code . ' — ' . $e->name, 'name' => $e->name])
+                ->map(fn ($e) => ['id' => $e->id, 'text' => $e->code.' — '.$e->name, 'name' => $e->name])
         );
     }
 
     public function searchCustomers(Request $request)
     {
         $term = $request->input('q', '');
+
         return response()->json(
             NasFreightsCustomer::where('status', 'Active')
                 ->where('branch_id', session('nas_freights_branch_id'))
-                ->where(fn($q) => $q->where('name', 'like', "%{$term}%")->orWhere('customer_id', 'like', "%{$term}%")->orWhere('mobile', 'like', "%{$term}%"))
+                ->where(fn ($q) => $q->where('name', 'like', "%{$term}%")->orWhere('customer_id', 'like', "%{$term}%")->orWhere('mobile', 'like', "%{$term}%"))
                 ->limit(15)->get(['id', 'customer_id', 'name', 'mobile', 'address'])
-                ->map(fn($c) => ['id' => $c->id, 'text' => $c->customer_id . '|' . $c->name . '|' . $c->mobile, 'name' => $c->name, 'address' => $c->address])
+                ->map(fn ($c) => ['id' => $c->id, 'text' => $c->customer_id.'|'.$c->name.'|'.$c->mobile, 'name' => $c->name, 'address' => $c->address])
         );
     }
 
     public function searchVehicles(Request $request)
     {
         $term = $request->input('q', '');
+
         return response()->json(
             NasFreightsVehicle::where('status', 'Active')
                 ->where('branch_id', session('nas_freights_branch_id'))
-                ->where(fn($q) => $q->where('vehicle_number', 'like', "%{$term}%")->orWhere('vehicle_name', 'like', "%{$term}%"))
+                ->where(fn ($q) => $q->where('vehicle_number', 'like', "%{$term}%")->orWhere('vehicle_name', 'like', "%{$term}%"))
                 ->limit(15)->get(['id', 'vehicle_number', 'vehicle_name', 'vehicle_type'])
-                ->map(fn($v) => ['id' => $v->vehicle_number, 'text' => $v->vehicle_number . ($v->vehicle_name ? ' — ' . $v->vehicle_name : ''), 'vehicle_type' => $v->vehicle_type])
+                ->map(fn ($v) => ['id' => $v->vehicle_number, 'text' => $v->vehicle_number.($v->vehicle_name ? ' — '.$v->vehicle_name : ''), 'vehicle_type' => $v->vehicle_type])
         );
     }
 

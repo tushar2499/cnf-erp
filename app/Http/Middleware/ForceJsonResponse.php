@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class EnsureAdmin
+class ForceJsonResponse
 {
     /**
      * Handle an incoming request.
@@ -15,15 +15,7 @@ class EnsureAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $isAdmin = $request->user()
-            ->companies()
-            ->wherePivot('role', 'admin')
-            ->wherePivot('is_active', true)
-            ->exists();
-
-        if (! $isAdmin) {
-            abort(403, 'Admin access required.');
-        }
+        $request->headers->set('Accept', 'application/json');
 
         return $next($request);
     }

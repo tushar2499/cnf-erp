@@ -27,7 +27,8 @@ class ChevronMoneyReceipt extends Model
         return DB::transaction(function () {
             $max = DB::table('chevron_money_receipts')->lockForUpdate()->max('receipt_no');
             $next = $max ? (int) substr($max, 2) + 1 : 1;
-            return 'MR' . str_pad($next, 6, '0', STR_PAD_LEFT);
+
+            return 'MR'.str_pad($next, 6, '0', STR_PAD_LEFT);
         });
     }
 

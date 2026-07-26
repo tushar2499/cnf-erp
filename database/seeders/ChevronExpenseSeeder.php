@@ -52,7 +52,7 @@ class ChevronExpenseSeeder extends Seeder
             ]);
         }
 
-        $catCount  = DB::table('chevron_expense_categories')->count();
+        $catCount = DB::table('chevron_expense_categories')->count();
         $headCount = DB::table('chevron_expense_heads')->count();
 
         $this->command->info("Chevron expense categories: {$catCount}");

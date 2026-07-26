@@ -16,17 +16,17 @@ class CustomerController extends Controller
         if ($request->ajax()) {
             return DataTables::of(ChevronCustomer::with('branch'))
                 ->addIndexColumn()
-                ->addColumn('branch_name', fn($r) => $r->branch?->name ?? '-')
-                ->addColumn('status_badge', fn($r) => $r->status === 'Active'
+                ->addColumn('branch_name', fn ($r) => $r->branch?->name ?? '-')
+                ->addColumn('status_badge', fn ($r) => $r->status === 'Active'
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')
-                ->addColumn('action', fn($r) => '
-                    <button class="btn btn-sm btn-outline-primary btn-edit" data-id="' . $r->id . '">
+                ->addColumn('action', fn ($r) => '
+                    <button class="btn btn-sm btn-outline-primary btn-edit" data-id="'.$r->id.'">
                         <i class="fa fa-edit"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger btn-delete"
-                        data-url="' . route('chevron.stakeholders.customers.destroy', $r->id) . '"
-                        data-name="' . e($r->name) . '">
+                        data-url="'.route('chevron.stakeholders.customers.destroy', $r->id).'"
+                        data-name="'.e($r->name).'">
                         <i class="fa fa-trash"></i>
                     </button>')
                 ->rawColumns(['status_badge', 'action'])
@@ -34,12 +34,14 @@ class CustomerController extends Controller
         }
 
         $branches = ChevronBranch::where('is_active', true)->orderBy('name')->get();
+
         return view('chevron.stakeholders.customers.index', compact('branches'));
     }
 
     public function nextId(Request $request)
     {
         $prefix = $request->input('prefix', 'CUS-');
+
         return response()->json(['customer_id' => ChevronCustomer::generateCustomerId($prefix)]);
     }
 
@@ -150,6 +152,7 @@ class CustomerController extends Controller
     public function destroy(ChevronCustomer $customer)
     {
         $customer->delete();
+
         return response()->json(['message' => 'Customer deleted.']);
     }
 }

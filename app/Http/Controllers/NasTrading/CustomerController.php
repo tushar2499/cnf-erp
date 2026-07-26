@@ -15,15 +15,15 @@ class CustomerController extends Controller
         if ($request->ajax()) {
             return DataTables::of(NasTradingCustomer::query())
                 ->addIndexColumn()
-                ->addColumn('status_badge', fn($r) => $r->status === 'Active'
+                ->addColumn('status_badge', fn ($r) => $r->status === 'Active'
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')
-                ->addColumn('action', fn($r) =>
-                    '<button class="btn btn-sm btn-outline-primary btn-edit" data-id="' . $r->id . '"><i class="fa fa-edit"></i></button> ' .
-                    '<button class="btn btn-sm btn-outline-danger btn-delete" data-url="' . route('nas-trading.customers.destroy', $r->id) . '" data-name="' . e($r->company_name) . '"><i class="fa fa-trash"></i></button>')
+                ->addColumn('action', fn ($r) => '<button class="btn btn-sm btn-outline-primary btn-edit" data-id="'.$r->id.'"><i class="fa fa-edit"></i></button> '.
+                    '<button class="btn btn-sm btn-outline-danger btn-delete" data-url="'.route('nas-trading.customers.destroy', $r->id).'" data-name="'.e($r->company_name).'"><i class="fa fa-trash"></i></button>')
                 ->rawColumns(['status_badge', 'action'])
                 ->make(true);
         }
+
         return view('nas-trading.customers.index');
     }
 
@@ -48,6 +48,7 @@ class CustomerController extends Controller
                 'status'           => $request->status ?? 'Active',
             ]);
         });
+
         return response()->json(['message' => 'Customer created successfully.']);
     }
 
@@ -64,23 +65,26 @@ class CustomerController extends Controller
             'credit_limit'     => $request->credit_limit ?? 0,
             'status'           => $request->status ?? 'Active',
         ]);
+
         return response()->json(['message' => 'Customer updated successfully.']);
     }
 
     public function destroy(NasTradingCustomer $customer)
     {
         $customer->delete();
+
         return response()->json(['message' => 'Customer deleted.']);
     }
 
     public function search(Request $request)
     {
         $term = $request->input('q', '');
+
         return response()->json(
             NasTradingCustomer::where('status', 'Active')
-                ->where(fn($q) => $q->where('company_name', 'like', "%{$term}%")->orWhere('code', 'like', "%{$term}%"))
+                ->where(fn ($q) => $q->where('company_name', 'like', "%{$term}%")->orWhere('code', 'like', "%{$term}%"))
                 ->limit(15)->get(['id', 'code', 'company_name', 'address', 'delivery_address'])
-                ->map(fn($c) => ['id' => $c->id, 'text' => $c->code . ' | ' . $c->company_name, 'address' => $c->address, 'delivery_address' => $c->delivery_address])
+                ->map(fn ($c) => ['id' => $c->id, 'text' => $c->code.' | '.$c->company_name, 'address' => $c->address, 'delivery_address' => $c->delivery_address])
         );
     }
 }

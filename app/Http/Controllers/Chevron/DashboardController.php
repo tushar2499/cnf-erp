@@ -17,33 +17,33 @@ class DashboardController extends Controller
         $branchId = session('active_branch_id');
 
         // --- Stat cards ---
-        $totalJobs        = ChevronJob::where('branch_id', $branchId)->count();
-        $jobsThisMonth    = ChevronJob::where('branch_id', $branchId)->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count();
-        $activeJobs       = ChevronJob::where('branch_id', $branchId)->where('status', 'Active')->count();
-        $pendingJobs      = ChevronJob::where('branch_id', $branchId)->where('status', 'Pending')->count();
-        $closedJobs       = ChevronJob::where('branch_id', $branchId)->where('status', 'Closed')->count();
+        $totalJobs = ChevronJob::where('branch_id', $branchId)->count();
+        $jobsThisMonth = ChevronJob::where('branch_id', $branchId)->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count();
+        $activeJobs = ChevronJob::where('branch_id', $branchId)->where('status', 'Active')->count();
+        $pendingJobs = ChevronJob::where('branch_id', $branchId)->where('status', 'Pending')->count();
+        $closedJobs = ChevronJob::where('branch_id', $branchId)->where('status', 'Closed')->count();
 
-        $totalBills       = ChevronBill::where('branch_id', $branchId)->count();
-        $totalReceivable  = ChevronBill::where('branch_id', $branchId)->sum('due_amount');
-        $totalNetPayable  = ChevronBill::where('branch_id', $branchId)->sum('net_payable');
+        $totalBills = ChevronBill::where('branch_id', $branchId)->count();
+        $totalReceivable = ChevronBill::where('branch_id', $branchId)->sum('due_amount');
+        $totalNetPayable = ChevronBill::where('branch_id', $branchId)->sum('net_payable');
 
-        $totalReceipts        = ChevronMoneyReceipt::where('branch_id', $branchId)->sum('total_amount');
-        $receiptsThisMonth    = ChevronMoneyReceipt::where('branch_id', $branchId)->whereMonth('receipt_date', now()->month)
-                                    ->whereYear('receipt_date', now()->year)->sum('total_amount');
+        $totalReceipts = ChevronMoneyReceipt::where('branch_id', $branchId)->sum('total_amount');
+        $receiptsThisMonth = ChevronMoneyReceipt::where('branch_id', $branchId)->whereMonth('receipt_date', now()->month)
+            ->whereYear('receipt_date', now()->year)->sum('total_amount');
 
-        $totalCustomers   = ChevronCustomer::count();
-        $totalEmployees   = ChevronEmployee::where('branch_id', $branchId)->count();
+        $totalCustomers = ChevronCustomer::count();
+        $totalEmployees = ChevronEmployee::where('branch_id', $branchId)->count();
 
         $approvedExpenses = ChevronJobExpense::where('branch_id', $branchId)->where('status', 'Approved')->sum('total_approved_amount');
 
         // --- Monthly jobs last 6 months (for chart) ---
-        $monthlyLabels   = [];
-        $monthlyJobData  = [];
+        $monthlyLabels = [];
+        $monthlyJobData = [];
         $monthlyBillData = [];
         for ($i = 5; $i >= 0; $i--) {
             $d = now()->subMonths($i);
-            $monthlyLabels[]   = $d->format('M y');
-            $monthlyJobData[]  = ChevronJob::whereMonth('created_at', $d->month)->whereYear('created_at', $d->year)->count();
+            $monthlyLabels[] = $d->format('M y');
+            $monthlyJobData[] = ChevronJob::whereMonth('created_at', $d->month)->whereYear('created_at', $d->year)->count();
             $monthlyBillData[] = round(
                 ChevronBill::whereMonth('created_at', $d->month)->whereYear('created_at', $d->year)->sum('net_payable'),
                 2

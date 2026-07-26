@@ -19,15 +19,27 @@ class ChevronJobExpense extends Model
         return ['date' => 'date'];
     }
 
-    public function job()      { return $this->belongsTo(ChevronJob::class,      'job_id'); }
-    public function employee() { return $this->belongsTo(ChevronEmployee::class, 'employee_id'); }
-    public function items()    { return $this->hasMany(ChevronJobExpenseItem::class, 'job_expense_id'); }
+    public function job()
+    {
+        return $this->belongsTo(ChevronJob::class, 'job_id');
+    }
+
+    public function employee()
+    {
+        return $this->belongsTo(ChevronEmployee::class, 'employee_id');
+    }
+
+    public function items()
+    {
+        return $this->hasMany(ChevronJobExpenseItem::class, 'job_expense_id');
+    }
 
     public static function generateExpenseNo(): string
     {
         $last = static::lockForUpdate()->max(
-            DB::raw("CAST(SUBSTRING(expense_no, 4) AS UNSIGNED)")
+            DB::raw('CAST(SUBSTRING(expense_no, 4) AS UNSIGNED)')
         );
-        return 'EXP' . str_pad(($last ?? 0) + 1, 6, '0', STR_PAD_LEFT);
+
+        return 'EXP'.str_pad(($last ?? 0) + 1, 6, '0', STR_PAD_LEFT);
     }
 }

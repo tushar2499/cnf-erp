@@ -21,9 +21,10 @@ class NasFreightsMoneyReceipt extends Model
     {
         return DB::transaction(function () {
             $max = self::lockForUpdate()
-                ->selectRaw("MAX(CAST(SUBSTRING(receipt_no, 4) AS UNSIGNED)) as max_no")
+                ->selectRaw('MAX(CAST(SUBSTRING(receipt_no, 4) AS UNSIGNED)) as max_no')
                 ->value('max_no') ?? 0;
-            return 'MR-' . str_pad($max + 1, 6, '0', STR_PAD_LEFT);
+
+            return 'MR-'.str_pad($max + 1, 6, '0', STR_PAD_LEFT);
         });
     }
 

@@ -24,7 +24,7 @@ class SetActiveCompany
             ]);
         }
 
-        $branchIdKey = match(session('active_company_slug')) {
+        $branchIdKey = match (session('active_company_slug')) {
             'nas-freights' => 'nas_freights_branch_id',
             'nas-trading'  => 'nas_trading_branch_id',
             default        => 'active_branch_id',

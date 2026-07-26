@@ -145,13 +145,11 @@
     function fmtDate($d) { return $d?->format('d-M-Y') ?? '—'; }
     function fmtAmt($v, $prefix = 'BDT', $dec = 2) { return $v ? $prefix . ' ' . number_format((float)$v, $dec) : '—'; }
 
-    $totalLcCost = (float)($lc->lc_rate_amount ?? 0)
-                 + (float)($lc->lc_amendment_charge ?? 0)
+    $totalLcCost = (float)($lc->lc_rt_value ?? 0)
+                 + (float)($lc->bank_charge ?? 0)
                  + (float)($lc->insurance_amt ?? 0)
                  + (float)($lc->credit_report_charge ?? 0)
-                 + (float)($lc->other_charges ?? 0)
-                 + (float)($lc->bank_charge ?? 0)
-                 + (float)($lc->lc_open_cost_bdt ?? 0);
+                 + (float)($lc->other_charges ?? 0);
 @endphp
 
 {{-- Letterhead — visible only when printing --}}
@@ -376,6 +374,21 @@
             </div>
             <div class="collapse show" id="sec-payment">
                 <div class="info-body">
+                    {{-- Duty & Clearance --}}
+                    <div class="row g-2 mb-3">
+                        <div class="col-6 col-md-3"><div class="info-label">Duty Advance</div><div class="info-value">{{ fmtAmt($lc->duty_advance) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Duty Advance Date</div><div class="info-value">{{ fmtDate($lc->duty_advance_date) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Duty Advance Posting</div><div class="info-value">{{ $lc->duty_advance_posting ?? $dash }}</div></div>
+                        <div class="col-6 col-md-3"></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Bill of Entry No</div><div class="info-value">{{ $lc->bill_of_entry_no ?? $dash }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Bill of Entry Date</div><div class="info-value">{{ fmtDate($lc->bill_of_entry_date) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Customs Duty</div><div class="info-value">{{ fmtAmt($lc->customs_duty) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Customs Duty Posting</div><div class="info-value">{{ $lc->customs_duty_posting ?? $dash }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">CNF Party</div><div class="info-value">{{ $lc->cnf_party ?? $dash }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">CNF Total Cost</div><div class="info-value">{{ fmtAmt($lc->cnf_total_cost) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">CNF Cost Posting</div><div class="info-value">{{ $lc->cnf_cost_posting ?? $dash }}</div></div>
+                    </div>
+                    {{-- LC Closing Bill --}}
                     <div class="row g-2 mb-3">
                         <div class="col-6 col-md-3"><div class="info-label">LC Closing Bill</div><div class="info-value">{{ fmtAmt($lc->lc_closing_bill) }}</div></div>
                         <div class="col-6 col-md-3"><div class="info-label">LC Closing Bill Date</div><div class="info-value">{{ fmtDate($lc->lc_closing_bill_date) }}</div></div>
@@ -389,7 +402,7 @@
                                 @foreach($lc->payments as $idx => $pay)
                                 <tr>
                                     <td>{{ $idx + 1 }}</td>
-                                    <td>{{ ucfirst($pay->payment_type) }}</td>
+                                    <td>{{ $pay->payment_type == 'advance' ? 'LC Advance' : 'Regular' }}</td>
                                     <td>{{ $pay->receipt_no ?? $dash }}</td>
                                     <td>{{ $pay->date ? \Carbon\Carbon::parse($pay->date)->format('d-M-Y') : $dash }}</td>
                                     <td>{{ number_format((float)$pay->amount, 2) }}</td>
@@ -411,35 +424,7 @@
             </div>
         </div>
 
-        {{-- 6. Duty & Clearance --}}
-        <div class="info-card">
-            <div class="info-header" data-bs-target="#sec-duty" data-section="duty">
-                <span><i class="fa fa-clipboard-check me-2"></i> Duty &amp; Clearance</span>
-                <div class="d-flex align-items-center gap-2">
-                    <button class="btn-print-section" data-print-target="sec-duty" title="Print this section" aria-label="Print Duty section"><i class="fa fa-print"></i></button>
-                    <i class="fa fa-chevron-down chevron"></i>
-                </div>
-            </div>
-            <div class="collapse show" id="sec-duty">
-                <div class="info-body">
-                    <div class="row g-2">
-                        <div class="col-6 col-md-3"><div class="info-label">Duty Advance</div><div class="info-value">{{ fmtAmt($lc->duty_advance) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Duty Advance Date</div><div class="info-value">{{ fmtDate($lc->duty_advance_date) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Duty Advance Posting</div><div class="info-value">{{ $lc->duty_advance_posting ?? $dash }}</div></div>
-                        <div class="col-6 col-md-3"></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Bill of Entry No</div><div class="info-value">{{ $lc->bill_of_entry_no ?? $dash }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Bill of Entry Date</div><div class="info-value">{{ fmtDate($lc->bill_of_entry_date) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Customs Duty</div><div class="info-value">{{ fmtAmt($lc->customs_duty) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Customs Duty Posting</div><div class="info-value">{{ $lc->customs_duty_posting ?? $dash }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">CNF Party</div><div class="info-value">{{ $lc->cnf_party ?? $dash }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">CNF Total Cost</div><div class="info-value">{{ fmtAmt($lc->cnf_total_cost) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">CNF Cost Posting</div><div class="info-value">{{ $lc->cnf_cost_posting ?? $dash }}</div></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- 7. VAT / Tax / Sales --}}
+        {{-- 6. VAT / Tax / Sales --}}
         <div class="info-card">
             <div class="info-header" data-bs-target="#sec-vat" data-section="vat">
                 <span><i class="fa fa-percent me-2"></i> VAT / Tax / Sales</span>
@@ -472,7 +457,7 @@
             </div>
         </div>
 
-        {{-- 8. Product Line Items --}}
+        {{-- 7. Product Line Items --}}
         @if($lc->items->count())
         <div class="info-card">
             <div class="info-header" data-bs-target="#sec-items" data-section="items">
@@ -580,7 +565,7 @@
                     @endphp
                     <div class="d-flex justify-content-between py-1 border-bottom">
                         <span style="font-size:.82rem">LC No</span>
-                        <span style="font-size:.82rem">{{ $lc->lc_no_system ?? '—' }}</span>
+                        <span style="font-size:.82rem">{{ $lc->lc_no ?? '—' }}</span>
                     </div>
                     <div class="d-flex justify-content-between py-1 border-bottom">
                         <span style="font-size:.82rem">PFI No</span>
@@ -593,6 +578,10 @@
                     <div class="d-flex justify-content-between py-1 border-bottom">
                         <span style="font-size:.82rem">Total LC Cost</span>
                         <span style="font-size:.82rem">BDT {{ number_format($lcCost, 2) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span style="font-size:.82rem">Customs Duty</span>
+                        <span style="font-size:.82rem">BDT {{ number_format((float)($lc->customs_duty ?? 0), 2) }}</span>
                     </div>
                     @if($totalOtherCharges > 0)
                     <div class="d-flex justify-content-between py-1 border-bottom">
@@ -610,7 +599,7 @@
                     </div>
                     <div class="d-flex justify-content-between py-1 border-bottom">
                         <strong style="font-size:.85rem">Grand Total</strong>
-                        <strong style="font-size:.85rem; color:#1a6b60">BDT {{ number_format($cnfCost + $lcCost + $totalExpenses, 2) }}</strong>
+                        <strong style="font-size:.85rem; color:#1a6b60">BDT {{ number_format($lc->customs_duty + $lcCost + $totalOtherCharges + $cnfCost + $totalExpenses, 2) }}</strong>
                     </div>
                     <div class="d-flex justify-content-between py-1 border-bottom">
                         <span style="font-size:.82rem">Advance Payment</span>
@@ -622,7 +611,7 @@
                     </div>
                     <div class="d-flex justify-content-between py-1">
                         <strong style="font-size:.85rem">Total Advance</strong>
-                        <strong style="font-size:.85rem; color:#17375e">BDT {{ number_format($totalAdvance, 2) }}</strong>
+                        <strong style="font-size:.85rem; color:#17375e">BDT {{ number_format($advancePayment + $dutyAdvance, 2) }}</strong>
                     </div>
                 </div>
             </div>

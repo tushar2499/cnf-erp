@@ -23,9 +23,9 @@ Route::middleware('auth')->group(function () {
 
 // Admin
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
-    Route::get('/companies', [\App\Http\Controllers\Admin\CompanyController::class, 'index'])->name('companies.index');
-    Route::get('/companies/{company}/edit', [\App\Http\Controllers\Admin\CompanyController::class, 'edit'])->name('companies.edit');
-    Route::post('/companies/{company}', [\App\Http\Controllers\Admin\CompanyController::class, 'update'])->name('companies.update');
+    Route::get('/companies', [App\Http\Controllers\Admin\CompanyController::class, 'index'])->name('companies.index');
+    Route::get('/companies/{company}/edit', [App\Http\Controllers\Admin\CompanyController::class, 'edit'])->name('companies.edit');
+    Route::post('/companies/{company}', [App\Http\Controllers\Admin\CompanyController::class, 'update'])->name('companies.update');
 });
 
 // Per-company panels

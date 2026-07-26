@@ -15,19 +15,18 @@ class ItemController extends Controller
         if ($request->ajax()) {
             return DataTables::of(ChevronItem::query())
                 ->addIndexColumn()
-                ->addColumn('status_badge', fn($r) => $r->status === 'Active'
+                ->addColumn('status_badge', fn ($r) => $r->status === 'Active'
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')
-                ->addColumn('po_so', fn($r) =>
-                    ($r->availability_in_po ? '<span class="badge bg-info text-dark me-1">PO</span>' : '') .
+                ->addColumn('po_so', fn ($r) => ($r->availability_in_po ? '<span class="badge bg-info text-dark me-1">PO</span>' : '').
                     ($r->availability_in_so ? '<span class="badge bg-primary">SO</span>' : ''))
-                ->addColumn('action', fn($r) => '
-                    <button class="btn btn-sm btn-outline-primary btn-edit" data-id="' . $r->id . '">
+                ->addColumn('action', fn ($r) => '
+                    <button class="btn btn-sm btn-outline-primary btn-edit" data-id="'.$r->id.'">
                         <i class="fa fa-edit"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger btn-delete"
-                        data-url="' . route('chevron.settings.items.destroy', $r->id) . '"
-                        data-name="' . e($r->item_code) . '">
+                        data-url="'.route('chevron.settings.items.destroy', $r->id).'"
+                        data-name="'.e($r->item_code).'">
                         <i class="fa fa-trash"></i>
                     </button>')
                 ->rawColumns(['status_badge', 'po_so', 'action'])
@@ -75,14 +74,16 @@ class ItemController extends Controller
     public function update(Request $request, ChevronItem $item)
     {
         $request->validate([
-            'item_code'     => ['required', 'string', 'max:100', 'unique:chevron_items,item_code,' . $item->id],
+            'item_code'     => ['required', 'string', 'max:100', 'unique:chevron_items,item_code,'.$item->id],
             'purchase_unit' => ['required', 'string'],
             'item_price'    => ['required', 'numeric', 'min:0'],
         ]);
 
         $imagePath = $item->image;
         if ($request->hasFile('image')) {
-            if ($imagePath) Storage::disk('public')->delete($imagePath);
+            if ($imagePath) {
+                Storage::disk('public')->delete($imagePath);
+            }
             $imagePath = $request->file('image')->store('chevron/items', 'public');
         }
 
@@ -105,8 +106,11 @@ class ItemController extends Controller
 
     public function destroy(ChevronItem $item)
     {
-        if ($item->image) Storage::disk('public')->delete($item->image);
+        if ($item->image) {
+            Storage::disk('public')->delete($item->image);
+        }
         $item->delete();
+
         return response()->json(['message' => 'Item deleted.']);
     }
 
@@ -131,10 +135,10 @@ class ItemController extends Controller
 
         return response()->json([
             'id'            => $item->id,
-            'text'          => $item->item_code . ' — ' . $item->item_name,
+            'text'          => $item->item_code.' — '.$item->item_name,
             'name'          => $item->item_name,
             'purchase_unit' => $item->purchase_unit,
-            'message'       => 'Item "' . $item->item_name . '" created successfully.',
+            'message'       => 'Item "'.$item->item_name.'" created successfully.',
         ]);
     }
 }

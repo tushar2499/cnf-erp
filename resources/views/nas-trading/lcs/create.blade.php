@@ -193,8 +193,6 @@
 
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-payment"><i
                                 class="fa fa-money-check-alt me-1"></i>Payment Tracking</a></li>
-                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-duty"><i
-                                class="fa fa-clipboard-check me-1"></i>Duty &amp; Clearance</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-vat"><i
                                 class="fa fa-percent me-1"></i>VAT / Tax / Sales</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-items"><i
@@ -543,62 +541,8 @@
 
                 {{-- Tab: Payment Tracking --}}
                 <div class="tab-pane fade" id="tab-payment">
-                    {{-- LC Closing Bill (flat summary fields) --}}
-                    <div class="row g-2 mt-1 mb-2">
-                        <div class="col-md-3">
-                            <label class="form-label">LC Closing Bill</label>
-                            <div class="input-group input-group-sm">
-                                <input type="number" name="lc_closing_bill" class="form-control form-control-sm"
-                                    step="0.01" placeholder="0.00">
-                                <span class="input-group-text">BDT</span>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">LC Closing Bill Date</label>
-                            <input type="date" name="lc_closing_bill_date" class="form-control form-control-sm">
-                        </div>
-                    </div>
-
-                    {{-- Multi-row payment table --}}
-                    <div class="lc-card" style="margin-bottom:0">
-                        <div class="lc-section-header" style="justify-content:space-between">
-                            <span><i class="fa fa-money-bill-wave me-2"></i>Payment Receipts</span>
-                            <button type="button" class="btn btn-sm py-0 px-2" id="btnAddPayment"
-                                style="font-size:.77rem;color:#fff;border:1px solid rgba(255,255,255,.5)"><i
-                                    class="fa fa-plus me-1"></i>Add Payment</button>
-                        </div>
-                        <div class="p-0" style="overflow-x:auto">
-                            <table class="table table-sm table-bordered items-table mb-0 w-100" id="paymentTable">
-                                <thead>
-                                    <tr>
-                                        <th class="text-center" style="width:32px">#</th>
-                                        <th style="width:110px">Type</th>
-                                        <th style="min-width:140px">Receipt No</th>
-                                        <th style="width:140px">Date</th>
-                                        <th style="width:150px">Amount</th>
-                                        <th style="width:32px"></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="paymentBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    {{-- Total Received (auto-sum) --}}
-                    <div class="d-flex justify-content-end align-items-center mt-2">
-                        <label class="form-label me-2 mb-0 fw-semibold" style="font-size:.82rem">Total Received:</label>
-                        <div class="input-group input-group-sm" style="width:180px">
-                            <input type="number" name="total_received_bdt" id="totalReceived"
-                                class="form-control form-control-sm bg-light fw-bold" readonly step="0.01"
-                                placeholder="0.00">
-                            <span class="input-group-text">BDT</span>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Tab: Duty & Clearance --}}
-                <div class="tab-pane fade" id="tab-duty">
-                    <div class="row g-2 mt-1">
+                     {{-- duty & clearance --}}
+                     <div class="row g-2 mt-1">
                         <div class="col-md-3">
                             <label class="form-label">Duty Advance</label>
                             <div class="input-group input-group-sm">
@@ -658,6 +602,61 @@
                                 placeholder="e.g. CC-001">
                         </div>
                     </div>
+
+                    {{-- LC Closing Bill (flat summary fields) --}}
+                    <div class="row g-2 mt-1 mb-2">
+                        <div class="col-md-3">
+                            <label class="form-label">LC Closing Bill</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" name="lc_closing_bill" class="form-control form-control-sm"
+                                    step="0.01" placeholder="0.00">
+                                <span class="input-group-text">BDT</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">LC Closing Bill Date</label>
+                            <input type="date" name="lc_closing_bill_date" class="form-control form-control-sm">
+                        </div>
+                    </div>
+
+                    {{-- Multi-row payment table --}}
+                    <div class="lc-card" style="margin-bottom:0">
+                        <div class="lc-section-header" style="justify-content:space-between">
+                            <span><i class="fa fa-money-bill-wave me-2"></i>Payment Receipts</span>
+                            <button type="button" class="btn btn-sm py-0 px-2" id="btnAddPayment"
+                                style="font-size:.77rem;color:#fff;border:1px solid rgba(255,255,255,.5)"><i
+                                    class="fa fa-plus me-1"></i>Add Payment</button>
+                        </div>
+                        <div class="p-0" style="overflow-x:auto">
+                            <table class="table table-sm table-bordered items-table mb-0 w-100" id="paymentTable">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center" style="width:32px">#</th>
+                                        <th style="width:110px">Type</th>
+                                        <th style="min-width:140px">Receipt No</th>
+                                        <th style="width:140px">Date</th>
+                                        <th style="width:150px">Amount</th>
+                                        <th style="width:32px"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="paymentBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {{-- Total Received (auto-sum) --}}
+                    <div class="d-flex justify-content-end align-items-center mt-2">
+                        <label class="form-label me-2 mb-0 fw-semibold" style="font-size:.82rem">Total Received:</label>
+                        <div class="input-group input-group-sm" style="width:180px">
+                            <input type="number" name="total_received_bdt" id="totalReceived"
+                                class="form-control form-control-sm bg-light fw-bold" readonly step="0.01"
+                                placeholder="0.00">
+                            <span class="input-group-text">BDT</span>
+                        </div>
+                    </div>
+
+
+
                 </div>
 
                 {{-- Tab: VAT / Tax / Sales --}}
@@ -915,7 +914,7 @@
                 <td class="text-center payment-row-num" style="font-size:.75rem;vertical-align:middle">${rowNum}</td>
                 <td>
                     <select class="form-select form-select-sm" name="payments[${idx}][payment_type]">
-                        <option value="advance" ${(data.payment_type || 'advance') === 'advance' ? 'selected' : ''}>Advance</option>
+                        <option value="advance" ${(data.payment_type || 'advance') === 'advance' ? 'selected' : ''}>Lc Advance</option>
                         <option value="regular" ${(data.payment_type || '') === 'regular' ? 'selected' : ''}>Regular</option>
                     </select>
                 </td>

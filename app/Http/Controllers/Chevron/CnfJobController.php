@@ -32,41 +32,43 @@ class CnfJobController extends Controller
         if ($request->ajax()) {
             $query = ChevronJob::with(['service', 'jobType', 'port'])
                 ->where('branch_id', session('active_branch_id'));
+
             return DataTables::of($query)
                 ->addIndexColumn()
-                ->addColumn('service_name',   fn($r) => $r->service?->name  ?? '—')
-                ->addColumn('job_type_name',  fn($r) => $r->jobType?->name  ?? '—')
-                ->addColumn('port_name',      fn($r) => $r->port?->name     ?? '—')
-                ->editColumn('job_date',      fn($r) => $r->job_date?->format('d M Y')      ?? '—')
-                ->editColumn('be_date',       fn($r) => $r->be_date?->format('d M Y')       ?? '—')
-                ->editColumn('bl_date',       fn($r) => $r->bl_date?->format('d M Y')       ?? '—')
-                ->editColumn('invoice_date',  fn($r) => $r->invoice_date?->format('d M Y')  ?? '—')
-                ->editColumn('delivery_date', fn($r) => $r->delivery_date?->format('d M Y') ?? '—')
-                ->editColumn('eta_date',      fn($r) => $r->eta_date?->format('d M Y')      ?? '—')
-                ->addColumn('invoice_value_1_fmt',      fn($r) => $r->invoice_value_1      ? number_format($r->invoice_value_1, 2)      : '—')
-                ->addColumn('invoice_value_2_fmt',      fn($r) => $r->invoice_value_2      ? number_format($r->invoice_value_2, 2)      : '—')
-                ->addColumn('assessable_value_fmt',     fn($r) => $r->assessable_value     ? number_format($r->assessable_value, 2)     : '—')
-                ->addColumn('assessable_value_bdt_fmt', fn($r) => $r->assessable_value_bdt ? number_format($r->assessable_value_bdt, 2) : '—')
-                ->addColumn('duty_amount_fmt',          fn($r) => $r->duty_amount          ? number_format($r->duty_amount, 2)          : '—')
-                ->addColumn('vat_amount_fmt',           fn($r) => $r->vat_amount           ? number_format($r->vat_amount, 2)           : '—')
-                ->addColumn('net_payable_1_fmt',        fn($r) => $r->net_payable_1        ? number_format($r->net_payable_1, 2)        : '—')
-                ->addColumn('net_payable_2_fmt',        fn($r) => $r->net_payable_2        ? number_format($r->net_payable_2, 2)        : '—')
-                ->filterColumn('service_name',  fn($q, $k) => $q->whereHas('service',  fn($s) => $s->where('name', 'like', "%{$k}%")))
-                ->filterColumn('job_type_name', fn($q, $k) => $q->whereHas('jobType',  fn($s) => $s->where('name', 'like', "%{$k}%")))
-                ->filterColumn('port_name',     fn($q, $k) => $q->whereHas('port',     fn($s) => $s->where('name', 'like', "%{$k}%")))
-                ->addColumn('status_badge', fn($r) => match ($r->status) {
+                ->addColumn('service_name', fn ($r) => $r->service?->name ?? '—')
+                ->addColumn('job_type_name', fn ($r) => $r->jobType?->name ?? '—')
+                ->addColumn('port_name', fn ($r) => $r->port?->name ?? '—')
+                ->editColumn('job_date', fn ($r) => $r->job_date?->format('d M Y') ?? '—')
+                ->editColumn('be_date', fn ($r) => $r->be_date?->format('d M Y') ?? '—')
+                ->editColumn('bl_date', fn ($r) => $r->bl_date?->format('d M Y') ?? '—')
+                ->editColumn('invoice_date', fn ($r) => $r->invoice_date?->format('d M Y') ?? '—')
+                ->editColumn('delivery_date', fn ($r) => $r->delivery_date?->format('d M Y') ?? '—')
+                ->editColumn('eta_date', fn ($r) => $r->eta_date?->format('d M Y') ?? '—')
+                ->addColumn('invoice_value_1_fmt', fn ($r) => $r->invoice_value_1 ? number_format($r->invoice_value_1, 2) : '—')
+                ->addColumn('invoice_value_2_fmt', fn ($r) => $r->invoice_value_2 ? number_format($r->invoice_value_2, 2) : '—')
+                ->addColumn('assessable_value_fmt', fn ($r) => $r->assessable_value ? number_format($r->assessable_value, 2) : '—')
+                ->addColumn('assessable_value_bdt_fmt', fn ($r) => $r->assessable_value_bdt ? number_format($r->assessable_value_bdt, 2) : '—')
+                ->addColumn('duty_amount_fmt', fn ($r) => $r->duty_amount ? number_format($r->duty_amount, 2) : '—')
+                ->addColumn('vat_amount_fmt', fn ($r) => $r->vat_amount ? number_format($r->vat_amount, 2) : '—')
+                ->addColumn('net_payable_1_fmt', fn ($r) => $r->net_payable_1 ? number_format($r->net_payable_1, 2) : '—')
+                ->addColumn('net_payable_2_fmt', fn ($r) => $r->net_payable_2 ? number_format($r->net_payable_2, 2) : '—')
+                ->filterColumn('service_name', fn ($q, $k) => $q->whereHas('service', fn ($s) => $s->where('name', 'like', "%{$k}%")))
+                ->filterColumn('job_type_name', fn ($q, $k) => $q->whereHas('jobType', fn ($s) => $s->where('name', 'like', "%{$k}%")))
+                ->filterColumn('port_name', fn ($q, $k) => $q->whereHas('port', fn ($s) => $s->where('name', 'like', "%{$k}%")))
+                ->addColumn('status_badge', fn ($r) => match ($r->status) {
                     'Active'  => '<span class="badge bg-success">Active</span>',
                     'Pending' => '<span class="badge bg-warning text-dark">Pending</span>',
                     default   => '<span class="badge bg-secondary">Closed</span>',
                 })
-                ->addColumn('action', fn($r) => '
-                    <a href="' . route('chevron.cnf.jobs.edit', $r->id) . '" class="btn btn-sm btn-outline-primary py-0 px-1"><i class="fa fa-edit"></i></a>
+                ->addColumn('action', fn ($r) => '
+                    <a href="'.route('chevron.cnf.jobs.edit', $r->id).'" class="btn btn-sm btn-outline-primary py-0 px-1"><i class="fa fa-edit"></i></a>
                     <button class="btn btn-sm btn-outline-danger py-0 px-1 btn-delete"
-                        data-url="' . route('chevron.cnf.jobs.destroy', $r->id) . '"
-                        data-name="' . e($r->job_no) . '"><i class="fa fa-trash"></i></button>')
+                        data-url="'.route('chevron.cnf.jobs.destroy', $r->id).'"
+                        data-name="'.e($r->job_no).'"><i class="fa fa-trash"></i></button>')
                 ->rawColumns(['status_badge', 'action'])
                 ->make(true);
         }
+
         return view('chevron.cnf.jobs.index');
     }
 
@@ -89,12 +91,12 @@ class CnfJobController extends Controller
         ]);
 
         $data = $this->prepareData($request);
-        $data['job_no'] = DB::transaction(fn() => ChevronJob::generateJobNo());
+        $data['job_no'] = DB::transaction(fn () => ChevronJob::generateJobNo());
 
         $job = ChevronJob::create($data);
 
         return redirect()->route('chevron.cnf.jobs.edit', $job->id)
-            ->with('success', 'Job ' . $job->job_no . ' created successfully.');
+            ->with('success', 'Job '.$job->job_no.' created successfully.');
     }
 
     public function edit(ChevronJob $job)
@@ -117,47 +119,50 @@ class CnfJobController extends Controller
 
         $job->update($this->prepareData($request));
 
-        return back()->with('success', 'Job ' . $job->job_no . ' updated successfully.');
+        return back()->with('success', 'Job '.$job->job_no.' updated successfully.');
     }
 
     public function destroy(ChevronJob $job)
     {
         $job->delete();
-        return response()->json(['message' => 'Job ' . $job->job_no . ' deleted.']);
+
+        return response()->json(['message' => 'Job '.$job->job_no.' deleted.']);
     }
 
     public function searchCustomers(Request $request)
     {
         $q = $request->get('q', '');
-        $results = ChevronCustomer::where('name', 'like', '%' . $q . '%')
-            ->orWhere('customer_id', 'like', '%' . $q . '%')
+        $results = ChevronCustomer::where('name', 'like', '%'.$q.'%')
+            ->orWhere('customer_id', 'like', '%'.$q.'%')
             ->limit(20)
             ->select(['id', 'name', 'customer_id', 'address'])
             ->get()
-            ->map(fn($c) => [
+            ->map(fn ($c) => [
                 'id'      => $c->id,
-                'text'    => $c->customer_id . ' — ' . $c->name,
+                'text'    => $c->customer_id.' — '.$c->name,
                 'name'    => $c->name,
                 'address' => $c->address,
             ]);
+
         return response()->json($results);
     }
 
     public function searchItems(Request $request)
     {
         $q = $request->get('q', '');
-        $results = ChevronItem::where('item_code', 'like', '%' . $q . '%')
-            ->orWhere('item_name', 'like', '%' . $q . '%')
+        $results = ChevronItem::where('item_code', 'like', '%'.$q.'%')
+            ->orWhere('item_name', 'like', '%'.$q.'%')
             ->where('status', 'Active')
             ->limit(20)
             ->select(['id', 'item_code', 'item_name', 'purchase_unit'])
             ->get()
-            ->map(fn($i) => [
+            ->map(fn ($i) => [
                 'id'            => $i->id,
-                'text'          => $i->item_code . ' — ' . $i->item_name,
+                'text'          => $i->item_code.' — '.$i->item_name,
                 'name'          => $i->item_name ?: $i->item_code,
                 'purchase_unit' => $i->purchase_unit,
             ]);
+
         return response()->json($results);
     }
 
@@ -181,8 +186,8 @@ class CnfJobController extends Controller
         }
 
         // Calculate assessable_value_bdt
-        $av   = (float) ($data['assessable_value'] ?? 0);
-        $rate = (float) ($data['currency_rate']     ?? 0);
+        $av = (float) ($data['assessable_value'] ?? 0);
+        $rate = (float) ($data['currency_rate'] ?? 0);
         $data['assessable_value_bdt'] = ($av > 0 && $rate > 0) ? round($av * $rate, 2) : null;
 
         // Null-ify numeric zeros stored as empty strings

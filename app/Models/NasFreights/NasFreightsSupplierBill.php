@@ -30,8 +30,9 @@ class NasFreightsSupplierBill extends Model
     public static function generatePayOrderNo(): string
     {
         $max = static::lockForUpdate()->max(
-            DB::raw("CAST(SUBSTRING(pay_order_no, 5) AS UNSIGNED)")
+            DB::raw('CAST(SUBSTRING(pay_order_no, 5) AS UNSIGNED)')
         );
-        return 'SPO-' . str_pad(($max ?? 0) + 1, 6, '0', STR_PAD_LEFT);
+
+        return 'SPO-'.str_pad(($max ?? 0) + 1, 6, '0', STR_PAD_LEFT);
     }
 }
