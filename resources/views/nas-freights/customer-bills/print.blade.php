@@ -48,14 +48,38 @@ table.items tfoot td.c { text-align:center; }
 .sig-block { width:160px; text-align:center; }
 .sig-line { border-top:1px solid #000; margin-bottom:3px; }
 
-.powered { margin-top:14px; border-top:1px solid #bbb; padding-top:4px; font-size:8px; color:#666; }
+.powered {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    border-top: 1px solid #bbb;
+    padding: 6px 14mm;
+    font-size: 8px;
+    color: #666;
+    background: #fff;
+}
 .powered table { width:100%; border-collapse:collapse; }
+.powered table td { vertical-align: middle; }
 
 @media print {
     .no-print { display:none !important; }
     body { margin:0; background:#fff; }
-    .page { width:100%; margin:0; padding:0; }
-    @page { size:A4 portrait; margin:6mm 14mm 10mm 14mm; }
+    .page { width:100%; margin:0; padding:0; padding-bottom: 25px; }
+    table.items th { color:#000; }
+    @page {
+        size: A4 portrait;
+        margin: 6mm 14mm 12mm 14mm;
+    }
+    .powered {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding-left: 0;
+        padding-right: 0;
+    }
 }
 </style>
 </head>
@@ -251,8 +275,9 @@ $amountInWords = $w.' Only';
     <div class="powered">
         <table>
             <tr>
-                <td>Powered By: <a href="https://a4bbd.com/" style="color:#666;text-decoration:none">Advertising For Business - A4B</a></td>
-                <td style="text-align:center">Print Date: {{ now()->format('d/m/Y g:i A') }}</td>
+                <td style="width:35%;text-align:left">Powered By: <a href="https://a4bbd.com/" target="_blank" style="color:#666;text-decoration:none">Advertising For Business - A4B</a></td>
+                <td style="width:30%;text-align:center">Page 1</td>
+                <td style="width:35%;text-align:right">Print Date: {{ now()->format('d/m/Y g:i A') }}</td>
             </tr>
         </table>
     </div>

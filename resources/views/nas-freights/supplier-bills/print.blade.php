@@ -43,14 +43,14 @@ body { font-family: Arial, sans-serif; font-size: 10px; color: #000; background:
 .info-table tr:last-child td { border-bottom:none; }
 
 /* Items table */
-table.items { width:100%; border-collapse:collapse; table-layout:fixed; }
-table.items th { background:#1a6b60; color:#fff; font-size:7.5px; padding:4px 2px;
+table.items { width:100%; border-collapse:collapse; table-layout:fixed; border:1px solid #000; }
+table.items th { background:#000; color:#fff; font-size:7.5px; padding:4px 2px;
     text-align:center; border:1px solid #000; word-wrap:break-word; line-height:1.3; }
-table.items td { font-size:7.5px; padding:2.5px 3px; border:1px solid #ccc;
+table.items td { font-size:7.5px; padding:2.5px 3px; border:1px solid #000;
     vertical-align:middle; word-wrap:break-word; line-height:1.4; }
 table.items td.r { text-align:right; }
 table.items td.c { text-align:center; }
-table.items tfoot td { background:#e4ede4; font-weight:700; font-size:7.5px;
+table.items tfoot td { font-weight:700; font-size:7.5px;
     padding:3px 3px; border:1px solid #000; }
 table.items tfoot td.r { text-align:right; }
 table.items tfoot td.c { text-align:center; }
@@ -66,14 +66,37 @@ table.items tfoot td.c { text-align:center; }
 .sig-block { text-align:center; }
 .sig-line { border-top:1px solid #000; margin-bottom:3px; }
 
-.powered { margin-top:12px; border-top:1px solid #bbb; padding-top:4px; font-size:8px; color:#666; }
+.powered {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    border-top: 1px solid #bbb;
+    padding: 6px 14mm;
+    font-size: 8px;
+    color: #666;
+    background: #fff;
+}
 .powered table { width:100%; border-collapse:collapse; }
+.powered table td { vertical-align: middle; }
 
 @media print {
     .no-print { display:none !important; }
     body { margin:0; background:#fff; }
-    .page { width:100%; margin:0; padding:0; }
+    .page { width:100%; margin:0; padding:0; padding-bottom: 25px; }
+    table.items th { color:#000; border:1px solid #000 !important; }
+    table.items td { border:1px solid #000 !important; }
+    table.items tfoot td { border:1px solid #000 !important; }
     @page { size:A4 portrait; margin:8mm 14mm 10mm 14mm; }
+    .powered {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding-left: 0;
+        padding-right: 0;
+    }
 }
 </style>
 </head>
@@ -259,8 +282,9 @@ $amountInWords = $w.' Only';
     <div class="powered">
         <table>
             <tr>
-                <td>Powered By: <a href="https://a4bbd.com/" style="color:#666;text-decoration:none">Advertising For Business - A4B</a></td>
-                <td style="text-align:center">Print Date: {{ now()->format('d/m/Y g:i A') }}</td>
+                <td style="width:35%;text-align:left">Powered By: <a href="https://a4bbd.com/" target="_blank" style="color:#666;text-decoration:none">Advertising For Business - A4B</a></td>
+                <td style="width:30%;text-align:center">Page 1</td>
+                <td style="width:35%;text-align:right">Print Date: {{ now()->format('d/m/Y g:i A') }}</td>
             </tr>
         </table>
     </div>
