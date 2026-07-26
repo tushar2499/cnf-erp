@@ -74,21 +74,21 @@
             <div class="info-body">
                 <div class="row g-2">
                     <div class="col-md-3"><div class="info-label">Bill No</div><div class="info-value">{{ $customerBill->bill_no }}</div></div>
+                    <div class="col-md-3"><div class="info-label">Bill Date</div><div class="info-value">{{ $customerBill->bill_date?->format('d-M-Y') }}</div></div>
+                    <div class="col-md-3"><div class="info-label">LC No</div><div class="info-value">{{ $customerBill->lc->lc_no ?? '-' }}</div></div>
                     <div class="col-md-3"><div class="info-label">Status</div>
                         <div class="info-value">
                             @php $badge = ['Draft' => 'secondary', 'Confirmed' => 'success', 'Paid' => 'primary'] @endphp
                             <span class="badge bg-{{ $badge[$customerBill->status] ?? 'secondary' }}">{{ $customerBill->status }}</span>
                         </div>
                     </div>
-                    <div class="col-md-3"><div class="info-label">Customer</div><div class="info-value">{{ $customerBill->customer_name }}</div></div>
-                    <div class="col-md-3"><div class="info-label">Bill Date</div><div class="info-value">{{ $customerBill->bill_date?->format('d-M-Y') }}</div></div>
-                    <div class="col-md-3"><div class="info-label">LC No</div><div class="info-value">{{ $customerBill->lc_no ?? '-' }}</div></div>
                     <div class="col-md-3"><div class="info-label">PFI No</div><div class="info-value">{{ $customerBill->pfi_no ?? '-' }}</div></div>
-                    <div class="col-md-3"><div class="info-label">Currency</div><div class="info-value">{{ $customerBill->currency }}</div></div>
-                    <div class="col-md-3"><div class="info-label">Exchange Rate</div><div class="info-value">{{ floatval($customerBill->exchange_rate) }}</div></div>
+                    <div class="col-md-3"><div class="info-label">Customer</div><div class="info-value">{{ $customerBill->customer_name }}</div></div>
                     @if($customerBill->customer_address)
-                    <div class="col-12"><div class="info-label">Address</div><div class="info-value">{{ $customerBill->customer_address }}</div></div>
+                    <div class="col-3"><div class="info-label">Customer Address</div><div class="info-value">{{ $customerBill->customer_address }}</div></div>
                     @endif
+                    <div class="col-md-3"><div class="info-label">Currency</div><div class="info-value">{{ $customerBill->currency }}</div></div>
+                    <div class="col-md-3"><div class="info-label">Item Description</div><div class="info-value">{{ $customerBill->lc->item_description ?? '-' }}</div></div>
                     @if($customerBill->note)
                     <div class="col-12"><div class="info-label">Note</div><div class="info-value">{{ $customerBill->note }}</div></div>
                     @endif
@@ -127,11 +127,35 @@
         <div class="info-card">
             <div class="info-header"><i class="fa fa-calculator me-2"></i> Bill Totals</div>
             <div class="info-body">
+                @php
+                    $advancePayment = $customerBill->lc?->payments?->where('payment_type', 'advance')->sum('amount') ?? 0;
+                    $dutyAdvance    = (float)($customerBill->lc?->duty_advance ?? 0);
+                    $totalAdvance   = $advancePayment + $dutyAdvance;
+                    $transportAmt   = $customerBill->total_amount - $totalAdvance;
+                @endphp
                 <table class="table table-sm mb-0">
                     <tr><td class="text-muted">Sub Total</td><td class="text-end fw-bold">{{ number_format($customerBill->sub_total, 2) }}</td></tr>
                     <tr><td class="text-muted">VAT ({{ floatval($customerBill->vat_pct) }}%)</td><td class="text-end fw-bold">{{ number_format($customerBill->vat_amount, 2) }}</td></tr>
                     <tr class="table-success"><td class="fw-bold fs-6">Total Amount</td><td class="text-end fw-bold fs-6">{{ number_format($customerBill->total_amount, 2) }} {{ $customerBill->currency }}</td></tr>
                 </table>
+                <hr class="my-2">
+                <div class="d-flex justify-content-between mb-1">
+                    <span style="font-size:.82rem;color:#6c757d">Advance Payment</span>
+                    <span style="font-size:.82rem">BDT {{ number_format($advancePayment, 2) }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span style="font-size:.82rem;color:#6c757d">Duty Advance</span>
+                    <span style="font-size:.82rem">BDT {{ number_format($dutyAdvance, 2) }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="fw-bold" style="font-size:.85rem">Total Advance</span>
+                    <strong style="font-size:.9rem;color:#0c2340">BDT {{ number_format($totalAdvance, 2) }}</strong>
+                </div>
+                <hr class="my-2">
+                <div class="d-flex justify-content-between">
+                    <span class="fw-bold" style="font-size:.85rem">Balance Amount</span>
+                    <strong class="text-success" style="font-size:1rem">BDT {{ number_format($transportAmt, 2) }}</strong>
+                </div>
             </div>
         </div>
     </div>
