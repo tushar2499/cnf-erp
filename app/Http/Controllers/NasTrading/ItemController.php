@@ -15,15 +15,15 @@ class ItemController extends Controller
         if ($request->ajax()) {
             return DataTables::of(NasTradingItem::query())
                 ->addIndexColumn()
-                ->addColumn('status_badge', fn($r) => $r->status === 'Active'
+                ->addColumn('status_badge', fn ($r) => $r->status === 'Active'
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')
-                ->addColumn('action', fn($r) =>
-                    '<button class="btn btn-sm btn-outline-primary btn-edit" data-id="' . $r->id . '"><i class="fa fa-edit"></i></button> ' .
-                    '<button class="btn btn-sm btn-outline-danger btn-delete" data-url="' . route('nas-trading.items.destroy', $r->id) . '" data-name="' . e($r->name) . '"><i class="fa fa-trash"></i></button>')
+                ->addColumn('action', fn ($r) => '<button class="btn btn-sm btn-outline-primary btn-edit" data-id="'.$r->id.'"><i class="fa fa-edit"></i></button> '.
+                    '<button class="btn btn-sm btn-outline-danger btn-delete" data-url="'.route('nas-trading.items.destroy', $r->id).'" data-name="'.e($r->name).'"><i class="fa fa-trash"></i></button>')
                 ->rawColumns(['status_badge', 'action'])
                 ->make(true);
         }
+
         return view('nas-trading.items.index');
     }
 
@@ -45,6 +45,7 @@ class ItemController extends Controller
                 'status'   => $request->status ?? 'Active',
             ]);
         });
+
         return response()->json(['message' => 'Item created successfully.']);
     }
 
@@ -58,23 +59,26 @@ class ItemController extends Controller
             'category' => $request->category,
             'status'   => $request->status ?? 'Active',
         ]);
+
         return response()->json(['message' => 'Item updated successfully.']);
     }
 
     public function destroy(NasTradingItem $item)
     {
         $item->delete();
+
         return response()->json(['message' => 'Item deleted.']);
     }
 
     public function search(Request $request)
     {
         $term = $request->input('q', '');
+
         return response()->json(
             NasTradingItem::where('status', 'Active')
-                ->where(fn($q) => $q->where('name', 'like', "%{$term}%")->orWhere('code', 'like', "%{$term}%"))
+                ->where(fn ($q) => $q->where('name', 'like', "%{$term}%")->orWhere('code', 'like', "%{$term}%"))
                 ->limit(15)->get(['id', 'code', 'name', 'hs_code', 'unit'])
-                ->map(fn($i) => ['id' => $i->id, 'text' => $i->code . ' | ' . $i->name, 'code' => $i->code, 'hs_code' => $i->hs_code, 'unit' => $i->unit])
+                ->map(fn ($i) => ['id' => $i->id, 'text' => $i->code.' | '.$i->name, 'code' => $i->code, 'hs_code' => $i->hs_code, 'unit' => $i->unit])
         );
     }
 }

@@ -25,13 +25,19 @@ class ImportController extends Controller
         $employees = [];
         foreach ($rows as $r) {
             $cell = trim($r['C'] ?? '');
-            if (!$cell || str_contains($cell, 'Emp. ID')) continue;
+            if (! $cell || str_contains($cell, 'Emp. ID')) {
+                continue;
+            }
 
             $parts = explode('_', $cell, 4);
-            if (count($parts) < 2) continue;
+            if (count($parts) < 2) {
+                continue;
+            }
 
             $code = trim($parts[0]);
-            if (in_array($code, self::SKIP_CODES, true)) continue;
+            if (in_array($code, self::SKIP_CODES, true)) {
+                continue;
+            }
 
             $employees[] = [
                 'code'        => $code,
@@ -40,6 +46,7 @@ class ImportController extends Controller
                 'department'  => trim($parts[3] ?? ($r['D'] ?? '')),
             ];
         }
+
         return $employees;
     }
 
@@ -54,21 +61,28 @@ class ImportController extends Controller
         $isFirst = true;
         foreach ($rows as $r) {
             $v = array_values($r);
-            if ($isFirst) { $isFirst = false; continue; } // header
+            if ($isFirst) {
+                $isFirst = false;
+
+                continue;
+            } // header
             $name = trim($v[2] ?? '');
-            if (strlen($name) < 3) continue;
+            if (strlen($name) < 3) {
+                continue;
+            }
             $heads[] = [
                 'name'     => $name,
                 'type'     => trim($v[3] ?? ''),
                 'category' => trim($v[5] ?? ''),
             ];
         }
+
         return $heads;
     }
 
     public function preview()
     {
-        $employees    = $this->parseEmployees();
+        $employees = $this->parseEmployees();
         $expenseHeads = $this->parseExpenseHeads();
 
         return view('nas-trading.import.chevron', compact('employees', 'expenseHeads'));
@@ -76,14 +90,14 @@ class ImportController extends Controller
 
     public function import()
     {
-        $employees    = $this->parseEmployees();
+        $employees = $this->parseEmployees();
         $expenseHeads = $this->parseExpenseHeads();
 
-        $empCount      = 0;
-        $deptCount     = 0;
-        $expCount      = 0;
+        $empCount = 0;
+        $deptCount = 0;
+        $expCount = 0;
         $freightsCount = 0;
-        $chevronCount  = 0;
+        $chevronCount = 0;
 
         foreach ($employees as $emp) {
             // --- NAS Trading ---
@@ -93,7 +107,9 @@ class ImportController extends Controller
                     ['name' => $emp['department']],
                     ['status' => 'Active']
                 );
-                if ($dept->wasRecentlyCreated) $deptCount++;
+                if ($dept->wasRecentlyCreated) {
+                    $deptCount++;
+                }
             }
 
             NasTradingEmployee::updateOrCreate(
@@ -116,7 +132,9 @@ class ImportController extends Controller
                     'status'      => 'Active',
                 ]
             );
-            if ($result->wasRecentlyCreated) $freightsCount++;
+            if ($result->wasRecentlyCreated) {
+                $freightsCount++;
+            }
 
             // --- Chevron Lines ---
             $designationId = null;
@@ -138,7 +156,9 @@ class ImportController extends Controller
                     'is_active'       => true,
                 ]
             );
-            if ($result->wasRecentlyCreated) $chevronCount++;
+            if ($result->wasRecentlyCreated) {
+                $chevronCount++;
+            }
         }
 
         foreach ($expenseHeads as $head) {
@@ -153,10 +173,10 @@ class ImportController extends Controller
 
         return response()->json([
             'message' => "Import complete. Departments: {$deptCount} new. "
-                . "NAS Trading employees: {$empCount}. "
-                . "NAS Freights: {$freightsCount} new. "
-                . "Chevron Lines: {$chevronCount} new. "
-                . "Expense Heads: {$expCount}.",
+                ."NAS Trading employees: {$empCount}. "
+                ."NAS Freights: {$freightsCount} new. "
+                ."Chevron Lines: {$chevronCount} new. "
+                ."Expense Heads: {$expCount}.",
         ]);
     }
 }

@@ -20,9 +20,9 @@ class MoneyReceiptController extends Controller
 
             return DataTables::of($query)
                 ->addIndexColumn()
-                ->editColumn('receipt_date', fn($r) => $r->receipt_date?->format('d-M-Y'))
-                ->editColumn('total_amount', fn($r) => number_format($r->total_amount, 2))
-                ->editColumn('payable_amount', fn($r) => number_format($r->payable_amount, 2))
+                ->editColumn('receipt_date', fn ($r) => $r->receipt_date?->format('d-M-Y'))
+                ->editColumn('total_amount', fn ($r) => number_format($r->total_amount, 2))
+                ->editColumn('payable_amount', fn ($r) => number_format($r->payable_amount, 2))
                 ->addColumn('status_badge', function ($r) {
                     return match ($r->status) {
                         'Approved'  => '<span class="badge bg-success">Approved</span>',
@@ -30,11 +30,11 @@ class MoneyReceiptController extends Controller
                         default     => '<span class="badge bg-primary">Active</span>',
                     };
                 })
-                ->addColumn('action', fn($r) => '
-                    <a href="' . route('chevron.cnf.money-receipts.edit', $r->id) . '" class="btn btn-sm btn-outline-primary"><i class="fa fa-edit"></i></a>
+                ->addColumn('action', fn ($r) => '
+                    <a href="'.route('chevron.cnf.money-receipts.edit', $r->id).'" class="btn btn-sm btn-outline-primary"><i class="fa fa-edit"></i></a>
                     <button class="btn btn-sm btn-outline-danger btn-delete"
-                        data-url="'  . route('chevron.cnf.money-receipts.destroy', $r->id) . '"
-                        data-name="' . e($r->receipt_no) . '">
+                        data-url="'.route('chevron.cnf.money-receipts.destroy', $r->id).'"
+                        data-name="'.e($r->receipt_no).'">
                         <i class="fa fa-trash"></i>
                     </button>')
                 ->rawColumns(['status_badge', 'action'])
@@ -95,7 +95,7 @@ class MoneyReceiptController extends Controller
 
     public function edit(ChevronMoneyReceipt $moneyReceipt)
     {
-        $existingItems = $moneyReceipt->items->map(fn($i) => [
+        $existingItems = $moneyReceipt->items->map(fn ($i) => [
             'payment_type'       => $i->payment_type,
             'account_id'         => $i->account_id,
             'account_no'         => $i->account_no,
@@ -157,6 +157,7 @@ class MoneyReceiptController extends Controller
     public function destroy(ChevronMoneyReceipt $moneyReceipt)
     {
         $moneyReceipt->delete();
+
         return response()->json(['message' => 'Money receipt deleted.']);
     }
 
@@ -166,7 +167,7 @@ class MoneyReceiptController extends Controller
         $results = ChevronCustomer::where('name', 'like', "%{$term}%")
             ->limit(20)
             ->get(['id', 'name'])
-            ->map(fn($c) => ['id' => $c->id, 'text' => $c->name]);
+            ->map(fn ($c) => ['id' => $c->id, 'text' => $c->name]);
 
         return response()->json(['results' => $results]);
     }
@@ -175,6 +176,7 @@ class MoneyReceiptController extends Controller
     {
         $partyName = $request->party_name ?? '';
         $payable = ChevronBill::where('party_name', $partyName)->sum('due_amount');
+
         return response()->json(['payable_amount' => round($payable, 2)]);
     }
 
@@ -186,11 +188,11 @@ class MoneyReceiptController extends Controller
             ->toArray();
 
         return [
-            'payTypes'    => ChevronMoneyReceipt::payTypes(),
-            'rowPayTypes' => ChevronMoneyReceipt::rowPayTypes(),
-            'accounts'    => $accounts,
+            'payTypes'      => ChevronMoneyReceipt::payTypes(),
+            'rowPayTypes'   => ChevronMoneyReceipt::rowPayTypes(),
+            'accounts'      => $accounts,
             'existingItems' => [],
-            'receipt'     => null,
+            'receipt'       => null,
         ];
     }
 }

@@ -16,16 +16,16 @@ class VehicleController extends Controller
         if ($request->ajax()) {
             return DataTables::of(NasFreightsVehicle::where('branch_id', session('nas_freights_branch_id')))
                 ->addIndexColumn()
-                ->addColumn('status_badge', fn($r) => $r->status === 'Active'
+                ->addColumn('status_badge', fn ($r) => $r->status === 'Active'
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')
-                ->addColumn('action', fn($r) => '
-                    <button class="btn btn-sm btn-outline-primary btn-edit" data-id="' . $r->id . '">
+                ->addColumn('action', fn ($r) => '
+                    <button class="btn btn-sm btn-outline-primary btn-edit" data-id="'.$r->id.'">
                         <i class="fa fa-edit"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger btn-delete"
-                        data-url="' . route('nas-freights.vehicles.destroy', $r->id) . '"
-                        data-name="' . e($r->vehicle_number) . '">
+                        data-url="'.route('nas-freights.vehicles.destroy', $r->id).'"
+                        data-name="'.e($r->vehicle_number).'">
                         <i class="fa fa-trash"></i>
                     </button>')
                 ->rawColumns(['status_badge', 'action'])
@@ -46,14 +46,14 @@ class VehicleController extends Controller
             ->where('branch_id', session('nas_freights_branch_id'))
             ->where(function ($q) use ($term) {
                 $q->where('company_name', 'like', "%{$term}%")
-                  ->orWhere('code', 'like', "%{$term}%");
+                    ->orWhere('code', 'like', "%{$term}%");
             })
             ->limit(15)
             ->get(['id', 'code', 'company_name']);
 
-        return response()->json($results->map(fn($s) => [
+        return response()->json($results->map(fn ($s) => [
             'id'   => $s->id,
-            'text' => $s->code . ' — ' . $s->company_name,
+            'text' => $s->code.' — '.$s->company_name,
             'name' => $s->company_name,
         ]));
     }
@@ -87,7 +87,7 @@ class VehicleController extends Controller
     public function update(Request $request, NasFreightsVehicle $vehicle)
     {
         $request->validate([
-            'vehicle_number' => ['required', 'string', 'max:50', 'unique:nas_freights_vehicles,vehicle_number,' . $vehicle->id],
+            'vehicle_number' => ['required', 'string', 'max:50', 'unique:nas_freights_vehicles,vehicle_number,'.$vehicle->id],
             'vehicle_class'  => ['required', 'string'],
             'vehicle_type'   => ['required', 'string'],
             'purchase_unit'  => ['nullable', 'string'],
@@ -96,7 +96,9 @@ class VehicleController extends Controller
         $data = $this->prepareData($request);
 
         if ($request->hasFile('image')) {
-            if ($vehicle->image) Storage::disk('public')->delete($vehicle->image);
+            if ($vehicle->image) {
+                Storage::disk('public')->delete($vehicle->image);
+            }
             $data['image'] = $request->file('image')->store('nas-freights/vehicles', 'public');
         }
 
@@ -107,8 +109,11 @@ class VehicleController extends Controller
 
     public function destroy(NasFreightsVehicle $vehicle)
     {
-        if ($vehicle->image) Storage::disk('public')->delete($vehicle->image);
+        if ($vehicle->image) {
+            Storage::disk('public')->delete($vehicle->image);
+        }
         $vehicle->delete();
+
         return response()->json(['message' => 'Vehicle deleted.']);
     }
 

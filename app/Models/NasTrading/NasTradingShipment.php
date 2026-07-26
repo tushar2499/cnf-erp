@@ -41,9 +41,10 @@ class NasTradingShipment extends Model
     {
         return DB::transaction(function () {
             $max = self::lockForUpdate()
-                ->selectRaw("MAX(CAST(SUBSTRING(shipment_no, 5) AS UNSIGNED)) as max_no")
+                ->selectRaw('MAX(CAST(SUBSTRING(shipment_no, 5) AS UNSIGNED)) as max_no')
                 ->value('max_no') ?? 0;
-            return 'SHP-' . str_pad($max + 1, 6, '0', STR_PAD_LEFT);
+
+            return 'SHP-'.str_pad($max + 1, 6, '0', STR_PAD_LEFT);
         });
     }
 }

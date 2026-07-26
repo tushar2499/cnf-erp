@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
-use App\Models\NasFreights\NasFreightsSupplierBill;
 use App\Models\NasFreights\NasFreightsSupplier;
+use App\Models\NasFreights\NasFreightsSupplierBill;
 use App\Models\NasFreights\NasFreightsSupplierPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,9 +20,9 @@ class SupplierPaymentController extends Controller
 
             return DataTables::of($query)
                 ->addIndexColumn()
-                ->editColumn('payment_date', fn($r) => $r->payment_date?->format('d-M-Y'))
-                ->addColumn('action', fn($r) => '
-                    <a href="' . route('nas-freights.supplier-payments.show', $r->id) . '" class="btn btn-sm btn-outline-info" title="View"><i class="fa fa-eye"></i></a>')
+                ->editColumn('payment_date', fn ($r) => $r->payment_date?->format('d-M-Y'))
+                ->addColumn('action', fn ($r) => '
+                    <a href="'.route('nas-freights.supplier-payments.show', $r->id).'" class="btn btn-sm btn-outline-info" title="View"><i class="fa fa-eye"></i></a>')
                 ->rawColumns(['action'])
                 ->make(true);
         }
@@ -43,11 +43,12 @@ class SupplierPaymentController extends Controller
         if ($request->supplier_id) {
             $query->where('supplier_id', $request->supplier_id);
         }
+
         return response()->json(
             $query->orderBy('bill_date')->get(['id', 'pay_order_no', 'supplier_name', 'total_amount'])
-                ->map(fn($b) => [
+                ->map(fn ($b) => [
                     'id'            => $b->id,
-                    'text'          => $b->pay_order_no . ' — ' . $b->supplier_name,
+                    'text'          => $b->pay_order_no.' — '.$b->supplier_name,
                     'pay_order_no'  => $b->pay_order_no,
                     'total_amount'  => $b->total_amount,
                     'supplier_name' => $b->supplier_name,
@@ -98,13 +99,13 @@ class SupplierPaymentController extends Controller
     public function searchSuppliers(Request $request)
     {
         $term = $request->input('q', '');
-        $ids  = NasFreightsSupplierBill::where('status', 'Approved')->pluck('supplier_id')->unique();
+        $ids = NasFreightsSupplierBill::where('status', 'Approved')->pluck('supplier_id')->unique();
 
         return response()->json(
             NasFreightsSupplier::whereIn('id', $ids)
-                ->where(fn($q) => $q->where('company_name', 'like', "%{$term}%")->orWhere('code', 'like', "%{$term}%"))
+                ->where(fn ($q) => $q->where('company_name', 'like', "%{$term}%")->orWhere('code', 'like', "%{$term}%"))
                 ->limit(15)->get(['id', 'code', 'company_name'])
-                ->map(fn($s) => ['id' => $s->id, 'text' => $s->code . ' | ' . $s->company_name])
+                ->map(fn ($s) => ['id' => $s->id, 'text' => $s->code.' | '.$s->company_name])
         );
     }
 }

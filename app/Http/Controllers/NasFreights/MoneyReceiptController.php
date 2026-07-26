@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
-use App\Models\NasFreights\NasFreightsCustomerBill;
+use App\Models\Company;
 use App\Models\NasFreights\NasFreightsCustomer;
+use App\Models\NasFreights\NasFreightsCustomerBill;
 use App\Models\NasFreights\NasFreightsMoneyReceipt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,10 +21,9 @@ class MoneyReceiptController extends Controller
 
             return DataTables::of($query)
                 ->addIndexColumn()
-                ->editColumn('receipt_date', fn($r) => $r->receipt_date?->format('d-M-Y'))
-                ->addColumn('action', fn($r) =>
-                    '<a href="' . route('nas-freights.money-receipts.show', $r->id) . '" class="btn btn-sm btn-outline-info" title="View"><i class="fa fa-eye"></i></a> ' .
-                    '<a href="' . route('nas-freights.money-receipts.print', $r->id) . '" target="_blank" class="btn btn-sm btn-outline-dark" title="Print"><i class="fa fa-print"></i></a>')
+                ->editColumn('receipt_date', fn ($r) => $r->receipt_date?->format('d-M-Y'))
+                ->addColumn('action', fn ($r) => '<a href="'.route('nas-freights.money-receipts.show', $r->id).'" class="btn btn-sm btn-outline-info" title="View"><i class="fa fa-eye"></i></a> '.
+                    '<a href="'.route('nas-freights.money-receipts.print', $r->id).'" target="_blank" class="btn btn-sm btn-outline-dark" title="Print"><i class="fa fa-print"></i></a>')
                 ->rawColumns(['action'])
                 ->make(true);
         }
@@ -44,14 +44,15 @@ class MoneyReceiptController extends Controller
         if ($request->customer_id) {
             $query->where('customer_id', $request->customer_id);
         }
+
         return response()->json(
             $query->orderBy('bill_date')->get(['id', 'bill_no', 'customer_name', 'total_amount'])
-                ->map(fn($b) => [
-                    'id'           => $b->id,
-                    'text'         => $b->bill_no . ' — ' . $b->customer_name,
-                    'bill_no'      => $b->bill_no,
-                    'total_amount' => $b->total_amount,
-                    'customer_name'=> $b->customer_name,
+                ->map(fn ($b) => [
+                    'id'            => $b->id,
+                    'text'          => $b->bill_no.' — '.$b->customer_name,
+                    'bill_no'       => $b->bill_no,
+                    'total_amount'  => $b->total_amount,
+                    'customer_name' => $b->customer_name,
                 ])
         );
     }
@@ -98,20 +99,21 @@ class MoneyReceiptController extends Controller
 
     public function printView(NasFreightsMoneyReceipt $moneyReceipt)
     {
-        $company = \App\Models\Company::where('slug', 'nas-freights')->first();
+        $company = Company::where('slug', 'nas-freights')->first();
+
         return view('nas-freights.money-receipts.print', compact('moneyReceipt', 'company'));
     }
 
     public function searchCustomers(Request $request)
     {
         $term = $request->input('q', '');
-        $ids  = NasFreightsCustomerBill::where('status', 'Approved')->pluck('customer_id')->unique();
+        $ids = NasFreightsCustomerBill::where('status', 'Approved')->pluck('customer_id')->unique();
 
         return response()->json(
             NasFreightsCustomer::whereIn('id', $ids)
-                ->where(fn($q) => $q->where('name', 'like', "%{$term}%")->orWhere('customer_id', 'like', "%{$term}%"))
+                ->where(fn ($q) => $q->where('name', 'like', "%{$term}%")->orWhere('customer_id', 'like', "%{$term}%"))
                 ->limit(15)->get(['id', 'customer_id', 'name'])
-                ->map(fn($c) => ['id' => $c->id, 'text' => $c->customer_id . ' | ' . $c->name])
+                ->map(fn ($c) => ['id' => $c->id, 'text' => $c->customer_id.' | '.$c->name])
         );
     }
 }

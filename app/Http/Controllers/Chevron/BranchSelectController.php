@@ -23,6 +23,7 @@ class BranchSelectController extends Controller
     {
         $request->validate(['branch_id' => ['required', 'exists:chevron_branches,id']]);
         $branch = ChevronBranch::findOrFail($request->branch_id);
+
         return $this->setAndRedirect($branch);
     }
 
@@ -33,6 +34,7 @@ class BranchSelectController extends Controller
             'active_branch_name' => $branch->name,
             'active_branch_code' => $branch->code,
         ]);
+
         return redirect()->route('chevron.dashboard');
     }
 }

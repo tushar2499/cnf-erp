@@ -13,7 +13,7 @@ return new class extends Migration
             $table->decimal('discount', 15, 2)->default(0)->after('total_amount');
             $table->decimal('forfeited_amount', 15, 2)->default(0)->after('discount');
             $table->enum('delivery_status', ['Pending', 'Partially Delivered', 'Fully Delivered'])
-                  ->default('Pending')->after('forfeited_amount');
+                ->default('Pending')->after('forfeited_amount');
             $table->string('entry_by', 150)->nullable()->after('status');
             $table->string('branch', 100)->nullable()->after('entry_by');
         });

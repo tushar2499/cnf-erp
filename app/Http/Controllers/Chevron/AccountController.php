@@ -14,23 +14,23 @@ class AccountController extends Controller
         if ($request->ajax()) {
             return DataTables::of(ChevronAccount::query())
                 ->addIndexColumn()
-                ->addColumn('status_badge', fn($r) => $r->is_active
+                ->addColumn('status_badge', fn ($r) => $r->is_active
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')
-                ->addColumn('action', fn($r) => '
+                ->addColumn('action', fn ($r) => '
                     <button class="btn btn-sm btn-outline-primary btn-edit"
-                        data-id="'           . $r->id           . '"
-                        data-account_no="'   . e($r->account_no)   . '"
-                        data-account_name="' . e($r->account_name) . '"
-                        data-bank_name="'    . e($r->bank_name)    . '"
-                        data-branch_name="'  . e($r->branch_name)  . '"
-                        data-account_type="' . e($r->account_type) . '"
-                        data-is_active="'    . (int)$r->is_active  . '">
+                        data-id="'.$r->id.'"
+                        data-account_no="'.e($r->account_no).'"
+                        data-account_name="'.e($r->account_name).'"
+                        data-bank_name="'.e($r->bank_name).'"
+                        data-branch_name="'.e($r->branch_name).'"
+                        data-account_type="'.e($r->account_type).'"
+                        data-is_active="'.(int) $r->is_active.'">
                         <i class="fa fa-edit"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger btn-delete"
-                        data-url="'  . route('chevron.settings.accounts.destroy', $r->id) . '"
-                        data-name="' . e($r->account_no) . ' — ' . e($r->account_name) . '">
+                        data-url="'.route('chevron.settings.accounts.destroy', $r->id).'"
+                        data-name="'.e($r->account_no).' — '.e($r->account_name).'">
                         <i class="fa fa-trash"></i>
                     </button>')
                 ->rawColumns(['status_badge', 'action'])
@@ -67,7 +67,7 @@ class AccountController extends Controller
     public function update(Request $request, ChevronAccount $account)
     {
         $request->validate([
-            'account_no'   => ['required', 'string', 'max:100', 'unique:chevron_accounts,account_no,' . $account->id],
+            'account_no'   => ['required', 'string', 'max:100', 'unique:chevron_accounts,account_no,'.$account->id],
             'account_name' => ['required', 'string', 'max:255'],
             'bank_name'    => ['nullable', 'string', 'max:255'],
             'branch_name'  => ['nullable', 'string', 'max:255'],
@@ -89,6 +89,7 @@ class AccountController extends Controller
     public function destroy(ChevronAccount $account)
     {
         $account->delete();
+
         return response()->json(['message' => 'Account deleted.']);
     }
 }

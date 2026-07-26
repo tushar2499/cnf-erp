@@ -15,16 +15,16 @@ class CustomerController extends Controller
         if ($request->ajax()) {
             return DataTables::of(NasFreightsCustomer::where('branch_id', session('nas_freights_branch_id')))
                 ->addIndexColumn()
-                ->addColumn('status_badge', fn($r) => $r->status === 'Active'
+                ->addColumn('status_badge', fn ($r) => $r->status === 'Active'
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')
-                ->addColumn('action', fn($r) => '
-                    <button class="btn btn-sm btn-outline-primary btn-edit" data-id="' . $r->id . '">
+                ->addColumn('action', fn ($r) => '
+                    <button class="btn btn-sm btn-outline-primary btn-edit" data-id="'.$r->id.'">
                         <i class="fa fa-edit"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger btn-delete"
-                        data-url="' . route('nas-freights.stakeholders.customers.destroy', $r->id) . '"
-                        data-name="' . e($r->name) . '">
+                        data-url="'.route('nas-freights.stakeholders.customers.destroy', $r->id).'"
+                        data-name="'.e($r->name).'">
                         <i class="fa fa-trash"></i>
                     </button>')
                 ->rawColumns(['status_badge', 'action'])
@@ -39,6 +39,7 @@ class CustomerController extends Controller
     public function nextId(Request $request)
     {
         $prefix = $request->input('prefix', 'CUS-');
+
         return response()->json(['customer_id' => NasFreightsCustomer::generateCustomerId($prefix)]);
     }
 
@@ -150,6 +151,7 @@ class CustomerController extends Controller
     public function destroy(NasFreightsCustomer $customer)
     {
         $customer->delete();
+
         return response()->json(['message' => 'Customer deleted.']);
     }
 }

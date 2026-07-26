@@ -22,6 +22,7 @@ class BranchSelectController extends Controller
     public function store(Request $request)
     {
         $request->validate(['branch_id' => 'required|exists:nas_trading_branches,id']);
+
         return $this->setAndRedirect(NasTradingBranch::findOrFail($request->branch_id));
     }
 
@@ -32,6 +33,7 @@ class BranchSelectController extends Controller
             'nas_trading_branch_name' => $branch->name,
             'nas_trading_branch_code' => $branch->code,
         ]);
+
         return redirect()->route('nas-trading.dashboard');
     }
 }

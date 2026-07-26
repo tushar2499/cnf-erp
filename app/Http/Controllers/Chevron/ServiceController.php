@@ -22,14 +22,14 @@ class ServiceController extends Controller
                 ->addColumn('action', function ($row) {
                     return '
                         <button class="btn btn-sm btn-outline-primary btn-edit"
-                            data-id="' . $row->id . '"
-                            data-name="' . e($row->name) . '"
-                            data-is_active="' . (int)$row->is_active . '">
+                            data-id="'.$row->id.'"
+                            data-name="'.e($row->name).'"
+                            data-is_active="'.(int) $row->is_active.'">
                             <i class="fa fa-edit"></i>
                         </button>
                         <button class="btn btn-sm btn-outline-danger btn-delete"
-                            data-url="' . route('chevron.settings.services.destroy', $row->id) . '"
-                            data-name="' . e($row->name) . '">
+                            data-url="'.route('chevron.settings.services.destroy', $row->id).'"
+                            data-name="'.e($row->name).'">
                             <i class="fa fa-trash"></i>
                         </button>';
                 })
@@ -69,6 +69,7 @@ class ServiceController extends Controller
     public function destroy(ChevronService $service)
     {
         $service->delete();
+
         return response()->json(['message' => 'Service deleted.']);
     }
 }

@@ -11,6 +11,7 @@ class CompanyController extends Controller
     public function index()
     {
         $companies = Company::all();
+
         return view('admin.companies.index', compact('companies'));
     }
 
@@ -33,13 +34,13 @@ class CompanyController extends Controller
         if ($request->hasFile('logo')) {
             // Delete old logo if exists
             if ($company->logo) {
-                $oldPath = public_path('assets/logos/' . $company->logo);
+                $oldPath = public_path('assets/logos/'.$company->logo);
                 if (file_exists($oldPath)) {
                     unlink($oldPath);
                 }
             }
-            $file     = $request->file('logo');
-            $filename = $company->slug . '.' . $file->getClientOriginalExtension();
+            $file = $request->file('logo');
+            $filename = $company->slug.'.'.$file->getClientOriginalExtension();
             $file->move(public_path('assets/logos'), $filename);
             $data['logo'] = $filename;
         }

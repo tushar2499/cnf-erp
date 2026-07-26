@@ -14,34 +14,34 @@ class SupplierController extends Controller
         if ($request->ajax()) {
             return DataTables::of(NasFreightsSupplier::where('branch_id', session('nas_freights_branch_id')))
                 ->addIndexColumn()
-                ->addColumn('group_badge', fn($r) => $r->supplier_group
-                    ? '<span class="badge ' . ($r->supplier_group === 'Exporter' ? 'bg-info text-dark' : 'bg-warning text-dark') . '">' . e($r->supplier_group) . '</span>'
+                ->addColumn('group_badge', fn ($r) => $r->supplier_group
+                    ? '<span class="badge '.($r->supplier_group === 'Exporter' ? 'bg-info text-dark' : 'bg-warning text-dark').'">'.e($r->supplier_group).'</span>'
                     : '—')
-                ->addColumn('status_badge', fn($r) => $r->is_active
+                ->addColumn('status_badge', fn ($r) => $r->is_active
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')
-                ->addColumn('action', fn($r) => '
+                ->addColumn('action', fn ($r) => '
                     <button class="btn btn-sm btn-outline-primary btn-edit"
-                        data-id="'             . $r->id                       . '"
-                        data-code="'           . e($r->code)                  . '"
-                        data-company_name="'   . e($r->company_name)          . '"
-                        data-owner_name="'     . e($r->owner_name)            . '"
-                        data-address="'        . e($r->address)               . '"
-                        data-phone_no="'       . e($r->phone_no)              . '"
-                        data-fax="'            . e($r->fax)                   . '"
-                        data-url="'            . e($r->url)                   . '"
-                        data-mobile_no="'      . e($r->mobile_no)             . '"
-                        data-email="'          . e($r->email)                 . '"
-                        data-contact="'        . e($r->contact)               . '"
-                        data-designation="'    . e($r->designation)           . '"
-                        data-supplier_group="' . e($r->supplier_group)        . '"
-                        data-taxscope="'       . e($r->taxscope)              . '"
-                        data-is_active="'      . (int) $r->is_active          . '">
+                        data-id="'.$r->id.'"
+                        data-code="'.e($r->code).'"
+                        data-company_name="'.e($r->company_name).'"
+                        data-owner_name="'.e($r->owner_name).'"
+                        data-address="'.e($r->address).'"
+                        data-phone_no="'.e($r->phone_no).'"
+                        data-fax="'.e($r->fax).'"
+                        data-url="'.e($r->url).'"
+                        data-mobile_no="'.e($r->mobile_no).'"
+                        data-email="'.e($r->email).'"
+                        data-contact="'.e($r->contact).'"
+                        data-designation="'.e($r->designation).'"
+                        data-supplier_group="'.e($r->supplier_group).'"
+                        data-taxscope="'.e($r->taxscope).'"
+                        data-is_active="'.(int) $r->is_active.'">
                         <i class="fa fa-edit"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger btn-delete"
-                        data-url="'  . route('nas-freights.stakeholders.suppliers.destroy', $r->id) . '"
-                        data-name="' . e($r->code) . ' — ' . e($r->company_name)                   . '">
+                        data-url="'.route('nas-freights.stakeholders.suppliers.destroy', $r->id).'"
+                        data-name="'.e($r->code).' — '.e($r->company_name).'">
                         <i class="fa fa-trash"></i>
                     </button>')
                 ->rawColumns(['group_badge', 'status_badge', 'action'])
@@ -131,6 +131,7 @@ class SupplierController extends Controller
     public function destroy(NasFreightsSupplier $supplier)
     {
         $supplier->delete();
+
         return response()->json(['message' => 'Supplier deleted.']);
     }
 }

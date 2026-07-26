@@ -47,7 +47,7 @@ class ChevronJob extends Model
         'atv_rate',      'atv_amount',
         'df_vat_rate',   'df_vat_amount',
         'total_payable_1',  'total_payable_2',
-        'comm_discount_pct','comm_discount_1', 'comm_discount_2',
+        'comm_discount_pct', 'comm_discount_1', 'comm_discount_2',
         'net_payable_1',    'net_payable_2',
         'status',
     ];
@@ -55,43 +55,63 @@ class ChevronJob extends Model
     protected function casts(): array
     {
         return [
-            'job_date'                  => 'date',
-            'copy_doc_received_date'    => 'date',
-            'original_doc_received_date'=> 'date',
-            'eta_date'                  => 'date',
-            'hbi_hawb_date'             => 'date',
-            'be_date'                   => 'date',
-            'lc_date'                   => 'date',
-            'lca_date'                  => 'date',
-            'bl_date'                   => 'date',
-            'mbl_mawb_date'             => 'date',
-            'invoice_date'              => 'date',
-            'lading_date'               => 'date',
-            'flight_date'               => 'date',
-            'arrived_date'              => 'date',
-            'common_lading_date'        => 'date',
-            'w_rent_due_date'           => 'date',
-            'berthing_date'             => 'date',
-            'port_bill_date'            => 'date',
-            'labour_bill_date'          => 'date',
-            'etb_date'                  => 'date',
-            'delivery_date'             => 'date',
-            'etd_date'                  => 'date',
+            'job_date'                   => 'date',
+            'copy_doc_received_date'     => 'date',
+            'original_doc_received_date' => 'date',
+            'eta_date'                   => 'date',
+            'hbi_hawb_date'              => 'date',
+            'be_date'                    => 'date',
+            'lc_date'                    => 'date',
+            'lca_date'                   => 'date',
+            'bl_date'                    => 'date',
+            'mbl_mawb_date'              => 'date',
+            'invoice_date'               => 'date',
+            'lading_date'                => 'date',
+            'flight_date'                => 'date',
+            'arrived_date'               => 'date',
+            'common_lading_date'         => 'date',
+            'w_rent_due_date'            => 'date',
+            'berthing_date'              => 'date',
+            'port_bill_date'             => 'date',
+            'labour_bill_date'           => 'date',
+            'etb_date'                   => 'date',
+            'delivery_date'              => 'date',
+            'etd_date'                   => 'date',
         ];
     }
 
-    public function service()  { return $this->belongsTo(ChevronService::class,  'service_id'); }
-    public function jobType()  { return $this->belongsTo(ChevronJobType::class,  'job_type_id'); }
-    public function port()     { return $this->belongsTo(ChevronPort::class,     'port_id'); }
-    public function customer() { return $this->belongsTo(ChevronCustomer::class, 'customer_id'); }
-    public function item()     { return $this->belongsTo(ChevronItem::class,     'item_id'); }
+    public function service()
+    {
+        return $this->belongsTo(ChevronService::class, 'service_id');
+    }
+
+    public function jobType()
+    {
+        return $this->belongsTo(ChevronJobType::class, 'job_type_id');
+    }
+
+    public function port()
+    {
+        return $this->belongsTo(ChevronPort::class, 'port_id');
+    }
+
+    public function customer()
+    {
+        return $this->belongsTo(ChevronCustomer::class, 'customer_id');
+    }
+
+    public function item()
+    {
+        return $this->belongsTo(ChevronItem::class, 'item_id');
+    }
 
     public static function generateJobNo(): string
     {
         $last = static::lockForUpdate()->max(
-            DB::raw("CAST(SUBSTRING(job_no, 3) AS UNSIGNED)")
+            DB::raw('CAST(SUBSTRING(job_no, 3) AS UNSIGNED)')
         );
-        return 'CF' . str_pad(($last ?? 0) + 1, 6, '0', STR_PAD_LEFT);
+
+        return 'CF'.str_pad(($last ?? 0) + 1, 6, '0', STR_PAD_LEFT);
     }
 
     public static function currencies(): array

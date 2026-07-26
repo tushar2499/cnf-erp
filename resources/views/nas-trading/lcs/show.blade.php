@@ -374,6 +374,21 @@
             </div>
             <div class="collapse show" id="sec-payment">
                 <div class="info-body">
+                    {{-- Duty & Clearance --}}
+                    <div class="row g-2 mb-3">
+                        <div class="col-6 col-md-3"><div class="info-label">Duty Advance</div><div class="info-value">{{ fmtAmt($lc->duty_advance) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Duty Advance Date</div><div class="info-value">{{ fmtDate($lc->duty_advance_date) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Duty Advance Posting</div><div class="info-value">{{ $lc->duty_advance_posting ?? $dash }}</div></div>
+                        <div class="col-6 col-md-3"></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Bill of Entry No</div><div class="info-value">{{ $lc->bill_of_entry_no ?? $dash }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Bill of Entry Date</div><div class="info-value">{{ fmtDate($lc->bill_of_entry_date) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Customs Duty</div><div class="info-value">{{ fmtAmt($lc->customs_duty) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Customs Duty Posting</div><div class="info-value">{{ $lc->customs_duty_posting ?? $dash }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">CNF Party</div><div class="info-value">{{ $lc->cnf_party ?? $dash }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">CNF Total Cost</div><div class="info-value">{{ fmtAmt($lc->cnf_total_cost) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">CNF Cost Posting</div><div class="info-value">{{ $lc->cnf_cost_posting ?? $dash }}</div></div>
+                    </div>
+                    {{-- LC Closing Bill --}}
                     <div class="row g-2 mb-3">
                         <div class="col-6 col-md-3"><div class="info-label">LC Closing Bill</div><div class="info-value">{{ fmtAmt($lc->lc_closing_bill) }}</div></div>
                         <div class="col-6 col-md-3"><div class="info-label">LC Closing Bill Date</div><div class="info-value">{{ fmtDate($lc->lc_closing_bill_date) }}</div></div>
@@ -409,35 +424,7 @@
             </div>
         </div>
 
-        {{-- 6. Duty & Clearance --}}
-        <div class="info-card">
-            <div class="info-header" data-bs-target="#sec-duty" data-section="duty">
-                <span><i class="fa fa-clipboard-check me-2"></i> Duty &amp; Clearance</span>
-                <div class="d-flex align-items-center gap-2">
-                    <button class="btn-print-section" data-print-target="sec-duty" title="Print this section" aria-label="Print Duty section"><i class="fa fa-print"></i></button>
-                    <i class="fa fa-chevron-down chevron"></i>
-                </div>
-            </div>
-            <div class="collapse show" id="sec-duty">
-                <div class="info-body">
-                    <div class="row g-2">
-                        <div class="col-6 col-md-3"><div class="info-label">Duty Advance</div><div class="info-value">{{ fmtAmt($lc->duty_advance) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Duty Advance Date</div><div class="info-value">{{ fmtDate($lc->duty_advance_date) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Duty Advance Posting</div><div class="info-value">{{ $lc->duty_advance_posting ?? $dash }}</div></div>
-                        <div class="col-6 col-md-3"></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Bill of Entry No</div><div class="info-value">{{ $lc->bill_of_entry_no ?? $dash }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Bill of Entry Date</div><div class="info-value">{{ fmtDate($lc->bill_of_entry_date) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Customs Duty</div><div class="info-value">{{ fmtAmt($lc->customs_duty) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Customs Duty Posting</div><div class="info-value">{{ $lc->customs_duty_posting ?? $dash }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">CNF Party</div><div class="info-value">{{ $lc->cnf_party ?? $dash }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">CNF Total Cost</div><div class="info-value">{{ fmtAmt($lc->cnf_total_cost) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">CNF Cost Posting</div><div class="info-value">{{ $lc->cnf_cost_posting ?? $dash }}</div></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- 7. VAT / Tax / Sales --}}
+        {{-- 6. VAT / Tax / Sales --}}
         <div class="info-card">
             <div class="info-header" data-bs-target="#sec-vat" data-section="vat">
                 <span><i class="fa fa-percent me-2"></i> VAT / Tax / Sales</span>
@@ -470,7 +457,7 @@
             </div>
         </div>
 
-        {{-- 8. Product Line Items --}}
+        {{-- 7. Product Line Items --}}
         @if($lc->items->count())
         <div class="info-card">
             <div class="info-header" data-bs-target="#sec-items" data-section="items">

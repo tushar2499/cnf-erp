@@ -22,8 +22,9 @@ class AuthController extends Controller
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
 
-            if (!Auth::user()->is_active) {
+            if (! Auth::user()->is_active) {
                 Auth::logout();
+
                 return back()->withErrors(['email' => 'Your account is inactive.']);
             }
 

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\NasTrading;
 
 use App\Http\Controllers\Controller;
 use App\Models\NasTrading\NasTradingCustomerBill;
-use App\Models\NasTrading\NasTradingLc;
 use App\Models\NasTrading\NasTradingExpenseHead;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,28 +16,29 @@ class CustomerBillController extends Controller
         if ($request->ajax()) {
             return DataTables::of(NasTradingCustomerBill::latest())
                 ->addIndexColumn()
-                ->editColumn('bill_date', fn($r) => $r->bill_date?->format('d-M-Y'))
-                ->editColumn('total_amount', fn($r) => number_format($r->total_amount, 2))
-                ->addColumn('status_badge', fn($r) => match($r->status) {
+                ->editColumn('bill_date', fn ($r) => $r->bill_date?->format('d-M-Y'))
+                ->editColumn('total_amount', fn ($r) => number_format($r->total_amount, 2))
+                ->addColumn('status_badge', fn ($r) => match ($r->status) {
                     'Draft'     => '<span class="badge bg-secondary">Draft</span>',
                     'Confirmed' => '<span class="badge bg-success">Confirmed</span>',
                     'Paid'      => '<span class="badge bg-primary">Paid</span>',
                     default     => $r->status,
                 })
-                ->addColumn('action', fn($r) =>
-                    '<a href="' . route('nas-trading.customer-bills.show', $r->id) . '" class="btn btn-sm btn-outline-info" style="padding:2px 6px;font-size:.7rem"><i class="fa fa-eye"></i></a> ' .
-                    ($r->status === 'Draft' ? '<a href="' . route('nas-trading.customer-bills.edit', $r->id) . '" class="btn btn-sm btn-outline-primary" style="padding:2px 6px;font-size:.7rem"><i class="fa fa-edit"></i></a> ' : '') .
-                    ($r->status === 'Draft' ? '<button class="btn btn-sm btn-outline-success btn-confirm" data-url="' . route('nas-trading.customer-bills.confirm', $r->id) . '" style="padding:2px 6px;font-size:.7rem" title="Confirm"><i class="fa fa-check"></i></button> ' : '') .
-                    ($r->status !== 'Paid' ? '<button class="btn btn-sm btn-outline-danger btn-delete" data-url="' . route('nas-trading.customer-bills.destroy', $r->id) . '" data-name="' . e($r->bill_no) . '" style="padding:2px 6px;font-size:.7rem"><i class="fa fa-trash"></i></button>' : ''))
+                ->addColumn('action', fn ($r) => '<a href="'.route('nas-trading.customer-bills.show', $r->id).'" class="btn btn-sm btn-outline-info" style="padding:2px 6px;font-size:.7rem"><i class="fa fa-eye"></i></a> '.
+                    ($r->status === 'Draft' ? '<a href="'.route('nas-trading.customer-bills.edit', $r->id).'" class="btn btn-sm btn-outline-primary" style="padding:2px 6px;font-size:.7rem"><i class="fa fa-edit"></i></a> ' : '').
+                    ($r->status === 'Draft' ? '<button class="btn btn-sm btn-outline-success btn-confirm" data-url="'.route('nas-trading.customer-bills.confirm', $r->id).'" style="padding:2px 6px;font-size:.7rem" title="Confirm"><i class="fa fa-check"></i></button> ' : '').
+                    ($r->status !== 'Paid' ? '<button class="btn btn-sm btn-outline-danger btn-delete" data-url="'.route('nas-trading.customer-bills.destroy', $r->id).'" data-name="'.e($r->bill_no).'" style="padding:2px 6px;font-size:.7rem"><i class="fa fa-trash"></i></button>' : ''))
                 ->rawColumns(['status_badge', 'action'])
                 ->make(true);
         }
+
         return view('nas-trading.customer-bills.index');
     }
 
     public function create()
     {
         $expenseHeads = NasTradingExpenseHead::where('status', 'Active')->get();
+
         return view('nas-trading.customer-bills.create', compact('expenseHeads'));
     }
 
@@ -72,15 +72,15 @@ class CustomerBillController extends Controller
             ]);
 
             foreach ($request->items as $idx => $item) {
-                if (!empty($item['description'])) {
+                if (! empty($item['description'])) {
                     $bill->items()->create([
-                        'description'    => $item['description'],
-                        'expense_head_id'=> $item['expense_head_id'] ?? null,
-                        'qty'            => $item['qty'] ?? 1,
-                        'unit_price'     => $item['unit_price'] ?? 0,
-                        'amount'         => $item['amount'] ?? 0,
-                        'note'           => $item['note'] ?? null,
-                        'sort_order'     => $idx,
+                        'description'     => $item['description'],
+                        'expense_head_id' => $item['expense_head_id'] ?? null,
+                        'qty'             => $item['qty'] ?? 1,
+                        'unit_price'      => $item['unit_price'] ?? 0,
+                        'amount'          => $item['amount'] ?? 0,
+                        'note'            => $item['note'] ?? null,
+                        'sort_order'      => $idx,
                     ]);
                 }
             }
@@ -92,6 +92,7 @@ class CustomerBillController extends Controller
     public function show(NasTradingCustomerBill $customerBill)
     {
         $customerBill->load(['items', 'lc.openingBank']);
+
         return view('nas-trading.customer-bills.show', compact('customerBill'));
     }
 
@@ -101,8 +102,9 @@ class CustomerBillController extends Controller
             return redirect()->route('nas-trading.customer-bills.show', $customerBill->id)
                 ->with('error', 'Only Draft bills can be edited.');
         }
-        $customerBill->load('items');
+        $customerBill->load(['items', 'lc.payments']);
         $expenseHeads = NasTradingExpenseHead::where('status', 'Active')->get();
+
         return view('nas-trading.customer-bills.edit', compact('customerBill', 'expenseHeads'));
     }
 
@@ -127,15 +129,15 @@ class CustomerBillController extends Controller
 
             $customerBill->items()->delete();
             foreach ($request->items as $idx => $item) {
-                if (!empty($item['description'])) {
+                if (! empty($item['description'])) {
                     $customerBill->items()->create([
-                        'description'    => $item['description'],
-                        'expense_head_id'=> $item['expense_head_id'] ?? null,
-                        'qty'            => $item['qty'] ?? 1,
-                        'unit_price'     => $item['unit_price'] ?? 0,
-                        'amount'         => $item['amount'] ?? 0,
-                        'note'           => $item['note'] ?? null,
-                        'sort_order'     => $idx,
+                        'description'     => $item['description'],
+                        'expense_head_id' => $item['expense_head_id'] ?? null,
+                        'qty'             => $item['qty'] ?? 1,
+                        'unit_price'      => $item['unit_price'] ?? 0,
+                        'amount'          => $item['amount'] ?? 0,
+                        'note'            => $item['note'] ?? null,
+                        'sort_order'      => $idx,
                     ]);
                 }
             }
@@ -147,6 +149,7 @@ class CustomerBillController extends Controller
     public function confirm(NasTradingCustomerBill $customerBill)
     {
         $customerBill->update(['status' => 'Confirmed']);
+
         return response()->json(['message' => 'Bill confirmed successfully.']);
     }
 
@@ -157,6 +160,7 @@ class CustomerBillController extends Controller
         }
         $customerBill->items()->delete();
         $customerBill->delete();
+
         return response()->json(['message' => 'Bill deleted.']);
     }
 }

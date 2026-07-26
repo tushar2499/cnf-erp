@@ -62,13 +62,17 @@ return new class extends Migration
             'nas_freights_supplier_bills', 'nas_freights_money_receipts',
             'nas_freights_supplier_payments',
         ] as $tbl) {
-            Schema::table($tbl, function (Blueprint $table) { $table->dropColumn('branch_id'); });
+            Schema::table($tbl, function (Blueprint $table) {
+                $table->dropColumn('branch_id');
+            });
         }
         foreach ([
             'nas_trading_lcs', 'nas_trading_shipments', 'nas_trading_customer_bills',
             'nas_trading_deliveries', 'nas_trading_money_receipts',
         ] as $tbl) {
-            Schema::table($tbl, function (Blueprint $table) { $table->dropColumn('branch_id'); });
+            Schema::table($tbl, function (Blueprint $table) {
+                $table->dropColumn('branch_id');
+            });
         }
         Schema::dropIfExists('nas_freights_branches');
         Schema::dropIfExists('nas_trading_branches');

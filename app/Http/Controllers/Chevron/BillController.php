@@ -134,8 +134,8 @@ class BillController extends Controller
     public function print(ChevronBill $bill)
     {
         $bill->load(['items.expenseCategory', 'items.expenseHead', 'job']);
-        $grouped  = $bill->items->groupBy(fn ($i) => $i->expenseCategory?->name ?? 'OTHER');
-        $inWords  = BdtWords::convert((float) $bill->due_amount);
+        $grouped = $bill->items->groupBy(fn ($i) => $i->expenseCategory?->name ?? 'OTHER');
+        $inWords = BdtWords::convert((float) $bill->due_amount);
 
         return view('chevron.cnf.bills.print', compact('bill', 'grouped', 'inWords'));
     }
@@ -261,8 +261,8 @@ class BillController extends Controller
     {
         foreach ($rows as $row) {
             $rate = is_numeric($row['rate'] ?? '') ? (float) $row['rate'] : null;
-            $qty  = is_numeric($row['qty']  ?? '') ? (float) $row['qty']  : null;
-            $amt  = ($rate !== null && $qty !== null && $qty > 0)
+            $qty = is_numeric($row['qty'] ?? '') ? (float) $row['qty'] : null;
+            $amt = ($rate !== null && $qty !== null && $qty > 0)
                 ? round($rate * $qty, 2)
                 : (float) ($row['amount'] ?? 0);
 

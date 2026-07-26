@@ -18,7 +18,7 @@ abstract class UserManagementController extends Controller
 
     protected function getEmployees(): Collection
     {
-        return match(session('active_company_type')) {
+        return match (session('active_company_type')) {
             'freight' => NasFreightsEmployee::where('branch_id', session('nas_freights_branch_id'))
                 ->orderBy('name')->get(['id', 'code as emp_code', 'name']),
             'trading' => NasTradingEmployee::orderBy('name')
@@ -35,17 +35,18 @@ abstract class UserManagementController extends Controller
         $employees = $this->getEmployees()->keyBy('id');
 
         if ($request->ajax()) {
-            $users = User::whereHas('companies', fn($q) => $q->where('company_id', $companyId))
-                ->with(['companies' => fn($q) => $q->where('companies.id', $companyId)])
+            $users = User::whereHas('companies', fn ($q) => $q->where('company_id', $companyId))
+                ->with(['companies' => fn ($q) => $q->where('companies.id', $companyId)])
                 ->get()
                 ->map(function ($u) use ($employees) {
                     $pivot = $u->companies->first()?->pivot;
-                    $u->role            = $pivot?->role ?? 'user';
-                    $u->company_active  = (bool)($pivot?->is_active ?? true);
-                    $u->employee_id     = $pivot?->employee_id;
-                    $u->employee_name   = $pivot?->employee_id
+                    $u->role = $pivot?->role ?? 'user';
+                    $u->company_active = (bool) ($pivot?->is_active ?? true);
+                    $u->employee_id = $pivot?->employee_id;
+                    $u->employee_name = $pivot?->employee_id
                         ? ($employees->get($pivot->employee_id)?->name ?? '—')
                         : '—';
+
                     return $u;
                 });
 
@@ -53,26 +54,26 @@ abstract class UserManagementController extends Controller
 
             return DataTables::of($users)
                 ->addIndexColumn()
-                ->addColumn('role_badge', fn($r) => $r->role === 'admin'
+                ->addColumn('role_badge', fn ($r) => $r->role === 'admin'
                     ? '<span class="badge bg-danger">Admin</span>'
                     : '<span class="badge bg-secondary">User</span>')
-                ->addColumn('status_badge', fn($r) => ($r->is_active && $r->company_active)
+                ->addColumn('status_badge', fn ($r) => ($r->is_active && $r->company_active)
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')
-                ->addColumn('action', fn($r) => '
-                    <button class="btn btn-sm btn-outline-primary btn-edit" data-id="' . $r->id . '">
+                ->addColumn('action', fn ($r) => '
+                    <button class="btn btn-sm btn-outline-primary btn-edit" data-id="'.$r->id.'">
                         <i class="fa fa-edit"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger btn-delete"
-                        data-url="' . route($prefix . '.users.destroy', $r->id) . '"
-                        data-name="' . e($r->name) . '">
+                        data-url="'.route($prefix.'.users.destroy', $r->id).'"
+                        data-name="'.e($r->name).'">
                         <i class="fa fa-trash"></i>
                     </button>')
                 ->rawColumns(['role_badge', 'status_badge', 'action'])
                 ->make(true);
         }
 
-        return view($this->routePrefix() . '.users.index', [
+        return view($this->routePrefix().'.users.index', [
             'employees' => $this->getEmployees(),
         ]);
     }
@@ -88,7 +89,7 @@ abstract class UserManagementController extends Controller
             'email'          => $user->email,
             'is_active'      => $user->is_active,
             'role'           => $pivot?->role ?? 'user',
-            'company_active' => (bool)($pivot?->is_active ?? true),
+            'company_active' => (bool) ($pivot?->is_active ?? true),
             'employee_id'    => $pivot?->employee_id,
         ]);
     }
@@ -124,7 +125,7 @@ abstract class UserManagementController extends Controller
     {
         $request->validate([
             'name'  => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:users,email,' . $user->id],
+            'email' => ['required', 'email', 'unique:users,email,'.$user->id],
             'role'  => ['required', 'in:admin,user'],
         ]);
 
@@ -156,6 +157,7 @@ abstract class UserManagementController extends Controller
     {
         $companyId = session('active_company_id');
         $user->companies()->detach($companyId);
+
         return response()->json(['message' => 'User removed from company.']);
     }
 }

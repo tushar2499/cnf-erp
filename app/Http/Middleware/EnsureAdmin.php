@@ -21,7 +21,7 @@ class EnsureAdmin
             ->wherePivot('is_active', true)
             ->exists();
 
-        if (!$isAdmin) {
+        if (! $isAdmin) {
             abort(403, 'Admin access required.');
         }
 

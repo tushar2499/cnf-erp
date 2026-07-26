@@ -26,7 +26,7 @@ class EnsureCompanyAccess
                 ->where('company_user.is_active', true)
                 ->first();
 
-            if (!$company) {
+            if (! $company) {
                 return redirect()->route('company.select')
                     ->with('error', 'You do not have access to that company.');
             }

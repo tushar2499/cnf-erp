@@ -26,8 +26,9 @@ class ChevronCustomer extends Model
     public static function generateCustomerId(string $prefix): string
     {
         $last = static::where('id_prefix', $prefix)->lockForUpdate()->max(
-            DB::raw("CAST(SUBSTRING(customer_id, " . (strlen($prefix) + 1) . ") AS UNSIGNED)")
+            DB::raw('CAST(SUBSTRING(customer_id, '.(strlen($prefix) + 1).') AS UNSIGNED)')
         );
-        return $prefix . str_pad(($last ?? 0) + 1, 6, '0', STR_PAD_LEFT);
+
+        return $prefix.str_pad(($last ?? 0) + 1, 6, '0', STR_PAD_LEFT);
     }
 }

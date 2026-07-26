@@ -1,5 +1,10 @@
 <?php
 
+use App\Http\Middleware\EnsureAdmin;
+use App\Http\Middleware\EnsureBranchSelected;
+use App\Http\Middleware\EnsureCompanyAccess;
+use App\Http\Middleware\ForceJsonResponse;
+use App\Http\Middleware\SetActiveCompany;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,17 +18,17 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->api(prepend: [
-            \App\Http\Middleware\ForceJsonResponse::class,
+            ForceJsonResponse::class,
         ]);
 
-        $middleware->redirectUsersTo(fn() => route('company.select'));
+        $middleware->redirectUsersTo(fn () => route('company.select'));
         $middleware->web(append: [
-            \App\Http\Middleware\SetActiveCompany::class,
+            SetActiveCompany::class,
         ]);
         $middleware->alias([
-            'company'         => \App\Http\Middleware\EnsureCompanyAccess::class,
-            'admin'           => \App\Http\Middleware\EnsureAdmin::class,
-            'branch.selected' => \App\Http\Middleware\EnsureBranchSelected::class,
+            'company'         => EnsureCompanyAccess::class,
+            'admin'           => EnsureAdmin::class,
+            'branch.selected' => EnsureBranchSelected::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

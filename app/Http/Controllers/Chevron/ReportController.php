@@ -28,7 +28,7 @@ class ReportController extends Controller
                 $query->whereDate('date', '<=', $request->to_date);
             }
             if ($request->filled('job_no')) {
-                $query->where('job_no', 'like', '%' . $request->job_no . '%');
+                $query->where('job_no', 'like', '%'.$request->job_no.'%');
             }
             if ($request->filled('employee_id')) {
                 $query->where('employee_id', $request->employee_id);
@@ -54,7 +54,7 @@ class ReportController extends Controller
             $query->whereDate('date', '<=', $request->to_date);
         }
         if ($request->filled('job_no')) {
-            $query->where('job_no', 'like', '%' . $request->job_no . '%');
+            $query->where('job_no', 'like', '%'.$request->job_no.'%');
         }
         if ($request->filled('employee_id')) {
             $query->where('employee_id', $request->employee_id);

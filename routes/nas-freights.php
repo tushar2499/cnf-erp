@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\NasFreights\ImportController;
 use App\Http\Controllers\NasFreights\BookingController;
 use App\Http\Controllers\NasFreights\BranchController;
 use App\Http\Controllers\NasFreights\BranchSelectController;
@@ -11,6 +10,7 @@ use App\Http\Controllers\NasFreights\DashboardController;
 use App\Http\Controllers\NasFreights\DueListController;
 use App\Http\Controllers\NasFreights\EmployeeController;
 use App\Http\Controllers\NasFreights\FreightBookingController;
+use App\Http\Controllers\NasFreights\ImportController;
 use App\Http\Controllers\NasFreights\MoneyReceiptController;
 use App\Http\Controllers\NasFreights\OverseasAgentController;
 use App\Http\Controllers\NasFreights\PackageTypeController;
@@ -197,29 +197,29 @@ Route::prefix('users')->name('users.')->group(function () {
 
 // Import
 Route::prefix('import')->name('import.')->group(function () {
-    Route::get('/supplier-payments',          [ImportController::class, 'supplierPaymentsIndex'])->name('supplier-payments');
+    Route::get('/supplier-payments', [ImportController::class, 'supplierPaymentsIndex'])->name('supplier-payments');
     Route::post('/supplier-payments/preview', [ImportController::class, 'supplierPaymentsPreview'])->name('supplier-payments.preview');
-    Route::post('/supplier-payments/import',  [ImportController::class, 'supplierPaymentsImport'])->name('supplier-payments.import');
+    Route::post('/supplier-payments/import', [ImportController::class, 'supplierPaymentsImport'])->name('supplier-payments.import');
 
-    Route::get('/customer-bills',             [ImportController::class, 'customerBillsIndex'])->name('customer-bills');
-    Route::post('/customer-bills/preview',    [ImportController::class, 'customerBillsPreview'])->name('customer-bills.preview');
-    Route::post('/customer-bills/import',     [ImportController::class, 'customerBillsImport'])->name('customer-bills.import');
+    Route::get('/customer-bills', [ImportController::class, 'customerBillsIndex'])->name('customer-bills');
+    Route::post('/customer-bills/preview', [ImportController::class, 'customerBillsPreview'])->name('customer-bills.preview');
+    Route::post('/customer-bills/import', [ImportController::class, 'customerBillsImport'])->name('customer-bills.import');
 
-    Route::get('/bookings',                   [ImportController::class, 'bookingsIndex'])->name('bookings');
-    Route::post('/bookings/preview',          [ImportController::class, 'bookingsPreview'])->name('bookings.preview');
-    Route::post('/bookings/import',           [ImportController::class, 'bookingsImport'])->name('bookings.import');
+    Route::get('/bookings', [ImportController::class, 'bookingsIndex'])->name('bookings');
+    Route::post('/bookings/preview', [ImportController::class, 'bookingsPreview'])->name('bookings.preview');
+    Route::post('/bookings/import', [ImportController::class, 'bookingsImport'])->name('bookings.import');
 
-    Route::get('/vehicles',                   [ImportController::class, 'vehiclesIndex'])->name('vehicles');
-    Route::post('/vehicles/preview',          [ImportController::class, 'vehiclesPreview'])->name('vehicles.preview');
-    Route::post('/vehicles/import',           [ImportController::class, 'vehiclesImport'])->name('vehicles.import');
+    Route::get('/vehicles', [ImportController::class, 'vehiclesIndex'])->name('vehicles');
+    Route::post('/vehicles/preview', [ImportController::class, 'vehiclesPreview'])->name('vehicles.preview');
+    Route::post('/vehicles/import', [ImportController::class, 'vehiclesImport'])->name('vehicles.import');
 
-    Route::get('/booking-updates',            [ImportController::class, 'bookingUpdatesIndex'])->name('booking-updates');
-    Route::post('/booking-updates/preview',   [ImportController::class, 'bookingUpdatesPreview'])->name('booking-updates.preview');
-    Route::post('/booking-updates/import',    [ImportController::class, 'bookingUpdatesImport'])->name('booking-updates.import');
+    Route::get('/booking-updates', [ImportController::class, 'bookingUpdatesIndex'])->name('booking-updates');
+    Route::post('/booking-updates/preview', [ImportController::class, 'bookingUpdatesPreview'])->name('booking-updates.preview');
+    Route::post('/booking-updates/import', [ImportController::class, 'bookingUpdatesImport'])->name('booking-updates.import');
 
-    Route::get('/customer-bill-summary',          [ImportController::class, 'customerBillSummaryIndex'])->name('customer-bill-summary');
+    Route::get('/customer-bill-summary', [ImportController::class, 'customerBillSummaryIndex'])->name('customer-bill-summary');
     Route::post('/customer-bill-summary/preview', [ImportController::class, 'customerBillSummaryPreview'])->name('customer-bill-summary.preview');
-    Route::post('/customer-bill-summary/import',  [ImportController::class, 'customerBillSummaryImport'])->name('customer-bill-summary.import');
+    Route::post('/customer-bill-summary/import', [ImportController::class, 'customerBillSummaryImport'])->name('customer-bill-summary.import');
 });
 
 // Settings — Branches

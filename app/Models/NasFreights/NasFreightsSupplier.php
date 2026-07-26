@@ -23,12 +23,13 @@ class NasFreightsSupplier extends Model
     public static function generateCode(): string
     {
         return DB::transaction(function () {
-            $max  = DB::table('nas_freights_suppliers')->lockForUpdate()->max('code');
+            $max = DB::table('nas_freights_suppliers')->lockForUpdate()->max('code');
             $next = 1;
             if ($max && preg_match('/\d+$/', $max, $m)) {
                 $next = (int) $m[0] + 1;
             }
-            return 'SUP-' . str_pad($next, 6, '0', STR_PAD_LEFT);
+
+            return 'SUP-'.str_pad($next, 6, '0', STR_PAD_LEFT);
         });
     }
 

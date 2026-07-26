@@ -17,5 +17,8 @@ class ChevronJobExpenseItem extends Model
         return ['expense_date' => 'date'];
     }
 
-    public function expenseHead() { return $this->belongsTo(ChevronExpenseHead::class, 'expense_head_id'); }
+    public function expenseHead()
+    {
+        return $this->belongsTo(ChevronExpenseHead::class, 'expense_head_id');
+    }
 }

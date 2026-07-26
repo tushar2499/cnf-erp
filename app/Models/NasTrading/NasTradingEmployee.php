@@ -37,9 +37,10 @@ class NasTradingEmployee extends Model
     {
         return DB::transaction(function () {
             $max = self::lockForUpdate()
-                ->selectRaw("MAX(CAST(SUBSTRING(code, 5) AS UNSIGNED)) as max_no")
+                ->selectRaw('MAX(CAST(SUBSTRING(code, 5) AS UNSIGNED)) as max_no')
                 ->value('max_no') ?? 0;
-            return 'EMP-' . str_pad($max + 1, 6, '0', STR_PAD_LEFT);
+
+            return 'EMP-'.str_pad($max + 1, 6, '0', STR_PAD_LEFT);
         });
     }
 }

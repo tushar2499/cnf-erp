@@ -33,9 +33,10 @@ class NasTradingCustomerBill extends Model
     {
         return DB::transaction(function () {
             $max = self::lockForUpdate()
-                ->selectRaw("MAX(CAST(SUBSTRING(bill_no, 6) AS UNSIGNED)) as max_no")
+                ->selectRaw('MAX(CAST(SUBSTRING(bill_no, 6) AS UNSIGNED)) as max_no')
                 ->value('max_no') ?? 0;
-            return 'BILL-' . str_pad($max + 1, 6, '0', STR_PAD_LEFT);
+
+            return 'BILL-'.str_pad($max + 1, 6, '0', STR_PAD_LEFT);
         });
     }
 }

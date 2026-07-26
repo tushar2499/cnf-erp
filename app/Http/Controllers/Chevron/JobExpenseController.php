@@ -53,10 +53,10 @@ class JobExpenseController extends Controller
             ->get();
 
         return view('chevron.cnf.job-expenses.create', [
-            'expense'         => null,
-            'expenseHeads'    => $heads,
+            'expense'          => null,
+            'expenseHeads'     => $heads,
             'expenseHeadsJson' => $heads->map(fn ($h) => ['id' => $h->id, 'name' => $h->name, 'amount' => (float) $h->amount])->values(),
-            'today'           => now()->format('Y-m-d'),
+            'today'            => now()->format('Y-m-d'),
         ]);
     }
 

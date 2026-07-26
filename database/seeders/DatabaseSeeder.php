@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Company;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -30,7 +31,7 @@ class DatabaseSeeder extends Seeder
         );
 
         // Give admin access to all 3 companies
-        $companies = \App\Models\Company::all();
+        $companies = Company::all();
         foreach ($companies as $company) {
             $admin->companies()->syncWithoutDetaching([
                 $company->id => ['role' => 'admin', 'is_active' => true],

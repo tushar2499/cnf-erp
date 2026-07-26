@@ -14,6 +14,9 @@
 @endpush
 
 @section('content')
+@php
+    function fmtNum($v) { return ($v !== null && $v !== '') ? (float)$v : ''; }
+@endphp
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0"><i class="fa fa-edit me-2 text-info"></i> Edit {{ $customerBill->bill_no }}</h4>
     <a href="{{ route('nas-trading.customer-bills.show', $customerBill->id) }}" class="btn btn-sm btn-outline-secondary"><i class="fa fa-arrow-left me-1"></i> Back</a>
@@ -54,7 +57,7 @@
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Exchange Rate</label>
-                    <input type="number" name="exchange_rate" class="form-control form-control-sm" step="0.01" value="{{ $customerBill->exchange_rate }}">
+                    <input type="number" name="exchange_rate" class="form-control form-control-sm" step="0.01" value="{{ fmtNum($customerBill->exchange_rate) }}">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Customer Address</label>
@@ -63,6 +66,14 @@
                 <div class="col-md-3">
                     <label class="form-label">Note</label>
                     <input type="text" name="note" class="form-control form-control-sm" value="{{ $customerBill->note }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">LC Entry No</label>
+                    <input type="text" class="form-control form-control-sm bg-light fw-semibold" value="{{ $customerBill->lc?->lc_no_system ?? $customerBill->lc_no }}" readonly>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">LC No (Bank)</label>
+                    <input type="text" class="form-control form-control-sm bg-light" value="{{ $customerBill->lc?->lc_no ?? '—' }}" readonly>
                 </div>
             </div>
         </div>
@@ -78,12 +89,10 @@
                 <table class="table table-bordered bill-table mb-0 w-100">
                     <thead><tr>
                         <th style="width:35px">#</th>
-                        <th style="min-width:200px">Description</th>
-                        <th style="min-width:130px">Expense Head</th>
-                        <th style="width:70px">Qty</th>
-                        <th style="width:110px">Unit Price</th>
-                        <th style="width:120px">Amount</th>
-                        <th style="min-width:130px">Note</th>
+                        <th style="min-width:220px">Description</th>
+                        <th style="min-width:150px">Expense Head</th>
+                        <th style="width:140px">Amount</th>
+                        <th style="min-width:150px">Note</th>
                         <th style="width:35px"></th>
                     </tr></thead>
                     <tbody id="billBody"></tbody>
@@ -102,7 +111,7 @@
                 <div class="d-flex justify-content-between align-items-center mb-1">
                     <span style="font-size:.85rem">VAT %</span>
                     <div class="d-flex align-items-center gap-1">
-                        <input type="number" name="vat_pct" id="vatPct" class="form-control form-control-sm" style="width:70px" value="{{ $customerBill->vat_pct }}" step="0.01" min="0">
+                        <input type="number" name="vat_pct" id="vatPct" class="form-control form-control-sm" style="width:70px" value="{{ fmtNum($customerBill->vat_pct) }}" step="0.01" min="0">
                         <strong id="dispVat">0.00</strong>
                     </div>
                 </div>
@@ -113,6 +122,30 @@
                 <input type="hidden" name="sub_total" id="subTotal">
                 <input type="hidden" name="vat_amount" id="vatAmount">
                 <input type="hidden" name="total_amount" id="totalAmount">
+
+                @php
+                    $advancePayment = $customerBill->lc?->payments?->where('payment_type', 'advance')->sum('amount') ?? 0;
+                    $dutyAdvance    = (float)($customerBill->lc?->duty_advance ?? 0);
+                    $totalAdvance   = $advancePayment + $dutyAdvance;
+                @endphp
+                <hr class="my-2">
+                <div class="d-flex justify-content-between mb-1">
+                    <span style="font-size:.82rem;color:#6c757d">Advance Payment</span>
+                    <span style="font-size:.82rem">BDT {{ number_format($advancePayment, 2) }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span style="font-size:.82rem;color:#6c757d">Duty Advance</span>
+                    <span style="font-size:.82rem">BDT {{ number_format($dutyAdvance, 2) }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="fw-bold" style="font-size:.85rem">Total Advance</span>
+                    <strong style="font-size:.9rem;color:#0c2340">BDT {{ number_format($totalAdvance, 2) }}</strong>
+                </div>
+                <hr class="my-2">
+                <div class="d-flex justify-content-between">
+                    <span class="fw-bold" style="font-size:.85rem">Transport Amount</span>
+                    <strong class="text-success" id="dispFinalAmount" style="font-size:1rem">0.00</strong>
+                </div>
             </div>
         </div>
     </div>
@@ -129,6 +162,7 @@
 var lineIdx = 0;
 var expenseHeads = @json($expenseHeads->pluck('name','id'));
 var existingItems = @json($customerBill->items);
+var totalAdvance = {{ $totalAdvance }};
 
 function addLine(d) {
     d = d || {};
@@ -140,9 +174,7 @@ function addLine(d) {
         <td class="text-center row-num">${lineIdx}</td>
         <td><input type="text" name="items[${i}][description]" class="form-control form-control-sm" value="${d.description||''}" required></td>
         <td><select name="items[${i}][expense_head_id]" class="form-select form-select-sm">${headOpts}</select></td>
-        <td><input type="number" name="items[${i}][qty]" class="form-control form-control-sm line-qty" data-row="${i}" value="${d.qty||1}" step="0.01" min="0"></td>
-        <td><input type="number" name="items[${i}][unit_price]" class="form-control form-control-sm line-price" data-row="${i}" value="${d.unit_price||0}" step="0.01"></td>
-        <td><input type="number" name="items[${i}][amount]" class="form-control form-control-sm line-amount" id="lineAmt_${i}" value="${d.amount||0}" step="0.01"></td>
+        <td><input type="number" name="items[${i}][amount]" class="form-control form-control-sm line-amount" id="lineAmt_${i}" value="${ d.amount||0}" step="0.01"></td>
         <td><input type="text" name="items[${i}][note]" class="form-control form-control-sm" value="${d.note||''}"></td>
         <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger btn-remove-line p-0" style="width:22px;height:22px"><i class="fa fa-times" style="font-size:.6rem"></i></button></td>
     </tr>`);
@@ -154,8 +186,10 @@ function recalc() {
     $('.line-amount').each(function () { sub += parseFloat($(this).val()) || 0; });
     var vat = sub * (parseFloat($('#vatPct').val()) || 0) / 100;
     var total = sub + vat;
+    var net = total - totalAdvance;
     $('#dispSubTotal').text(sub.toFixed(2)); $('#dispVat').text(vat.toFixed(2)); $('#dispTotal').text(total.toFixed(2));
-    $('#subTotal').val(sub.toFixed(2)); $('#vatAmount').val(vat.toFixed(2)); $('#totalAmount').val(total.toFixed(2));
+    $('#dispFinalAmount').text(net.toFixed(2));
+    $('#subTotal').val(sub.toFixed(2)); $('#vatAmount').val(vat.toFixed(2)); $('#totalAmount').val(net.toFixed(2));
 }
 
 $(function () {
@@ -163,11 +197,6 @@ $(function () {
     if (!existingItems.length) addLine();
     recalc();
 
-    $(document).on('input', '.line-qty, .line-price', function () {
-        var row = $(this).data('row');
-        $(`#lineAmt_${row}`).val(((parseFloat($(`[name="items[${row}][qty]"]`).val())||0) * (parseFloat($(`[name="items[${row}][unit_price]"]`).val())||0)).toFixed(2));
-        recalc();
-    });
     $(document).on('input', '.line-amount', recalc);
     $('#vatPct').on('input', recalc);
     $('#btnAddLine').on('click', () => addLine());

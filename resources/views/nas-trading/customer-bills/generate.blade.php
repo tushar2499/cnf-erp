@@ -143,6 +143,11 @@
                     <span class="fw-bold" style="font-size:.85rem">Total Advance</span>
                     <strong style="font-size:.9rem;color:#0c2340">BDT {{ number_format($totalAdvance, 2) }}</strong>
                 </div>
+                <hr class="my-2">
+                <div class="d-flex justify-content-between">
+                    <span class="fw-bold" style="font-size:.85rem">Transport Amount</span>
+                    <strong class="text-success" id="dispFinalAmount" style="font-size:1rem">0.00</strong>
+                </div>
             </div>
         </div>
     </div>
@@ -158,6 +163,7 @@
 <script>
 var lineIdx = 0;
 var expenseHeads = @json($expenseHeads->pluck('name','id'));
+var totalAdvance = {{ $totalAdvance }};
 
 function addLine(d) {
     d = d || {};
@@ -182,12 +188,14 @@ function recalc() {
     var vatPct = parseFloat($('#vatPct').val()) || 0;
     var vat = sub * vatPct / 100;
     var total = sub + vat;
+    var net = total - totalAdvance;
     $('#dispSubTotal').text(sub.toFixed(2));
     $('#dispVat').text(vat.toFixed(2));
     $('#dispTotal').text(total.toFixed(2));
+    $('#dispFinalAmount').text(net.toFixed(2));
     $('#subTotal').val(sub.toFixed(2));
     $('#vatAmount').val(vat.toFixed(2));
-    $('#totalAmount').val(total.toFixed(2));
+    $('#totalAmount').val(net.toFixed(2));
 }
 
 $(function () {

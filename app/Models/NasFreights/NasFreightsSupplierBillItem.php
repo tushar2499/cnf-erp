@@ -24,6 +24,6 @@ class NasFreightsSupplierBillItem extends Model
 
     public function booking()
     {
-        return $this->belongsTo(\App\Models\NasFreights\NasFreightsBooking::class, 'booking_id');
+        return $this->belongsTo(NasFreightsBooking::class, 'booking_id');
     }
 }

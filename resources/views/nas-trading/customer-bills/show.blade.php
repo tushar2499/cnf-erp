@@ -11,20 +11,30 @@
 .bill-items td { font-size:.8rem; padding:.35rem .5rem; vertical-align:middle; }
 .print-header { display:none; }
 @media print {
-    .top-navbar, .sidebar, .d-print-none { display:none !important; }
-    .main-content { margin-left:0 !important; padding:1rem !important; }
-    body { background:#fff !important; }
-    .print-header { display:block; margin-bottom:1.25rem; padding-bottom:.75rem; border-bottom:2px solid #0c2340; }
-    .print-header .co-name { font-size:1.1rem; font-weight:700; color:#0c2340; margin:0; }
-    .print-header .co-meta { font-size:.75rem; color:#555; margin:0; }
-    .print-header .bill-title { font-size:.95rem; font-weight:700; color:#1a6b60; margin:.4rem 0 0; text-transform:uppercase; letter-spacing:.05em; }
-    .info-card { border:1px solid #ccc; border-radius:0; margin-bottom:.65rem; page-break-inside:avoid; }
-    .info-header { background:#0c2340 !important; color:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    .bill-items th { background:#1a6b60 !important; color:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .top-navbar, .mobile-context-bar, .sidebar, footer, .d-print-none { display:none !important; }
+    .main-content { margin-left:0 !important; padding:0.5rem !important; }
+    body { background:#fff !important; font-size:9px !important; }
+    .print-header { display:block; margin-bottom:.6rem; padding-bottom:.4rem; border-bottom:1px solid #0c2340; }
+    .print-header .co-name { font-size:.95rem; margin:0; }
+    .print-header .co-meta { font-size:.65rem; margin:0; }
+    .print-header .bill-title { font-size:.8rem; margin:.25rem 0 0; }
+    .info-card { border:1px solid #ccc; border-radius:0; margin-bottom:.35rem; page-break-inside:avoid; }
+    .info-header { background:#0c2340 !important; color:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; padding:.3rem .6rem; font-size:.7rem; }
+    .info-body { padding:.4rem .6rem; }
+    .info-label { font-size:.62rem; }
+    .info-value { font-size:.72rem; }
+    .bill-items th { background:#1a6b60 !important; color:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; padding:.25rem .35rem; font-size:.65rem; }
+    .bill-items td { padding:.2rem .35rem; font-size:.65rem; }
     .table-success { background:#d1e7dd !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    .col-md-8, .col-md-4 { width:100% !important; max-width:100% !important; flex:0 0 100% !important; }
-    .row { page-break-inside:avoid; }
+    .row { page-break-inside:avoid; margin:0 !important; }
+    .row.g-3 > * { padding:0 !important; }
+    .col-md-8, .col-md-4 { width:100% !important; flex:0 0 100% !important; max-width:100% !important; }
+    .info-card .row.g-2 > * { padding:0 .2rem !important; }
+    .info-card .col-md-3 { width:50% !important; flex:0 0 50% !important; max-width:50% !important; }
     a[href]::after { content:none !important; }
+    .container-fluid { padding:0 !important; }
+    .table { margin-bottom:0 !important; }
+    .table-sm td, .table-sm th { padding:.2rem .35rem; font-size:.65rem; }
 }
 </style>
 @endpush
@@ -75,7 +85,7 @@
                     <div class="col-md-3"><div class="info-label">LC No</div><div class="info-value">{{ $customerBill->lc_no ?? '-' }}</div></div>
                     <div class="col-md-3"><div class="info-label">PFI No</div><div class="info-value">{{ $customerBill->pfi_no ?? '-' }}</div></div>
                     <div class="col-md-3"><div class="info-label">Currency</div><div class="info-value">{{ $customerBill->currency }}</div></div>
-                    <div class="col-md-3"><div class="info-label">Exchange Rate</div><div class="info-value">{{ $customerBill->exchange_rate }}</div></div>
+                    <div class="col-md-3"><div class="info-label">Exchange Rate</div><div class="info-value">{{ floatval($customerBill->exchange_rate) }}</div></div>
                     @if($customerBill->customer_address)
                     <div class="col-12"><div class="info-label">Address</div><div class="info-value">{{ $customerBill->customer_address }}</div></div>
                     @endif
@@ -93,8 +103,6 @@
                     <thead><tr>
                         <th style="width:40px">#</th>
                         <th>Description</th>
-                        <th style="width:60px">Qty</th>
-                        <th style="width:110px">Unit Price</th>
                         <th style="width:120px">Amount</th>
                         <th>Note</th>
                     </tr></thead>
@@ -103,13 +111,11 @@
                         <tr>
                             <td class="text-center">{{ $i + 1 }}</td>
                             <td>{{ $item->description }}</td>
-                            <td class="text-center">{{ $item->qty }}</td>
-                            <td class="text-end">{{ number_format($item->unit_price, 2) }}</td>
                             <td class="text-end fw-bold">{{ number_format($item->amount, 2) }}</td>
                             <td class="text-muted" style="font-size:.75rem">{{ $item->note }}</td>
                         </tr>
                         @empty
-                        <tr><td colspan="6" class="text-center text-muted">No items</td></tr>
+                        <tr><td colspan="4" class="text-center text-muted">No items</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -123,7 +129,7 @@
             <div class="info-body">
                 <table class="table table-sm mb-0">
                     <tr><td class="text-muted">Sub Total</td><td class="text-end fw-bold">{{ number_format($customerBill->sub_total, 2) }}</td></tr>
-                    <tr><td class="text-muted">VAT ({{ $customerBill->vat_pct }}%)</td><td class="text-end fw-bold">{{ number_format($customerBill->vat_amount, 2) }}</td></tr>
+                    <tr><td class="text-muted">VAT ({{ floatval($customerBill->vat_pct) }}%)</td><td class="text-end fw-bold">{{ number_format($customerBill->vat_amount, 2) }}</td></tr>
                     <tr class="table-success"><td class="fw-bold fs-6">Total Amount</td><td class="text-end fw-bold fs-6">{{ number_format($customerBill->total_amount, 2) }} {{ $customerBill->currency }}</td></tr>
                 </table>
             </div>
