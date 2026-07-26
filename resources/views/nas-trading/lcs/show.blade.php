@@ -387,7 +387,7 @@
                                 @foreach($lc->payments as $idx => $pay)
                                 <tr>
                                     <td>{{ $idx + 1 }}</td>
-                                    <td>{{ ucfirst($pay->payment_type) }}</td>
+                                    <td>{{ $pay->payment_type == 'advance' ? 'LC Advance' : 'Regular' }}</td>
                                     <td>{{ $pay->receipt_no ?? $dash }}</td>
                                     <td>{{ $pay->date ? \Carbon\Carbon::parse($pay->date)->format('d-M-Y') : $dash }}</td>
                                     <td>{{ number_format((float)$pay->amount, 2) }}</td>
@@ -589,12 +589,12 @@
                         <span style="font-size:.82rem">{{ $lc->currency }} {{ number_format((float)($lc->pfi_value ?? 0), 4) }}</span>
                     </div>
                     <div class="d-flex justify-content-between py-1 border-bottom">
-                        <span style="font-size:.82rem">Customs Duty</span>
-                        <span style="font-size:.82rem">BDT {{ number_format((float)($lc->customs_duty ?? 0), 2) }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between py-1 border-bottom">
                         <span style="font-size:.82rem">Total LC Cost</span>
                         <span style="font-size:.82rem">BDT {{ number_format($lcCost, 2) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span style="font-size:.82rem">Customs Duty</span>
+                        <span style="font-size:.82rem">BDT {{ number_format((float)($lc->customs_duty ?? 0), 2) }}</span>
                     </div>
                     @if($totalOtherCharges > 0)
                     <div class="d-flex justify-content-between py-1 border-bottom">
@@ -612,7 +612,7 @@
                     </div>
                     <div class="d-flex justify-content-between py-1 border-bottom">
                         <strong style="font-size:.85rem">Grand Total</strong>
-                        <strong style="font-size:.85rem; color:#1a6b60">BDT {{ number_format($lcCost + $totalOtherCharges + $cnfCost + $totalExpenses, 2) }}</strong>
+                        <strong style="font-size:.85rem; color:#1a6b60">BDT {{ number_format($lc->customs_duty + $lcCost + $totalOtherCharges + $cnfCost + $totalExpenses, 2) }}</strong>
                     </div>
                     <div class="d-flex justify-content-between py-1 border-bottom">
                         <span style="font-size:.82rem">Advance Payment</span>
@@ -624,7 +624,7 @@
                     </div>
                     <div class="d-flex justify-content-between py-1">
                         <strong style="font-size:.85rem">Total Advance</strong>
-                        <strong style="font-size:.85rem; color:#17375e">BDT {{ number_format($totalAdvance, 2) }}</strong>
+                        <strong style="font-size:.85rem; color:#17375e">BDT {{ number_format($advancePayment + $dutyAdvance, 2) }}</strong>
                     </div>
                 </div>
             </div>
