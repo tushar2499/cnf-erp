@@ -118,6 +118,13 @@
                         <tr><td colspan="4" class="text-center text-muted">No items</td></tr>
                         @endforelse
                     </tbody>
+                    <tfoot>
+                        <tr style="background:#f0f4f8">
+                            <td colspan="2" class="text-end fw-bold" style="font-size:.82rem">Total</td>
+                            <td class="text-end fw-bold" style="font-size:.82rem">{{ number_format($customerBill->items->sum('amount'), 2) }}</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         </div>
@@ -131,16 +138,16 @@
                     $advancePayment = $customerBill->lc?->payments?->where('payment_type', 'advance')->sum('amount') ?? 0;
                     $dutyAdvance    = (float)($customerBill->lc?->duty_advance ?? 0);
                     $totalAdvance   = $advancePayment + $dutyAdvance;
-                    $transportAmt   = $customerBill->total_amount - $totalAdvance;
+                    $transportAmt   = $customerBill->sub_total + $customerBill->vat_amount - $totalAdvance;
                 @endphp
                 <table class="table table-sm mb-0">
                     <tr><td class="text-muted">Sub Total</td><td class="text-end fw-bold">{{ number_format($customerBill->sub_total, 2) }}</td></tr>
                     <tr><td class="text-muted">VAT ({{ floatval($customerBill->vat_pct) }}%)</td><td class="text-end fw-bold">{{ number_format($customerBill->vat_amount, 2) }}</td></tr>
-                    <tr class="table-success"><td class="fw-bold fs-6">Total Amount</td><td class="text-end fw-bold fs-6">{{ number_format($customerBill->total_amount, 2) }} {{ $customerBill->currency }}</td></tr>
+                    <tr class="table-success"><td class="fw-bold fs-6">Total Amount</td><td class="text-end fw-bold fs-6">{{ number_format($customerBill->sub_total + $customerBill->vat_amount, 2) }} {{ $customerBill->currency }}</td></tr>
                 </table>
                 <hr class="my-2">
                 <div class="d-flex justify-content-between mb-1">
-                    <span style="font-size:.82rem;color:#6c757d">Advance Payment</span>
+                    <span style="font-size:.82rem;color:#6c757d">LC Advance Payment</span>
                     <span style="font-size:.82rem">BDT {{ number_format($advancePayment, 2) }}</span>
                 </div>
                 <div class="d-flex justify-content-between mb-1">

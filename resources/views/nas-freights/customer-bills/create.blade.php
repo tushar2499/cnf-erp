@@ -260,8 +260,8 @@ function addRow(item) {
     var tr = `<tr data-idx="${i}">
         <td class="text-center row-sl">${i}</td>
         <td class="text-center"><span class="text-danger fw-bold btn-del-row" style="cursor:pointer">×</span></td>
-        <td><input type="text" class="form-control form-control-sm row-bdate" value="${item.booking_date||''}" style="width:100px"></td>
-        <td><input type="text" class="form-control form-control-sm row-ddate" value="${item.delivery_date||''}" style="width:100px"></td>
+        <td><input type="date" class="form-control form-control-sm row-bdate" value="${item.booking_date||''}" style="width:130px"></td>
+        <td><input type="date" class="form-control form-control-sm row-ddate" value="${item.delivery_date||''}" style="width:130px"></td>
         <td><input type="text" class="form-control form-control-sm row-icode" value="${item.item_code||''}" style="width:110px"></td>
         <td><input type="text" class="form-control form-control-sm row-iname" value="${item.item_name||''}" style="width:180px"></td>
         <td><input type="text" class="form-control form-control-sm row-loc"   value="${item.location||''}" style="width:200px"></td>
