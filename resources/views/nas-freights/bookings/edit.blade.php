@@ -118,11 +118,7 @@
                     </div>
                     <div class="col-12">
                         <label class="form-label"><span class="req">*</span> <span style="color:#1a6b60">Cover Van No:</span></label>
-                        <select id="fldCoverVan" class="form-select form-select-sm" style="width:100%">
-                            @if($booking->cover_van_no)
-                            <option value="{{ $booking->cover_van_no }}" selected>{{ $booking->cover_van_no }}</option>
-                            @endif
-                        </select>
+                        <select id="fldCoverVan" class="form-select form-select-sm" style="width:100%"></select>
                         <input type="hidden" name="cover_van_no" id="fldCoverVanNo" value="{{ $booking->cover_van_no }}">
                     </div>
                     <div class="col-12">

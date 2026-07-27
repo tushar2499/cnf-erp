@@ -184,7 +184,7 @@
                     @endphp
                     <hr class="my-2">
                     <div class="d-flex justify-content-between mb-1">
-                        <span style="font-size:.82rem;color:#6c757d">Advance Payment</span>
+                        <span style="font-size:.82rem;color:#6c757d">LC Advance Payment</span>
                         <span style="font-size:.82rem">BDT {{ number_format($advancePayment, 2) }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-1">

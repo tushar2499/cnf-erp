@@ -602,7 +602,7 @@
                         <strong style="font-size:.85rem; color:#1a6b60">BDT {{ number_format($lc->customs_duty + $lcCost + $totalOtherCharges + $cnfCost + $totalExpenses, 2) }}</strong>
                     </div>
                     <div class="d-flex justify-content-between py-1 border-bottom">
-                        <span style="font-size:.82rem">Advance Payment</span>
+                        <span style="font-size:.82rem">LC Advance Payment</span>
                         <span style="font-size:.82rem">BDT {{ number_format($advancePayment, 2) }}</span>
                     </div>
                     <div class="d-flex justify-content-between py-1 border-bottom">

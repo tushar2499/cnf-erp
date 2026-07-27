@@ -129,6 +129,7 @@ input[type="number"] { -moz-appearance:textfield; }
                     <div class="col-md-4">
                         <label class="form-label">Supplier</label>
                         <select id="supplierSelect" class="form-select form-select-sm" name="supplier_id">
+                            <option value=""></option>
                             @if($lc->supplier_id)
                                 <option value="{{ $lc->supplier_id }}" selected>{{ $lc->supplier_name }}</option>
                             @endif
@@ -856,7 +857,7 @@ $(function () {
     }).on('select2:select', e => $('#customerName').val(e.params.data.text.split(' | ')[1] || e.params.data.text));
 
     $('#supplierSelect').select2({
-        width: '100%', allowClear: true, minimumInputLength: 1,
+        width: '100%', placeholder: 'Search supplier...', allowClear: true, minimumInputLength: 1,
         ajax: { url: '{{ route('nas-trading.lcs.search-suppliers') }}', dataType: 'json', delay: 300, data: p => ({ q: p.term }), processResults: d => ({ results: d }) }
     }).on('select2:select', function (e) {
         $('#supplierName').val(e.params.data.text.split(' | ')[1] || e.params.data.text);
