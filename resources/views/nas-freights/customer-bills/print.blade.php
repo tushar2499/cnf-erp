@@ -14,7 +14,7 @@
 
         body {
             font-family: Arial, sans-serif;
-            font-size: 10px;
+            font-size: 12px;
             color: #000;
             background: #fff;
         }
@@ -52,13 +52,13 @@
         }
 
         .pad-header {
-            height: 30mm;
+            height: 35mm;
             width: 100%;
         }
 
         .bill-title {
             text-align: center;
-            font-size: 14px;
+            font-size: 17px;
             font-weight: 700;
             text-decoration: underline;
             margin-bottom: 8px;
@@ -76,7 +76,7 @@
             width: 46%;
             padding: 7px 9px;
             vertical-align: top;
-            font-size: 10px;
+            font-size: 12px;
             line-height: 1.7;
             border-right: 1px solid #000;
         }
@@ -94,7 +94,7 @@
 
         .info-table td {
             padding: 2.5px 6px;
-            font-size: 10px;
+            font-size: 12px;
             border-bottom: 1px solid #ddd;
             vertical-align: top;
         }
@@ -118,7 +118,7 @@
         table.items th {
             background: #000;
             color: #fff;
-            font-size: 7.5px;
+            font-size: 9.5px;
             padding: 3px 2px;
             text-align: center;
             border: 1px solid #000;
@@ -127,7 +127,7 @@
         }
 
         table.items td {
-            font-size: 7.5px;
+            font-size: 9.5px;
             padding: 2px 3px;
             border: 1px solid #000;
             vertical-align: middle;
@@ -146,7 +146,7 @@
         table.items tfoot td {
             background: #e8e8e8;
             font-weight: 700;
-            font-size: 7.5px;
+            font-size: 9.5px;
             padding: 3px 3px;
             border: 1px solid #000;
         }
@@ -176,7 +176,7 @@
         }
 
         .summary-table td {
-            font-size: 10px;
+            font-size: 12px;
             padding: 3px 7px;
             border: 1px solid #000;
         }
@@ -195,12 +195,12 @@
         .summary-table tr.gross td {
             background: #d0d0d0;
             font-weight: 700;
-            font-size: 10.5px;
+            font-size: 13px;
         }
 
         .footer {
             margin-top: 12px;
-            font-size: 10px;
+            font-size: 12px;
             line-height: 1.9;
         }
 
@@ -226,7 +226,7 @@
             width: 100%;
             border-top: 1px solid #bbb;
             padding: 4px 14mm;
-            font-size: 8px;
+            font-size: 10px;
             color: #666;
             background: #fff;
             z-index: 9999;
@@ -393,7 +393,7 @@
                     <table class="info-table">
                         <tr>
                             <td class="lbl">Bill Date:</td>
-                            <td>{{ $customerBill->bill_date?->format('d/m/Y') }}</td>
+                            <td><strong>{{ $customerBill->bill_date?->format('d/m/Y') }}</strong></td>
                         </tr>
                         <tr>
                             <td class="lbl">Bill No:</td>
@@ -534,7 +534,7 @@
                         <div class="sig-block">
                             <div style="height:36px"></div>
                             <div class="sig-line"></div>
-                            <div style="font-size:10px">Account Officer</div>
+                            <div style="font-size:12px">Account Officer</div>
                         </div>
                     </td>
                 </tr>
