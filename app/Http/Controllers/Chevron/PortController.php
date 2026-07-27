@@ -11,6 +11,7 @@ class PortController extends Controller
 {
     public function index(Request $request)
     {
+
         if ($request->ajax()) {
             return DataTables::of(ChevronPort::query())
                 ->addIndexColumn()
@@ -40,7 +41,10 @@ class PortController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate(['name' => ['required', 'string', 'max:255']]);
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:5'],
+        ]);
         ChevronPort::create([
             'name'      => $request->name,
             'code'      => strtoupper($request->code),
@@ -53,7 +57,10 @@ class PortController extends Controller
 
     public function update(Request $request, ChevronPort $port)
     {
-        $request->validate(['name' => ['required', 'string', 'max:255']]);
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:5'],
+        ]);
         $port->update([
             'name'      => $request->name,
             'code'      => strtoupper($request->code),

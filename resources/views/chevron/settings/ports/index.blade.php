@@ -65,7 +65,7 @@
                             <input type="text" id="portName" class="form-control" placeholder="e.g. Chittagong Port" required>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Port Code</label>
+                            <label class="form-label">Port Code <span class="text-danger">*</span></label>
                             <input type="text" id="portCode" class="form-control" placeholder="e.g. CGP" maxlength="10" style="text-transform:uppercase">
                         </div>
                         <div class="col-12">
@@ -180,8 +180,18 @@ $(function () {
             ? '{{ url('chevron/settings/ports') }}/' + id
             : '{{ route('chevron.settings.ports.store') }}';
 
-        $('#portName').removeClass('is-invalid');
+        $('.is-invalid').removeClass('is-invalid');
         $('.invalid-feedback').remove();
+
+        if (!$('#portName').val().trim()) {
+            $('#portName').addClass('is-invalid').after('<div class="invalid-feedback">Name is required.</div>');
+            return;
+        }
+        if (!$('#portCode').val().trim()) {
+            $('#portCode').addClass('is-invalid').after('<div class="invalid-feedback">Code is required.</div>');
+            return;
+        }
+
         $('#btnSave').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Saving...');
 
         $.ajax({
@@ -202,7 +212,9 @@ $(function () {
         })
         .fail(function (xhr) {
             if (xhr.status === 422) {
-                $('#portName').addClass('is-invalid').after('<div class="invalid-feedback">' + (xhr.responseJSON.errors.name?.[0] ?? '') + '</div>');
+                const errors = xhr.responseJSON.errors;
+                if (errors.name) { $('#portName').addClass('is-invalid').after('<div class="invalid-feedback">' + errors.name[0] + '</div>'); }
+                if (errors.code) { $('#portCode').addClass('is-invalid').after('<div class="invalid-feedback">' + errors.code[0] + '</div>'); }
             } else {
                 Swal.fire({ icon: 'error', title: xhr.responseJSON?.message || 'Something went wrong.' });
             }

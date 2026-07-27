@@ -67,7 +67,7 @@
                             <input type="text" id="branchName" class="form-control" placeholder="e.g. Chittagong Branch">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Code</label>
+                            <label class="form-label">Code <span class="text-danger">*</span></label>
                             <input type="text" id="branchCode" class="form-control" placeholder="e.g. CGP" maxlength="20" style="text-transform:uppercase">
                         </div>
                         <div class="col-12">
@@ -192,6 +192,10 @@ $(function () {
             $('#branchName').addClass('is-invalid').after('<div class="invalid-feedback">Name is required.</div>');
             return;
         }
+        if (!$('#branchCode').val().trim()) {
+            $('#branchCode').addClass('is-invalid').after('<div class="invalid-feedback">Code is required.</div>');
+            return;
+        }
 
         const id  = $('#branchId').val();
         const url = id
@@ -221,6 +225,7 @@ $(function () {
             if (xhr.status === 422) {
                 const errors = xhr.responseJSON.errors;
                 if (errors.name) { $('#branchName').addClass('is-invalid').after('<div class="invalid-feedback">' + errors.name[0] + '</div>'); }
+                if (errors.code) { $('#branchCode').addClass('is-invalid').after('<div class="invalid-feedback">' + errors.code[0] + '</div>'); }
             } else {
                 Swal.fire({ icon: 'error', title: xhr.responseJSON?.message || 'Something went wrong.' });
             }
