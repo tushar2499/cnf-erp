@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Chevron;
 use App\Http\Controllers\Controller;
 use App\Models\Chevron\ChevronItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -117,21 +118,25 @@ class ItemController extends Controller
     public function quickStore(Request $request)
     {
         $request->validate([
-            'item_code'     => ['required', 'string', 'max:100', 'unique:chevron_items,item_code'],
             'item_name'     => ['required', 'string', 'max:255'],
             'purchase_unit' => ['required', 'string'],
             'item_price'    => ['required', 'numeric', 'min:0'],
         ]);
 
-        $item = ChevronItem::create([
-            'item_code'          => strtoupper($request->item_code),
-            'item_name'          => $request->item_name,
-            'purchase_unit'      => $request->purchase_unit,
-            'item_price'         => $request->item_price,
-            'status'             => 'Active',
-            'availability_in_po' => true,
-            'availability_in_so' => true,
-        ]);
+        $item = DB::transaction(function () use ($request) {
+            $last = ChevronItem::lockForUpdate()->max('item_code');
+            $next = $last ? ('ITEM-'.str_pad((intval(substr($last, 5)) + 1), 4, '0', STR_PAD_LEFT)) : 'ITEM-1001';
+
+            return ChevronItem::create([
+                'item_code'          => $next,
+                'item_name'          => $request->item_name,
+                'purchase_unit'      => $request->purchase_unit,
+                'item_price'         => $request->item_price,
+                'status'             => 'Active',
+                'availability_in_po' => true,
+                'availability_in_so' => true,
+            ]);
+        });
 
         return response()->json([
             'id'            => $item->id,
