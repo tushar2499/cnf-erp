@@ -58,12 +58,15 @@
 
             .main-content {
                 margin-left: 0 !important;
+                margin-top: 0 !important;
                 padding: 0.5rem !important;
+                min-height: 0 !important;
             }
 
             body {
                 background: #fff !important;
                 font-size: 9px !important;
+                min-height: 0 !important;
             }
 
             .badge {
@@ -212,18 +215,12 @@
     </div>
 
     {{-- ======================== PRINT-ONLY LAYOUT ======================== --}}
-    <div class="d-none d-print-block">
+    <div class="d-none d-print-block" style="padding-top:1cm;">
+
+        <p style="font-size:1.1rem;font-weight:700;color:#000;margin:0 0 .6rem;text-align:center;text-decoration:underline;letter-spacing:.05em;">Bill</p>
 
         {{-- Bill Information --}}
         <table style="width:100%;border-collapse:collapse;margin-bottom:.6rem;font-size:.72rem;">
-            <thead>
-                <tr>
-                    <th colspan="4"
-                        style="border-bottom:2px solid #000;color:#000;padding:.3rem .5rem;font-size:.75rem;">
-                        Bill Information
-                    </th>
-                </tr>
-            </thead>
             <tbody>
                 <tr>
                     <td style="width:25%;padding:.25rem .5rem;color:#555;font-size:.62rem;text-transform:uppercase;">Bill No
@@ -236,14 +233,14 @@
                 </tr>
                 <tr>
                     <td style="padding:.25rem .5rem;color:#555;font-size:.62rem;text-transform:uppercase;">LC No</td>
-                    <td style="padding:.25rem .5rem;font-weight:600;color:#000;">{{ $customerBill->lc->lc_no ?? '-' }}</td>
+                    <td style="padding:.25rem .5rem;font-weight:600;color:#000;">{{ $customerBill->lc->lc_no ?? '---' }}</td>
                     <td style="padding:.25rem .5rem;color:#555;font-size:.62rem;text-transform:uppercase;">LC Date</td>
                     <td style="padding:.25rem .5rem;font-weight:600;color:#000;">
-                        {{ $customerBill->lc?->lc_open_date?->format('d-M-Y') ?? '-' }}</td>
+                        {{ $customerBill->lc?->lc_open_date?->format('d-M-Y') ?? '---' }}</td>
                 </tr>
                 <tr>
                     <td style="padding:.25rem .5rem;color:#555;font-size:.62rem;text-transform:uppercase;">PFI No</td>
-                    <td style="padding:.25rem .5rem;font-weight:600;color:#000;">{{ $customerBill->pfi_no ?? '-' }}</td>
+                    <td style="padding:.25rem .5rem;font-weight:600;color:#000;">{{ $customerBill->pfi_no ?? '---' }}</td>
                     <td style="padding:.25rem .5rem;color:#555;font-size:.62rem;text-transform:uppercase;">Currency</td>
                     <td style="padding:.25rem .5rem;font-weight:600;color:#000;">{{ $customerBill->currency }}</td>
                 </tr>
@@ -260,10 +257,10 @@
                     <td style="padding:.25rem .5rem;color:#555;font-size:.62rem;text-transform:uppercase;">Item Description
                     </td>
                     <td style="padding:.25rem .5rem;font-weight:600;color:#000;">
-                        {{ $customerBill->lc->item_description ?? '-' }}</td>
+                        {{ $customerBill->lc->item_description ?? '---' }}</td>
                     <td style="padding:.25rem .5rem;color:#555;font-size:.62rem;text-transform:uppercase;">Note</td>
                     <td style="padding:.25rem .5rem;font-weight:600;color:#000;">
-                        {{ $customerBill->note ?? '-' }}</td>
+                        {{ $customerBill->note ?? '---' }}</td>
                 </tr>
                 <tr>
 
@@ -280,27 +277,19 @@
         <table style="width:100%;border-collapse:collapse;margin-bottom:.6rem;font-size:.72rem;">
             <thead>
                 <tr>
-                    <th
-                        style="border:1px solid #999;padding:.25rem .4rem;width:30px;text-align:center;font-size:.65rem;font-weight:700;color:#000;">
-                        #</th>
-                    <th style="border:1px solid #999;padding:.25rem .4rem;font-size:.65rem;font-weight:700;color:#000;">
-                        Items Description</th>
-                    <th
-                        style="border:1px solid #999;padding:.25rem .4rem;width:110px;text-align:right;font-size:.65rem;font-weight:700;color:#000;">
-                        Amount</th>
-                    <th style="border:1px solid #999;padding:.25rem .4rem;font-size:.65rem;font-weight:700;color:#000;">Note
-                    </th>
+                    <th style="border:1px solid #999;padding:.25rem .4rem;width:30px;text-align:center;font-size:.65rem;font-weight:700;color:#000;">#</th>
+                    <th style="border:1px solid #999;padding:.25rem .4rem;font-size:.65rem;font-weight:700;color:#000;">Items Description</th>
+                    <th style="border:1px solid #999;padding:.25rem .4rem;font-size:.65rem;font-weight:700;color:#000;">Note</th>
+                    <th style="border:1px solid #999;padding:.25rem .4rem;width:110px;text-align:right;font-size:.65rem;font-weight:700;color:#000;">Amount</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($customerBill->items as $i => $item)
                     <tr>
-                        <td style="border:1px solid #999;padding:.25rem .4rem;text-align:center;color:#000;">
-                            {{ $i + 1 }}</td>
+                        <td style="border:1px solid #999;padding:.25rem .4rem;text-align:center;color:#000;">{{ $i + 1 }}</td>
                         <td style="border:1px solid #999;padding:.25rem .4rem;color:#000;">{{ $item->description }}</td>
-                        <td style="border:1px solid #999;padding:.25rem .4rem;text-align:right;color:#000;">
-                            {{ number_format($item->amount, 2) }}</td>
                         <td style="border:1px solid #999;padding:.25rem .4rem;color:#555;">{{ $item->note }}</td>
+                        <td style="border:1px solid #999;padding:.25rem .4rem;text-align:right;color:#000;">{{ number_format($item->amount, 2) }}</td>
                     </tr>
                 @empty
                     <tr>
@@ -317,6 +306,8 @@
             $dutyAdvance = (float) ($customerBill->lc?->duty_advance ?? 0);
             $totalAdvance = $advancePayment + $dutyAdvance;
             $transportAmt = $customerBill->sub_total + $customerBill->vat_amount - $totalAdvance;
+
+            $amountInWords = \App\Helpers\NumberHelper::amountInWords($transportAmt);
         @endphp
         <table class="print-totals" style="width:50%;margin-left:auto;border-collapse:collapse;font-size:.72rem;">
             <tr>
@@ -350,15 +341,44 @@
                     {{ number_format($totalAdvance, 2) }}</td>
             </tr>
             <tr class="border-solid-top">
-                <td style="padding:.25rem .5rem;font-weight:700;color:#000;">{{ $transportAmt >= 0 ? 'Balance' : 'Due' }}
+                <td style="padding:.25rem .5rem;font-weight:700;color:#000;">{{ $transportAmt >= 0 ? 'Due' : 'Balance' }}
                     Amount</td>
                 <td style="padding:.25rem .5rem;text-align:right;font-weight:700;color:#000;">BDT
                     {{ number_format(abs($transportAmt), 2) }}</td>
             </tr>
         </table>
 
+        {{-- In Word + Enclosed + Signatures --}}
+        <div style="margin-top:.6rem;font-size:.72rem;">
+            <div style="margin-bottom:.8rem;">
+                <span style="color:#555;">In Word:</span>
+                <span style="font-weight:600;"> {{ $amountInWords }}</span>
+            </div>
+            <div style="margin-bottom:1.5rem;">
+                <span style="color:#555;">Enclosed:</span>
+                <span id="enclosedPrintVal" style="font-weight:600;min-width:200px;display:inline-block;margin-left:.3rem;"></span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:8rem;">
+                <div style="text-align:center;width:30%;">
+                    <div style="border-top:1px solid #000;padding-top:.3rem;font-size:.7rem;">Checked By</div>
+                </div>
+                <div style="text-align:center;width:30%;">
+                    <div style="border-top:1px solid #000;padding-top:.3rem;font-size:.7rem;">Prepared By</div>
+                </div>
+            </div>
+        </div>
+
     </div>
     {{-- ==================== END PRINT-ONLY LAYOUT ==================== --}}
+
+    {{-- Enclosed input — visible on screen, value synced to print span via JS --}}
+    <div class="d-print-none mt-3 mb-2">
+        <div class="d-flex align-items-center gap-2" style="max-width:500px;">
+            <label class="fw-semibold text-nowrap" style="font-size:.82rem;">Enclosed:</label>
+            <input type="text" id="enclosedScreenInput" class="form-control form-control-sm"
+                   placeholder="Type enclosed value before printing...">
+        </div>
+    </div>
 
     {{-- ======================== SCREEN-ONLY LAYOUT ======================== --}}
     <div class="row g-3 d-print-none">
@@ -377,16 +397,16 @@
                         </div>
                         <div class="col-md-3">
                             <div class="info-label">LC No</div>
-                            <div class="info-value">{{ $customerBill->lc->lc_no ?? '-' }}</div>
+                            <div class="info-value">{{ $customerBill->lc->lc_no ?? '---' }}</div>
                         </div>
                         <div class="col-md-3">
                             <div class="info-label">LC Date</div>
-                            <div class="info-value">{{ $customerBill->lc?->lc_open_date?->format('d-M-Y') ?? '-' }}</div>
+                            <div class="info-value">{{ $customerBill->lc?->lc_open_date?->format('d-M-Y') ?? '---' }}</div>
                         </div>
 
                         <div class="col-md-3">
                             <div class="info-label">PFI No</div>
-                            <div class="info-value">{{ $customerBill->pfi_no ?? '-' }}</div>
+                            <div class="info-value">{{ $customerBill->pfi_no ?? '---' }}</div>
                         </div>
                         <div class="col-md-3">
                             <div class="info-label">Currency</div>
@@ -398,15 +418,15 @@
                         </div>
                         <div class="col-md-3">
                             <div class="info-label">Customer Address</div>
-                            <div class="info-value">{{ $customerBill->customer_address ?? '-' }}</div>
+                            <div class="info-value">{{ $customerBill->customer_address ?? '---' }}</div>
                         </div>
                         <div class="col-md-3">
                             <div class="info-label">Item Description</div>
-                            <div class="info-value">{{ $customerBill->lc->item_description ?? '-' }}</div>
+                            <div class="info-value">{{ $customerBill->lc->item_description ?? '---' }}</div>
                         </div>
                         <div class="col-md-3">
                             <div class="info-label">Note</div>
-                            <div class="info-value">{{ $customerBill->note ?? '-' }}</div>
+                            <div class="info-value">{{ $customerBill->note ?? '---' }}</div>
                         </div>
                         <div class="col-md-3">
                             <div class="info-label">Status</div>
@@ -428,8 +448,8 @@
                             <tr>
                                 <th style="width:40px">#</th>
                                 <th>Description</th>
-                                <th style="width:120px">Amount</th>
                                 <th>Note</th>
+                                <th style="width:120px">Amount</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -437,8 +457,8 @@
                                 <tr>
                                     <td class="text-center">{{ $i + 1 }}</td>
                                     <td>{{ $item->description }}</td>
-                                    <td class="text-end fw-bold">{{ number_format($item->amount, 2) }}</td>
                                     <td class="text-muted" style="font-size:.75rem">{{ $item->note }}</td>
+                                    <td class="text-end fw-bold">{{ number_format($item->amount, 2) }}</td>
                                 </tr>
                             @empty
                                 <tr>
@@ -448,10 +468,8 @@
                         </tbody>
                         <tfoot>
                             <tr style="background:#f0f4f8">
-                                <td colspan="2" class="text-end fw-bold" style="font-size:.82rem">Total</td>
-                                <td class="text-end fw-bold" style="font-size:.82rem">
-                                    {{ number_format($customerBill->items->sum('amount'), 2) }}</td>
-                                <td></td>
+                                <td colspan="3" class="text-end fw-bold" style="font-size:.82rem">Total</td>
+                                <td class="text-end fw-bold" style="font-size:.82rem">{{ number_format($customerBill->items->sum('amount'), 2) }}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -501,7 +519,7 @@
                     </div>
                     <hr class="my-2">
                     <div class="d-flex justify-content-between">
-                        <span class="fw-bold" style="font-size:.85rem">{{ $transportAmt >= 0 ? 'Balance' : 'Due' }}
+                        <span class="fw-bold" style="font-size:.85rem">{{ $transportAmt >= 0 ? 'Due' : 'Balance' }}
                             Amount</span>
                         <strong class="{{ $transportAmt >= 0 ? 'text-success' : 'text-danger' }}"
                             style="font-size:1rem">BDT
@@ -543,5 +561,16 @@
                     }
                 });
         });
+
+        document.getElementById('enclosedScreenInput').addEventListener('input', function () {
+            document.getElementById('enclosedPrintVal').textContent = this.value;
+        });
+
+        const _originalTitle = document.title;
+        window.addEventListener('beforeprint', () => {
+            document.title = 'Bill Information';
+            document.getElementById('enclosedPrintVal').textContent = document.getElementById('enclosedScreenInput').value;
+        });
+        window.addEventListener('afterprint',  () => { document.title = _originalTitle; });
     </script>
 @endpush

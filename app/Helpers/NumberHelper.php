@@ -2,7 +2,7 @@
 
 namespace App\Helpers;
 
-class BdtWords
+class NumberHelper
 {
     private static array $ones = [
         '', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE',
@@ -14,7 +14,7 @@ class BdtWords
         '', '', 'TWENTY', 'THIRTY', 'FORTY', 'FIFTY', 'SIXTY', 'SEVENTY', 'EIGHTY', 'NINETY',
     ];
 
-    public static function convert(float $amount): string
+    public static function amountInWords(float $amount): string
     {
         $amount = round(abs($amount), 2);
         $taka = (int) $amount;
