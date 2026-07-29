@@ -20,7 +20,7 @@ class CnfJobController extends Controller
         return [
             'services'   => ChevronService::where('is_active', true)->orderBy('name')->get(),
             'jobTypes'   => ChevronJobType::where('is_active', true)->orderBy('name')->get(),
-            'ports'      => ChevronPort::where('is_active', true)->orderBy('name')->get(),
+            'ports'      => ChevronPort::where('branch_id', session('active_branch_id'))->where('is_active', true)->orderBy('name')->get(),
             'currencies' => ChevronJob::currencies(),
             'countries'  => ChevronJob::countries(),
             'units'      => ChevronItem::units(),
@@ -105,7 +105,7 @@ class CnfJobController extends Controller
             return ChevronJob::create($data);
         });
 
-        return redirect()->route('chevron.cnf.jobs.edit', $job->id)
+        return redirect()->route('chevron.cnf.jobs.index')
             ->with('success', 'Job '.$job->job_no.' created successfully.');
     }
 
@@ -128,7 +128,8 @@ class CnfJobController extends Controller
 
         $job->update($this->prepareData($request));
 
-        return back()->with('success', 'Job '.$job->job_no.' updated successfully.');
+        return redirect()->route('chevron.cnf.jobs.index')
+            ->with('success', 'Job '.$job->job_no.' updated successfully.');
     }
 
     public function destroy(ChevronJob $job)
