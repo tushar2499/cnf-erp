@@ -601,6 +601,10 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 
     {{-- 12. Charges & Taxes --}}
     <div class="job-card ac-indigo">
+        <div class="job-card-hdr">
+            <i class="fa fa-percent" style="color:#4f46e5;"></i>
+            <span>Duty</span>
+        </div>
         <div class="job-card-body">
             <div>
                 <table class="charge-tbl">
@@ -620,6 +624,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                             ['AIT @',     'ait'],
                             ['AT @',      'atv'],
                             ['DF VAT @',  'df_vat'],
+                            ['Other @',   'other'],
                         ];
                         @endphp
                         @foreach($taxRows as [$label, $key])
@@ -635,9 +640,9 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                     <table class="charge-tbl">
                         <tr>
                             <td class="fw-semibold" style="color:#374151;">Total Duty</td>
-                            <td><input type="number" id="totalDutyAmount" class="form-control form-control-sm ro-field text-end fw-semibold" readonly placeholder="0.00"></td>
-                            <td><input type="number" id="totalDutyAmountBdt" class="form-control form-control-sm ro-field text-end fw-semibold" readonly placeholder="0.00"></td>
-                        </tr> 
+                            <td style="width:120px;"><input type="number" id="totalDutyAmount" class="form-control form-control-sm ro-field text-end fw-semibold" readonly placeholder="0.00"></td>
+                            <td style="width:120px;"><input type="number" id="totalDutyAmountBdt" class="form-control form-control-sm ro-field text-end fw-semibold" readonly placeholder="0.00"></td>
+                        </tr>
                     </table>
                 </div>
             </div> 
@@ -833,16 +838,10 @@ $(function () {
         recalcTotals();
     });
 
-    // When invoice_value col2 is manually edited: recalc taxes + duty total from new value
+    // When invoice_value col2 is manually edited: recalc taxes + totals
     $(document).on('input', '#c2_invoice_value', function () {
         recalcTaxes();
-        recalcDutyTotal();
         recalcTotals();
-    });
-
-    // When invoice_value col1 changes: recalc duty total (col1 contribution)
-    $(document).on('input', '[name="invoice_value_1"]', function () {
-        recalcDutyTotal();
     });
 
     // Tax amount = invoice_value (BDT) × rate%
@@ -859,10 +858,9 @@ $(function () {
     function recalcDutyTotal() {
         var taxSum = 0;
         $('.tax-amount').each(function () { taxSum += parseFloat($(this).val()) || 0; });
-        var iv1 = parseFloat($('[name="invoice_value_1"]').val()) || 0;
-        var iv2 = parseFloat($('#c2_invoice_value').val()) || 0;
-        $('#totalDutyAmount').val(fmt(iv1 + taxSum));
-        $('#totalDutyAmountBdt').val(fmt(iv2 + taxSum));
+        var rate = getCurrencyRate();
+        $('#totalDutyAmount').val(fmt(rate ? taxSum / rate : 0));
+        $('#totalDutyAmountBdt').val(fmt(taxSum));
     }
 
     // When tax rate typed: recalc that tax, then totals

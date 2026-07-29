@@ -10,6 +10,7 @@
 .jobs-table-wrapper::-webkit-scrollbar { width: 6px; height: 6px; }
 .jobs-table-wrapper::-webkit-scrollbar-track { background: #f1f1f1; }
 .jobs-table-wrapper::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+#jobsTable_wrapper > .row:last-child { position: sticky; bottom: 0; background: #fff; z-index: 3; border-top: 1px solid #dee2e6; margin: 0; padding: 6px 12px; }
 </style>
 @endpush
 

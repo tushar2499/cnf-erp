@@ -46,6 +46,7 @@ class ChevronJob extends Model
         'rd_rate',       'rd_amount',
         'atv_rate',      'atv_amount',
         'df_vat_rate',   'df_vat_amount',
+        'other_rate',    'other_amount',
         'total_payable_1',  'total_payable_2',
         'comm_discount_pct', 'comm_discount_1', 'comm_discount_2',
         'net_payable_1',    'net_payable_2',
