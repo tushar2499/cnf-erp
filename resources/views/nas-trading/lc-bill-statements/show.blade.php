@@ -68,7 +68,12 @@
             </tr>
             <tr>
                 <td style="padding:.25rem .5rem;color:#555;font-size:.62rem;text-transform:uppercase;">Customer</td>
-                <td style="padding:.25rem .5rem;font-weight:600;color:#000;">{{ $lcBillStatement->customer?->company_name ?? '-' }}</td>
+                <td style="padding:.25rem .5rem;font-weight:600;color:#000;">
+                    {{ $lcBillStatement->customer?->company_name ?? '-' }}
+                    @if ($lcBillStatement->customer?->address)
+                        <div style="font-weight:400;font-size:.6rem;color:#555;margin-top:.1rem;">{{ $lcBillStatement->customer->address }}</div>
+                    @endif
+                </td>
                 <td style="padding:.25rem .5rem;color:#555;font-size:.62rem;text-transform:uppercase;">Status</td>
                 <td style="padding:.25rem .5rem;font-weight:600;color:#000;">{{ $lcBillStatement->status }}</td>
             </tr>
@@ -103,8 +108,8 @@
                 <td style="border:1px solid #999;padding:.25rem .4rem;color:#000;">{{ $item->lc?->lc_open_date?->format('d-M-Y') ?? '-' }}</td>
                 <td style="border:1px solid #999;padding:.25rem .4rem;color:#000;">{{ $item->lc?->lc_retirement_date?->format('d-M-Y') ?? '-' }}</td>
                 <td style="border:1px solid #999;padding:.25rem .4rem;text-align:right;color:#000;">{{ $item->lc?->lc_rt_value ? number_format($item->lc->lc_rt_value, 2) : '-' }}</td>
-                <td style="border:1px solid #999;padding:.25rem .4rem;text-align:right;color:#000;">{{ $item->lc?->lc_commission_percent ? number_format($item->lc->lc_commission_percent, 2).'%' : '-' }}</td>
-                <td style="border:1px solid #999;padding:.25rem .4rem;text-align:right;color:#000;">{{ $item->lc?->lc_commission ? number_format($item->lc->lc_commission, 2) : '-' }}</td>
+                <td style="border:1px solid #999;padding:.25rem .4rem;text-align:right;color:#000;">{{ $item->lc?->lc_commission_percent ? rtrim(rtrim(number_format($item->lc->lc_commission_percent, 4), '0'), '.').'%' : '-' }}</td>
+                <td style="border:1px solid #999;padding:.25rem .4rem;text-align:right;color:#000;">{{ $item->lc?->lc_commission_flat ? number_format($item->lc->lc_commission_flat, 2) : '-' }}</td>
             </tr>
             @empty
             <tr>
@@ -117,7 +122,7 @@
             <tr>
                 <td colspan="7" style="border:1px solid #999;padding:.25rem .4rem;text-align:right;font-weight:700;color:#000;">Total Commission</td>
                 <td style="border:1px solid #999;padding:.25rem .4rem;text-align:right;font-weight:700;color:#000;">
-                    {{ number_format($lcBillStatement->items->sum(fn($i) => $i->lc?->lc_commission ?? 0), 2) }}
+                    {{ number_format($lcBillStatement->items->sum(fn($i) => $i->lc?->lc_commission_flat ?? 0), 2) }}
                 </td>
             </tr>
         </tfoot>
@@ -143,6 +148,9 @@
                 <div class="col-md-3">
                     <div class="info-label">Customer</div>
                     <div class="info-value">{{ $lcBillStatement->customer?->company_name ?? '-' }}</div>
+                    @if ($lcBillStatement->customer?->address)
+                        <div class="text-muted" style="font-size:.75rem;">{{ $lcBillStatement->customer->address }}</div>
+                    @endif
                 </div>
                 <div class="col-md-3">
                     <div class="info-label">Status</div>
@@ -169,10 +177,10 @@
                     <tr>
                         <th style="width:40px">#</th>
                         <th>PFI No</th>
-                        <th>LC No</th>
-                        <th>LC Date</th>
+                        <th>LC/TT No</th>
+                        <th>LC/TT Date</th>
                         <th>LC Retirement Date</th>
-                        <th class="text-end">LC RT Value (BDT)</th>
+                        <th class="text-end">LC RT/Invoice Value (BDT)</th>
                         <th class="text-end">Commission %</th>
                         <th class="text-end">Commission Amt (BDT)</th>
                     </tr>
@@ -186,8 +194,8 @@
                         <td>{{ $item->lc?->lc_open_date?->format('d-M-Y') ?? '-' }}</td>
                         <td>{{ $item->lc?->lc_retirement_date?->format('d-M-Y') ?? '-' }}</td>
                         <td class="text-end fw-bold">{{ $item->lc?->lc_rt_value ? number_format($item->lc->lc_rt_value, 2) : '-' }}</td>
-                        <td class="text-end">{{ $item->lc?->lc_commission_percent ? number_format($item->lc->lc_commission_percent, 2).'%' : '-' }}</td>
-                        <td class="text-end fw-bold">{{ $item->lc?->lc_commission ? number_format($item->lc->lc_commission, 2) : '-' }}</td>
+                        <td class="text-end">{{ $item->lc?->lc_commission_percent ? rtrim(rtrim(number_format($item->lc->lc_commission_percent, 4), '0'), '.').'%' : '-' }}</td>
+                        <td class="text-end fw-bold">{{ $item->lc?->lc_commission_flat ? number_format($item->lc->lc_commission_flat, 2) : '-' }}</td>
                     </tr>
                     @empty
                     <tr>
@@ -200,7 +208,7 @@
                     <tr style="background:#f0f4f8">
                         <td colspan="7" class="text-end fw-bold" style="font-size:.82rem">Total Commission (BDT)</td>
                         <td class="text-end fw-bold text-success" style="font-size:.9rem">
-                            {{ number_format($lcBillStatement->items->sum(fn($i) => $i->lc?->lc_commission ?? 0), 2) }}
+                            {{ number_format($lcBillStatement->items->sum(fn($i) => $i->lc?->lc_commission_flat ?? 0), 2) }}
                         </td>
                     </tr>
                 </tfoot>

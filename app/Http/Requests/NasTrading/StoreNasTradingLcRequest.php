@@ -34,7 +34,6 @@ class StoreNasTradingLcRequest extends FormRequest
             'supplier_id'      => ['nullable', 'integer'],
             'supplier_country' => ['nullable', 'string', 'max:100'],
             'importer_id'      => ['nullable', 'integer'],
-            'item_description' => ['nullable', 'string'],
             'customer_po_date' => ['nullable', 'date'],
 
             // Bank & Documents

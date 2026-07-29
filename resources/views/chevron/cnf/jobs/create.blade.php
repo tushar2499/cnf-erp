@@ -243,14 +243,14 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                     <label class="form-label">Gross Weight</label>
                     <div class="input-group input-group-sm">
                         <input type="number" name="gross_weight" class="form-control form-control-sm" step="0.001" value="{{ old('gross_weight', $job?->gross_weight) }}" placeholder="0.000">
-                        <input type="text"   name="gross_weight_unit" class="form-control form-control-sm" style="max-width:100px;" value="{{ old('gross_weight_unit', $job?->gross_weight_unit ?? 'Kg') }}" placeholder="Unit">
+                        <input type="text"   name="gross_weight_unit" class="form-control form-control-sm" style="max-width:100px;" value="{{ old('gross_weight_unit', $job?->gross_weight_unit ?? 'KGS') }}" placeholder="Unit">
                     </div>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Net Weight</label>
                     <div class="input-group input-group-sm">
                         <input type="number" name="net_weight" class="form-control form-control-sm" step="0.001" value="{{ old('net_weight', $job?->net_weight) }}" placeholder="0.000">
-                        <input type="text"   name="net_weight_unit" class="form-control form-control-sm" style="max-width:100px;" value="{{ old('net_weight_unit', $job?->net_weight_unit ?? 'Kg') }}" placeholder="Unit">
+                        <input type="text"   name="net_weight_unit" class="form-control form-control-sm" style="max-width:100px;" value="{{ old('net_weight_unit', $job?->net_weight_unit ?? 'KGS') }}" placeholder="Unit">
                     </div>
                 </div>
             </div>
@@ -567,9 +567,9 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 <div class="col-md-4" style="position:sticky;top:70px;align-self:start;max-height:calc(100vh - 80px);overflow-y:auto;">
 
     {{-- 11. Financial --}}
-    <div class="job-card ac-amber"> 
+    <div class="job-card ac-amber">
         <div class="job-card-body">
-            <div class="row g-2"> 
+            <div class="row g-2">
                 <div class="col-6">
                     <label class="form-label">Currency</label>
                     <select name="currency_type" id="currencyType" class="form-select form-select-sm">
@@ -582,7 +582,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                 <div class="col-6">
                     <label class="form-label">Exchange Rate <small class="text-muted fw-normal">(BDT)</small></label>
                     <input type="number" name="currency_rate" id="currencyRate" class="form-control form-control-sm text-end" step="0.000000001" value="{{ old('currency_rate', $job?->currency_rate) }}" placeholder="0.00">
-                </div> 
+                </div>
                 <div class="col-6">
                     <label class="form-label">Invoice Value <small id="invoiceCurLabel" class="text-muted fw-normal">(Orig. Cur.)</small></label>
                     <input type="number" name="invoice_value_1" class="form-control form-control-sm charge-c1 text-end" step="0.01" value="{{ old('invoice_value_1', $job?->invoice_value_1) }}" data-key="invoice_value" placeholder="0.00">
@@ -629,7 +629,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                         @endphp
                         @foreach($taxRows as [$label, $key])
                         <tr>
-                            <td>{{ $label }}</td> 
+                            <td>{{ $label }}</td>
                             <td><input type="number" name="{{ $key }}_amount" id="tax_{{ $key }}" class="form-control form-control-sm tax-amount text-end" step="0.000000001" value="{{ old($key.'_amount', $job?->{$key.'_amount'}) }}" placeholder="0.00"></td>
                         </tr>
                         @endforeach
@@ -645,7 +645,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                         </tr>
                     </table>
                 </div>
-            </div> 
+            </div>
         </div>
         <input type="hidden" name="comm_discount_1" id="commDiscount1">
         <input type="hidden" name="total_payable_1_hidden" id="totalPayable1h">

@@ -158,10 +158,6 @@ input[type="number"] { -moz-appearance:textfield; }
                         <label class="form-label">Customer PO Date</label>
                         <input type="date" name="customer_po_date" class="form-control form-control-sm" value="{{ $lc->customer_po_date?->format('Y-m-d') }}">
                     </div>
-                    <div class="col-12">
-                        <label class="form-label">Item Description</label>
-                        <textarea name="item_description" class="form-control form-control-sm" rows="2" placeholder="Brief description of goods">{{ $lc->item_description }}</textarea>
-                    </div>
                 </div>
             </div>
 

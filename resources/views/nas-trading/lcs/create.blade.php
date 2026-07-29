@@ -234,11 +234,6 @@
                             <label class="form-label">Customer PO Date</label>
                             <input type="date" name="customer_po_date" class="form-control form-control-sm">
                         </div>
-                        <div class="col-12">
-                            <label class="form-label">Item Description</label>
-                            <textarea name="item_description" class="form-control form-control-sm" rows="2"
-                                placeholder="Brief description of goods"></textarea>
-                        </div>
                     </div>
                 </div>
 

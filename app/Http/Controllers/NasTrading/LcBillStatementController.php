@@ -185,7 +185,7 @@ class LcBillStatementController extends Controller
             NasTradingLc::when($customerId, fn ($q) => $q->where('customer_id', $customerId))
                 ->when($term, fn ($q) => $q->where(fn ($q) => $q->where('lc_no', 'like', "%{$term}%")->orWhere('pfi_no', 'like', "%{$term}%")->orWhere('lc_no_system', 'like', "%{$term}%")))
                 ->orderBy('lc_open_date', 'desc')
-                ->get(['id', 'lc_no_system', 'lc_no', 'pfi_no', 'lc_open_date', 'lc_rt_value', 'lc_commission_percent', 'lc_commission', 'lc_retirement_date'])
+                ->get(['id', 'lc_no_system', 'lc_no', 'pfi_no', 'lc_open_date', 'lc_rt_value', 'lc_commission_percent', 'lc_commission_flat', 'lc_retirement_date'])
                 ->map(fn ($l) => [
                     'id'                    => $l->id,
                     'text'                  => $l->lc_no_system.' | '.$l->lc_no.' | '.$l->pfi_no,
@@ -194,7 +194,7 @@ class LcBillStatementController extends Controller
                     'lc_open_date'          => $l->lc_open_date?->format('d-M-Y'),
                     'lc_rt_value'           => $l->lc_rt_value,
                     'lc_commission_percent' => $l->lc_commission_percent,
-                    'lc_commission'         => $l->lc_commission,
+                    'lc_commission_flat'    => $l->lc_commission_flat,
                     'lc_retirement_date'    => $l->lc_retirement_date?->format('d-M-Y'),
                 ])
         );

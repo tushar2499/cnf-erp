@@ -29,11 +29,11 @@
         <div class="card-panel-header"><i class="fa fa-id-card me-2"></i> Statement Header</div>
         <div class="card-panel-body">
             <div class="row g-2">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">Bill No</label>
                     <input type="text" class="form-control form-control-sm bg-light fw-bold" value="{{ $lcBillStatement->bill_no }}" readonly>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">Bill Date <span class="text-danger">*</span></label>
                     <input type="date" name="bill_date" class="form-control form-control-sm" value="{{ $lcBillStatement->bill_date?->format('Y-m-d') }}" required>
                 </div>
@@ -45,9 +45,13 @@
                         </option>
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-4">
+                    <label class="form-label">Customer Address</label>
+                    <input type="text" id="customerAddressDisplay" class="form-control form-control-sm" placeholder="Customer address" readonly value="{{ $lcBillStatement->customer?->address }}" style="{{ $lcBillStatement->customer?->address ? '' : 'display:none;' }}background:#f8f9fa;color:#6c757d;font-size:.78rem;">
+                </div>
+                <div class="col-md-12">
                     <label class="form-label">Note</label>
-                    <input type="text" name="note" class="form-control form-control-sm" value="{{ $lcBillStatement->note }}">
+                    <input type="text" name="note" class="form-control form-control-sm" value="{{ $lcBillStatement->note }}" placeholder="Optional">
                 </div>
             </div>
         </div>
@@ -74,12 +78,12 @@
                         <tr>
                             <th style="width:35px">#</th>
                             <th>PFI No</th>
-                            <th>LC No</th>
-                            <th>LC Date</th>
+                            <th>LC/TT No</th>
+                            <th>LC/TT Date</th>
                             <th>LC Retirement Date</th>
-                            <th>LC RT Value (BDT)</th>
-                            <th>Commission %</th>
-                            <th>Commission Amt (BDT)</th>
+                            <th class="text-end">LC RT/Invoice Value (BDT)</th>
+                            <th class="text-end">Commission %</th>
+                            <th class="text-end">Commission Amt (BDT)</th>
                             <th style="width:35px"></th>
                         </tr>
                     </thead>
@@ -108,7 +112,7 @@ $existingLcsJson = json_encode($lcBillStatement->items->map(fn($item) => [
     'lc_retirement_date'    => $item->lc?->lc_retirement_date?->format('d-M-Y'),
     'lc_rt_value'           => $item->lc?->lc_rt_value,
     'lc_commission_percent' => $item->lc?->lc_commission_percent,
-    'lc_commission'         => $item->lc?->lc_commission,
+    'lc_commission_flat'    => $item->lc?->lc_commission_flat,
 ]));
 @endphp
 @push('scripts')
@@ -129,7 +133,15 @@ $(function () {
     }).on('change', function () {
         addedLcIds = [];
         $('#lcBody').empty();
+        $('#lcTfoot').remove();
         $('#lcSearch').val(null).trigger('change');
+        var data = $(this).select2('data');
+        var address = data.length ? (data[0].address || '') : '';
+        if (address) {
+            $('#customerAddressDisplay').val(address).show();
+        } else {
+            $('#customerAddressDisplay').hide();
+        }
     });
 
     $('#lcSearch').select2({
@@ -174,19 +186,43 @@ $(function () {
     });
 });
 
+function formatCommissionPercent(val) {
+    if (!val) { return '-'; }
+    return parseFloat(val).toFixed(4).replace(/\.?0+$/, '') + '%';
+}
+
+function updateTotal() {
+    var total = 0;
+    $('#lcBody tr[data-lc-id]').each(function () {
+        var raw = $(this).data('commission-flat');
+        if (raw) { total += parseFloat(raw); }
+    });
+    if ($('#lcBody tr[data-lc-id]').length > 0) {
+        $('#lcTfoot').remove();
+        $('#lcTable').append(`<tfoot id="lcTfoot"><tr style="background:#f0f4f8">
+            <td colspan="7" class="text-end fw-bold" style="font-size:.82rem">Total Commission (BDT)</td>
+            <td class="text-end fw-bold text-success" style="font-size:.9rem">${total.toLocaleString('en-BD', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+            <td></td>
+        </tr></tfoot>`);
+    } else {
+        $('#lcTfoot').remove();
+    }
+}
+
 function addLcRow(lc) {
     addedLcIds.push(lc.id);
     var idx = addedLcIds.length;
+    var commFlat = lc.lc_commission_flat ? parseFloat(lc.lc_commission_flat) : null;
     $('#lcBody').append(`
-        <tr data-lc-id="${lc.id}">
+        <tr data-lc-id="${lc.id}" data-commission-flat="${commFlat || ''}">
             <td class="text-center">${idx}</td>
             <td>${lc.pfi_no || '-'}</td>
             <td>${lc.lc_no || '-'}</td>
             <td>${lc.lc_open_date || '-'}</td>
             <td>${lc.lc_retirement_date || '-'}</td>
-            <td class="text-end">${lc.lc_rt_value ? parseFloat(lc.lc_rt_value).toLocaleString('en-BD', {minimumFractionDigits:2}) : '-'}</td>
-            <td class="text-end">${lc.lc_commission_percent ? parseFloat(lc.lc_commission_percent).toFixed(2) + '%' : '-'}</td>
-            <td class="text-end">${lc.lc_commission ? parseFloat(lc.lc_commission).toLocaleString('en-BD', {minimumFractionDigits:2}) : '-'}</td>
+            <td class="text-end fw-bold">${lc.lc_rt_value ? parseFloat(lc.lc_rt_value).toLocaleString('en-BD', {minimumFractionDigits:2}) : '-'}</td>
+            <td class="text-end">${formatCommissionPercent(lc.lc_commission_percent)}</td>
+            <td class="text-end fw-bold">${commFlat ? commFlat.toLocaleString('en-BD', {minimumFractionDigits:2}) : '-'}</td>
             <td class="text-center">
                 <button type="button" class="btn btn-sm btn-outline-danger p-0 btn-remove-lc" style="width:22px;height:22px;line-height:1" title="Remove">
                     <i class="fa fa-times" style="font-size:.6rem"></i>
@@ -194,6 +230,7 @@ function addLcRow(lc) {
             </td>
         </tr>
     `);
+    updateTotal();
 }
 
 $(document).on('click', '.btn-remove-lc', function () {
@@ -202,6 +239,7 @@ $(document).on('click', '.btn-remove-lc', function () {
     addedLcIds = addedLcIds.filter(id => id !== lcId);
     row.remove();
     $('#lcBody tr[data-lc-id]').each((i, tr) => $(tr).find('td:first').text(i + 1));
+    updateTotal();
 });
 </script>
 @endpush
