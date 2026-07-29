@@ -49,7 +49,7 @@
                     <th>Job Date</th>
                     <th>Party Name</th>
                     <th>Goods Name</th>
-                    <th>Service</th>
+                    <th>HBL No</th>
                     <th>Job Type</th>
                     <th>Port</th>
                     <th>Country</th>
@@ -121,6 +121,7 @@ $(function () {
         serverSide: true,
         autoWidth: false,
         pageLength: 15,
+        order: [],
         lengthMenu: [[15, 25, 50, 100, 200, 500, 1000, -1], [15, 25, 50, 100, 200, 500, 1000, 'All']],
         ajax: {
             url: '{{ route('chevron.cnf.jobs.index') }}',
@@ -135,7 +136,7 @@ $(function () {
             { data: 'job_date',                name: 'job_date' },
             { data: 'party_name',              name: 'party_name' },
             { data: 'goods_name',              name: 'goods_name' },
-            { data: 'service_name',            name: 'service_name' },
+            { data: 'hbi_hawb_no',              name: 'hbi_hawb_no' },
             { data: 'job_type_name',           name: 'job_type_name' },
             { data: 'port_name',               name: 'port_name' },
             { data: 'country_of_origin',       name: 'country_of_origin' },

@@ -157,21 +157,23 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
             <div class="row g-3">
                 <div class="col-md-4">
                     <label class="form-label">Job Type <span class="req">*</span></label>
-                    <select name="job_type_id" class="form-select form-select-sm">
+                    <select name="job_type_id" class="form-select form-select-sm" required>
                         <option value="">-- Select Job Type --</option>
                         @foreach($jobTypes as $jt)
                             <option value="{{ $jt->id }}" {{ old('job_type_id', $job?->job_type_id) == $jt->id ? 'selected' : '' }}>{{ $jt->name }}</option>
                         @endforeach
                     </select>
+                    <small class="text-danger d-none" id="job_type_id_err">The job type field is required.</small>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Port <span class="req">*</span></label>
-                    <select name="port_id" class="form-select form-select-sm">
+                    <select name="port_id" class="form-select form-select-sm" required>
                         <option value="">-- Select Port --</option>
                         @foreach($ports as $p)
                             <option value="{{ $p->id }}" {{ old('port_id', $job?->port_id) == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
                         @endforeach
                     </select>
+                    <small class="text-danger d-none" id="port_id_err">The port field is required.</small>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Country of Origin</label>
@@ -184,7 +186,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Job Date <span class="req">*</span></label>
-                    <input type="date" name="job_date" class="form-control form-control-sm" value="{{ old('job_date', $job?->job_date?->format('Y-m-d')) }}">
+                    <input type="date" name="job_date" class="form-control form-control-sm" value="{{ old('job_date', $job?->job_date?->format('Y-m-d')) }}" required>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Status</label>
@@ -213,6 +215,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                             <option value="{{ $job->customer_id ?? $job->party_name }}" selected>{{ $job->party_name }}</option>
                         @endif
                     </select>
+                    <small class="text-danger d-none" id="party_name_err">The party name field is required.</small>
                 </div>
                 <div class="col-md-8">
                     <label class="form-label">Party Address</label>
@@ -230,6 +233,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                             <option value="{{ $job->item_id ?? $job->goods_name }}" selected>{{ $job->goods_name }}</option>
                         @endif
                     </select>
+                    <small class="text-danger d-none" id="goods_name_err">The goods name field is required.</small>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Pack Quantity</label>
@@ -281,8 +285,8 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                     <input type="date" name="eta_date" class="form-control form-control-sm" value="{{ old('eta_date', $job?->eta_date?->format('Y-m-d')) }}">
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">HBL/HAWB No</label>
-                    <input type="text" name="hbi_hawb_no" class="form-control form-control-sm" value="{{ old('hbi_hawb_no', $job?->hbi_hawb_no) }}" placeholder="HBI/HAWB No">
+                    <label class="form-label">HBL/HAWB No <span class="req">*</span></label>
+                    <input type="text" name="hbi_hawb_no" class="form-control form-control-sm" value="{{ old('hbi_hawb_no', $job?->hbi_hawb_no) }}" placeholder="HBI/HAWB No" required>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">HBL/HAWB Date</label>
@@ -958,6 +962,66 @@ $(function () {
         .always(function () {
             $('#btnSaveQuickItem').prop('disabled', false).html('<i class="fa fa-save me-1"></i> Save & Select');
         });
+    });
+
+    // ── Client-side required validation for Select2 / hidden fields ──
+    function validateSelect2Field(selectEl, hiddenVal, errId) {
+        var empty = !hiddenVal && !$(selectEl).val();
+        $(selectEl).next('.select2-container').find('.select2-selection')
+            .toggleClass('border-danger', empty);
+        $('#' + errId).toggleClass('d-none', !empty);
+        return !empty;
+    }
+
+    $('form').on('submit', function (e) {
+        var valid = true;
+
+        if (!$('select[name="job_type_id"]').val()) {
+            $('select[name="job_type_id"]').next('.select2-container').find('.select2-selection').addClass('border-danger');
+            $('#job_type_id_err').removeClass('d-none');
+            valid = false;
+        }
+
+        if (!$('select[name="port_id"]').val()) {
+            $('select[name="port_id"]').next('.select2-container').find('.select2-selection').addClass('border-danger');
+            $('#port_id_err').removeClass('d-none');
+            valid = false;
+        }
+
+        if (!$('#partyNameHidden').val()) {
+            $('#partyNameSelect').next('.select2-container').find('.select2-selection').addClass('border-danger');
+            $('#party_name_err').removeClass('d-none');
+            valid = false;
+        }
+
+        if (!$('#goodsNameHidden').val()) {
+            $('#goodsNameSelect').next('.select2-container').find('.select2-selection').addClass('border-danger');
+            $('#goods_name_err').removeClass('d-none');
+            valid = false;
+        }
+
+        if (!valid) {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    });
+
+    // Clear errors on selection
+    $('select[name="job_type_id"]').on('change', function () {
+        $(this).next('.select2-container').find('.select2-selection').removeClass('border-danger');
+        $('#job_type_id_err').addClass('d-none');
+    });
+    $('select[name="port_id"]').on('change', function () {
+        $(this).next('.select2-container').find('.select2-selection').removeClass('border-danger');
+        $('#port_id_err').addClass('d-none');
+    });
+    $('#partyNameSelect').on('select2:select select2:clear', function () {
+        $(this).next('.select2-container').find('.select2-selection').removeClass('border-danger');
+        $('#party_name_err').addClass('d-none');
+    });
+    $('#goodsNameSelect').on('select2:select select2:clear', function () {
+        $(this).next('.select2-container').find('.select2-selection').removeClass('border-danger');
+        $('#goods_name_err').addClass('d-none');
     });
 });
 </script>

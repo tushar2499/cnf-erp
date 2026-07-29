@@ -37,7 +37,8 @@ class CnfJobController extends Controller
             $query = ChevronJob::with(['service', 'jobType', 'port'])
                 ->where('branch_id', session('active_branch_id'))
                 ->when($fromDate, fn ($q) => $q->whereDate('job_date', '>=', $fromDate))
-                ->when($toDate, fn ($q) => $q->whereDate('job_date', '<=', $toDate));
+                ->when($toDate, fn ($q) => $q->whereDate('job_date', '<=', $toDate))
+                ->latest();
 
             return DataTables::of($query)
                 ->addIndexColumn()
@@ -91,6 +92,7 @@ class CnfJobController extends Controller
             'party_name'       => ['required', 'string', 'max:255'],
             'goods_name'       => ['required', 'string', 'max:255'],
             'job_date'         => ['required', 'date'],
+            'hbi_hawb_no'      => ['required', 'string', 'max:255', 'unique:chevron_jobs,hbi_hawb_no'],
             'received_amount'  => ['nullable', 'numeric', 'min:0'],
             'assessable_value' => ['nullable', 'numeric', 'min:0'],
         ]);
@@ -122,6 +124,7 @@ class CnfJobController extends Controller
             'party_name'       => ['required', 'string', 'max:255'],
             'goods_name'       => ['required', 'string', 'max:255'],
             'job_date'         => ['required', 'date'],
+            'hbi_hawb_no'      => ['required', 'string', 'max:255', 'unique:chevron_jobs,hbi_hawb_no,'.$job->id],
             'received_amount'  => ['nullable', 'numeric', 'min:0'],
             'assessable_value' => ['nullable', 'numeric', 'min:0'],
         ]);
