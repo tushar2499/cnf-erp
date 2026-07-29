@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Chevron;
 
 use App\Http\Controllers\Controller;
 use App\Models\Chevron\ChevronItem;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -42,10 +43,19 @@ class ItemController extends Controller
         return response()->json($item);
     }
 
+    public function nextCode(): JsonResponse
+    {
+        $last = ChevronItem::max('item_code');
+        $next = $last
+            ? 'ITEM-'.str_pad((intval(substr($last, 5)) + 1), 4, '0', STR_PAD_LEFT)
+            : 'ITEM-1001';
+
+        return response()->json(['next_code' => $next]);
+    }
+
     public function store(Request $request)
     {
         $request->validate([
-            'item_code'     => ['required', 'string', 'max:100', 'unique:chevron_items,item_code'],
             'purchase_unit' => ['required', 'string'],
             'item_price'    => ['required', 'numeric', 'min:0'],
         ]);
@@ -55,19 +65,26 @@ class ItemController extends Controller
             $imagePath = $request->file('image')->store('chevron/items', 'public');
         }
 
-        ChevronItem::create([
-            'item_code'          => strtoupper($request->item_code),
-            'item_name'          => $request->item_name,
-            'supplier'           => $request->supplier,
-            'purchase_unit'      => $request->purchase_unit,
-            'description'        => $request->description,
-            'remarks'            => $request->remarks,
-            'status'             => $request->status ?? 'Active',
-            'item_price'         => $request->item_price ?? 0,
-            'availability_in_po' => $request->boolean('availability_in_po', true),
-            'availability_in_so' => $request->boolean('availability_in_so', true),
-            'image'              => $imagePath,
-        ]);
+        DB::transaction(function () use ($request, $imagePath) {
+            $last = ChevronItem::lockForUpdate()->max('item_code');
+            $code = $last
+                ? 'ITEM-'.str_pad((intval(substr($last, 5)) + 1), 4, '0', STR_PAD_LEFT)
+                : 'ITEM-1001';
+
+            ChevronItem::create([
+                'item_code'          => $code,
+                'item_name'          => $request->item_name,
+                'supplier'           => $request->supplier,
+                'purchase_unit'      => $request->purchase_unit,
+                'description'        => $request->description,
+                'remarks'            => $request->remarks,
+                'status'             => $request->status ?? 'Active',
+                'item_price'         => $request->item_price ?? 0,
+                'availability_in_po' => $request->boolean('availability_in_po', true),
+                'availability_in_so' => $request->boolean('availability_in_so', true),
+                'image'              => $imagePath,
+            ]);
+        });
 
         return response()->json(['message' => 'Item created successfully.']);
     }

@@ -46,6 +46,11 @@
             vertical-align: middle;
         }
 
+        @page {
+            size: A4 portrait;
+            margin: 25mm 12mm 8mm;
+        }
+
         @media print {
 
             .top-navbar,
@@ -57,16 +62,17 @@
             }
 
             .main-content {
-                margin-left: 0 !important;
-                margin-top: 0 !important;
-                padding: 0.5rem !important;
+                margin: 0 !important;
+                padding: 0 !important;
                 min-height: 0 !important;
+                width: 100% !important;
             }
 
             body {
                 background: #fff !important;
                 font-size: 9px !important;
                 min-height: 0 !important;
+                width: 100% !important;
             }
 
             .badge {
@@ -215,7 +221,7 @@
     </div>
 
     {{-- ======================== PRINT-ONLY LAYOUT ======================== --}}
-    <div class="d-none d-print-block" style="padding-top:1cm;">
+    <div class="d-none d-print-block" style="width:100%;box-sizing:border-box;">
 
         <p style="font-size:1.1rem;font-weight:700;color:#000;margin:0 0 .6rem;text-align:center;text-decoration:underline;letter-spacing:.05em;">Bill</p>
 
@@ -356,7 +362,7 @@
             </div>
             <div style="margin-bottom:1.5rem;">
                 <span style="color:#555;">Enclosed:</span>
-                <span id="enclosedPrintVal" style="font-weight:600;min-width:200px;display:inline-block;margin-left:.3rem;"></span>
+                <span id="enclosedPrintVal" style="font-weight:600;min-width:200px;display:inline-block;margin-left:.3rem;padding-bottom:1px;"></span>
             </div>
             <div style="display:flex;justify-content:space-between;margin-top:8rem;">
                 <div style="text-align:center;width:30%;">
@@ -370,6 +376,7 @@
 
     </div>
     {{-- ==================== END PRINT-ONLY LAYOUT ==================== --}}
+
 
     {{-- Enclosed input — visible on screen, value synced to print span via JS --}}
     <div class="d-print-none mt-3 mb-2">

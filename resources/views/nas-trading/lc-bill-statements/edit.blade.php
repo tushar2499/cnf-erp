@@ -98,10 +98,8 @@
 </form>
 @endsection
 
-@push('scripts')
-<script>
-var addedLcIds = [];
-var existingLcs = @json($lcBillStatement->items->map(fn($item) => [
+@php
+$existingLcsJson = json_encode($lcBillStatement->items->map(fn($item) => [
     'id'                    => $item->lc?->id,
     'text'                  => ($item->lc?->lc_no_system ?? '') . ' | ' . ($item->lc?->lc_no ?? '') . ' | ' . ($item->lc?->pfi_no ?? ''),
     'pfi_no'                => $item->lc?->pfi_no,
@@ -112,6 +110,11 @@ var existingLcs = @json($lcBillStatement->items->map(fn($item) => [
     'lc_commission_percent' => $item->lc?->lc_commission_percent,
     'lc_commission'         => $item->lc?->lc_commission,
 ]));
+@endphp
+@push('scripts')
+<script>
+var addedLcIds = [];
+var existingLcs = {!! $existingLcsJson !!};
 
 $(function () {
     $('#customerSelect').select2({

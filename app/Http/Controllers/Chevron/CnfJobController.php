@@ -31,8 +31,13 @@ class CnfJobController extends Controller
     {
 
         if ($request->ajax()) {
+            $fromDate = $request->input('from_date');
+            $toDate   = $request->input('to_date');
+
             $query = ChevronJob::with(['service', 'jobType', 'port'])
-                ->where('branch_id', session('active_branch_id'));
+                ->where('branch_id', session('active_branch_id'))
+                ->when($fromDate, fn ($q) => $q->whereDate('job_date', '>=', $fromDate))
+            ->when($toDate, fn ($q) => $q->whereDate('job_date', '<=', $toDate));
 
             return DataTables::of($query)
                 ->addIndexColumn()

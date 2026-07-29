@@ -107,8 +107,8 @@
                                 </div>
                                 <div class="row g-2 pt-2">
                                     <div class="col-md-4">
-                                        <label class="form-label">Item Code <span class="text-danger">*</span></label>
-                                        <input type="text" id="itemCode" name="item_code" class="form-control form-control-sm" placeholder="e.g. ITEM-001" style="text-transform:uppercase">
+                                        <label class="form-label">Item Code</label>
+                                        <input type="text" id="itemCode" name="item_code" class="form-control form-control-sm bg-light" placeholder="Auto-generated" readonly>
                                     </div>
                                     <div class="col-md-8">
                                         <label class="form-label">Item Name</label>
@@ -263,7 +263,7 @@ $(function () {
     function resetForm() {
         $('#itemId').val('');
         $('#formMethod').val('POST');
-        $('#itemCode').val('').removeClass('is-invalid').prop('readonly', false);
+        $('#itemCode').val('').removeClass('is-invalid');
         $('#itemName, #itemSupplier, #itemDescription, #itemRemarks').val('');
         $('#itemUnit').val('');
         $('#itemPrice').val('0');
@@ -281,6 +281,10 @@ $(function () {
     $('#btnAdd').on('click', function () {
         $('#modalTitle').html('<i class="fa fa-plus me-2"></i>Add Item');
         resetForm();
+        $('#itemCode').val('Generating...').prop('readonly', true);
+        $.getJSON('{{ route('chevron.settings.items.next-code') }}', function (r) {
+            $('#itemCode').val(r.next_code);
+        });
     });
 
     $(document).on('click', '.btn-edit', function () {
@@ -348,8 +352,7 @@ $(function () {
         $('.invalid-feedback').remove();
 
         let valid = true;
-        if (!$('#itemCode').val().trim()) { $('#itemCode').addClass('is-invalid').after('<div class="invalid-feedback">Item code is required.</div>'); $('#itemTabs a[href="#tabItemEntry"]').tab('show'); valid = false; }
-        if (!$('#itemUnit').val())        { $('#itemUnit').addClass('is-invalid').after('<div class="invalid-feedback">Purchase unit is required.</div>'); valid = false; }
+        if (!$('#itemUnit').val()) { $('#itemUnit').addClass('is-invalid').after('<div class="invalid-feedback">Purchase unit is required.</div>'); valid = false; }
         if (!valid) return;
 
         const id  = $('#itemId').val();

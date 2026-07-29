@@ -105,6 +105,7 @@ Route::prefix('settings')->name('settings.')->group(function () {
     Route::delete('/ports/{port}', [PortController::class, 'destroy'])->name('ports.destroy');
 
     Route::get('/items', [ItemController::class, 'index'])->name('items.index');
+    Route::get('/items/next-code', [ItemController::class, 'nextCode'])->name('items.next-code');
     Route::get('/items/{item}', [ItemController::class, 'show'])->name('items.show');
     Route::post('/items/quick', [ItemController::class, 'quickStore'])->name('items.quick-store');
     Route::post('/items', [ItemController::class, 'store'])->name('items.store');
