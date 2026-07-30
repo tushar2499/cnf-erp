@@ -148,6 +148,7 @@
     $totalLcCost = (float)($lc->lc_rt_value ?? 0)
                  + (float)($lc->bank_charge ?? 0)
                  + (float)($lc->insurance_amt ?? 0)
+                 + (float)($lc->lc_amendment_charge ?? 0)
                  + (float)($lc->credit_report_charge ?? 0)
                  + (float)($lc->other_charges ?? 0);
 @endphp
@@ -328,26 +329,65 @@
             </div>
             <div class="collapse show" id="sec-payment">
                 <div class="info-body">
-                    {{-- Duty & Clearance --}}
-                    <div class="row g-2 mb-3">
-                        <div class="col-6 col-md-3"><div class="info-label">Duty Advance</div><div class="info-value">{{ fmtAmt($lc->duty_advance) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Duty Advance Date</div><div class="info-value">{{ fmtDate($lc->duty_advance_date) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Duty Advance Posting</div><div class="info-value">{{ $lc->duty_advance_posting ?? $dash }}</div></div>
-                        <div class="col-6 col-md-3"></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Bill of Entry No</div><div class="info-value">{{ $lc->bill_of_entry_no ?? $dash }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Bill of Entry Date</div><div class="info-value">{{ fmtDate($lc->bill_of_entry_date) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Customs Duty</div><div class="info-value">{{ fmtAmt($lc->customs_duty) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Customs Duty Posting</div><div class="info-value">{{ $lc->customs_duty_posting ?? $dash }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">CNF Party</div><div class="info-value">{{ $lc->cnf_party ?? $dash }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">CNF Total Cost</div><div class="info-value">{{ fmtAmt($lc->cnf_total_cost) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">CNF Cost Posting</div><div class="info-value">{{ $lc->cnf_cost_posting ?? $dash }}</div></div>
-                    </div>
                     {{-- LC Closing Bill --}}
                     <div class="row g-2 mb-3">
                         <div class="col-6 col-md-3"><div class="info-label">LC Closing Bill</div><div class="info-value">{{ fmtAmt($lc->lc_closing_bill) }}</div></div>
                         <div class="col-6 col-md-3"><div class="info-label">LC Closing Bill Date</div><div class="info-value">{{ fmtDate($lc->lc_closing_bill_date) }}</div></div>
                         <div class="col-6 col-md-3"><div class="info-label">Total Received</div><div class="info-value">{{ fmtAmt($lc->total_received_bdt) }}</div></div>
                     </div>
+
+                    {{-- Bill of Entries --}}
+                    @if($lc->billOfEntries->count())
+                    <div class="mb-3">
+                        <div class="info-label mb-2"><i class="fa fa-file-invoice me-1"></i>Bill of Entries</div>
+                        @foreach($lc->billOfEntries as $boeNum => $boe)
+                        <div style="border:1px solid #dee2e6;border-radius:.375rem;margin-bottom:.75rem;overflow:hidden">
+                            <div style="background:#0c5a4e;color:#fff;padding:.4rem .75rem;font-size:.78rem;font-weight:700">
+                                <i class="fa fa-file-alt me-2"></i>#{{ $boeNum + 1 }} Bill of Entry
+                            </div>
+                            <div style="padding:.75rem">
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6 col-md-3"><div class="info-label">BE No</div><div class="info-value">{{ $boe->be_no }}</div></div>
+                                    <div class="col-6 col-md-3"><div class="info-label">BE Date</div><div class="info-value">{{ fmtDate($boe->be_date) }}</div></div>
+                                    <div class="col-6 col-md-3"><div class="info-label">Customs Duty</div><div class="info-value">{{ fmtAmt($boe->customs_duty) }}</div></div>
+                                    <div class="col-6 col-md-3"><div class="info-label">Customs Duty Posting</div><div class="info-value">{{ $boe->customs_duty_posting ?? $dash }}</div></div>
+                                    <div class="col-6 col-md-4"><div class="info-label">CNF Party</div><div class="info-value">{{ $boe->cnf_party ?? $dash }}</div></div>
+                                    <div class="col-6 col-md-4"><div class="info-label">CNF Total Costing</div><div class="info-value">{{ fmtAmt($boe->cnf_total_costing) }}</div></div>
+                                    <div class="col-6 col-md-4"><div class="info-label">CNF Total Posting</div><div class="info-value">{{ $boe->cnf_total_posting ?? $dash }}</div></div>
+                                </div>
+                                @if($boe->dutyAdvances->count())
+                                <div style="font-size:.75rem;font-weight:600;color:#495057;margin-bottom:.35rem">
+                                    <i class="fa fa-coins me-1 text-muted"></i>Duty Advances
+                                </div>
+                                <div style="overflow-x:auto">
+                                    <table class="table table-sm table-bordered mb-0 w-100" style="font-size:.8rem">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center" style="width:32px;background:#e9ecef;padding:.3rem .5rem">#</th>
+                                                <th style="background:#e9ecef;padding:.3rem .5rem">Amount (BDT)</th>
+                                                <th style="background:#e9ecef;padding:.3rem .5rem">Date</th>
+                                                <th style="background:#e9ecef;padding:.3rem .5rem">Posting</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($boe->dutyAdvances as $daIdx => $da)
+                                            <tr>
+                                                <td class="text-center" style="padding:.3rem .5rem">{{ $daIdx + 1 }}</td>
+                                                <td style="padding:.3rem .5rem">{{ number_format((float)$da->amount, 2) }}</td>
+                                                <td style="padding:.3rem .5rem">{{ $da->date ? $da->date->format('d-M-Y') : $dash }}</td>
+                                                <td style="padding:.3rem .5rem">{{ $da->posting ?? $dash }}</td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    @endif
+
                     @if($lc->payments->count())
                     <div style="overflow-x:auto">
                         <table class="table table-bordered pay-table mb-0 w-100">
@@ -561,9 +601,10 @@
                         $totalExpenses      = $lc->expenses->sum('amount');
                         $totalOtherCharges  = $lc->otherChargeItems->sum('amount');
                         $lcCost             = $totalLcCost;
-                        $cnfCost            = (float)($lc->cnf_total_cost ?? 0);
+                        $cnfCost            = $lc->billOfEntries->sum('cnf_total_costing');
+                        $totalCustomsDuty   = $lc->billOfEntries->sum('customs_duty');
                         $advancePayment     = $lc->payments->where('payment_type', 'advance')->sum('amount');
-                        $dutyAdvance        = (float)($lc->duty_advance ?? 0);
+                        $dutyAdvance        = $lc->billOfEntries->flatMap->dutyAdvances->sum('amount');
                         $totalAdvance       = $advancePayment + $dutyAdvance;
                     @endphp
                     <div class="d-flex justify-content-between py-1 border-bottom">
@@ -584,7 +625,7 @@
                     </div>
                     <div class="d-flex justify-content-between py-1 border-bottom">
                         <span style="font-size:.82rem">Customs Duty</span>
-                        <span style="font-size:.82rem">BDT {{ number_format((float)($lc->customs_duty ?? 0), 2) }}</span>
+                        <span style="font-size:.82rem">BDT {{ number_format((float)$totalCustomsDuty, 2) }}</span>
                     </div>
                     @if($totalOtherCharges > 0)
                     <div class="d-flex justify-content-between py-1 border-bottom">
@@ -602,14 +643,14 @@
                     </div>
                     <div class="d-flex justify-content-between py-1 border-bottom">
                         <strong style="font-size:.85rem">Grand Total</strong>
-                        <strong style="font-size:.85rem; color:#1a6b60">BDT {{ number_format($lc->customs_duty + $lcCost + $totalOtherCharges + $cnfCost + $totalExpenses, 2) }}</strong>
+                        <strong style="font-size:.85rem; color:#1a6b60">BDT {{ number_format($totalCustomsDuty + $lcCost + $totalOtherCharges + $cnfCost + $totalExpenses, 2) }}</strong>
                     </div>
                     <div class="d-flex justify-content-between py-1 border-bottom">
                         <span style="font-size:.82rem">LC Advance Payment</span>
                         <span style="font-size:.82rem">BDT {{ number_format($advancePayment, 2) }}</span>
                     </div>
                     <div class="d-flex justify-content-between py-1 border-bottom">
-                        <span style="font-size:.82rem">Duty Advance</span>
+                        <span style="font-size:.82rem">Duty Advance (Total)</span>
                         <span style="font-size:.82rem">BDT {{ number_format($dutyAdvance, 2) }}</span>
                     </div>
                     <div class="d-flex justify-content-between py-1">

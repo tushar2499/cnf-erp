@@ -58,7 +58,7 @@ class LcController extends Controller
         DB::transaction(function () use ($request) {
             $lc = NasTradingLc::create(array_merge(
                 ['lc_no_system' => NasTradingLc::generateLcNo(), 'created_by' => auth()->user()?->id],
-                $request->except(['_token', 'items', 'payments', 'other_charge_items'])
+                $request->except(['_token', 'items', 'payments', 'other_charge_items', 'invoices', 'bill_of_entries'])
             ));
 
             foreach ($request->input('items', []) as $item) {
@@ -78,6 +78,36 @@ class LcController extends Controller
                     $lc->otherChargeItems()->create($charge);
                 }
             }
+
+            foreach ($request->input('invoices', []) as $invoice) {
+                if (! empty($invoice['invoice_no']) || ! empty($invoice['invoice_value'])) {
+                    $lc->invoiceValues()->create($invoice);
+                }
+            }
+
+            foreach ($request->input('bill_of_entries', []) as $boeData) {
+                if (! empty($boeData['be_no'])) {
+                    $boe = $lc->billOfEntries()->create([
+                        'be_no'                 => $boeData['be_no'],
+                        'be_date'               => $boeData['be_date'],
+                        'customs_duty'          => $boeData['customs_duty'] ?? null,
+                        'customs_duty_posting'  => $boeData['customs_duty_posting'] ?? null,
+                        'cnf_party'             => $boeData['cnf_party'] ?? null,
+                        'cnf_total_costing'     => $boeData['cnf_total_costing'] ?? null,
+                        'cnf_total_posting'     => $boeData['cnf_total_posting'] ?? null,
+                    ]);
+                    foreach ($boeData['duty_advances'] ?? [] as $daData) {
+                        if (! empty($daData['amount'])) {
+                            $boe->dutyAdvances()->create([
+                                'amount'  => $daData['amount'],
+                                'date'    => $daData['date'],
+                                'posting' => $daData['posting'] ?? null,
+                            ]);
+                        }
+                    }
+                }
+            }
+
         });
 
         return response()->json(['message' => 'LC created successfully.', 'redirect' => route('nas-trading.lcs.index')]);
@@ -85,7 +115,7 @@ class LcController extends Controller
 
     public function show(NasTradingLc $lc)
     {
-        $lc->load('items', 'payments', 'otherChargeItems', 'expenses.expenseHead');
+        $lc->load('items', 'payments', 'otherChargeItems', 'invoiceValues', 'expenses.expenseHead', 'billOfEntries.dutyAdvances');
         $banks = NasTradingBank::where('status', 'Active')->get();
         $importers = NasTradingImporter::where('status', 'Active')->get();
         $psiCompanies = NasTradingPsiCompany::where('status', 'Active')->get();
@@ -97,7 +127,7 @@ class LcController extends Controller
 
     public function edit(NasTradingLc $lc)
     {
-        $lc->load('items', 'payments', 'otherChargeItems');
+        $lc->load('items', 'payments', 'otherChargeItems', 'invoiceValues', 'billOfEntries.dutyAdvances');
         $banks = NasTradingBank::where('status', 'Active')->get();
         $importers = NasTradingImporter::where('status', 'Active')->get();
         $psiCompanies = NasTradingPsiCompany::where('status', 'Active')->get();
@@ -109,7 +139,7 @@ class LcController extends Controller
     public function update(StoreNasTradingLcRequest $request, NasTradingLc $lc)
     {
         DB::transaction(function () use ($request, $lc) {
-            $lc->update($request->except(['_token', '_method', 'items', 'payments', 'other_charge_items']));
+            $lc->update($request->except(['_token', '_method', 'items', 'payments', 'other_charge_items', 'invoices', 'bill_of_entries']));
 
             $lc->items()->delete();
             foreach ($request->input('items', []) as $item) {
@@ -131,6 +161,70 @@ class LcController extends Controller
                     $lc->otherChargeItems()->create($charge);
                 }
             }
+
+            $lc->invoiceValues()->delete();
+            foreach ($request->input('invoices', []) as $invoice) {
+                if (! empty($invoice['invoice_no']) || ! empty($invoice['invoice_value'])) {
+                    $lc->invoiceValues()->create($invoice);
+                }
+            }
+
+            $survivingBoeIds = [];
+            foreach ($request->input('bill_of_entries', []) as $boeData) {
+                if (empty($boeData['be_no'])) {
+                    continue;
+                }
+
+                $boeFields = [
+                    'be_no'                => $boeData['be_no'],
+                    'be_date'              => $boeData['be_date'],
+                    'customs_duty'         => $boeData['customs_duty'] ?? null,
+                    'customs_duty_posting' => $boeData['customs_duty_posting'] ?? null,
+                    'cnf_party'            => $boeData['cnf_party'] ?? null,
+                    'cnf_total_costing'    => $boeData['cnf_total_costing'] ?? null,
+                    'cnf_total_posting'    => $boeData['cnf_total_posting'] ?? null,
+                ];
+
+                if (! empty($boeData['id']) && $boe = $lc->billOfEntries()->find((int) $boeData['id'])) {
+                    $boe->update($boeFields);
+                } else {
+                    $boe = $lc->billOfEntries()->create($boeFields);
+                }
+
+                $survivingBoeIds[] = $boe->id;
+
+                // Sync duty advances for this BOE
+                $survivingDaIds = [];
+                foreach ($boeData['duty_advances'] ?? [] as $daData) {
+                    if (empty($daData['amount'])) {
+                        continue;
+                    }
+                    $daFields = [
+                        'amount'  => $daData['amount'],
+                        'date'    => $daData['date'],
+                        'posting' => $daData['posting'] ?? null,
+                    ];
+                    if (! empty($daData['id']) && $da = $boe->dutyAdvances()->find((int) $daData['id'])) {
+                        $da->update($daFields);
+                    } else {
+                        $da = $boe->dutyAdvances()->create($daFields);
+                    }
+                    $survivingDaIds[] = $da->id;
+                }
+                if (! empty($survivingDaIds)) {
+                    $boe->dutyAdvances()->whereNotIn('id', $survivingDaIds)->delete();
+                } else {
+                    $boe->dutyAdvances()->delete();
+                }
+            }
+
+            // Delete BOEs removed from the form (cascade deletes their duty advances)
+            if (! empty($survivingBoeIds)) {
+                $lc->billOfEntries()->whereNotIn('id', $survivingBoeIds)->delete();
+            } else {
+                $lc->billOfEntries()->delete();
+            }
+
         });
 
         return response()->json(['message' => 'LC updated successfully.', 'redirect' => route('nas-trading.lcs.show', $lc->id)]);
@@ -141,6 +235,11 @@ class LcController extends Controller
         $lc->items()->delete();
         $lc->expenses()->delete();
         $lc->otherChargeItems()->delete();
+        $lc->invoiceValues()->delete();
+        foreach ($lc->billOfEntries as $boe) {
+            $boe->dutyAdvances()->delete();
+        }
+        $lc->billOfEntries()->delete();
         $lc->delete();
 
         return response()->json(['message' => 'LC deleted.']);

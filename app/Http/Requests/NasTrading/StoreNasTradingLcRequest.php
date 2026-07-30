@@ -86,17 +86,21 @@ class StoreNasTradingLcRequest extends FormRequest
             'payments.*.date'         => ['nullable', 'date'],
             'payments.*.amount'       => ['nullable', 'numeric', 'min:0'],
 
-            // Duty & Clearance
-            'duty_advance'         => ['nullable', 'numeric', 'min:0'],
-            'duty_advance_date'    => ['nullable', 'date'],
-            'duty_advance_posting' => ['nullable', 'string', 'max:100'],
-            'bill_of_entry_no'     => ['nullable', 'string', 'max:100'],
-            'bill_of_entry_date'   => ['nullable', 'date'],
-            'customs_duty'         => ['nullable', 'numeric', 'min:0'],
-            'customs_duty_posting' => ['nullable', 'string', 'max:100'],
-            'cnf_party'            => ['nullable', 'string', 'max:255'],
-            'cnf_total_cost'       => ['nullable', 'numeric', 'min:0'],
-            'cnf_cost_posting'     => ['nullable', 'string', 'max:100'],
+            // Bill of Entries
+            'bill_of_entries'                                    => ['nullable', 'array'],
+            'bill_of_entries.*.id'                               => ['nullable', 'integer'],
+            'bill_of_entries.*.be_no'                            => ['required_with:bill_of_entries', 'string', 'max:100'],
+            'bill_of_entries.*.be_date'                          => ['required_with:bill_of_entries', 'date'],
+            'bill_of_entries.*.customs_duty'                     => ['nullable', 'numeric', 'min:0'],
+            'bill_of_entries.*.customs_duty_posting'             => ['nullable', 'string', 'max:100'],
+            'bill_of_entries.*.cnf_party'                        => ['nullable', 'string', 'max:255'],
+            'bill_of_entries.*.cnf_total_costing'                => ['nullable', 'numeric', 'min:0'],
+            'bill_of_entries.*.cnf_total_posting'                => ['nullable', 'string', 'max:100'],
+            'bill_of_entries.*.duty_advances'                    => ['nullable', 'array'],
+            'bill_of_entries.*.duty_advances.*.id'               => ['nullable', 'integer'],
+            'bill_of_entries.*.duty_advances.*.amount'           => ['nullable', 'numeric', 'min:0'],
+            'bill_of_entries.*.duty_advances.*.date'             => ['nullable', 'date'],
+            'bill_of_entries.*.duty_advances.*.posting'          => ['nullable', 'string', 'max:100'],
 
             // VAT / Tax / Sales
             'payable_receivable'  => ['nullable', 'numeric'],
@@ -119,6 +123,11 @@ class StoreNasTradingLcRequest extends FormRequest
             'other_charge_items'           => ['nullable', 'array'],
             'other_charge_items.*.name'    => ['required_with:other_charge_items', 'string', 'max:255'],
             'other_charge_items.*.amount'  => ['nullable', 'numeric', 'min:0'],
+
+            // Invoices
+            'invoices'                  => ['nullable', 'array'],
+            'invoices.*.invoice_no'     => ['nullable', 'string', 'max:100'],
+            'invoices.*.invoice_value'  => ['nullable', 'numeric', 'min:0'],
 
             // Product Items
             'items'                => ['nullable', 'array'],

@@ -11,22 +11,19 @@
         <p class="text-muted small">Sign in to your account</p>
     </div>
 
-    @if($errors->any())
-        <div class="alert alert-danger py-2">
-            {{ $errors->first() }}
-        </div>
-    @endif
-
     <form method="POST" action="{{ route('login') }}">
         @csrf
         <div class="mb-3">
-            <label class="form-label" for="email">Email Address</label>
+            <label class="form-label" for="login">Email or Username</label>
             <div class="input-group">
-                <span class="input-group-text"><i class="fa fa-envelope text-muted"></i></span>
-                <input id="email" type="email" name="email" value="{{ old('email') }}"
-                    class="form-control @error('email') is-invalid @enderror"
-                    placeholder="you@example.com" required autofocus>
+                <span class="input-group-text"><i class="fa fa-user text-muted"></i></span>
+                <input id="login" type="text" name="login" value="{{ old('login') }}"
+                    class="form-control @error('login') is-invalid @enderror"
+                    placeholder="email or username" required autofocus>
             </div>
+            @error('login')
+                <div class="invalid-feedback d-block">{{ $message }}</div>
+            @enderror
         </div>
         <div class="mb-3">
             <label class="form-label" for="password">Password</label>
@@ -39,6 +36,9 @@
                     <i class="fa fa-eye" id="togglePassIcon"></i>
                 </button>
             </div>
+            @error('password')
+                <div class="invalid-feedback d-block">{{ $message }}</div>
+            @enderror
         </div>
         <div class="mb-3 form-check">
             <input type="checkbox" class="form-check-input" name="remember" id="remember">

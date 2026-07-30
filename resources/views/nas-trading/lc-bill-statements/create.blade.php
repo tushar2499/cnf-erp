@@ -46,9 +46,13 @@
                     <label class="form-label">Customer Address</label>
                     <input type="text" id="customerAddressDisplay" class="form-control form-control-sm" placeholder="Customer address" readonly style="background:#f8f9fa;color:#6c757d;font-size:.78rem;">
                 </div>
-                <div class="col-md-12">
+                <div class="col-md-6">
                     <label class="form-label">Note</label>
                     <input type="text" name="note" class="form-control form-control-sm" placeholder="Bill statement note">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Enclosed</label>
+                    <input type="text" name="enclosed" class="form-control form-control-sm" placeholder="Bill statement enclosed">
                 </div>
             </div>
         </div>

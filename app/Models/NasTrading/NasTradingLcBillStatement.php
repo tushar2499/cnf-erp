@@ -11,7 +11,7 @@ class NasTradingLcBillStatement extends Model
 
     protected $fillable = [
         'branch_id', 'bill_no', 'customer_id', 'bill_date',
-        'status', 'note', 'created_by',
+        'status', 'note', 'enclosed', 'created_by',
     ];
 
     protected $casts = [
@@ -32,12 +32,12 @@ class NasTradingLcBillStatement extends Model
     {
         return DB::transaction(function () {
             $year = now()->format('Y');
-            $max  = self::lockForUpdate()
+            $max = self::lockForUpdate()
                 ->whereYear('created_at', $year)
                 ->selectRaw('MAX(CAST(SUBSTRING_INDEX(bill_no, "/", -2) AS UNSIGNED)) as max_no')
                 ->value('max_no') ?? 0;
 
-            return 'NAS/COM/' . str_pad($max + 1, 2, '0', STR_PAD_LEFT) . '/' . $year;
+            return 'NAS/COM/'.str_pad($max + 1, 2, '0', STR_PAD_LEFT).'/'.$year;
         });
     }
 }

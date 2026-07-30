@@ -203,12 +203,12 @@
                                 class="fa fa-boxes me-1"></i>Product Items</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-bank"><i
                                 class="fa fa-university me-1"></i>Bank &amp; Documents</a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-lcdetails"><i
+                                class="fa fa-dollar-sign me-1"></i>LC Details</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-payment"><i
                                 class="fa fa-money-check-alt me-1"></i>Payment Tracking</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-vat"><i
                                 class="fa fa-percent me-1"></i>VAT / Tax / Sales</a></li>
-                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-lcdetails"><i
-                                class="fa fa-dollar-sign me-1"></i>LC Details</a></li>
                 </ul>
             </div>
             <div class="tab-content px-3 pb-3 pt-2">
@@ -344,15 +344,6 @@
                 <div class="tab-pane fade" id="tab-lcdetails">
                     <div class="row g-2 mt-1">
                         <div class="col-6 col-md-3">
-                            <label class="form-label">PFI Value</label>
-                            <div class="input-group input-group-sm">
-                                <input type="number" name="pfi_value" id="pfiValue"
-                                    class="form-control form-control-sm" step="0.0001"
-                                    value="{{ fmtNum($lc->pfi_value) }}" placeholder="0.00">
-                                <span class="input-group-text fcy-label">USD</span>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-3">
                             <label class="form-label">Currency</label>
                             <select name="currency" id="currency" class="form-select form-select-sm">
                                 @foreach (['USD', 'EUR', 'GBP', 'CNY'] as $c)
@@ -360,6 +351,15 @@
                                         {{ $c }}</option>
                                 @endforeach
                             </select>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label">PFI Value</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" name="pfi_value" id="pfiValue"
+                                    class="form-control form-control-sm" step="0.0001"
+                                    value="{{ fmtNum($lc->pfi_value) }}" placeholder="0.00">
+                                <span class="input-group-text fcy-label">USD</span>
+                            </div>
                         </div>
                         <div class="col-6 col-md-3">
                             <label class="form-label">LC OP Rate</label>
@@ -570,74 +570,38 @@
                                 </div>
                             </div>
                         </div>
+
+                        {{-- Invoices --}}
+                        <div class="col-12 mt-2">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label mb-0">Invoices</label>
+                                <button type="button" class="btn btn-secondary btn-sm py-0 px-2"
+                                    id="btnAddInvoice" style="font-size:.75rem">
+                                    <i class="fa fa-plus me-1"></i>Add Invoice
+                                </button>
+                            </div>
+                            <div style="overflow-x:auto">
+                                <table class="table table-sm table-bordered items-table mb-1 w-100" id="invoicesTable">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center" style="width:32px">#</th>
+                                            <th>Invoice No</th>
+                                            <th style="width:200px">Invoice Value</th>
+                                            <th style="width:32px"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="invoicesBody"></tbody>
+                                </table>
+                            </div>
+                            <div id="invoicesEmpty" class="text-center py-1"
+                                style="display:none;font-size:.78rem;color:#adb5bd">No invoices added yet.</div>
+                        </div>
+
                     </div>
                 </div>
 
                 {{-- Tab: Payment Tracking --}}
                 <div class="tab-pane fade" id="tab-payment">
-                    {{-- duty & clearance --}}
-                    <div class="row g-2 mt-1">
-                        <div class="col-md-3">
-                            <label class="form-label">Duty Advance</label>
-                            <div class="input-group input-group-sm">
-                                <input type="number" name="duty_advance" class="form-control form-control-sm"
-                                    step="0.01" value="{{ fmtNum($lc->duty_advance) }}" placeholder="0.00">
-                                <span class="input-group-text">BDT</span>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Duty Advance Date</label>
-                            <input type="date" name="duty_advance_date" class="form-control form-control-sm"
-                                value="{{ $lc->duty_advance_date?->format('Y-m-d') }}">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Duty Advance Posting</label>
-                            <input type="text" name="duty_advance_posting" class="form-control form-control-sm"
-                                value="{{ $lc->duty_advance_posting }}" placeholder="e.g. DA-001">
-                        </div>
-                        <div class="col-md-3"></div>
-                        <div class="col-md-3">
-                            <label class="form-label">Bill of Entry No</label>
-                            <input type="text" name="bill_of_entry_no" class="form-control form-control-sm"
-                                value="{{ $lc->bill_of_entry_no }}" placeholder="e.g. BE-2025-001">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Bill of Entry Date</label>
-                            <input type="date" name="bill_of_entry_date" class="form-control form-control-sm"
-                                value="{{ $lc->bill_of_entry_date?->format('Y-m-d') }}">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Customs Duty</label>
-                            <div class="input-group input-group-sm">
-                                <input type="number" name="customs_duty" class="form-control form-control-sm"
-                                    step="0.01" value="{{ fmtNum($lc->customs_duty) }}" placeholder="0.00">
-                                <span class="input-group-text">BDT</span>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Customs Duty Posting</label>
-                            <input type="text" name="customs_duty_posting" class="form-control form-control-sm"
-                                value="{{ $lc->customs_duty_posting }}" placeholder="e.g. CD-001">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">CNF Party</label>
-                            <input type="text" name="cnf_party" class="form-control form-control-sm"
-                                value="{{ $lc->cnf_party }}" placeholder="e.g. Party Name">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">CNF Total Cost</label>
-                            <div class="input-group input-group-sm">
-                                <input type="number" name="cnf_total_cost" class="form-control form-control-sm"
-                                    step="0.01" value="{{ fmtNum($lc->cnf_total_cost) }}" placeholder="0.00">
-                                <span class="input-group-text">BDT</span>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">CNF Cost Posting</label>
-                            <input type="text" name="cnf_cost_posting" class="form-control form-control-sm"
-                                value="{{ $lc->cnf_cost_posting }}" placeholder="e.g. CC-001">
-                        </div>
-                    </div>
 
                     {{-- LC Closing Bill (flat summary fields) --}}
                     <div class="row g-2 mt-1 mb-2">
@@ -653,6 +617,25 @@
                             <label class="form-label">LC Closing Bill Date</label>
                             <input type="date" name="lc_closing_bill_date" class="form-control form-control-sm"
                                 value="{{ $lc->lc_closing_bill_date?->format('Y-m-d') }}">
+                        </div>
+                    </div>
+
+                    {{-- Bill of Entries (dynamic, multiple) --}}
+                    <div class="mt-2 mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span style="font-size:.82rem;font-weight:700;color:#1a6b60">
+                                <i class="fa fa-file-invoice me-1"></i>Bill of Entries
+                            </span>
+                            <button type="button" id="btnAddBoe" class="btn btn-sm py-0 px-2"
+                                style="font-size:.77rem;background:#1a6b60;color:#fff;border:1px solid #1a6b60">
+                                <i class="fa fa-plus me-1"></i>Add Bill of Entry
+                            </button>
+                        </div>
+                        <div id="boeContainer"></div>
+                        <div id="boeEmpty" class="text-center py-3"
+                            style="font-size:.78rem;color:#adb5bd;border:2px dashed #dee2e6;border-radius:.375rem;background:#fafafa">
+                            <i class="fa fa-file-invoice fa-lg mb-1 d-block" style="opacity:.4"></i>
+                            No bill of entry added yet. Click <strong>Add Bill of Entry</strong> to begin.
                         </div>
                     </div>
 
@@ -884,7 +867,11 @@
         var itemRowIdx = 0;
         var paymentRowIdx = 0;
         var otherChargeRowIdx = 0;
+        var invoiceRowIdx = 0;
+        var boeIdx = 0;
+        var dutyAdvanceCounters = {};
         var existingItems = @json($lc->items);
+        var existingBillOfEntries = @json($lc->billOfEntries);
 
         function fmtQty(v) {
             return (v !== null && v !== '' && v !== undefined) ? parseFloat(v).toString() : '';
@@ -895,6 +882,203 @@
         }
         var existingPayments = @json($lc->payments);
         var existingOtherCharges = @json($lc->otherChargeItems);
+
+        // ── Bill of Entry ────────────────────────────────────────────────────────
+        function validateBoeCards() {
+            $('.boe-req, .da-req').removeClass('is-invalid');
+            var valid = true;
+
+            $('#boeContainer .boe-card').each(function() {
+                $(this).find('.boe-req').each(function() {
+                    if (!$(this).val().toString().trim()) {
+                        $(this).addClass('is-invalid');
+                        valid = false;
+                    }
+                });
+                $(this).find('.da-req').each(function() {
+                    if (!$(this).val().toString().trim()) {
+                        $(this).addClass('is-invalid');
+                        valid = false;
+                    }
+                });
+            });
+
+            if (!valid) {
+                $('[data-bs-toggle="tab"][href="#tab-payment"]').tab('show');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Bill of Entry Incomplete',
+                    text: 'Please fill in all required fields (marked *) in each Bill of Entry and Duty Advance row.',
+                });
+            }
+
+            return valid;
+        }
+
+        function syncBoeEmpty() {
+            var empty = $('#boeContainer .boe-card').length === 0;
+            $('#boeEmpty').toggle(empty);
+            reNumberBoeCards();
+        }
+
+        function reNumberBoeCards() {
+            $('#boeContainer .boe-card').each(function(i) {
+                $(this).find('.boe-title').html(`<i class="fa fa-file-alt me-2"></i> #${i + 1} Bill of Entry`);
+            });
+        }
+
+        function syncDaEmpty(boeIndex) {
+            var empty = $('#daBody_' + boeIndex + ' tr').length === 0;
+            $('#daEmpty_' + boeIndex).toggle(empty);
+        }
+
+        function addBoeCard(data) {
+            data = data || {};
+            var idx = boeIdx++;
+            dutyAdvanceCounters[idx] = 0;
+            var cardNum = $('#boeContainer .boe-card').length + 1;
+
+            var html = `
+    <div class="boe-card lc-card mb-2" data-boe-idx="${idx}">
+        <div class="lc-section-header" style="background:#0c5a4e;justify-content:space-between">
+            <span class="boe-title"><i class="fa fa-file-alt me-2"></i>Bill of Entry #${cardNum}</span>
+            <button type="button" class="btn btn-sm btn-remove-boe py-0 px-2"
+                    style="font-size:.74rem;background:#dc3545;color:#fff;border:1px solid #b02a37">
+                <i class="fa fa-times me-1"></i>Remove
+            </button>
+        </div>
+        <div class="lc-section-body">
+            <input type="hidden" name="bill_of_entries[${idx}][id]" value="${data.id || ''}">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label">Bill of Entry No <span class="text-danger">*</span></label>
+                    <input type="text" name="bill_of_entries[${idx}][be_no]"
+                           class="form-control form-control-sm boe-req" placeholder="e.g. BE-2025-001"
+                           value="${data.be_no || ''}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Bill of Entry Date <span class="text-danger">*</span></label>
+                    <input type="date" name="bill_of_entries[${idx}][be_date]"
+                           class="form-control form-control-sm boe-req" value="${data.be_date ? data.be_date.substring(0,10) : ''}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Customs Duty</label>
+                    <div class="input-group input-group-sm">
+                        <input type="number" name="bill_of_entries[${idx}][customs_duty]"
+                               class="form-control form-control-sm" step="0.01" placeholder="0.00"
+                               value="${data.customs_duty || ''}">
+                        <span class="input-group-text">BDT</span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Customs Duty Posting</label>
+                    <input type="text" name="bill_of_entries[${idx}][customs_duty_posting]"
+                           class="form-control form-control-sm" placeholder="e.g. CD-001"
+                           value="${data.customs_duty_posting || ''}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">CNF Party</label>
+                    <input type="text" name="bill_of_entries[${idx}][cnf_party]"
+                           class="form-control form-control-sm" placeholder="e.g. Party Name"
+                           value="${data.cnf_party || ''}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">CNF Total Costing</label>
+                    <div class="input-group input-group-sm">
+                        <input type="number" name="bill_of_entries[${idx}][cnf_total_costing]"
+                               class="form-control form-control-sm" step="0.01" placeholder="0.00"
+                               value="${data.cnf_total_costing || ''}">
+                        <span class="input-group-text">BDT</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">CNF Total Posting</label>
+                    <input type="text" name="bill_of_entries[${idx}][cnf_total_posting]"
+                           class="form-control form-control-sm" placeholder="e.g. CC-001"
+                           value="${data.cnf_total_posting || ''}">
+                </div>
+            </div>
+
+            <div class="mt-2 pt-2" style="border-top:1px solid #e9ecef">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span style="font-size:.78rem;font-weight:600;color:#495057">
+                        <i class="fa fa-coins me-1 text-muted"></i>Duty Advances
+                    </span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 btn-add-da"
+                            data-boe-idx="${idx}" style="font-size:.74rem">
+                        <i class="fa fa-plus me-1"></i>Add Duty Advance
+                    </button>
+                </div>
+                <div style="overflow-x:auto">
+                    <table class="table table-sm table-bordered items-table mb-0 w-100" id="daTable_${idx}">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width:32px">#</th>
+                                <th style="width:190px">Duty Advance</th>
+                                <th style="width:150px">Date</th>
+                                <th>Posting</th>
+                                <th style="width:32px"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="daBody_${idx}"></tbody>
+                    </table>
+                </div>
+                <div class="text-center py-1" id="daEmpty_${idx}"
+                     style="font-size:.76rem;color:#adb5bd">No duty advances added.</div>
+            </div>
+        </div>
+    </div>`;
+
+            $('#boeContainer').append(html);
+            syncBoeEmpty();
+            syncDaEmpty(idx);
+
+            // Load existing duty advances if provided
+            if (data.duty_advances && data.duty_advances.length) {
+                data.duty_advances.forEach(function(da) {
+                    addDutyAdvanceRow(idx, da);
+                });
+            }
+        }
+
+        function addDutyAdvanceRow(boeIndex, data) {
+            data = data || {};
+            var idx = dutyAdvanceCounters[boeIndex]++;
+            var rowNum = $('#daBody_' + boeIndex + ' tr').length + 1;
+
+            var html = `
+    <tr>
+        <td class="text-center da-row-num" style="font-size:.75rem;vertical-align:middle">${rowNum}</td>
+        <td>
+            <input type="hidden" name="bill_of_entries[${boeIndex}][duty_advances][${idx}][id]" value="${data.id || ''}">
+            <div class="input-group input-group-sm">
+                <input type="number" class="form-control form-control-sm"
+                       name="bill_of_entries[${boeIndex}][duty_advances][${idx}][amount]"
+                       value="${data.amount || ''}" step="0.01" min="0" placeholder="0.00">
+                <span class="input-group-text">BDT</span>
+            </div>
+        </td>
+        <td>
+            <input type="date" class="form-control form-control-sm"
+                   name="bill_of_entries[${boeIndex}][duty_advances][${idx}][date]"
+                   value="${data.date ? data.date.substring(0,10) : ''}">
+        </td>
+        <td>
+            <input type="text" class="form-control form-control-sm"
+                   name="bill_of_entries[${boeIndex}][duty_advances][${idx}][posting]"
+                   value="${data.posting || ''}" placeholder="e.g. DA-001">
+        </td>
+        <td class="text-center" style="vertical-align:middle">
+            <button type="button" class="btn btn-sm btn-outline-danger btn-remove-da p-0"
+                    data-boe-idx="${boeIndex}" style="width:24px;height:24px" title="Remove">
+                <i class="fa fa-times" style="font-size:.65rem"></i>
+            </button>
+        </td>
+    </tr>`;
+
+            $('#daBody_' + boeIndex).append(html);
+            syncDaEmpty(boeIndex);
+        }
 
         // ── Other Charges ────────────────────────────────────────────────────────
         function addOtherChargeRow(data) {
@@ -932,6 +1116,36 @@
 
         function syncOtherChargesEmpty() {
             $('#otherChargesEmpty').toggle($('#otherChargesBody tr').length === 0);
+        }
+
+        // ── Invoices ─────────────────────────────────────────────────────────────
+        function addInvoiceRow(data) {
+            data = data || {};
+            var idx = invoiceRowIdx++;
+            var rowNum = $('#invoicesBody tr').length + 1;
+            var fcy = $('#currency').val() || 'USD';
+            var html = `
+            <tr>
+                <td class="text-center invoice-row-num" style="font-size:.75rem;vertical-align:middle">${rowNum}</td>
+                <td><input type="text" class="form-control form-control-sm" name="invoices[${idx}][invoice_no]" value="${data.invoice_no || ''}" placeholder="e.g. INV-001"></td>
+                <td>
+                    <div class="input-group input-group-sm">
+                        <input type="number" class="form-control form-control-sm" name="invoices[${idx}][invoice_value]" value="${data.invoice_value || ''}" step="0.0001" min="0" placeholder="0.00">
+                        <span class="input-group-text invoice-fcy-label">${fcy}</span>
+                    </div>
+                </td>
+                <td class="text-center" style="vertical-align:middle">
+                    <button type="button" class="btn btn-sm btn-danger btn-remove-invoice-row p-0" style="width:24px;height:24px" title="Remove">
+                        <i class="fa fa-times" style="font-size:.65rem"></i>
+                    </button>
+                </td>
+            </tr>`;
+            $('#invoicesBody').append(html);
+            syncInvoicesEmpty();
+        }
+
+        function syncInvoicesEmpty() {
+            $('#invoicesEmpty').toggle($('#invoicesBody tr').length === 0);
         }
 
         // ── Payment Receipts ─────────────────────────────────────────────────────
@@ -1120,7 +1334,7 @@
             })();
 
             $('#currency').on('change', function() {
-                $('.fcy-label').text($(this).val());
+                $('.fcy-label, .invoice-fcy-label').text($(this).val());
             }).trigger('change');
 
             // Item qty × price = amount
@@ -1141,6 +1355,15 @@
                 syncOtherChargesEmpty();
             });
 
+            // Invoice rows
+            syncInvoicesEmpty();
+            $('#btnAddInvoice').on('click', () => addInvoiceRow());
+            $(document).on('click', '.btn-remove-invoice-row', function() {
+                $(this).closest('tr').remove();
+                $('#invoicesBody tr').each((i, tr) => $(tr).find('.invoice-row-num').text(i + 1));
+                syncInvoicesEmpty();
+            });
+
             // Payment rows
             $('#btnAddPayment').on('click', () => addPaymentRow());
             $(document).on('input', '.payment-amount', syncPaymentTotal);
@@ -1158,6 +1381,28 @@
                 syncItemsEmpty();
             });
 
+            // BOE events
+            syncBoeEmpty();
+            $('#btnAddBoe').on('click', () => addBoeCard());
+            $(document).on('click', '.btn-remove-boe', function() {
+                $(this).closest('.boe-card').remove();
+                syncBoeEmpty();
+            });
+            $(document).on('click', '.btn-add-da', function() {
+                addDutyAdvanceRow($(this).data('boe-idx'));
+            });
+            $(document).on('click', '.btn-remove-da', function() {
+                var boeIdx = $(this).data('boe-idx');
+                $(this).closest('tr').remove();
+                $('#daBody_' + boeIdx + ' tr').each((i, tr) => $(tr).find('.da-row-num').text(i + 1));
+                syncDaEmpty(boeIdx);
+            });
+            $(document).on('input change', '.boe-req, .da-req', function() {
+                if ($(this).val().toString().trim()) {
+                    $(this).removeClass('is-invalid');
+                }
+            });
+
             // Load existing data
             existingOtherCharges.forEach(c => addOtherChargeRow(c));
             syncOtherChargesTotal();
@@ -1165,8 +1410,14 @@
             existingPayments.forEach(p => addPaymentRow(p));
             syncPaymentTotal();
 
+            existingBillOfEntries.forEach(boe => addBoeCard(boe));
+
             existingItems.forEach(item => addItemRow(item));
             if (!existingItems.length) addItemRow();
+
+            // Invoices
+            @json($lc->invoiceValues).forEach(inv => addInvoiceRow(inv));
+            syncInvoicesEmpty();
 
             // Form submit
             $('#lcForm').on('submit', function(e) {
@@ -1185,6 +1436,9 @@
                         icon: 'warning',
                         title: 'PFI No is required.'
                     });
+                    return;
+                }
+                if (!validateBoeCards()) {
                     return;
                 }
 

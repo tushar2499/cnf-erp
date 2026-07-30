@@ -83,6 +83,12 @@
                 <td colspan="3" style="padding:.25rem .5rem;color:#000;">{{ $lcBillStatement->note }}</td>
             </tr>
             @endif
+            @if ($lcBillStatement->enclosed)
+            <tr>
+                <td style="padding:.25rem .5rem;color:#555;font-size:.62rem;text-transform:uppercase;">Enclosed</td>
+                <td colspan="3" style="padding:.25rem .5rem;color:#000;">{{ $lcBillStatement->enclosed }}</td>
+            </tr>
+            @endif
         </tbody>
     </table>
 
@@ -163,6 +169,12 @@
                 <div class="col-md-6">
                     <div class="info-label">Note</div>
                     <div class="info-value">{{ $lcBillStatement->note }}</div>
+                </div>
+                @endif
+                @if ($lcBillStatement->enclosed)
+                <div class="col-md-6">
+                    <div class="info-label">Enclosed</div>
+                    <div class="info-value">{{ $lcBillStatement->enclosed }}</div>
                 </div>
                 @endif
             </div>

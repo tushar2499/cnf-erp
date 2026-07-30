@@ -4,7 +4,8 @@
 <style>
 .usr-panel { background:#fff; border:1px solid #dee2e6; border-radius:.5rem; overflow:hidden; }
 .usr-panel-header { background:#0c2340; color:#fff; padding:.6rem 1rem; font-weight:600; font-size:.85rem; }
-.usr-list-table th { background:#1a6b60; color:#fff; font-size:.78rem; padding:.45rem .6rem; }
+.usr-list-table thead { --bs-table-bg:#1a6b60; --bs-table-color:#fff; }
+.usr-list-table th { font-size:.78rem; padding:.45rem .6rem; }
 .usr-list-table td { font-size:.8rem; padding:.4rem .6rem; vertical-align:middle; }
 .form-label { font-size:.82rem; font-weight:600; color:#374151; margin-bottom:.25rem; }
 </style>
@@ -37,8 +38,14 @@
                     </div>
 
                     <div class="mb-2">
-                        <label class="form-label">Email <span class="text-danger">*</span></label>
-                        <input type="email" id="uEmail" class="form-control form-control-sm" placeholder="email@example.com">
+                        <label class="form-label">Username <span class="text-danger">*</span></label>
+                        <input type="text" id="uUsername" class="form-control form-control-sm" placeholder="e.g. john_doe">
+                        <div class="invalid-feedback" id="uUsernameErr"></div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label">Email</label>
+                        <input type="email" id="uEmail" class="form-control form-control-sm" placeholder="email@example.com (optional)">
                         <div class="invalid-feedback" id="uEmailErr"></div>
                     </div>
 
@@ -108,6 +115,7 @@
                         <tr>
                             <th>#</th>
                             <th>Name</th>
+                            <th>Username</th>
                             <th>Email</th>
                             <th>Employee</th>
                             <th>Role</th>
@@ -144,7 +152,8 @@ $(function () {
         columns: [
             { data: 'DT_RowIndex',  name: 'DT_RowIndex', orderable: false, searchable: false, width: '40px' },
             { data: 'name',         name: 'name' },
-            { data: 'email',        name: 'email' },
+            { data: 'username',     name: 'username' },
+            { data: 'email',        name: 'email', defaultContent: '—' },
             { data: 'employee_name',name: 'employee_name', orderable: false, searchable: false },
             { data: 'role_badge',   name: 'role', orderable: false, searchable: false },
             { data: 'status_badge', name: 'status', orderable: false, searchable: false },
@@ -157,8 +166,9 @@ $(function () {
 
     function resetForm() {
         $('#userId').val('');
-        $('#uName').val('').removeClass('is-invalid'); $('#uNameErr').text('');
-        $('#uEmail').val('').removeClass('is-invalid'); $('#uEmailErr').text('');
+        $('#uName').val('').removeClass('is-invalid');     $('#uNameErr').text('');
+        $('#uUsername').val('').removeClass('is-invalid'); $('#uUsernameErr').text('');
+        $('#uEmail').val('').removeClass('is-invalid');    $('#uEmailErr').text('');
         $('#uPassword').val('').removeClass('is-invalid'); $('#uPasswordErr').text('');
         $('#uEmployeeId').val('').trigger('change');
         $('#uRole').val('user');
@@ -179,7 +189,8 @@ $(function () {
             resetForm();
             $('#userId').val(r.id);
             $('#uName').val(r.name);
-            $('#uEmail').val(r.email);
+            $('#uUsername').val(r.username);
+            $('#uEmail').val(r.email || '');
             $('#uEmployeeId').val(r.employee_id || '').trigger('change');
             $('#uRole').val(r.role);
             $('#uIsActive').val(r.is_active ? '1' : '0');
@@ -208,8 +219,8 @@ $(function () {
     $('#userForm').on('submit', function (e) {
         e.preventDefault();
 
-        $('#uName,#uEmail,#uPassword').removeClass('is-invalid');
-        $('#uNameErr,#uEmailErr,#uPasswordErr').text('');
+        $('#uName,#uUsername,#uEmail,#uPassword').removeClass('is-invalid');
+        $('#uNameErr,#uUsernameErr,#uEmailErr,#uPasswordErr').text('');
 
         const id  = $('#userId').val();
         const url = id ? baseUrl + '/' + id : baseUrl;
@@ -219,6 +230,7 @@ $(function () {
         const data = {
             _token:         $('meta[name="csrf-token"]').attr('content'),
             name:           $('#uName').val(),
+            username:       $('#uUsername').val(),
             email:          $('#uEmail').val(),
             password:       $('#uPassword').val(),
             employee_id:    $('#uEmployeeId').val(),
@@ -238,6 +250,7 @@ $(function () {
             if (xhr.status === 422) {
                 const errors = xhr.responseJSON.errors || {};
                 if (errors.name)     { $('#uName').addClass('is-invalid');     $('#uNameErr').text(errors.name[0]); }
+                if (errors.username) { $('#uUsername').addClass('is-invalid'); $('#uUsernameErr').text(errors.username[0]); }
                 if (errors.email)    { $('#uEmail').addClass('is-invalid');    $('#uEmailErr').text(errors.email[0]); }
                 if (errors.password) { $('#uPassword').addClass('is-invalid'); $('#uPasswordErr').text(errors.password[0]); }
             } else {

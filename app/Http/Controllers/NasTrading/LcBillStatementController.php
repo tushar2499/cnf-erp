@@ -57,6 +57,7 @@ class LcBillStatementController extends Controller
                 'bill_date'   => $request->bill_date,
                 'status'      => 'Draft',
                 'note'        => $request->note,
+                'enclosed'    => $request->enclosed,
                 'created_by'  => auth()->id(),
             ]);
 
@@ -103,6 +104,7 @@ class LcBillStatementController extends Controller
                 'customer_id' => $request->customer_id,
                 'bill_date'   => $request->bill_date,
                 'note'        => $request->note,
+                'enclosed'    => $request->enclosed,
             ]);
 
             $lcBillStatement->items()->delete();
