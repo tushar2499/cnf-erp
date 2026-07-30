@@ -20,7 +20,7 @@ class CnfJobController extends Controller
         return [
             'services'   => ChevronService::where('is_active', true)->orderBy('name')->get(),
             'jobTypes'   => ChevronJobType::where('is_active', true)->orderBy('name')->get(),
-            'ports'      => ChevronPort::where('is_active', true)->orderBy('name')->get(),
+            'ports'      => ChevronPort::where('branch_id', session('active_branch_id'))->where('is_active', true)->orderBy('name')->get(),
             'currencies' => ChevronJob::currencies(),
             'countries'  => ChevronJob::countries(),
             'units'      => ChevronItem::units(),
@@ -29,9 +29,16 @@ class CnfJobController extends Controller
 
     public function index(Request $request)
     {
+
         if ($request->ajax()) {
+            $fromDate = $request->input('from_date');
+            $toDate = $request->input('to_date');
+
             $query = ChevronJob::with(['service', 'jobType', 'port'])
-                ->where('branch_id', session('active_branch_id'));
+                ->where('branch_id', session('active_branch_id'))
+                ->when($fromDate, fn ($q) => $q->whereDate('job_date', '>=', $fromDate))
+                ->when($toDate, fn ($q) => $q->whereDate('job_date', '<=', $toDate))
+                ->latest();
 
             return DataTables::of($query)
                 ->addIndexColumn()
@@ -80,22 +87,27 @@ class CnfJobController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'service_id'       => ['required'],
             'job_type_id'      => ['required'],
             'port_id'          => ['required'],
             'party_name'       => ['required', 'string', 'max:255'],
             'goods_name'       => ['required', 'string', 'max:255'],
             'job_date'         => ['required', 'date'],
+            'hbi_hawb_no'      => ['required', 'string', 'max:255', 'unique:chevron_jobs,hbi_hawb_no'],
             'received_amount'  => ['nullable', 'numeric', 'min:0'],
             'assessable_value' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $data = $this->prepareData($request);
-        $data['job_no'] = DB::transaction(fn () => ChevronJob::generateJobNo());
+        $jobTypeId = (int) $request->job_type_id;
+        $portId = (int) $request->port_id;
 
-        $job = ChevronJob::create($data);
+        $job = DB::transaction(function () use ($data, $jobTypeId, $portId) {
+            $data['job_no'] = ChevronJob::generateJobNo($jobTypeId, $portId);
 
-        return redirect()->route('chevron.cnf.jobs.edit', $job->id)
+            return ChevronJob::create($data);
+        });
+
+        return redirect()->route('chevron.cnf.jobs.index')
             ->with('success', 'Job '.$job->job_no.' created successfully.');
     }
 
@@ -107,19 +119,20 @@ class CnfJobController extends Controller
     public function update(Request $request, ChevronJob $job)
     {
         $request->validate([
-            'service_id'       => ['required'],
             'job_type_id'      => ['required'],
             'port_id'          => ['required'],
             'party_name'       => ['required', 'string', 'max:255'],
             'goods_name'       => ['required', 'string', 'max:255'],
             'job_date'         => ['required', 'date'],
+            'hbi_hawb_no'      => ['required', 'string', 'max:255', 'unique:chevron_jobs,hbi_hawb_no,'.$job->id],
             'received_amount'  => ['nullable', 'numeric', 'min:0'],
             'assessable_value' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $job->update($this->prepareData($request));
 
-        return back()->with('success', 'Job '.$job->job_no.' updated successfully.');
+        return redirect()->route('chevron.cnf.jobs.index')
+            ->with('success', 'Job '.$job->job_no.' updated successfully.');
     }
 
     public function destroy(ChevronJob $job)
@@ -172,17 +185,36 @@ class CnfJobController extends Controller
 
         // Null-ify empty strings for date / numeric fields
         $nullable = [
-            'job_date', 'copy_doc_received_date', 'original_doc_received_date',
-            'eta_date', 'hbi_hawb_date', 'be_date', 'lc_date', 'lca_date',
-            'bl_date', 'mbl_mawb_date', 'invoice_date', 'lading_date',
-            'flight_date', 'arrived_date', 'common_lading_date', 'w_rent_due_date',
-            'berthing_date', 'port_bill_date', 'labour_bill_date', 'etb_date',
-            'delivery_date', 'etd_date',
+            'job_date',
+            'copy_doc_received_date',
+            'original_doc_received_date',
+            'eta_date',
+            'hbi_hawb_date',
+            'be_date',
+            'lc_date',
+            'lca_date',
+            'bl_date',
+            'mbl_mawb_date',
+            'invoice_date',
+            'lading_date',
+            'flight_date',
+            'arrived_date',
+            'common_lading_date',
+            'w_rent_due_date',
+            'berthing_date',
+            'port_bill_date',
+            'labour_bill_date',
+            'etb_date',
+            'delivery_date',
+            'etd_date',
         ];
+
         foreach ($nullable as $field) {
+
             if (isset($data[$field]) && $data[$field] === '') {
                 $data[$field] = null;
             }
+
         }
 
         // Calculate assessable_value_bdt
@@ -192,27 +224,67 @@ class CnfJobController extends Controller
 
         // Null-ify numeric zeros stored as empty strings
         $numerics = [
-            'pack_quantity', 'gross_weight', 'net_weight',
-            'received_amount', 'due_amount', 'assessable_value', 'currency_rate',
-            'port_bill_amount', 'labour_bill_amount', 'shipping_charge',
-            'pickup_charge_1', 'pickup_charge_2', 'cnf_charge_1', 'cnf_charge_2',
-            'stuffing_charge_1', 'stuffing_charge_2', 'carrier_bill_1', 'carrier_bill_2',
-            'mbl_free_1', 'mbl_free_2', 'hbl_charge_1', 'hbl_charge_2',
-            'ps_to_agent_1', 'ps_to_agent_2', 'ps_to_b_co_1', 'ps_to_b_co_2',
-            'noc_charge_1', 'noc_charge_2', 'other_charge_1', 'other_charge_2',
-            'invoice_value_1', 'invoice_value_2',
-            'duty_rate', 'duty_amount', 'ait_rate', 'ait_amount',
-            'sup_tax_rate', 'sup_tax_amount', 'vat_rate', 'vat_amount',
-            'rd_rate', 'rd_amount', 'atv_rate', 'atv_amount',
-            'df_vat_rate', 'df_vat_amount',
-            'total_payable_1', 'total_payable_2',
-            'comm_discount_pct', 'comm_discount_1', 'comm_discount_2',
-            'net_payable_1', 'net_payable_2',
+            'pack_quantity',
+            'gross_weight',
+            'net_weight',
+            'received_amount',
+            'due_amount',
+            'assessable_value',
+            'currency_rate',
+            'port_bill_amount',
+            'labour_bill_amount',
+            'shipping_charge',
+            'pickup_charge_1',
+            'pickup_charge_2',
+            'cnf_charge_1',
+            'cnf_charge_2',
+            'stuffing_charge_1',
+            'stuffing_charge_2',
+            'carrier_bill_1',
+            'carrier_bill_2',
+            'mbl_free_1',
+            'mbl_free_2',
+            'hbl_charge_1',
+            'hbl_charge_2',
+            'ps_to_agent_1',
+            'ps_to_agent_2',
+            'ps_to_b_co_1',
+            'ps_to_b_co_2',
+            'noc_charge_1',
+            'noc_charge_2',
+            'other_charge_1',
+            'other_charge_2',
+            'invoice_value_1',
+            'invoice_value_2',
+            'duty_rate',
+            'duty_amount',
+            'ait_rate',
+            'ait_amount',
+            'sup_tax_rate',
+            'sup_tax_amount',
+            'vat_rate',
+            'vat_amount',
+            'rd_rate',
+            'rd_amount',
+            'atv_rate',
+            'atv_amount',
+            'df_vat_rate',
+            'df_vat_amount',
+            'total_payable_1',
+            'total_payable_2',
+            'comm_discount_pct',
+            'comm_discount_1',
+            'comm_discount_2',
+            'net_payable_1',
+            'net_payable_2',
         ];
+
         foreach ($numerics as $field) {
+
             if (isset($data[$field]) && $data[$field] === '') {
                 $data[$field] = null;
             }
+
         }
 
         $data['branch_id'] = session('active_branch_id');

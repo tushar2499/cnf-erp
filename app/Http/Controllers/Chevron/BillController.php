@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Chevron;
 
 use App\Enums\Chevron\ChevronExpenseCategoryType;
-use App\Helpers\BdtWords;
+use App\Helpers\NumberHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Chevron\ChevronBill;
 use App\Models\Chevron\ChevronExpenseCategory;
@@ -135,7 +135,7 @@ class BillController extends Controller
     {
         $bill->load(['items.expenseCategory', 'items.expenseHead', 'job']);
         $grouped = $bill->items->groupBy(fn ($i) => $i->expenseCategory?->name ?? 'OTHER');
-        $inWords = BdtWords::convert((float) $bill->due_amount);
+        $inWords = NumberHelper::amountInWords((float) $bill->due_amount);
 
         return view('chevron.cnf.bills.print', compact('bill', 'grouped', 'inWords'));
     }

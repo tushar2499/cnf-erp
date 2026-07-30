@@ -46,6 +46,7 @@ class ChevronJob extends Model
         'rd_rate',       'rd_amount',
         'atv_rate',      'atv_amount',
         'df_vat_rate',   'df_vat_amount',
+        'other_rate',    'other_amount',
         'total_payable_1',  'total_payable_2',
         'comm_discount_pct', 'comm_discount_1', 'comm_discount_2',
         'net_payable_1',    'net_payable_2',
@@ -105,13 +106,24 @@ class ChevronJob extends Model
         return $this->belongsTo(ChevronItem::class, 'item_id');
     }
 
-    public static function generateJobNo(): string
+    public static function generateJobNo(int $jobTypeId, int $portId): string
     {
-        $last = static::lockForUpdate()->max(
-            DB::raw('CAST(SUBSTRING(job_no, 3) AS UNSIGNED)')
-        );
+        $jobType = ChevronJobType::find($jobTypeId);
+        $port = ChevronPort::find($portId);
 
-        return 'CF'.str_pad(($last ?? 0) + 1, 6, '0', STR_PAD_LEFT);
+        $typeCode = $jobType?->code ?? 'XX';
+        $portCode = $port?->code ?? 'XX';
+        $year = now()->year;
+        $prefix = "CF_{$typeCode}{$portCode}-{$year}-";
+        $scopePattern = 'CF\\___'.$portCode.'-'.$year.'-%';
+
+        $last = static::lockForUpdate()
+            ->where('job_no', 'like', $scopePattern)
+            ->max(DB::raw('CAST(SUBSTRING_INDEX(job_no, \'-\', -1) AS UNSIGNED)'));
+
+        $serial = str_pad(($last ?? 0) + 1, 6, '0', STR_PAD_LEFT);
+
+        return "{$prefix}{$serial}";
     }
 
     public static function currencies(): array

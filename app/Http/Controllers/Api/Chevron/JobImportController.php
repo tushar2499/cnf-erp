@@ -150,8 +150,9 @@ class JobImportController extends Controller
 
     private function buildLookups(): array
     {
+        $branchId = session('active_branch_id');
         $ports = [];
-        ChevronPort::where('is_active', true)->get(['id', 'name', 'code'])->each(function ($p) use (&$ports) {
+        ChevronPort::where('branch_id', $branchId)->where('is_active', true)->get(['id', 'name', 'code'])->each(function ($p) use (&$ports) {
             $ports[strtolower(trim($p->name))] = $p->id;
             if (trim($p->code) !== '') {
                 $ports[strtolower(trim($p->code))] = $p->id;
@@ -253,7 +254,7 @@ class JobImportController extends Controller
 
                 if ($portId === null && $rawPortName !== '') {
                     $port = ChevronPort::firstOrCreate(
-                        ['name' => $rawPortName],
+                        ['name' => $rawPortName, 'branch_id' => $row['branch_id']],
                         ['code' => strtoupper($rawPortName), 'is_active' => true]
                     );
                     $portId = $port->id;

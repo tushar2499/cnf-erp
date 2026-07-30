@@ -14,6 +14,7 @@ use App\Http\Controllers\NasTrading\ExpenseHeadController;
 use App\Http\Controllers\NasTrading\ImportController;
 use App\Http\Controllers\NasTrading\ImporterController;
 use App\Http\Controllers\NasTrading\ItemController;
+use App\Http\Controllers\NasTrading\LcBillStatementController;
 use App\Http\Controllers\NasTrading\LcController;
 use App\Http\Controllers\NasTrading\LcExpenseController;
 use App\Http\Controllers\NasTrading\MoneyReceiptController;
@@ -177,6 +178,24 @@ Route::prefix('customer-bills')->name('customer-bills.')->group(function () {
     Route::put('/{customerBill}', [CustomerBillController::class, 'update'])->name('update');
     Route::patch('/{customerBill}/confirm', [CustomerBillController::class, 'confirm'])->name('confirm');
     Route::delete('/{customerBill}', [CustomerBillController::class, 'destroy'])->name('destroy');
+});
+
+// LC Bill Statements
+Route::prefix('lc-bill-statements')->name('lc-bill-statements.')->group(function () {
+    Route::get('/search-customers', [LcBillStatementController::class, 'searchCustomers'])->name('search-customers');
+    Route::get('/search-lcs', [LcBillStatementController::class, 'searchLcs'])->name('search-lcs');
+    Route::get('/', [LcBillStatementController::class, 'index'])->name('index');
+    Route::get('/create', [LcBillStatementController::class, 'create'])->name('create');
+    Route::post('/', [LcBillStatementController::class, 'store'])->name('store');
+    Route::get('/{lcBillStatement}', [LcBillStatementController::class, 'show'])->name('show');
+    Route::get('/{lcBillStatement}/edit', [LcBillStatementController::class, 'edit'])->name('edit');
+    Route::put('/{lcBillStatement}', [LcBillStatementController::class, 'update'])->name('update');
+    Route::patch('/{lcBillStatement}/confirm', [LcBillStatementController::class, 'confirm'])->name('confirm');
+    Route::delete('/{lcBillStatement}', [LcBillStatementController::class, 'destroy'])->name('destroy');
+    Route::get('/{lcBillStatement}/print/cnf-dues', [LcBillStatementController::class, 'printCnfDues'])->name('print.cnf-dues');
+    Route::get('/{lcBillStatement}/print/commission-bill', [LcBillStatementController::class, 'printCommissionBill'])->name('print.commission-bill');
+    Route::get('/{lcBillStatement}/print/commission-statement', [LcBillStatementController::class, 'printCommissionStatement'])->name('print.commission-statement');
+    Route::get('/{lcBillStatement}/print/bill-statement', [LcBillStatementController::class, 'printBillStatement'])->name('print.bill-statement');
 });
 
 // Deliveries

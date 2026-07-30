@@ -11,6 +11,7 @@ class BranchController extends Controller
 {
     public function index(Request $request)
     {
+
         if ($request->ajax()) {
             return DataTables::of(ChevronBranch::query())
                 ->addIndexColumn()
@@ -41,10 +42,13 @@ class BranchController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate(['name' => ['required', 'string', 'max:255']]);
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:5'],
+        ]);
         ChevronBranch::create([
             'name'      => $request->name,
-            'code'      => $request->code ? strtoupper($request->code) : null,
+            'code'      => strtoupper($request->code),
             'address'   => $request->address,
             'phone'     => $request->phone,
             'is_active' => $request->boolean('is_active', true),
@@ -55,10 +59,13 @@ class BranchController extends Controller
 
     public function update(Request $request, ChevronBranch $branch)
     {
-        $request->validate(['name' => ['required', 'string', 'max:255']]);
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:5'],
+        ]);
         $branch->update([
             'name'      => $request->name,
-            'code'      => $request->code ? strtoupper($request->code) : null,
+            'code'      => strtoupper($request->code),
             'address'   => $request->address,
             'phone'     => $request->phone,
             'is_active' => $request->boolean('is_active', true),

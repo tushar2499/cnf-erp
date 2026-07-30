@@ -156,31 +156,24 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <div class="job-card-body">
             <div class="row g-3">
                 <div class="col-md-4">
-                    <label class="form-label">Service <span class="req">*</span></label>
-                    <select name="service_id" class="form-select form-select-sm">
-                        <option value="">-- Select Service --</option>
-                        @foreach($services as $s)
-                            <option value="{{ $s->id }}" {{ old('service_id', $job?->service_id) == $s->id ? 'selected' : '' }}>{{ $s->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-4">
                     <label class="form-label">Job Type <span class="req">*</span></label>
-                    <select name="job_type_id" class="form-select form-select-sm">
+                    <select name="job_type_id" class="form-select form-select-sm" required>
                         <option value="">-- Select Job Type --</option>
                         @foreach($jobTypes as $jt)
                             <option value="{{ $jt->id }}" {{ old('job_type_id', $job?->job_type_id) == $jt->id ? 'selected' : '' }}>{{ $jt->name }}</option>
                         @endforeach
                     </select>
+                    <small class="text-danger d-none" id="job_type_id_err">The job type field is required.</small>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Port <span class="req">*</span></label>
-                    <select name="port_id" class="form-select form-select-sm">
+                    <select name="port_id" class="form-select form-select-sm" required>
                         <option value="">-- Select Port --</option>
                         @foreach($ports as $p)
                             <option value="{{ $p->id }}" {{ old('port_id', $job?->port_id) == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
                         @endforeach
                     </select>
+                    <small class="text-danger d-none" id="port_id_err">The port field is required.</small>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Country of Origin</label>
@@ -193,7 +186,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Job Date <span class="req">*</span></label>
-                    <input type="date" name="job_date" class="form-control form-control-sm" value="{{ old('job_date', $job?->job_date?->format('Y-m-d')) }}">
+                    <input type="date" name="job_date" class="form-control form-control-sm" value="{{ old('job_date', $job?->job_date?->format('Y-m-d')) }}" required>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Status</label>
@@ -222,6 +215,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                             <option value="{{ $job->customer_id ?? $job->party_name }}" selected>{{ $job->party_name }}</option>
                         @endif
                     </select>
+                    <small class="text-danger d-none" id="party_name_err">The party name field is required.</small>
                 </div>
                 <div class="col-md-8">
                     <label class="form-label">Party Address</label>
@@ -239,6 +233,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                             <option value="{{ $job->item_id ?? $job->goods_name }}" selected>{{ $job->goods_name }}</option>
                         @endif
                     </select>
+                    <small class="text-danger d-none" id="goods_name_err">The goods name field is required.</small>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Pack Quantity</label>
@@ -247,6 +242,20 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                 <div class="col-md-4">
                     <label class="form-label">Pack Unit</label>
                     <input type="text" name="pack_unit" class="form-control form-control-sm" value="{{ old('pack_unit', $job?->pack_unit) }}" placeholder="e.g. MT, PCS">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Gross Weight</label>
+                    <div class="input-group input-group-sm">
+                        <input type="number" name="gross_weight" class="form-control form-control-sm" step="0.001" value="{{ old('gross_weight', $job?->gross_weight) }}" placeholder="0.000">
+                        <input type="text"   name="gross_weight_unit" class="form-control form-control-sm" style="max-width:100px;" value="{{ old('gross_weight_unit', $job?->gross_weight_unit ?? 'KGS') }}" placeholder="Unit">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Net Weight</label>
+                    <div class="input-group input-group-sm">
+                        <input type="number" name="net_weight" class="form-control form-control-sm" step="0.001" value="{{ old('net_weight', $job?->net_weight) }}" placeholder="0.000">
+                        <input type="text"   name="net_weight_unit" class="form-control form-control-sm" style="max-width:100px;" value="{{ old('net_weight_unit', $job?->net_weight_unit ?? 'KGS') }}" placeholder="Unit">
+                    </div>
                 </div>
             </div>
         </div>
@@ -276,23 +285,28 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                     <input type="date" name="eta_date" class="form-control form-control-sm" value="{{ old('eta_date', $job?->eta_date?->format('Y-m-d')) }}">
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">HBL/HAWB No</label>
-                    <input type="text" name="hbi_hawb_no" class="form-control form-control-sm" value="{{ old('hbi_hawb_no', $job?->hbi_hawb_no) }}" placeholder="HBI/HAWB No">
+                    <label class="form-label">HBL/HAWB No <span class="req">*</span></label>
+                    <input type="text" name="hbi_hawb_no" class="form-control form-control-sm" value="{{ old('hbi_hawb_no', $job?->hbi_hawb_no) }}" placeholder="HBI/HAWB No" required>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">HBL/HAWB Date</label>
                     <input type="date" name="hbi_hawb_date" class="form-control form-control-sm" value="{{ old('hbi_hawb_date', $job?->hbi_hawb_date?->format('Y-m-d')) }}">
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Gross Weight</label>
-                    <div class="input-group input-group-sm">
-                        <input type="number" name="gross_weight" class="form-control form-control-sm" step="0.001" value="{{ old('gross_weight', $job?->gross_weight) }}" placeholder="0.000">
-                        <input type="text"   name="gross_weight_unit" class="form-control form-control-sm" style="max-width:100px;" value="{{ old('gross_weight_unit', $job?->gross_weight_unit) }}" placeholder="Unit">
-                    </div>
+                    <label class="form-label">MBL/MAWB No</label>
+                    <input type="text" name="mbl_mawb_no" class="form-control form-control-sm" value="{{ old('mbl_mawb_no', $job?->mbl_mawb_no) }}" placeholder="MBL/MAWB No">
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Net Weight</label>
-                    <input type="number" name="net_weight" class="form-control form-control-sm" step="0.001" value="{{ old('net_weight', $job?->net_weight) }}" placeholder="0.000">
+                    <label class="form-label">MBL/MAWB Date</label>
+                    <input type="date" name="mbl_mawb_date" class="form-control form-control-sm" value="{{ old('mbl_mawb_date', $job?->mbl_mawb_date?->format('Y-m-d')) }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Invoice No</label>
+                    <input type="text" name="invoice_no" class="form-control form-control-sm" value="{{ old('invoice_no', $job?->invoice_no) }}" placeholder="Invoice No">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Invoice Date</label>
+                    <input type="date" name="invoice_date" class="form-control form-control-sm" value="{{ old('invoice_date', $job?->invoice_date?->format('Y-m-d')) }}">
                 </div>
             </div>
         </div>
@@ -337,42 +351,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                 <div class="col-md-3">
                     <label class="form-label">Mate Code</label>
                     <input type="text" name="mate_code" class="form-control form-control-sm" value="{{ old('mate_code', $job?->mate_code) }}" placeholder="Mate Code">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- 5. Shipping Documents --}}
-    <div class="job-card ac-pink">
-        <div class="job-card-hdr">
-            <i class="fa fa-file-invoice" style="color:#db2777;"></i>
-            <span>Shipping Documents</span>
-        </div>
-        <div class="job-card-body">
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label">B/L No</label>
-                    <input type="text" name="bl_no" class="form-control form-control-sm" value="{{ old('bl_no', $job?->bl_no) }}" placeholder="B/L No">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">B/L Date</label>
-                    <input type="date" name="bl_date" class="form-control form-control-sm" value="{{ old('bl_date', $job?->bl_date?->format('Y-m-d')) }}">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">MBL/MAWB No</label>
-                    <input type="text" name="mbl_mawb_no" class="form-control form-control-sm" value="{{ old('mbl_mawb_no', $job?->mbl_mawb_no) }}" placeholder="MBL/MAWB No">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">MBL/MAWB Date</label>
-                    <input type="date" name="mbl_mawb_date" class="form-control form-control-sm" value="{{ old('mbl_mawb_date', $job?->mbl_mawb_date?->format('Y-m-d')) }}">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Invoice No</label>
-                    <input type="text" name="invoice_no" class="form-control form-control-sm" value="{{ old('invoice_no', $job?->invoice_no) }}" placeholder="Invoice No">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Invoice Date</label>
-                    <input type="date" name="invoice_date" class="form-control form-control-sm" value="{{ old('invoice_date', $job?->invoice_date?->format('Y-m-d')) }}">
                 </div>
             </div>
         </div>
@@ -509,28 +487,8 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <div class="job-card-body">
             <div class="row g-3">
                 <div class="col-md-3">
-                    <label class="form-label">Port Bill Amount</label>
-                    <input type="number" name="port_bill_amount" class="form-control form-control-sm" step="0.01" value="{{ old('port_bill_amount', $job?->port_bill_amount) }}" placeholder="0.00">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Port Bill Date</label>
-                    <input type="date" name="port_bill_date" class="form-control form-control-sm" value="{{ old('port_bill_date', $job?->port_bill_date?->format('Y-m-d')) }}">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Labour Bill Amount</label>
-                    <input type="number" name="labour_bill_amount" class="form-control form-control-sm" step="0.01" value="{{ old('labour_bill_amount', $job?->labour_bill_amount) }}" placeholder="0.00">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Labour Bill Date</label>
-                    <input type="date" name="labour_bill_date" class="form-control form-control-sm" value="{{ old('labour_bill_date', $job?->labour_bill_date?->format('Y-m-d')) }}">
-                </div>
-                <div class="col-md-3">
                     <label class="form-label">ETB Date</label>
                     <input type="date" name="etb_date" class="form-control form-control-sm" value="{{ old('etb_date', $job?->etb_date?->format('Y-m-d')) }}">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Shipping Charge</label>
-                    <input type="number" name="shipping_charge" class="form-control form-control-sm" step="0.01" value="{{ old('shipping_charge', $job?->shipping_charge) }}" placeholder="0.00">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Delivery Date</label>
@@ -604,10 +562,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                     <label class="form-label">ETD Date</label>
                     <input type="date" name="etd_date" class="form-control form-control-sm" value="{{ old('etd_date', $job?->etd_date?->format('Y-m-d')) }}">
                 </div>
-                  <div class="col-md-3">
-                    <label class="form-label">Assessable Value <span class="req">*</span></label>
-                    <input type="number" name="assessable_value" id="assessableValue" class="form-control form-control-sm text-end" step="0.01" value="{{ old('assessable_value', $job?->assessable_value) }}" placeholder="0.00">
-                </div>
             </div>
         </div>
     </div>
@@ -617,9 +571,9 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 <div class="col-md-4" style="position:sticky;top:70px;align-self:start;max-height:calc(100vh - 80px);overflow-y:auto;">
 
     {{-- 11. Financial --}}
-    <div class="job-card ac-amber"> 
+    <div class="job-card ac-amber">
         <div class="job-card-body">
-            <div class="row g-2"> 
+            <div class="row g-2">
                 <div class="col-6">
                     <label class="form-label">Currency</label>
                     <select name="currency_type" id="currencyType" class="form-select form-select-sm">
@@ -632,7 +586,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                 <div class="col-6">
                     <label class="form-label">Exchange Rate <small class="text-muted fw-normal">(BDT)</small></label>
                     <input type="number" name="currency_rate" id="currencyRate" class="form-control form-control-sm text-end" step="0.000000001" value="{{ old('currency_rate', $job?->currency_rate) }}" placeholder="0.00">
-                </div> 
+                </div>
                 <div class="col-6">
                     <label class="form-label">Invoice Value <small id="invoiceCurLabel" class="text-muted fw-normal">(Orig. Cur.)</small></label>
                     <input type="number" name="invoice_value_1" class="form-control form-control-sm charge-c1 text-end" step="0.01" value="{{ old('invoice_value_1', $job?->invoice_value_1) }}" data-key="invoice_value" placeholder="0.00">
@@ -641,12 +595,20 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                     <label class="form-label">Invoice Value <small class="text-muted fw-normal">(BDT)</small></label>
                     <input type="number" name="invoice_value_2" id="c2_invoice_value" class="form-control form-control-sm ro-field text-end" readonly step="0.000000001" value="{{ old('invoice_value_2', $job?->invoice_value_2) }}" placeholder="0.00">
                 </div>
+                <div class="col-12">
+                    <label class="form-label">Assessable Value <span class="req">*</span></label>
+                    <input type="number" name="assessable_value" id="assessableValue" class="form-control form-control-sm text-end" step="0.01" value="{{ old('assessable_value', $job?->assessable_value) }}" placeholder="0.00">
+                </div>
             </div>
         </div>
     </div>
 
     {{-- 12. Charges & Taxes --}}
     <div class="job-card ac-indigo">
+        <div class="job-card-hdr">
+            <i class="fa fa-percent" style="color:#4f46e5;"></i>
+            <span>Duty</span>
+        </div>
         <div class="job-card-body">
             <div>
                 <table class="charge-tbl">
@@ -666,11 +628,12 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                             ['AIT @',     'ait'],
                             ['AT @',      'atv'],
                             ['DF VAT @',  'df_vat'],
+                            ['Other @',   'other'],
                         ];
                         @endphp
                         @foreach($taxRows as [$label, $key])
                         <tr>
-                            <td>{{ $label }}</td> 
+                            <td>{{ $label }}</td>
                             <td><input type="number" name="{{ $key }}_amount" id="tax_{{ $key }}" class="form-control form-control-sm tax-amount text-end" step="0.000000001" value="{{ old($key.'_amount', $job?->{$key.'_amount'}) }}" placeholder="0.00"></td>
                         </tr>
                         @endforeach
@@ -681,107 +644,8 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                     <table class="charge-tbl">
                         <tr>
                             <td class="fw-semibold" style="color:#374151;">Total Duty</td>
-                            <td><input type="number" id="totalDutyAmount" class="form-control form-control-sm ro-field text-end fw-semibold" readonly placeholder="0.00"></td>
-                            <td><input type="number" id="totalDutyAmountBdt" class="form-control form-control-sm ro-field text-end fw-semibold" readonly placeholder="0.00"></td>
-                        </tr> 
-                    </table>
-                </div>
-            </div> 
-        </div>
-        <input type="hidden" name="comm_discount_1" id="commDiscount1">
-        <input type="hidden" name="total_payable_1_hidden" id="totalPayable1h">
-    </div>
-
-    <div class="job-card ac-amber">
-        <div class="job-card-hdr">
-            <i class="fa fa-coins" style="color:#d97706;"></i>
-            <span>Financial</span>
-        </div>
-        <div class="job-card-body">
-            <div class="row g-2">
-                
-                <div class="col-6">
-                    <label class="form-label">Received Amount <span class="req">*</span></label>
-                    <input type="number" name="received_amount" class="form-control form-control-sm text-end" step="0.01" value="{{ old('received_amount', $job?->received_amount) }}" placeholder="0.00">
-                </div>
-                <div class="col-6">
-                    <label class="form-label">Due Amount</label>
-                    <input type="number" name="due_amount" class="form-control form-control-sm text-end" step="0.01" value="{{ old('due_amount', $job?->due_amount) }}" placeholder="0.00">
-                </div> 
-                <div class="col-12">
-                    <label class="form-label">BDT Equivalent <small class="text-muted fw-normal">(auto)</small></label>
-                    <input type="number" id="assessableBdt" name="assessable_value_bdt" class="form-control form-control-sm ro-field text-end" readonly value="{{ old('assessable_value_bdt', $job?->assessable_value_bdt) }}" placeholder="0.00">
-                </div> 
-            </div>
-        </div>
-    </div>
-
-    <div class="job-card ac-indigo">
-        <div class="job-card-hdr">
-            <i class="fa fa-calculator" style="color:#4f46e5;"></i>
-            <span>Charges &amp; Taxes</span>
-        </div>
-        <div class="job-card-body"> 
-
-            <div class="charge-sub-hdr"><i class="fa fa-list-ul"></i> Charges</div>
-            <div class="mb-3">
-                <table class="charge-tbl">
-                    <thead>
-                        <tr>
-                            <th>Description</th>
-                            <th class="text-end" style="width:90px;">Orig. Cur.</th>
-                            <th class="text-end" style="width:90px;">BDT</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>B/E E.F.R No @</td>
-                            <td colspan="2"><input type="text" name="be_efr_no" class="form-control form-control-sm" value="{{ old('be_efr_no', $job?->be_efr_no) }}" placeholder="B/E E.F.R No"></td>
-                        </tr>
-                        @php
-                        $chargeRows = [
-                            ['Pickup Charge @',   'pickup_charge'],
-                            ['C&F Charge @',      'cnf_charge'],
-                            ['Stuffing Charge @', 'stuffing_charge'],
-                            ['Carrier Bill @',    'carrier_bill'],
-                            ['MB/L Free @',       'mbl_free'],
-                            ['HB/L Charge @',     'hbl_charge'],
-                            ['P/S to Agent @',    'ps_to_agent'],
-                            ['P/S to B & Co @',   'ps_to_b_co'],
-                            ['NOC Charge @',      'noc_charge'],
-                            ['Other @',           'other_charge'],
-                        ];
-                        @endphp
-                        @foreach($chargeRows as [$label, $key])
-                        <tr>
-                            <td>{{ $label }}</td>
-                            <td><input type="number" name="{{ $key }}_1" class="form-control form-control-sm charge-c1 text-end" step="0.01" value="{{ old($key.'_1', $job?->{$key.'_1'}) }}" data-key="{{ $key }}"></td>
-                            <td><input type="number" name="{{ $key }}_2" id="c2_{{ $key }}" class="form-control form-control-sm charge-c2 text-end" step="0.01" value="{{ old($key.'_2', $job?->{$key.'_2'}) }}"></td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-                <div class="totals-panel">
-                    <table class="charge-tbl"> 
-                        <tr>
-                            <td class="fw-semibold" style="color:#374151;">Total Payable</td>
-                            <td><input type="number" name="total_payable_1" id="totalPayable1" class="form-control form-control-sm ro-field text-end fw-semibold" readonly value="{{ old('total_payable_1', $job?->total_payable_1) }}"></td>
-                            <td><input type="number" name="total_payable_2" id="totalPayable2" class="form-control form-control-sm ro-field text-end fw-semibold" readonly value="{{ old('total_payable_2', $job?->total_payable_2) }}"></td>
-                        </tr>
-                        <tr>
-                            <td class="fw-semibold">Comm/Discount</td>
-                            <td>
-                                <div class="input-group input-group-sm">
-                                    <input type="number" name="comm_discount_pct" id="commPct" class="form-control form-control-sm text-end" step="0.01" value="{{ old('comm_discount_pct', $job?->comm_discount_pct) }}">
-                                    <span class="input-group-text px-1">%</span>
-                                </div>
-                            </td>
-                            <td><input type="number" name="comm_discount_2" id="commDiscount2" class="form-control form-control-sm ro-field text-end" readonly value="{{ old('comm_discount_2', $job?->comm_discount_2) }}"></td>
-                        </tr>
-                        <tr>
-                            <td class="fw-semibold net-lbl">Net Payable</td>
-                            <td><input type="number" name="net_payable_1" id="netPayable1" class="form-control form-control-sm ro-field text-end fw-semibold net-inp" readonly value="{{ old('net_payable_1', $job?->net_payable_1) }}"></td>
-                            <td><input type="number" name="net_payable_2" id="netPayable2" class="form-control form-control-sm ro-field text-end fw-semibold net-inp" readonly value="{{ old('net_payable_2', $job?->net_payable_2) }}"></td>
+                            <td style="width:120px;"><input type="number" id="totalDutyAmount" class="form-control form-control-sm ro-field text-end fw-semibold" readonly placeholder="0.00"></td>
+                            <td style="width:120px;"><input type="number" id="totalDutyAmountBdt" class="form-control form-control-sm ro-field text-end fw-semibold" readonly placeholder="0.00"></td>
                         </tr>
                     </table>
                 </div>
@@ -790,7 +654,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <input type="hidden" name="comm_discount_1" id="commDiscount1">
         <input type="hidden" name="total_payable_1_hidden" id="totalPayable1h">
     </div>
-    
 
     {{-- Submit bar --}}
     <div class="submit-bar">
@@ -815,11 +678,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                 <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body py-3">
-                <div class="mb-2">
-                    <label class="form-label">Item Code <span class="req">*</span></label>
-                    <input type="text" id="qi_code" class="form-control form-control-sm text-uppercase" placeholder="e.g. RICE-001">
-                    <div class="invalid-feedback" id="qi_code_err"></div>
-                </div>
                 <div class="mb-2">
                     <label class="form-label">Item Name <span class="req">*</span></label>
                     <input type="text" id="qi_name" class="form-control form-control-sm" placeholder="e.g. Rice (IRRI)">
@@ -910,7 +768,7 @@ $(function () {
     });
 
     // ── Static Selects → Select2 ──
-    $('select[name="service_id"], select[name="job_type_id"], select[name="port_id"], select[name="country_of_origin"], select[name="status"]').each(function () {
+    $('select[name="job_type_id"], select[name="port_id"], select[name="country_of_origin"], select[name="status"]').each(function () {
         var $el = $(this);
         $el.select2({
             theme: 'bootstrap-5',
@@ -984,16 +842,10 @@ $(function () {
         recalcTotals();
     });
 
-    // When invoice_value col2 is manually edited: recalc taxes + duty total from new value
+    // When invoice_value col2 is manually edited: recalc taxes + totals
     $(document).on('input', '#c2_invoice_value', function () {
         recalcTaxes();
-        recalcDutyTotal();
         recalcTotals();
-    });
-
-    // When invoice_value col1 changes: recalc duty total (col1 contribution)
-    $(document).on('input', '[name="invoice_value_1"]', function () {
-        recalcDutyTotal();
     });
 
     // Tax amount = invoice_value (BDT) × rate%
@@ -1010,10 +862,9 @@ $(function () {
     function recalcDutyTotal() {
         var taxSum = 0;
         $('.tax-amount').each(function () { taxSum += parseFloat($(this).val()) || 0; });
-        var iv1 = parseFloat($('[name="invoice_value_1"]').val()) || 0;
-        var iv2 = parseFloat($('#c2_invoice_value').val()) || 0;
-        $('#totalDutyAmount').val(fmt(iv1 + taxSum));
-        $('#totalDutyAmountBdt').val(fmt(iv2 + taxSum));
+        var rate = getCurrencyRate();
+        $('#totalDutyAmount').val(fmt(rate ? taxSum / rate : 0));
+        $('#totalDutyAmountBdt').val(fmt(taxSum));
     }
 
     // When tax rate typed: recalc that tax, then totals
@@ -1061,7 +912,6 @@ $(function () {
 
     // ── Quick Create Item ──────────────────────────────────────────────────
     $('#btnQuickItem').on('click', function () {
-        $('#qi_code').val('').removeClass('is-invalid');
         $('#qi_name').val('').removeClass('is-invalid');
         $('#qi_unit').val('').removeClass('is-invalid');
         $('#qi_price').val('0').removeClass('is-invalid');
@@ -1069,14 +919,11 @@ $(function () {
     });
 
     $('#btnSaveQuickItem').on('click', function () {
-        var code  = $('#qi_code').val().trim();
         var name  = $('#qi_name').val().trim();
         var unit  = $('#qi_unit').val();
         var price = $('#qi_price').val();
         var ok = true;
 
-        if (!code)  { $('#qi_code').addClass('is-invalid');  $('#qi_code_err').text('Required.');  ok = false; }
-        else          { $('#qi_code').removeClass('is-invalid'); }
         if (!name)  { $('#qi_name').addClass('is-invalid');  $('#qi_name_err').text('Required.');  ok = false; }
         else          { $('#qi_name').removeClass('is-invalid'); }
         if (!unit)  { $('#qi_unit').addClass('is-invalid');  $('#qi_unit_err').text('Required.');  ok = false; }
@@ -1091,7 +938,7 @@ $(function () {
 
         $.ajax({
             url: QUICK_ITEM_STORE, method: 'POST',
-            data: { _token: $('meta[name="csrf-token"]').attr('content'), item_code: code, item_name: name, purchase_unit: unit, item_price: price },
+            data: { _token: $('meta[name="csrf-token"]').attr('content'), item_name: name, purchase_unit: unit, item_price: price },
         })
         .done(function (r) {
             var opt = new Option(r.text, r.id, true, true);
@@ -1105,7 +952,6 @@ $(function () {
         .fail(function (xhr) {
             var errs = xhr.responseJSON?.errors;
             if (errs) {
-                if (errs.item_code)     { $('#qi_code').addClass('is-invalid');  $('#qi_code_err').text(errs.item_code[0]); }
                 if (errs.item_name)     { $('#qi_name').addClass('is-invalid');  $('#qi_name_err').text(errs.item_name[0]); }
                 if (errs.purchase_unit) { $('#qi_unit').addClass('is-invalid');  $('#qi_unit_err').text(errs.purchase_unit[0]); }
                 if (errs.item_price)    { $('#qi_price').addClass('is-invalid'); $('#qi_price_err').text(errs.item_price[0]); }
@@ -1116,6 +962,66 @@ $(function () {
         .always(function () {
             $('#btnSaveQuickItem').prop('disabled', false).html('<i class="fa fa-save me-1"></i> Save & Select');
         });
+    });
+
+    // ── Client-side required validation for Select2 / hidden fields ──
+    function validateSelect2Field(selectEl, hiddenVal, errId) {
+        var empty = !hiddenVal && !$(selectEl).val();
+        $(selectEl).next('.select2-container').find('.select2-selection')
+            .toggleClass('border-danger', empty);
+        $('#' + errId).toggleClass('d-none', !empty);
+        return !empty;
+    }
+
+    $('form').on('submit', function (e) {
+        var valid = true;
+
+        if (!$('select[name="job_type_id"]').val()) {
+            $('select[name="job_type_id"]').next('.select2-container').find('.select2-selection').addClass('border-danger');
+            $('#job_type_id_err').removeClass('d-none');
+            valid = false;
+        }
+
+        if (!$('select[name="port_id"]').val()) {
+            $('select[name="port_id"]').next('.select2-container').find('.select2-selection').addClass('border-danger');
+            $('#port_id_err').removeClass('d-none');
+            valid = false;
+        }
+
+        if (!$('#partyNameHidden').val()) {
+            $('#partyNameSelect').next('.select2-container').find('.select2-selection').addClass('border-danger');
+            $('#party_name_err').removeClass('d-none');
+            valid = false;
+        }
+
+        if (!$('#goodsNameHidden').val()) {
+            $('#goodsNameSelect').next('.select2-container').find('.select2-selection').addClass('border-danger');
+            $('#goods_name_err').removeClass('d-none');
+            valid = false;
+        }
+
+        if (!valid) {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    });
+
+    // Clear errors on selection
+    $('select[name="job_type_id"]').on('change', function () {
+        $(this).next('.select2-container').find('.select2-selection').removeClass('border-danger');
+        $('#job_type_id_err').addClass('d-none');
+    });
+    $('select[name="port_id"]').on('change', function () {
+        $(this).next('.select2-container').find('.select2-selection').removeClass('border-danger');
+        $('#port_id_err').addClass('d-none');
+    });
+    $('#partyNameSelect').on('select2:select select2:clear', function () {
+        $(this).next('.select2-container').find('.select2-selection').removeClass('border-danger');
+        $('#party_name_err').addClass('d-none');
+    });
+    $('#goodsNameSelect').on('select2:select select2:clear', function () {
+        $(this).next('.select2-container').find('.select2-selection').removeClass('border-danger');
+        $('#goods_name_err').addClass('d-none');
     });
 });
 </script>

@@ -14,24 +14,27 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email'    => ['required', 'email'],
+        $request->validate([
+            'login'    => ['required', 'string'],
             'password' => ['required'],
         ]);
 
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
-            $request->session()->regenerate();
+        $login = $request->input('login');
+        $field = filter_var($login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
-            if (! Auth::user()->is_active) {
-                Auth::logout();
-
-                return back()->withErrors(['email' => 'Your account is inactive.']);
-            }
-
-            return redirect()->route('company.select');
+        if (! Auth::attempt([$field => $login, 'password' => $request->input('password')], $request->boolean('remember'))) {
+            return back()->withErrors(['login' => 'Invalid credentials.'])->onlyInput('login');
         }
 
-        return back()->withErrors(['email' => 'Invalid credentials.'])->onlyInput('email');
+        $request->session()->regenerate();
+
+        if (! Auth::user()->is_active) {
+            Auth::logout();
+
+            return back()->withErrors(['login' => 'Your account is inactive.']);
+        }
+
+        return redirect()->route('company.select');
     }
 
     public function logout(Request $request)

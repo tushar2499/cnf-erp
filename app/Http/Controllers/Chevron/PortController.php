@@ -11,8 +11,11 @@ class PortController extends Controller
 {
     public function index(Request $request)
     {
+
+        $branchId = session('active_branch_id');
+
         if ($request->ajax()) {
-            return DataTables::of(ChevronPort::query())
+            return DataTables::of(ChevronPort::where('branch_id', $branchId))
                 ->addIndexColumn()
                 ->addColumn('status_badge', fn ($row) => $row->is_active
                     ? '<span class="badge bg-success">Active</span>'
@@ -40,8 +43,12 @@ class PortController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate(['name' => ['required', 'string', 'max:255']]);
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:5'],
+        ]);
         ChevronPort::create([
+            'branch_id' => session('active_branch_id'),
             'name'      => $request->name,
             'code'      => strtoupper($request->code),
             'prefix'    => $request->prefix,
@@ -53,7 +60,10 @@ class PortController extends Controller
 
     public function update(Request $request, ChevronPort $port)
     {
-        $request->validate(['name' => ['required', 'string', 'max:255']]);
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:5'],
+        ]);
         $port->update([
             'name'      => $request->name,
             'code'      => strtoupper($request->code),

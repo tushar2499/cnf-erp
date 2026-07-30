@@ -11,6 +11,7 @@ class JobTypeController extends Controller
 {
     public function index(Request $request)
     {
+
         if ($request->ajax()) {
             return DataTables::of(ChevronJobType::query())
                 ->addIndexColumn()
@@ -21,6 +22,7 @@ class JobTypeController extends Controller
                     <button class="btn btn-sm btn-outline-primary btn-edit"
                         data-id="'.$row->id.'"
                         data-name="'.e($row->name).'"
+                        data-code="'.e($row->code).'"
                         data-is_active="'.(int) $row->is_active.'">
                         <i class="fa fa-edit"></i>
                     </button>
@@ -38,9 +40,13 @@ class JobTypeController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate(['name' => ['required', 'string', 'max:255']]);
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:5'],
+        ]);
         ChevronJobType::create([
             'name'      => $request->name,
+            'code'      => strtoupper($request->code),
             'is_active' => $request->boolean('is_active', true),
         ]);
 
@@ -49,9 +55,13 @@ class JobTypeController extends Controller
 
     public function update(Request $request, ChevronJobType $jobType)
     {
-        $request->validate(['name' => ['required', 'string', 'max:255']]);
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:5'],
+        ]);
         $jobType->update([
             'name'      => $request->name,
+            'code'      => strtoupper($request->code),
             'is_active' => $request->boolean('is_active', true),
         ]);
 

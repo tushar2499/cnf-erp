@@ -8,7 +8,7 @@
 
     @php
         $lcOpsActive       = request()->routeIs('nas-trading.lcs.*', 'nas-trading.shipments.*');
-        $billingActive     = request()->routeIs('nas-trading.customer-bills.*', 'nas-trading.due-lists.*', 'nas-trading.money-receipts.*');
+        $billingActive     = request()->routeIs('nas-trading.customer-bills.*', 'nas-trading.lc-bill-statements.*', 'nas-trading.due-lists.*', 'nas-trading.money-receipts.*');
         $mastersActive     = request()->routeIs('nas-trading.customers.*', 'nas-trading.suppliers.*', 'nas-trading.items.*', 'nas-trading.expense-heads.*', 'nas-trading.banks.*', 'nas-trading.importers.*', 'nas-trading.employees.*', 'nas-trading.ports.*', 'nas-trading.cnf-agents.*', 'nas-trading.transport-companies.*', 'nas-trading.psi-companies.*');
         $settingsActive    = request()->routeIs('nas-trading.users.*', 'nas-trading.settings.*');
         $dataActive        = request()->routeIs('nas-trading.import.*');
@@ -56,6 +56,10 @@
             <a href="{{ route('nas-trading.customer-bills.index') }}"
                class="nav-link ps-4 {{ request()->routeIs('nas-trading.customer-bills.*') ? 'active' : '' }}">
                 <i class="fa fa-file-invoice-dollar"></i> Customer Bills
+            </a>
+            <a href="{{ route('nas-trading.lc-bill-statements.index') }}"
+               class="nav-link ps-4 {{ request()->routeIs('nas-trading.lc-bill-statements.*') ? 'active' : '' }}">
+                <i class="fa fa-file-alt"></i> LC Bill Statement
             </a>
             <a href="{{ route('nas-trading.due-lists.customer') }}"
                class="nav-link ps-4 {{ request()->routeIs('nas-trading.due-lists.customer') ? 'active' : '' }}">

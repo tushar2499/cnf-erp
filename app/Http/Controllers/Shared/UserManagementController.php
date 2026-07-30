@@ -86,6 +86,7 @@ abstract class UserManagementController extends Controller
         return response()->json([
             'id'             => $user->id,
             'name'           => $user->name,
+            'username'       => $user->username,
             'email'          => $user->email,
             'is_active'      => $user->is_active,
             'role'           => $pivot?->role ?? 'user',
@@ -98,7 +99,8 @@ abstract class UserManagementController extends Controller
     {
         $request->validate([
             'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'email', 'unique:users,email'],
+            'username' => ['required', 'string', 'max:255', 'unique:users,username', 'alpha_dash'],
+            'email'    => ['nullable', 'email', 'unique:users,email'],
             'password' => ['required', Password::min(6)],
             'role'     => ['required', 'in:admin,user'],
         ]);
@@ -107,7 +109,8 @@ abstract class UserManagementController extends Controller
 
         $user = User::create([
             'name'      => $request->name,
-            'email'     => $request->email,
+            'username'  => $request->username,
+            'email'     => $request->filled('email') ? $request->email : null,
             'password'  => $request->password,
             'is_active' => true,
         ]);
@@ -124,16 +127,18 @@ abstract class UserManagementController extends Controller
     public function update(Request $request, User $user)
     {
         $request->validate([
-            'name'  => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:users,email,'.$user->id],
-            'role'  => ['required', 'in:admin,user'],
+            'name'     => ['required', 'string', 'max:255'],
+            'username' => ['required', 'string', 'max:255', 'unique:users,username,'.$user->id, 'alpha_dash'],
+            'email'    => ['nullable', 'email', 'unique:users,email,'.$user->id],
+            'role'     => ['required', 'in:admin,user'],
         ]);
 
         $companyId = session('active_company_id');
 
         $data = [
             'name'      => $request->name,
-            'email'     => $request->email,
+            'username'  => $request->username,
+            'email'     => $request->filled('email') ? $request->email : null,
             'is_active' => $request->boolean('is_active'),
         ];
         if ($request->filled('password')) {

@@ -27,11 +27,13 @@
                     <tr>
                         <th>#</th>
                         <th>Job Type Name</th>
+                        <th>Code</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
                     <tr>
                         <th></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                         <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                         <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                         <th></th>
@@ -55,9 +57,15 @@
                 @csrf
                 <input type="hidden" id="jobTypeId">
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Job Type Name <span class="text-danger">*</span></label>
-                        <input type="text" id="jtName" class="form-control" placeholder="e.g. Sea Import" required>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Job Type Name <span class="text-danger">*</span></label>
+                            <input type="text" id="jtName" class="form-control" placeholder="e.g. Sea Import">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Code <span class="text-danger">*</span></label>
+                            <input type="text" id="jtCode" class="form-control" placeholder="e.g. SI" maxlength="20" style="text-transform:uppercase">
+                        </div>
                     </div>
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="jtActive" checked>
@@ -89,6 +97,7 @@ $(function () {
         columns: [
             { data: 'DT_RowIndex',  name: 'DT_RowIndex', orderable: false, searchable: false, width: '50px' },
             { data: 'name',         name: 'name' },
+            { data: 'code',         name: 'code' },
             { data: 'status_badge', name: 'is_active', searchable: false },
             { data: 'action',       name: 'action', orderable: false, searchable: false, width: '90px' },
         ],
@@ -116,6 +125,7 @@ $(function () {
         $('#modalTitle').html('<i class="fa fa-plus me-2"></i>Add Job Type');
         $('#jobTypeId').val('');
         $('#jtName').val('').removeClass('is-invalid');
+        $('#jtCode').val('').removeClass('is-invalid');
         $('#jtActive').prop('checked', true);
         $('.invalid-feedback').remove();
     });
@@ -125,6 +135,7 @@ $(function () {
         $('#modalTitle').html('<i class="fa fa-edit me-2"></i>Edit Job Type');
         $('#jobTypeId').val(d.id);
         $('#jtName').val(d.name).removeClass('is-invalid');
+        $('#jtCode').val(d.code).removeClass('is-invalid');
         $('#jtActive').prop('checked', d.is_active == 1);
         $('.invalid-feedback').remove();
         $('#jobTypeModal').modal('show');
@@ -158,8 +169,18 @@ $(function () {
             ? '{{ url('chevron/settings/job-types') }}/' + id
             : '{{ route('chevron.settings.job-types.store') }}';
 
-        $('#jtName').removeClass('is-invalid');
+        $('.is-invalid').removeClass('is-invalid');
         $('.invalid-feedback').remove();
+
+        if (!$('#jtName').val().trim()) {
+            $('#jtName').addClass('is-invalid').after('<div class="invalid-feedback">Name is required.</div>');
+            return;
+        }
+        if (!$('#jtCode').val().trim()) {
+            $('#jtCode').addClass('is-invalid').after('<div class="invalid-feedback">Code is required.</div>');
+            return;
+        }
+
         $('#btnSave').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Saving...');
 
         $.ajax({
@@ -168,6 +189,7 @@ $(function () {
             data: {
                 _token:    $('meta[name="csrf-token"]').attr('content'),
                 name:      $('#jtName').val(),
+                code:      $('#jtCode').val(),
                 is_active: $('#jtActive').is(':checked') ? 1 : 0,
             },
         })
@@ -178,7 +200,9 @@ $(function () {
         })
         .fail(function (xhr) {
             if (xhr.status === 422) {
-                $('#jtName').addClass('is-invalid').after('<div class="invalid-feedback">' + xhr.responseJSON.errors.name?.[0] + '</div>');
+                const errors = xhr.responseJSON.errors;
+                if (errors.name) { $('#jtName').addClass('is-invalid').after('<div class="invalid-feedback">' + errors.name[0] + '</div>'); }
+                if (errors.code) { $('#jtCode').addClass('is-invalid').after('<div class="invalid-feedback">' + errors.code[0] + '</div>'); }
             } else {
                 Swal.fire({ icon: 'error', title: xhr.responseJSON?.message || 'Something went wrong.' });
             }
@@ -187,6 +211,7 @@ $(function () {
             $('#btnSave').prop('disabled', false).html('<i class="fa fa-save me-1"></i> Save');
         });
     });
+    $('#jtCode').on('input', function () { this.value = this.value.toUpperCase(); });
 });
 </script>
 @endpush
