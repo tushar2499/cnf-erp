@@ -222,7 +222,7 @@
         {{-- 2. Supplier & Goods --}}
         <div class="info-card">
             <div class="info-header" data-bs-target="#sec-supplier" data-section="supplier">
-                <span><i class="fa fa-industry me-2"></i> Supplier &amp; Goods</span>
+                <span><i class="fa fa-industry me-2"></i> Supplier</span>
                 <div class="d-flex align-items-center gap-2">
                     <button class="btn-print-section" data-print-target="sec-supplier" title="Print this section" aria-label="Print Supplier section"><i class="fa fa-print"></i></button>
                     <i class="fa fa-chevron-down chevron"></i>
@@ -235,13 +235,53 @@
                         <div class="col-md-2"><div class="info-label">Country</div><div class="info-value">{{ $lc->supplier_country ?? $dash }}</div></div>
                         <div class="col-md-3"><div class="info-label">Importer</div><div class="info-value">{{ $importer?->name ?? $dash }}</div></div>
                         <div class="col-md-3"><div class="info-label">Customer PO Date</div><div class="info-value">{{ fmtDate($lc->customer_po_date) }}</div></div>
-                        <div class="col-12"><div class="info-label">Item Description</div><div class="info-value">{{ $lc->item_description ?? $dash }}</div></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- 3. Bank & Documents --}}
+        {{-- 3. Product Items --}}
+        <div class="info-card">
+            <div class="info-header" data-bs-target="#sec-items" data-section="items">
+                <span><i class="fa fa-boxes me-2"></i> Product Items</span>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn-print-section" data-print-target="sec-items" title="Print this section" aria-label="Print Product Items section"><i class="fa fa-print"></i></button>
+                    <i class="fa fa-chevron-down chevron"></i>
+                </div>
+            </div>
+            <div class="collapse show" id="sec-items">
+                @if($lc->items->count())
+                <div style="overflow-x:auto">
+                    <table class="table table-bordered exp-table mb-0 w-100">
+                        <thead><tr><th>#</th><th>Product</th><th>Code</th><th>HS Code</th><th>Qty</th><th>Unit</th><th>Weight</th><th>W.Unit</th><th>Unit Price</th><th>Amount</th><th>Curr.</th></tr></thead>
+                        <tbody>
+                            @foreach($lc->items as $idx => $item)
+                            <tr>
+                                <td>{{ $idx + 1 }}</td>
+                                <td>{{ $item->product_name }}</td>
+                                <td>{{ $item->product_code ?? $dash }}</td>
+                                <td>{{ $item->hs_code ?? $dash }}</td>
+                                <td>{{ $item->qty_count ? rtrim(rtrim(number_format((float)$item->qty_count, 4), '0'), '.') : $dash }}</td>
+                                <td>{{ $item->qty_unit }}</td>
+                                <td>{{ $item->weight ? rtrim(rtrim(number_format((float)$item->weight, 4), '0'), '.') : $dash }}</td>
+                                <td>{{ $item->weight_unit ?? $dash }}</td>
+                                <td>{{ number_format((float)$item->unit_price, 2) }}</td>
+                                <td>{{ number_format((float)$item->line_amount, 2) }}</td>
+                                <td>{{ $item->currency }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @else
+                <div class="info-body text-center text-muted py-3" style="font-size:.82rem">
+                    <i class="fa fa-boxes fa-2x mb-2 d-block opacity-50"></i>No product items added.
+                </div>
+                @endif
+            </div>
+        </div>
+
+        {{-- 4. Bank & Documents --}}
         <div class="info-card">
             <div class="info-header" data-bs-target="#sec-bank" data-section="bank">
                 <span><i class="fa fa-university me-2"></i> Bank &amp; Documents</span>
@@ -272,92 +312,6 @@
                         <div class="col-md-4"><div class="info-label">Sanction Types</div><div class="info-value">{{ $lc->sanction_types ?? $dash }}</div></div>
                         <div class="col-md-4"><div class="info-label">Third Party</div><div class="info-value">{{ $lc->third_party ?? $dash }}</div></div>
                         <div class="col-12"><div class="info-label">Remarks</div><div class="info-value">{{ $lc->remarks ?? $dash }}</div></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- 4. LC Details --}}
-        <div class="info-card">
-            <div class="info-header" data-bs-target="#sec-lcdetails" data-section="lcdetails">
-                <span><i class="fa fa-dollar-sign me-2"></i> LC Details</span>
-                <div class="d-flex align-items-center gap-2">
-                    <button class="btn-print-section" data-print-target="sec-lcdetails" title="Print this section" aria-label="Print LC Details section"><i class="fa fa-print"></i></button>
-                    <i class="fa fa-chevron-down chevron"></i>
-                </div>
-            </div>
-            <div class="collapse show" id="sec-lcdetails">
-                <div class="info-body">
-                    <div class="row g-2">
-                        <div class="col-6 col-md-3"><div class="info-label">PFI Value</div><div class="info-value">{{ ($lc->currency ?? '') . ' ' . number_format((float)$lc->pfi_value, 4) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Currency</div><div class="info-value">{{ $lc->currency ?? $dash }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">LC OP Rate</div><div class="info-value">{{ $lc->lc_open_rate ? 'BDT ' . number_format((float)$lc->lc_open_rate, 4) : $dash }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Margin %</div><div class="info-value">{{ $lc->margin_percent ? number_format((float)$lc->margin_percent, 2) . '%' : $dash }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">LC Margin Amt</div><div class="info-value">{{ fmtAmt($lc->lc_margin_amt) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">LC Opening Cost</div><div class="info-value">{{ fmtAmt($lc->lc_open_cost_bdt) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Freight Value</div><div class="info-value">{{ $lc->freight_value ? ($lc->currency ?? '') . ' ' . number_format((float)$lc->freight_value, 4) : $dash }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">LC Value</div><div class="info-value">{{ $lc->lc_value ? ($lc->currency ?? '') . ' ' . number_format((float)$lc->lc_value, 4) : $dash }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Amount BDT</div><div class="info-value">{{ fmtAmt($lc->amount_bdt) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Total LC Cost</div><div class="info-value">{{ fmtAmt($totalLcCost) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Landed Cost</div><div class="info-value">{{ fmtAmt($lc->landed_cost) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">LC Rate Amount</div><div class="info-value">{{ fmtAmt($lc->lc_rate_amount) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Doc RT Rate</div><div class="info-value">{{ $lc->doc_rt_rate ? 'BDT ' . number_format((float)$lc->doc_rt_rate, 4) : $dash }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">LC RT Value</div><div class="info-value">{{ fmtAmt($lc->lc_rt_value) }}</div></div>
-                        <div class="col-6 col-md-3">
-                            <div class="info-label">LC Commission</div>
-                            <div class="info-value">
-                                @if($lc->lc_commission_percent || $lc->lc_commission_flat)
-                                    {{ $lc->lc_commission_percent ? number_format((float)$lc->lc_commission_percent, 4) . '%' : '' }}
-                                    {{ $lc->lc_commission_percent && $lc->lc_commission_flat ? ' / ' : '' }}
-                                    {{ $lc->lc_commission_flat ? 'BDT ' . number_format((float)$lc->lc_commission_flat, 2) : '' }}
-                                @else
-                                    {{ $dash }}
-                                @endif
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-3"><div class="info-label">LC Charge Posting</div><div class="info-value">{{ $lc->lc_charge_posting ?? $dash }}</div></div>
-
-                        <div class="col-6 col-md-3"><div class="info-label">Insurance Amount</div><div class="info-value">{{ fmtAmt($lc->insurance_amt) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Insurance Validity</div><div class="info-value">{{ fmtDate($lc->insurance_validity) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Comm. Currency</div><div class="info-value">{{ $lc->comm_currency ?? $dash }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Comm. Amount</div><div class="info-value">{{ fmtAmt($lc->comm_amount) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">LC Amendment Charge</div><div class="info-value">{{ fmtAmt($lc->lc_amendment_charge) }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">Credit Report Charge</div><div class="info-value">{{ fmtAmt($lc->credit_report_charge) }}</div></div>
-
-                        {{-- Other Charges --}}
-                        <div class="col-12 mt-1">
-                            <div class="info-label mb-1">Other Charges</div>
-                            @if($lc->otherChargeItems->count())
-                            <div style="overflow-x:auto">
-                                <table class="table table-sm table-bordered mb-1 w-100" style="font-size:.8rem">
-                                    <thead>
-                                        <tr>
-                                            <th class="text-center" style="width:32px;background:#e9ecef;padding:.3rem .5rem">#</th>
-                                            <th style="background:#e9ecef;padding:.3rem .5rem">Charge Name</th>
-                                            <th style="width:160px;background:#e9ecef;padding:.3rem .5rem">Amount (BDT)</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($lc->otherChargeItems as $idx => $charge)
-                                        <tr>
-                                            <td class="text-center" style="padding:.3rem .5rem">{{ $idx + 1 }}</td>
-                                            <td style="padding:.3rem .5rem">{{ $charge->name }}</td>
-                                            <td style="padding:.3rem .5rem">{{ number_format((float)$charge->amount, 2) }}</td>
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <td colspan="2" class="text-end fw-bold" style="padding:.3rem .5rem;font-size:.78rem">Total</td>
-                                            <td class="fw-bold" style="padding:.3rem .5rem">{{ number_format($lc->otherChargeItems->sum('amount'), 2) }}</td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                            @else
-                            <div class="info-value">{{ $dash }}</div>
-                            @endif
-                        </div>
                     </div>
                 </div>
             </div>
@@ -457,42 +411,91 @@
             </div>
         </div>
 
-        {{-- 7. Product Line Items --}}
-        @if($lc->items->count())
+        {{-- 7. LC Details --}}
         <div class="info-card">
-            <div class="info-header" data-bs-target="#sec-items" data-section="items">
-                <span><i class="fa fa-boxes me-2"></i> Product Line Items</span>
+            <div class="info-header" data-bs-target="#sec-lcdetails" data-section="lcdetails">
+                <span><i class="fa fa-dollar-sign me-2"></i> LC Details</span>
                 <div class="d-flex align-items-center gap-2">
-                    <button class="btn-print-section" data-print-target="sec-items" title="Print this section" aria-label="Print Product Items section"><i class="fa fa-print"></i></button>
+                    <button class="btn-print-section" data-print-target="sec-lcdetails" title="Print this section" aria-label="Print LC Details section"><i class="fa fa-print"></i></button>
                     <i class="fa fa-chevron-down chevron"></i>
                 </div>
             </div>
-            <div class="collapse show" id="sec-items">
-                <div style="overflow-x:auto">
-                    <table class="table table-bordered exp-table mb-0 w-100">
-                        <thead><tr><th>#</th><th>Product</th><th>Code</th><th>HS Code</th><th>Qty</th><th>Unit</th><th>Weight</th><th>W.Unit</th><th>Unit Price</th><th>Amount</th><th>Curr.</th></tr></thead>
-                        <tbody>
-                            @foreach($lc->items as $idx => $item)
-                            <tr>
-                                <td>{{ $idx + 1 }}</td>
-                                <td>{{ $item->product_name }}</td>
-                                <td>{{ $item->product_code ?? $dash }}</td>
-                                <td>{{ $item->hs_code ?? $dash }}</td>
-                                <td>{{ $item->qty_count }}</td>
-                                <td>{{ $item->qty_unit }}</td>
-                                <td>{{ $item->weight ?? $dash }}</td>
-                                <td>{{ $item->weight_unit ?? $dash }}</td>
-                                <td>{{ number_format((float)$item->unit_price, 4) }}</td>
-                                <td>{{ number_format((float)$item->line_amount, 4) }}</td>
-                                <td>{{ $item->currency }}</td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+            <div class="collapse show" id="sec-lcdetails">
+                <div class="info-body">
+                    <div class="row g-2">
+                        <div class="col-6 col-md-3"><div class="info-label">PFI Value</div><div class="info-value">{{ ($lc->currency ?? '') . ' ' . number_format((float)$lc->pfi_value, 4) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Currency</div><div class="info-value">{{ $lc->currency ?? $dash }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">LC OP Rate</div><div class="info-value">{{ $lc->lc_open_rate ? 'BDT ' . number_format((float)$lc->lc_open_rate, 4) : $dash }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Margin %</div><div class="info-value">{{ $lc->margin_percent ? number_format((float)$lc->margin_percent, 2) . '%' : $dash }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">LC Margin Amt</div><div class="info-value">{{ fmtAmt($lc->lc_margin_amt) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">LC Opening Cost</div><div class="info-value">{{ fmtAmt($lc->lc_open_cost_bdt) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Freight Value</div><div class="info-value">{{ $lc->freight_value ? ($lc->currency ?? '') . ' ' . number_format((float)$lc->freight_value, 4) : $dash }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">LC Value</div><div class="info-value">{{ $lc->lc_value ? ($lc->currency ?? '') . ' ' . number_format((float)$lc->lc_value, 4) : $dash }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Amount BDT</div><div class="info-value">{{ fmtAmt($lc->amount_bdt) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Total LC Cost</div><div class="info-value">{{ fmtAmt($totalLcCost) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Landed Cost</div><div class="info-value">{{ fmtAmt($lc->landed_cost) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">LC Rate Amount</div><div class="info-value">{{ fmtAmt($lc->lc_rate_amount) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Doc RT Rate</div><div class="info-value">{{ $lc->doc_rt_rate ? 'BDT ' . number_format((float)$lc->doc_rt_rate, 4) : $dash }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">LC RT Value</div><div class="info-value">{{ fmtAmt($lc->lc_rt_value) }}</div></div>
+                        <div class="col-6 col-md-3">
+                            <div class="info-label">LC Commission</div>
+                            <div class="info-value">
+                                @if($lc->lc_commission_percent || $lc->lc_commission_flat)
+                                    {{ $lc->lc_commission_percent ? number_format((float)$lc->lc_commission_percent, 4) . '%' : '' }}
+                                    {{ $lc->lc_commission_percent && $lc->lc_commission_flat ? ' / ' : '' }}
+                                    {{ $lc->lc_commission_flat ? 'BDT ' . number_format((float)$lc->lc_commission_flat, 2) : '' }}
+                                @else
+                                    {{ $dash }}
+                                @endif
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3"><div class="info-label">LC Charge Posting</div><div class="info-value">{{ $lc->lc_charge_posting ?? $dash }}</div></div>
+
+                        <div class="col-6 col-md-3"><div class="info-label">Insurance Amount</div><div class="info-value">{{ fmtAmt($lc->insurance_amt) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Insurance Validity</div><div class="info-value">{{ fmtDate($lc->insurance_validity) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Comm. Currency</div><div class="info-value">{{ $lc->comm_currency ?? $dash }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Comm. Amount</div><div class="info-value">{{ fmtAmt($lc->comm_amount) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">LC Amendment Charge</div><div class="info-value">{{ fmtAmt($lc->lc_amendment_charge) }}</div></div>
+                        <div class="col-6 col-md-3"><div class="info-label">Credit Report Charge</div><div class="info-value">{{ fmtAmt($lc->credit_report_charge) }}</div></div>
+
+                        {{-- Other Charges --}}
+                        <div class="col-12 mt-1">
+                            <div class="info-label mb-1">Other Charges</div>
+                            @if($lc->otherChargeItems->count())
+                            <div style="overflow-x:auto">
+                                <table class="table table-sm table-bordered mb-1 w-100" style="font-size:.8rem">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center" style="width:32px;background:#e9ecef;padding:.3rem .5rem">#</th>
+                                            <th style="background:#e9ecef;padding:.3rem .5rem">Charge Name</th>
+                                            <th style="width:160px;background:#e9ecef;padding:.3rem .5rem">Amount (BDT)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($lc->otherChargeItems as $idx => $charge)
+                                        <tr>
+                                            <td class="text-center" style="padding:.3rem .5rem">{{ $idx + 1 }}</td>
+                                            <td style="padding:.3rem .5rem">{{ $charge->name }}</td>
+                                            <td style="padding:.3rem .5rem">{{ number_format((float)$charge->amount, 2) }}</td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="2" class="text-end fw-bold" style="padding:.3rem .5rem;font-size:.78rem">Total</td>
+                                            <td class="fw-bold" style="padding:.3rem .5rem">{{ number_format($lc->otherChargeItems->sum('amount'), 2) }}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            @else
+                            <div class="info-value">{{ $dash }}</div>
+                            @endif
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        @endif
 
     </div>{{-- /col-md-8 --}}
 

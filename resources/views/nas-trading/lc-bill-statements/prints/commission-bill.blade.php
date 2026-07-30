@@ -62,10 +62,10 @@ table tfoot td { font-weight:bold; background:#f5f5f5; }
         <tbody>
             @foreach ($lcBillStatement->items as $i => $item)
                 @php
-                    $commission = (float) ($item->lc?->lc_commission ?? 0);
+                    $commission = (float) ($item->lc?->lc_commission_flat ?? 0);
                     $totalCommission += $commission;
-                    $invoiceValue = $item->lc?->lc_value
-                        ? number_format($item->lc->lc_value, 2) . ' ' . ($item->lc->currency ?? '')
+                    $invoiceValue = $item->lc?->lc_rt_value
+                        ? number_format($item->lc->lc_rt_value, 2)
                         : '-';
                 @endphp
                 <tr>
@@ -76,7 +76,7 @@ table tfoot td { font-weight:bold; background:#f5f5f5; }
                     <td class="text-right">{{ $invoiceValue }}</td>
                     <td class="text-center">{{ $item->lc?->lc_retirement_date?->format('d.m.Y') ?? '-' }}</td>
                     <td class="text-right">{{ $item->lc?->lc_rt_value ? number_format($item->lc->lc_rt_value, 2) : '-' }}</td>
-                    <td class="text-center">{{ $item->lc?->lc_commission_percent ? number_format($item->lc->lc_commission_percent, 2).'%' : '-' }}</td>
+                    <td class="text-center">{{ $item->lc?->lc_commission_percent ? rtrim(rtrim(number_format($item->lc->lc_commission_percent, 4), '0'), '.').'%' : '-' }}</td>
                     <td class="text-right">{{ $commission ? number_format($commission, 2) : '-' }}</td>
                 </tr>
             @endforeach

@@ -61,10 +61,10 @@ table tfoot td { font-weight:bold; background:#f5f5f5; }
         <tbody>
             @foreach ($lcBillStatement->items as $item)
                 @php
-                    $commission = (float) ($item->lc?->lc_commission ?? 0);
+                    $commission = (float) ($item->lc?->lc_commission_flat ?? 0);
                     $totalCommission += $commission;
-                    $invoiceValue = $item->lc?->lc_value
-                        ? number_format($item->lc->lc_value, 2) . ' ' . ($item->lc->currency ?? '')
+                    $invoiceValue = $item->lc?->lc_rt_value
+                        ? number_format($item->lc->lc_rt_value, 2)
                         : '-';
                 @endphp
                 <tr>

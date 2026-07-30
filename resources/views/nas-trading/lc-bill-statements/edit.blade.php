@@ -47,7 +47,7 @@
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Customer Address</label>
-                    <input type="text" id="customerAddressDisplay" class="form-control form-control-sm" placeholder="Customer address" readonly value="{{ $lcBillStatement->customer?->address }}" style="{{ $lcBillStatement->customer?->address ? '' : 'display:none;' }}background:#f8f9fa;color:#6c757d;font-size:.78rem;">
+                    <input type="text" id="customerAddressDisplay" class="form-control form-control-sm" placeholder="Customer address" readonly value="{{ $lcBillStatement->customer?->address }}" style="background:#f8f9fa;color:#6c757d;font-size:.78rem;">
                 </div>
                 <div class="col-md-12">
                     <label class="form-label">Note</label>

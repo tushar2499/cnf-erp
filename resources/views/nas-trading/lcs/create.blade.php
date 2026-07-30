@@ -185,23 +185,22 @@
             <div class="px-3 pt-2">
                 <ul class="nav nav-tabs lc-tabs border-bottom mb-0" id="lcOptTabs">
                     <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-supplier"><i
-                                class="fa fa-industry me-1"></i>Supplier &amp; Goods</a></li>
+                                class="fa fa-industry me-1"></i>Supplier</a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-items"><i
+                                class="fa fa-boxes me-1"></i>Product Items</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-bank"><i
                                 class="fa fa-university me-1"></i>Bank &amp; Documents</a></li>
-                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-lcdetails"><i
-                                class="fa fa-dollar-sign me-1"></i>LC Details</a></li>
-
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-payment"><i
                                 class="fa fa-money-check-alt me-1"></i>Payment Tracking</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-vat"><i
                                 class="fa fa-percent me-1"></i>VAT / Tax / Sales</a></li>
-                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-items"><i
-                                class="fa fa-boxes me-1"></i>Product Items</a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-lcdetails"><i
+                                class="fa fa-dollar-sign me-1"></i>LC Details</a></li>
                 </ul>
             </div>
             <div class="tab-content px-3 pb-3 pt-2">
 
-                {{-- Tab: Supplier & Goods --}}
+                {{-- Tab: Supplier --}}
                 <div class="tab-pane fade show active" id="tab-supplier">
                     <div class="row g-2 mt-1">
                         <div class="col-md-4">
@@ -764,17 +763,17 @@
                                 <thead>
                                     <tr>
                                         <th class="text-center" style="width:32px">#</th>
-                                        <th style="min-width:185px">Product</th>
-                                        <th style="width:78px">Code</th>
-                                        <th style="width:88px">HS Code</th>
-                                        <th style="width:68px">Qty</th>
-                                        <th style="width:60px">Unit</th>
-                                        <th style="width:72px">Weight</th>
-                                        <th style="width:60px">W.Unit</th>
+                                        <th style="min-width:140px">Product</th>
+                                        <th style="width:90px">Code</th>
+                                        <th style="width:90px">HS Code</th>
+                                        <th style="width:90px">Qty</th>
+                                        <th style="width:90px">Unit</th>
+                                        <th style="width:90px">Weight</th>
+                                        <th style="width:90px">W.Unit</th>
                                         <th style="width:90px">Unit Price</th>
                                         <th style="width:90px">Amount</th>
-                                        <th style="width:55px">Curr.</th>
-                                        <th style="width:32px"></th>
+                                        <th style="width:90px">Curr.</th>
+                                        <th ></th>
                                     </tr>
                                 </thead>
                                 <tbody id="itemsBody"></tbody>
@@ -964,7 +963,7 @@
         <td><input type="number" class="form-control form-control-sm" name="items[${idx}][weight]" value="${data.weight || ''}" step="0.0001" min="0" placeholder="0.00"></td>
         <td><input type="text" class="form-control form-control-sm" name="items[${idx}][weight_unit]" value="${data.weight_unit || ''}" placeholder="KG"></td>
         <td><input type="number" class="form-control form-control-sm item-uprice" name="items[${idx}][unit_price]" value="${data.unit_price || ''}" step="0.0001" min="0" placeholder="0.00"></td>
-        <td><input type="number" class="form-control form-control-sm item-amount bg-light" name="items[${idx}][line_amount]" value="${data.line_amount || ''}" step="0.0001" readonly tabindex="-1" placeholder="0.00"></td>
+        <td><input type="number" class="form-control form-control-sm item-amount bg-light" name="items[${idx}][line_amount]" value="${data.line_amount || ''}" step="0.01" readonly tabindex="-1" placeholder="0.00"></td>
         <td>
             <select class="form-select form-select-sm" name="items[${idx}][currency]">
                 ${['USD','EUR','GBP','CNY','BDT'].map(c => `<option value="${c}" ${(data.currency||'USD')===c?'selected':''}>${c}</option>`).join('')}
@@ -1091,7 +1090,7 @@
                 var row = $(this).closest('tr');
                 var qty = parseFloat(row.find('.item-qty').val()) || 0;
                 var up = parseFloat(row.find('.item-uprice').val()) || 0;
-                row.find('.item-amount').val((qty * up).toFixed(4));
+                row.find('.item-amount').val((qty * up).toFixed(2));
             });
 
             // Other charge rows
