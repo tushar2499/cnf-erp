@@ -471,7 +471,7 @@
                         <td class="c">{{ $i + 1 }}</td>
                         <td>{{ $item->booking?->job_no ?? '—' }}</td>
                         <td class="c">
-                            {{ $item->delivery_date ? \Carbon\Carbon::parse($item->delivery_date)->format('d M Y') : '—' }}
+                            {{ $item->booking?->delivery_date ? $item->booking->delivery_date->format('d M Y') : '—' }}
                         </td>
                         <td>{{ $item->item_code }}</td>
                         <td>{{ $vanType }}</td>
