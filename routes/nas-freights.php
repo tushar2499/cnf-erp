@@ -88,6 +88,7 @@ Route::prefix('customer-bills')->name('customer-bills.')->group(function () {
     Route::get('/{customerBill}/edit', [CustomerBillController::class, 'edit'])->name('edit');
     Route::put('/{customerBill}', [CustomerBillController::class, 'update'])->name('update');
     Route::get('/{customerBill}/print', [CustomerBillController::class, 'printView'])->name('print');
+    Route::get('/{customerBill}/mushak', [CustomerBillController::class, 'mushakView'])->name('mushak');
     Route::patch('/{customerBill}/confirm', [CustomerBillController::class, 'confirm'])->name('confirm');
     Route::delete('/{customerBill}', [CustomerBillController::class, 'destroy'])->name('destroy');
 });

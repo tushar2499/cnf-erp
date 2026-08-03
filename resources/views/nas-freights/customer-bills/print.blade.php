@@ -288,7 +288,8 @@
     @php
         $firstItem = $customerBill->items->first();
         $firstBooking = $firstItem?->booking;
-        $allProducts = $customerBill->items->flatMap(fn($i) => $i->booking?->products ?? collect());
+        $uniqueBookings = $customerBill->items->pluck('booking')->filter()->unique('id');
+        $allProducts = $uniqueBookings->flatMap(fn($b) => $b->products ?? collect());
         $goodsName =
             $allProducts->pluck('goods_name')->filter()->unique()->join(', ') ?: $firstBooking?->goods_name ?? '—';
         $totalQty = $allProducts->sum('qty') ?: $customerBill->items->sum('b_qty');
@@ -416,11 +417,11 @@
                         @endif
                         <tr>
                             <td class="lbl">L/C No:</td>
-                            <td>{{ $lcNo }}{{ $lcNo && $lcDate ? ' DT: ' . $lcDate : '' }}</td>
+                            <td>{{ $lcNo }}</td>
                         </tr>
                         <tr>
                             <td class="lbl">Invoice No:</td>
-                            <td>{{ $invoiceNo }}{{ $invoiceNo && $invoiceDate ? ' DT: ' . $invoiceDate : '' }}</td>
+                            <td>{{ $invoiceNo }}</td>
                         </tr>
                         <tr>
                             <td class="lbl">P/O No:</td>

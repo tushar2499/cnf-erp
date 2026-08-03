@@ -37,6 +37,7 @@ class CustomerBillController extends Controller
                         : '';
                     $view = '<a href="'.route('nas-freights.customer-bills.show', $r->id).'" class="btn btn-sm btn-outline-info" title="View"><i class="fa fa-eye"></i></a> '
                           .'<a href="'.route('nas-freights.customer-bills.print', $r->id).'" target="_blank" class="btn btn-sm btn-outline-dark" title="Print"><i class="fa fa-print"></i></a> '
+                          .'<a href="'.route('nas-freights.customer-bills.mushak', $r->id).'" target="_blank" class="btn btn-sm btn-outline-secondary" title="Mushak-6.3"><i class="fa fa-file-invoice"></i></a> '
                           .$edit;
                     $confirm = ($r->status === 'Draft' || $r->status === 'Submitted')
                         ? '<button class="btn btn-sm btn-outline-success btn-confirm" data-url="'.route('nas-freights.customer-bills.confirm', $r->id).'" data-name="'.e($r->bill_no).'" title="Confirm"><i class="fa fa-check"></i></button> '
@@ -286,6 +287,14 @@ class CustomerBillController extends Controller
         $customerBill->load(['items.booking.products', 'items.bookingItem']);
 
         return view('nas-freights.customer-bills.print', compact('customerBill'));
+    }
+
+    public function mushakView(NasFreightsCustomerBill $customerBill)
+    {
+        $customerBill->load(['items.booking', 'items.bookingItem']);
+        $customer = NasFreightsCustomer::find($customerBill->customer_id);
+
+        return view('nas-freights.customer-bills.mushak', compact('customerBill', 'customer'));
     }
 
     public function confirm(NasFreightsCustomerBill $customerBill)

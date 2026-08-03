@@ -32,34 +32,36 @@ class NasFreightsCustomerBill extends Model
 
     public static function generateBillNo(int $branchId, string $deliveryType): string
     {
-        $branch     = NasFreightsBranch::find($branchId);
+        $branch = NasFreightsBranch::find($branchId);
         $branchCode = $branch?->code ?? 'XX';
-        $typeCode   = match ($deliveryType) {
+        $typeCode = match ($deliveryType) {
             'EXPORT'       => 'EX',
             'IMPORT'       => 'IM',
             'DISTRIBUTION' => 'DS',
             'LOCAL'        => 'LC',
             default        => 'DS',
         };
-        $year    = now()->year;
-        $prefix  = "NAS-L-{$branchCode}-{$typeCode}-{$year}-";
+        $year = now()->year;
+        $prefix = "NAS-L-{$branchCode}-{$typeCode}-{$year}-";
 
-        // Legacy prefixes — kept so the running number stays continuous across the rename.
-        $legacyPrefixes = [
-            "NAS-F-{$branchCode}-{$typeCode}-{$year}-",
-            "NASF-{$branchCode}-{$typeCode}-{$year}-",
-            "BILL-{$branchCode}-{$typeCode}-{$year}-",
+        // Shared sequence across all delivery types for this branch+year — match any
+        // 2-char type code so LC/IM/EX/DS all draw from the same running number.
+        $patterns = [
+            "NAS-L-{$branchCode}-__-{$year}-",
+            "NAS-F-{$branchCode}-__-{$year}-",
+            "NASF-{$branchCode}-__-{$year}-",
+            "BILL-{$branchCode}-__-{$year}-",
         ];
 
         $max = 0;
-        foreach ([$prefix, ...$legacyPrefixes] as $p) {
-            $n = static::where('bill_no', 'like', $p . '%')
+        foreach ($patterns as $p) {
+            $n = static::where('bill_no', 'like', $p.'%')
                 ->lockForUpdate()
-                ->max(DB::raw("CAST(SUBSTRING(bill_no, " . (strlen($p) + 1) . ") AS UNSIGNED)"));
+                ->max(DB::raw('CAST(SUBSTRING(bill_no, '.(strlen($p) + 1).') AS UNSIGNED)'));
             $max = max($max, (int) $n);
         }
 
-        return $prefix . str_pad($max + 1, 7, '0', STR_PAD_LEFT);
+        return $prefix.str_pad($max + 1, 7, '0', STR_PAD_LEFT);
     }
 
     public static function deliveryTypes(): array
