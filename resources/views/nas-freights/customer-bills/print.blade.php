@@ -45,15 +45,18 @@
             border-color: #6c757d;
         }
 
+        /* Horizontal spacing lives here (padding), not in @page's margin —
+           @page only reserves top/bottom (for the letterhead). This keeps
+           the effective content width identical between screen preview and
+           print, so the pagination script's row-height measurements (taken
+           on screen load) match what will actually wrap/print. If left/right
+           were handled by @page margin instead, .page would need a narrower
+           width during print than on screen, and text would wrap differently
+           between the two — silently invalidating the measurements. */
         .page {
             width: 210mm;
             margin: 0 auto;
-            padding: 6mm 14mm 15mm 14mm;
-        }
-
-        .pad-header {
-            height: 35mm;
-            width: 100%;
+            padding: 0 14mm;
         }
 
         .bill-title {
@@ -143,25 +146,13 @@
             text-align: center;
         }
 
-        table.items tfoot td {
+        table.items tfoot td,
+        table.items tr.total-row td {
             background: #e8e8e8;
             font-weight: 700;
             font-size: 9.5px;
             padding: 3px 3px;
             border: 1px solid #000;
-        }
-
-        table.items tfoot td.r {
-            text-align: right;
-        }
-
-        table.items tfoot td.c {
-            text-align: center;
-        }
-
-        table.items tr {
-            page-break-inside: avoid;
-            break-inside: avoid;
         }
 
         .summary-wrap {
@@ -218,27 +209,20 @@
             margin-bottom: 3px;
         }
 
-        .powered {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            width: 100%;
+        .page-footer {
             border-top: 1px solid #bbb;
-            padding: 4px 14mm;
+            padding: 4px 0;
             font-size: 10px;
             color: #666;
-            background: #fff;
-            z-index: 9999;
         }
 
-        .powered table {
+        .page-footer table {
             width: 100%;
             border-collapse: collapse;
         }
 
-        .powered table td {
-            vertical-align: middle;
+        tr.force-break {
+            page-break-before: always;
         }
 
         @media print {
@@ -251,27 +235,13 @@
                 background: #fff;
             }
 
-            .page {
-                width: 100%;
-                margin: 0;
-                padding: 0;
-                padding-bottom: 12mm;
-            }
-
-            table.items th {
-                color: #000;
-            }
-
+            /* Left/right spacing comes from .page's own padding (see above),
+               not @page's margin, so screen and print always wrap text
+               identically. Only top/bottom (the letterhead space) belongs
+               on @page — those don't affect row heights the way width does. */
             @page {
                 size: A4 portrait;
-                margin: 6mm 14mm 16mm 14mm;
-            }
-
-            .powered {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
+                margin: 51mm 0 28mm 0;
             }
         }
     </style>
@@ -298,9 +268,7 @@
         $weightUnit = $allProducts->first()?->weight_unit ?? '';
         $poNo = $firstBooking?->po_number ?? '';
         $lcNo = $firstBooking?->lc_no ?? '';
-        $lcDate = $firstBooking?->job_date?->format('d.m.Y') ?? '';
         $invoiceNo = $firstBooking?->invoice_no ?? '';
-        $invoiceDate = $firstBooking?->delivery_date?->format('d.m.Y') ?? '';
 
         $subTotal = $customerBill->items->sum('line_amount');
         $totalDem = $customerBill->items->sum('demurrage_amount');
@@ -376,9 +344,6 @@
     @endphp
 
     <div class="page">
-
-        {{-- Blank space for pre-printed pad letterhead --}}
-        <div class="pad-header"></div>
 
         <div class="bill-title">TRANSPORT BILL</div>
 
@@ -468,7 +433,7 @@
                         )->first();
                         $vanType = $vehicle?->vehicle_type ?? '';
                     @endphp
-                    <tr>
+                    <tr class="item-row">
                         <td class="c">{{ $i + 1 }}</td>
                         <td>{{ $item->booking?->job_no ?? '—' }}</td>
                         <td class="c">
@@ -485,7 +450,7 @@
                         <td class="r">{{ number_format($rowTot, 2) }}</td>
                     </tr>
                 @endforeach
-                <tr style="font-weight:700">
+                <tr class="total-row">
                     <td colspan="8" style="text-align:right">Total Amount</td>
                     <td class="r">{{ number_format($subTotal, 2) }}</td>
                     <td class="c">{{ $totalDemDays }}</td>
@@ -542,14 +507,12 @@
             </table>
         </div>
 
-        <div class="powered">
+        <div class="page-footer final-page-footer">
             <table>
                 <tr>
                     <td style="width:35%;text-align:left"></td>
-                    <td style="width:30%;text-align:center">Page <span class="current-page">1</span> of <span
-                            class="total-pages"></span></td>
-                    <td style="width:35%;text-align:right">Print Date: <span
-                            class="print-time">{{ now()->format('d/m/Y g:i A') }}</span></td>
+                    <td style="width:30%;text-align:center">Page <span class="pg-num">1</span> of <span class="pg-total">1</span></td>
+                    <td style="width:35%;text-align:right">Print Date: {{ now()->format('d/m/Y g:i A') }}</td>
                 </tr>
             </table>
         </div>
@@ -557,14 +520,68 @@
     </div>
 
     <script>
-        (function() {
-            var el = document.querySelector('.page');
-            if (!el) return;
-            var mmPx = 3.7795275591;
-            var pageH = (297 - 6 - 12) * mmPx;
-            var n = Math.max(1, Math.ceil(el.scrollHeight / pageH));
-            document.querySelector('.total-pages').textContent = n;
-        })();
+        // Real per-page pagination: measure actual rendered row heights (this
+        // browser's real font metrics/wrapping) instead of guessing a fixed
+        // row count server-side — a static guess can't account for how much
+        // text an individual destination/job-no cell wraps to, which varies
+        // bill to bill. Runs once on load, before the user hits Print.
+        window.addEventListener('load', function () {
+            var pageEl = document.querySelector('.page');
+            var itemsTable = document.querySelector('table.items');
+            var thead = itemsTable.querySelector('thead');
+            var tbody = itemsTable.querySelector('tbody');
+            var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr.item-row'));
+            if (!rows.length) return;
+
+            var pxPerMm = pageEl.getBoundingClientRect().width / 210;
+            // 5% safety buffer against any minor screen/print rendering variance.
+            var contentHeightPx = (297 - 51 - 28) * pxPerMm * 0.95;
+
+            var billTitle = document.querySelector('.bill-title');
+            var headerOuter = document.querySelector('.header-outer');
+            var headerBlockHeight = billTitle.getBoundingClientRect().height
+                + headerOuter.getBoundingClientRect().height + 10;
+            var theadHeight = thead.getBoundingClientRect().height;
+
+            var firstPageBudget = contentHeightPx - headerBlockHeight - theadHeight;
+            var otherPageBudget = contentHeightPx - theadHeight;
+
+            var breakIndexes = [];
+            var used = firstPageBudget;
+            rows.forEach(function (row, idx) {
+                var h = row.getBoundingClientRect().height;
+                if (idx > 0 && (used - h) < 0) {
+                    breakIndexes.push(idx);
+                    used = otherPageBudget;
+                }
+                used -= h;
+            });
+
+            var totalPages = breakIndexes.length + 1;
+
+            function buildFooterRow(pageNum) {
+                var tr = document.createElement('tr');
+                tr.innerHTML = '<td colspan="12" style="border:none;padding:0">' +
+                    '<div class="page-footer"><table><tr>' +
+                    '<td style="width:35%"></td>' +
+                    '<td style="width:30%;text-align:center">Page ' + pageNum + ' of ' + totalPages + '</td>' +
+                    '<td style="width:35%;text-align:right">Print Date: {{ now()->format('d/m/Y g:i A') }}</td>' +
+                    '</tr></table></div></td>';
+                return tr;
+            }
+
+            var pageNum = 1;
+            breakIndexes.forEach(function (idx) {
+                var breakRow = rows[idx];
+                breakRow.parentNode.insertBefore(buildFooterRow(pageNum), breakRow);
+                breakRow.classList.add('force-break');
+                pageNum++;
+            });
+
+            var finalFooter = document.querySelector('.final-page-footer');
+            finalFooter.querySelector('.pg-num').textContent = totalPages;
+            finalFooter.querySelector('.pg-total').textContent = totalPages;
+        });
     </script>
 </body>
 

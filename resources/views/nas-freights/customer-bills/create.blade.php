@@ -477,7 +477,7 @@ $('#billForm').on('submit', function (e) {
             bill_by:          $('#fldBillByName').val(),
             note:             $('#fldNote').val(),
             sub_total:        $('#fldSubTotal').val(),
-            items:            items,
+            items:            JSON.stringify(items),
         },
     })
     .done(function (r) {

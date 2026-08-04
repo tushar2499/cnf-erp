@@ -64,6 +64,11 @@
                     </div>
 
                     <div class="mb-2">
+                        <label class="form-label">BIN No</label>
+                        <input type="text" id="cusBin" class="form-control form-control-sm" placeholder="Business Identification Number">
+                    </div>
+
+                    <div class="mb-2">
                         <label class="form-label">Mobile</label>
                         <input type="text" id="cusMobile" class="form-control form-control-sm" placeholder="+880...">
                     </div>
@@ -105,6 +110,7 @@
                                 <th>#</th>
                                 <th>Code</th>
                                 <th>Name</th>
+                                <th>BIN No</th>
                                 <th>Group</th>
                                 <th>Mobile</th>
                                 <th>Status</th>
@@ -133,6 +139,7 @@ $(function () {
             { data: 'DT_RowIndex',    name: 'DT_RowIndex',    orderable: false, searchable: false, width: '40px' },
             { data: 'customer_id',    name: 'customer_id' },
             { data: 'name',           name: 'name' },
+            { data: 'tin_bin_nid',    name: 'tin_bin_nid' },
             { data: 'customer_group', name: 'customer_group' },
             { data: 'mobile',         name: 'mobile' },
             { data: 'status_badge',   name: 'status', orderable: false, searchable: false },
@@ -150,6 +157,7 @@ $(function () {
         $('#cusGroup').val('');
         $('#cusName').val('').removeClass('is-invalid');
         $('#cusAddress').val('');
+        $('#cusBin').val('');
         $('#cusMobile').val('');
         $('#cusEmail').val('');
         $('#cusNameErr').text('');
@@ -168,6 +176,7 @@ $(function () {
             $('#cusGroup').val(r.customer_group || '');
             $('#cusName').val(r.name);
             $('#cusAddress').val(r.address || '');
+            $('#cusBin').val(r.tin_bin_nid || '');
             $('#cusMobile').val(r.mobile || '');
             $('#cusEmail').val(r.email || '');
             $('#formPanelTitle').html('<i class="fa fa-edit me-2"></i> Edit Customer');
@@ -214,6 +223,7 @@ $(function () {
                 customer_group: $('#cusGroup').val(),
                 name:           $('#cusName').val(),
                 address:        $('#cusAddress').val(),
+                tin_bin_nid:    $('#cusBin').val(),
                 mobile:         $('#cusMobile').val(),
                 email:          $('#cusEmail').val(),
             },

@@ -97,8 +97,8 @@ class CustomerBillController extends Controller
             return [
                 'booking_id'       => $b->id,
                 'booking_item_id'  => $item->id,
-                'booking_date'     => $b->job_date?->format('d-M-Y'),
-                'delivery_date'    => $b->delivery_date?->format('d-M-Y'),
+                'booking_date'     => $b->job_date?->format('Y-m-d'),
+                'delivery_date'    => $b->delivery_date?->format('Y-m-d'),
                 'item_code'        => $item->cover_van_no,
                 'item_name'        => $item->cover_van_no.($item->location_from ? ' || '.$item->location_from : ''),
                 'location'         => $loc,
@@ -139,13 +139,21 @@ class CustomerBillController extends Controller
             'bill_date'     => ['required', 'date'],
             'delivery_type' => ['required'],
             'bill_type'     => ['required'],
-            'items'         => ['required', 'array', 'min:1'],
         ]);
 
-        DB::transaction(function () use ($request) {
+        // Items arrive as a JSON string, not a nested array — a bill with enough
+        // rows (17 fields each) blows past PHP's default max_input_vars (1000)
+        // if posted as `items[0][field]=...`, silently truncating the row list.
+        $items = json_decode($request->input('items', '[]'), true) ?: [];
+
+        if (empty($items)) {
+            return response()->json(['message' => 'Add at least one item row.'], 422);
+        }
+
+        DB::transaction(function () use ($request, $items) {
             $billNo = NasFreightsCustomerBill::generateBillNo(session('nas_freights_branch_id'), $request->delivery_type);
-            $subTotal = collect($request->items)->sum('line_amount');
-            $totalDem = collect($request->items)->sum('demurrage_amount');
+            $subTotal = collect($items)->sum('line_amount');
+            $totalDem = collect($items)->sum('demurrage_amount');
             $tdsAmt = round($subTotal * ($request->tds_percent ?? 0) / 100, 2);
             $vatAmt = round($subTotal * ($request->vat_percent ?? 0) / 100, 2);
 
@@ -173,7 +181,7 @@ class CustomerBillController extends Controller
                 'entry_by'         => Auth::user()?->name ?? 'System',
             ]);
 
-            foreach ($request->items as $item) {
+            foreach ($items as $item) {
                 NasFreightsCustomerBillItem::create([
                     'bill_id'          => $bill->id,
                     'booking_id'       => $item['booking_id'] ?: null,
@@ -226,12 +234,17 @@ class CustomerBillController extends Controller
             'bill_date'     => ['required', 'date'],
             'delivery_type' => ['required'],
             'bill_type'     => ['required'],
-            'items'         => ['required', 'array', 'min:1'],
         ]);
 
-        DB::transaction(function () use ($request, $customerBill) {
-            $subTotal = collect($request->items)->sum('line_amount');
-            $totalDem = collect($request->items)->sum('demurrage_amount');
+        $items = json_decode($request->input('items', '[]'), true) ?: [];
+
+        if (empty($items)) {
+            return response()->json(['message' => 'Add at least one item row.'], 422);
+        }
+
+        DB::transaction(function () use ($request, $customerBill, $items) {
+            $subTotal = collect($items)->sum('line_amount');
+            $totalDem = collect($items)->sum('demurrage_amount');
             $tdsAmt = round($subTotal * ($request->tds_percent ?? 0) / 100, 2);
             $vatAmt = round($subTotal * ($request->vat_percent ?? 0) / 100, 2);
 
@@ -255,7 +268,7 @@ class CustomerBillController extends Controller
             ]);
 
             $customerBill->items()->delete();
-            foreach ($request->items as $item) {
+            foreach ($items as $item) {
                 NasFreightsCustomerBillItem::create([
                     'bill_id'          => $customerBill->id,
                     'booking_id'       => $item['booking_id'] ?: null,

@@ -70,12 +70,12 @@ class NasFreightsBooking extends Model
 
     public static function qtyUnits(): array
     {
-        return ['PCS', 'BOX', 'BAG', 'KG', 'TON', 'LITER', 'DRUM', 'CARTON'];
+        return ['PCS', 'BOX', 'BAG', 'KG', 'TON', 'LITER', 'DRUM', 'CARTON', 'PALLET', 'BALES'];
     }
 
     public static function weightUnits(): array
     {
-        return ['KG', 'TON', 'MT', 'LB'];
+        return ['KG', 'TON', 'MT', 'LB', 'PALLET', 'BALES'];
     }
 
     public static function deliveryStatuses(): array

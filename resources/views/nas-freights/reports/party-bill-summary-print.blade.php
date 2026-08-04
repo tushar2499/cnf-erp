@@ -9,7 +9,13 @@ body { font-family: Arial, sans-serif; font-size:9px; color:#000; background:#ff
 .no-print { margin:10px; display:flex; gap:8px; }
 .no-print button { padding:6px 18px; font-size:13px; cursor:pointer; border-radius:4px; border:1px solid #333; }
 .btn-print { background:#1a6b60; color:#fff; } .btn-close { background:#6c757d; color:#fff; }
-.page { width:297mm; margin:0 auto; padding:6mm 10mm 10mm; }
+/* Horizontal spacing lives in .page's own padding, not @page's margin, so
+   screen and print always wrap text identically — the pagination script
+   measures real row heights on screen load, and those measurements only
+   stay valid for print if nothing about the available width changes
+   between the two contexts. Only top/bottom (letterhead space) belongs on
+   @page, since vertical margin doesn't affect how cells wrap. */
+.page { width:297mm; margin:0 auto; padding:0 10mm; }
 .co-name { text-align:center; font-size:14pt; font-weight:bold; margin-bottom:2px; }
 .co-address { text-align:center; font-size:8.5pt; color:#333; margin-bottom:1px; }
 .divider { border-top:1.5px solid #000; margin:4px 0; }
@@ -23,14 +29,13 @@ table.items th { background:#000; color:#fff; font-size:7pt; padding:3px 2px; te
 table.items td { font-size:7.5pt; padding:2px 3px; border:1px solid #ccc; vertical-align:middle; word-wrap:break-word; line-height:1.4; }
 table.items td.r { text-align:right; } table.items td.c { text-align:center; }
 .even-row { background:#f5faf9; }
-table.items tfoot td { background:#d4e8d4; font-weight:bold; font-size:8pt; padding:3px; border:1px solid #000; }
-table.items tfoot td.r { text-align:right; }
-.powered { margin-top:6px; border-top:1px solid #ccc; padding-top:2px; font-size:6.5pt; color:#888; }
-.powered table { width:100%; border-collapse:collapse; }
+table.items tfoot td, table.items tr.total-row td { background:#d4e8d4; font-weight:bold; font-size:8pt; padding:3px; border:1px solid #000; }
+table.items tfoot td.r, table.items tr.total-row td.r { text-align:right; }
+.page-footer { margin-top:6px; border-top:1px solid #ccc; padding-top:2px; font-size:6.5pt; color:#888; }
+.page-footer table { width:100%; border-collapse:collapse; }
 @media print {
     .no-print { display:none !important; }
-    .page { width:100%; margin:0; padding:0; }
-    @page { size:A4 landscape; margin:6mm 10mm 10mm; }
+    @page { size:A4 landscape; margin:51mm 0 28mm 0; }
 }
 </style>
 </head>
@@ -69,17 +74,18 @@ $coName    = $company?->name ?? 'NAS Freights And Logistics Ltd.';
         <thead>
             <tr>
                 <th style="width:3%">SL</th>
-                <th style="width:10%">Job No</th>
-                <th style="width:11%">Bill No</th>
-                <th style="width:7%">Bill Date</th>
+                <th style="width:12%">Job No</th>
+                <th style="width:10%">Bill No</th>
+                <th style="width:6%">Bill Date</th>
                 <th style="width:13%">LC No</th>
-                <th style="width:14%">Invoice No</th>
-                <th style="width:9%">Net Amount</th>
-                <th style="width:5%">TDS %</th>
-                <th style="width:7%">TDS Amt</th>
-                <th style="width:5%">Vat %</th>
-                <th style="width:7%">Vat Amt</th>
+                <th style="width:13%">Invoice No</th>
+                <th style="width:8%">Net Amount</th>
+                <th style="width:4%">TDS %</th>
+                <th style="width:6%">TDS Amt</th>
+                <th style="width:4%">Vat %</th>
+                <th style="width:6%">Vat Amt</th>
                 <th style="width:9%">Total Amt</th>
+                <th style="width:6%">Remarks</th>
             </tr>
         </thead>
         <tbody>
@@ -88,7 +94,7 @@ $coName    = $company?->name ?? 'NAS Freights And Logistics Ltd.';
                 $jobNos = $bill->items->pluck('booking.job_no')->filter()->unique()->implode(', ');
                 $lcNos  = $bill->items->pluck('booking.lc_no')->filter()->unique()->implode(', ');
                 $invNos = $bill->items->pluck('booking.invoice_no')->filter()->unique()->implode(', ');
-                $cls    = ($i % 2 === 1) ? ' class="even-row"' : '';
+                $cls    = ($i % 2 === 1) ? ' class="even-row item-row"' : ' class="item-row"';
             @endphp
             <tr{{ $cls }}>
                 <td class="c">{{ $i + 1 }}</td>
@@ -103,24 +109,24 @@ $coName    = $company?->name ?? 'NAS Freights And Logistics Ltd.';
                 <td class="c">{{ number_format($bill->vat_percent, 2) }}</td>
                 <td class="r">{{ number_format($bill->vat_amount, 2) }}</td>
                 <td class="r">{{ number_format($bill->total_amount, 2) }}</td>
+                <td>{{ $bill->note ?: '—' }}</td>
             </tr>
             @endforeach
-        </tbody>
-        <tfoot>
-            <tr>
-                <td colspan="6" style="text-align:right;font-weight:bold">Total ({{ $bills->count() }} bills)</td>
+            <tr class="total-row">
+                <td colspan="6" style="text-align:right">Total ({{ $bills->count() }} bills)</td>
                 <td class="r">{{ number_format($totalNet, 2) }}</td>
                 <td></td>
                 <td class="r">{{ number_format($totalTds, 2) }}</td>
                 <td></td>
                 <td class="r">{{ number_format($totalVat, 2) }}</td>
                 <td class="r">{{ number_format($totalAmt, 2) }}</td>
+                <td></td>
             </tr>
-        </tfoot>
+        </tbody>
     </table>
-    <div class="powered"><table><tr>
+    <div class="page-footer"><table><tr>
         <td>Powered By: Advertising For Business - A4B</td>
-        <td style="text-align:center">Print Date: {{ now()->format('d/m/Y g:i A') }}</td>
+        <td style="text-align:right">Print Date: {{ now()->format('d/m/Y g:i A') }}</td>
     </tr></table></div>
 </div>
 </body>
