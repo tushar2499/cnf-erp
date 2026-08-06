@@ -255,7 +255,7 @@ function addRow(item) {
     var discPct= parseFloat(item.disc_percent || 0);
     var disc   = parseFloat(item.discount || 0);
     var aitPct = parseFloat(item.ait_percent || 0);
-    var lineAmt= parseFloat(item.line_amount || (dueQty * price));
+    var lineAmt= parseFloat(item.line_amount || (dQty * price));
 
     var tr = `<tr data-idx="${i}">
         <td class="text-center row-sl">${i}</td>
@@ -294,7 +294,7 @@ function rowRecalc(el) {
     var price   = parseFloat($tr.find('.row-price').val()) || 0;
     var discPct = parseFloat($tr.find('.row-discpct').val()) || 0;
     var aitPct  = parseFloat($tr.find('.row-aitpct').val()) || 0;
-    var base    = dueQty * price;
+    var base    = dQty * price;
     var disc    = base * discPct / 100;
     var ait     = (base - disc) * aitPct / 100;
     var lineAmt = base - disc + ait;

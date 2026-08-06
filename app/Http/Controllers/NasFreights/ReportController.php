@@ -455,7 +455,7 @@ class ReportController extends Controller
             $query->where('bill_type', $request->bill_type);
         }
 
-        $bills = $query->orderBy('bill_date')->orderBy('bill_no')->get();
+        $bills = $query->orderBy('id')->get();
         $customer = $request->filled('customer_id')
             ? NasFreightsCustomer::find($request->customer_id)
             : null;

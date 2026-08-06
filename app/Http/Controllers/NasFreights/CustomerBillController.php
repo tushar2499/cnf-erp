@@ -7,10 +7,16 @@ use App\Models\NasFreights\NasFreightsBookingItem;
 use App\Models\NasFreights\NasFreightsCustomer;
 use App\Models\NasFreights\NasFreightsCustomerBill;
 use App\Models\NasFreights\NasFreightsCustomerBillItem;
+use App\Models\NasFreights\NasFreightsVehicle;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Yajra\DataTables\Facades\DataTables;
 
 class CustomerBillController extends Controller
@@ -38,6 +44,7 @@ class CustomerBillController extends Controller
                     $view = '<a href="'.route('nas-freights.customer-bills.show', $r->id).'" class="btn btn-sm btn-outline-info" title="View"><i class="fa fa-eye"></i></a> '
                           .'<a href="'.route('nas-freights.customer-bills.print', $r->id).'" target="_blank" class="btn btn-sm btn-outline-dark" title="Print"><i class="fa fa-print"></i></a> '
                           .'<a href="'.route('nas-freights.customer-bills.mushak', $r->id).'" target="_blank" class="btn btn-sm btn-outline-secondary" title="Mushak-6.3"><i class="fa fa-file-invoice"></i></a> '
+                          .'<a href="'.route('nas-freights.customer-bills.excel', $r->id).'" class="btn btn-sm btn-outline-success" title="Excel"><i class="fa fa-file-excel"></i></a> '
                           .$edit;
                     $confirm = ($r->status === 'Draft' || $r->status === 'Submitted')
                         ? '<button class="btn btn-sm btn-outline-success btn-confirm" data-url="'.route('nas-freights.customer-bills.confirm', $r->id).'" data-name="'.e($r->bill_no).'" title="Confirm"><i class="fa fa-check"></i></button> '
@@ -300,6 +307,157 @@ class CustomerBillController extends Controller
         $customerBill->load(['items.booking.products', 'items.bookingItem']);
 
         return view('nas-freights.customer-bills.print', compact('customerBill'));
+    }
+
+    public function billExcel(NasFreightsCustomerBill $customerBill)
+    {
+        $customerBill->load(['items.booking.products', 'items.bookingItem']);
+
+        $firstItem = $customerBill->items->first();
+        $firstBooking = $firstItem?->booking;
+        $uniqueBookings = $customerBill->items->pluck('booking')->filter()->unique('id');
+        $allProducts = $uniqueBookings->flatMap(fn ($b) => $b->products ?? collect());
+        $goodsName = $allProducts->pluck('goods_name')->filter()->unique()->join(', ')
+            ?: ($firstBooking?->goods_name ?? '—');
+        $totalQty = $allProducts->sum('qty') ?: $customerBill->items->sum('b_qty');
+        $qtyUnit = $allProducts->first()?->qty_unit ?? '';
+        $totalWeight = $allProducts->sum('net_weight');
+        $weightUnit = $allProducts->first()?->weight_unit ?? '';
+
+        $subTotal = $customerBill->items->sum('line_amount');
+        $totalDem = $customerBill->items->sum('demurrage_amount');
+        $totalDemDays = $customerBill->items->sum('demurrage_day');
+        $tdsAmt = (float) ($customerBill->tds_amount ?? 0);
+        $tdsPct = (float) ($customerBill->tds_percent ?? 0);
+        $vatPct = (float) ($customerBill->vat_percent ?? 0);
+        $vatAmt = (float) ($customerBill->vat_amount ?? 0);
+        $grossAmt = $subTotal + $totalDem + $tdsAmt + $vatAmt;
+
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet()->setTitle('Transport Bill');
+
+        $sheet->mergeCells('A1:L1');
+        $sheet->setCellValue('A1', 'TRANSPORT BILL');
+        $sheet->getStyle('A1')->applyFromArray(['font' => ['bold' => true, 'size' => 14, 'underline' => true], 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]]);
+        $sheet->getRowDimension(1)->setRowHeight(22);
+
+        $sheet->setCellValue('A3', 'To,');
+        $sheet->setCellValue('A4', $customerBill->customer_name);
+        $sheet->setCellValue('A5', $customerBill->customer_address);
+        $sheet->getStyle('A4')->getFont()->setBold(true);
+
+        $sheet->setCellValue('H3', 'Bill Date:');
+        $sheet->setCellValue('I3', $customerBill->bill_date?->format('d/m/Y'));
+        $sheet->setCellValue('H4', 'Bill No:');
+        $sheet->setCellValue('I4', $customerBill->bill_no);
+        $sheet->setCellValue('H5', 'Goods Name:');
+        $sheet->setCellValue('I5', $goodsName);
+        $sheet->setCellValue('H6', 'Qty & N.Weight:');
+        $sheet->setCellValue('I6', ($totalQty > 0 ? number_format($totalQty, 2).($qtyUnit ? ' '.$qtyUnit : '') : '—')
+            .($totalWeight > 0 ? ' & '.number_format($totalWeight, 2).' '.$weightUnit : ''));
+        $sheet->getStyle('H3:H6')->getFont()->setBold(true);
+        $sheet->getStyle('I3:I4')->getFont()->setBold(true);
+
+        $headers = ['SL', 'Job No', 'Delivery Date', 'Cover Van No', 'Cover Van Type', 'Capacity', 'Qty', 'Destination', 'Net Amt', 'Dem. Days', 'Total Dem.', 'Total Amt'];
+        $col = 'A';
+        foreach ($headers as $h) {
+            $sheet->setCellValue($col.'8', $h);
+            $col++;
+        }
+        $sheet->getStyle('A8:L8')->applyFromArray([
+            'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '000000']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+        ]);
+
+        $row = 9;
+        foreach ($customerBill->items as $i => $item) {
+            $bItem = $item->bookingItem
+                ?? ($item->booking_id
+                    ? NasFreightsBookingItem::where('booking_id', $item->booking_id)
+                        ->where('cover_van_no', $item->item_code)->first()
+                    : null);
+            $demDays = (float) ($item->demurrage_day ?? 0);
+            $demAmt = (float) ($item->demurrage_amount ?? 0);
+            $rowTot = $item->line_amount + $demAmt;
+            $capacity = $bItem?->capacity ?? '';
+            $vehicle = NasFreightsVehicle::where('vehicle_number', $item->item_code)->first();
+            $vanType = $vehicle?->vehicle_type ?? '';
+
+            $sheet->fromArray([
+                $i + 1,
+                $item->booking?->job_no ?? '—',
+                $item->booking?->delivery_date ? $item->booking->delivery_date->format('d M Y') : '—',
+                $item->item_code,
+                $vanType,
+                $capacity,
+                (float) $item->b_qty,
+                $item->location,
+                (float) $item->line_amount,
+                $demDays,
+                $demAmt,
+                (float) $rowTot,
+            ], null, 'A'.$row);
+            foreach (['I', 'K', 'L'] as $c) {
+                $sheet->getStyle($c.$row)->getNumberFormat()->setFormatCode('#,##0.00');
+            }
+            if ($row % 2 === 0) {
+                $sheet->getStyle('A'.$row.':L'.$row)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('F5FAF9');
+            }
+            $row++;
+        }
+
+        $sheet->mergeCells('A'.$row.':H'.$row);
+        $sheet->setCellValue('A'.$row, 'Total Amount');
+        $sheet->setCellValue('I'.$row, $subTotal);
+        $sheet->setCellValue('J'.$row, $totalDemDays);
+        $sheet->setCellValue('K'.$row, $totalDem);
+        $sheet->setCellValue('L'.$row, $subTotal + $totalDem);
+        $sheet->getStyle('A'.$row.':L'.$row)->applyFromArray(['font' => ['bold' => true], 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E8E8E8']]]);
+        $sheet->getStyle('A'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        foreach (['I', 'K', 'L'] as $c) {
+            $sheet->getStyle($c.$row)->getNumberFormat()->setFormatCode('#,##0.00');
+        }
+        $row++;
+
+        $sheet->setCellValue('K'.$row, 'TDS Amount ('.number_format($tdsPct, 2).'%)');
+        $sheet->setCellValue('L'.$row, $tdsAmt);
+        $sheet->getStyle('K'.$row)->getFont()->setBold(true);
+        $sheet->getStyle('L'.$row)->getNumberFormat()->setFormatCode('#,##0.00');
+        $row++;
+
+        $sheet->setCellValue('K'.$row, 'VAT Amount ('.number_format($vatPct, 2).'%)');
+        $sheet->setCellValue('L'.$row, $vatAmt);
+        $sheet->getStyle('K'.$row)->getFont()->setBold(true);
+        $sheet->getStyle('L'.$row)->getNumberFormat()->setFormatCode('#,##0.00');
+        $row++;
+
+        $sheet->setCellValue('K'.$row, 'Gross Amount');
+        $sheet->setCellValue('L'.$row, $grossAmt);
+        $sheet->getStyle('K'.$row.':L'.$row)->applyFromArray(['font' => ['bold' => true], 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D0D0D0']]]);
+        $sheet->getStyle('L'.$row)->getNumberFormat()->setFormatCode('#,##0.00');
+        $row += 2;
+
+        $sheet->setCellValue('A'.$row, 'Please make all CHEQUE payable to NAS Freights And Logistics Ltd.');
+        $sheet->getStyle('A'.$row)->getFont()->setBold(true)->getColor()->setRGB('C00000');
+        $row++;
+        $sheet->setCellValue('A'.$row, 'A/C: Mercantile Bank PLC.(1111001335991)');
+        $row++;
+        $sheet->setCellValue('A'.$row, 'For NAS Freights And Logistics Ltd.');
+        $sheet->getStyle('A'.$row)->getFont()->setBold(true);
+
+        foreach (['A' => 5, 'B' => 12, 'C' => 12, 'D' => 12, 'E' => 12, 'F' => 9, 'G' => 8, 'H' => 20, 'I' => 12, 'J' => 10, 'K' => 12, 'L' => 12] as $c => $w) {
+            $sheet->getColumnDimension($c)->setWidth($w);
+        }
+        $sheet->getStyle('A8:L'.($row - 4))->applyFromArray(['borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]]]);
+
+        $writer = new Xlsx($spreadsheet);
+
+        return response()->streamDownload(
+            fn () => $writer->save('php://output'),
+            "transport-bill-{$customerBill->bill_no}.xlsx",
+            ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Cache-Control' => 'max-age=0']
+        );
     }
 
     public function mushakView(NasFreightsCustomerBill $customerBill)
