@@ -132,7 +132,10 @@ $(function () {
         initComplete: function () {
             this.api().columns().every(function (i) {
                 const $in = $('thead tr:eq(1) th:eq(' + i + ') input', this.table().container());
-                if ($in.length) $in.on('keyup change', () => this.search($in.val()).draw());
+                if ($in.length) {
+                    $in.on('click mousedown', e => e.stopPropagation());
+                    $in.on('keyup change', () => this.search($in.val()).draw());
+                }
             });
         },
         language: { emptyTable: '<div class="text-center py-3 text-muted"><i class="fa fa-inbox fa-2x mb-2 d-block"></i>No accounts yet.</div>' },
