@@ -213,8 +213,8 @@ Route::prefix('deliveries')->name('deliveries.')->group(function () {
 
 // Due List
 Route::prefix('due-lists')->name('due-lists.')->group(function () {
-    Route::get('/customer', [DueListController::class, 'customerDue'])->name('customer');
     Route::get('/search-customers', [DueListController::class, 'searchCustomers'])->name('search-customers');
+    Route::get('/customer', [DueListController::class, 'customerDue'])->name('customer');
 });
 
 // Money Receipts

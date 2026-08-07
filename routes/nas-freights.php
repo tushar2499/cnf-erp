@@ -159,17 +159,21 @@ Route::prefix('employees')->name('employees.')->group(function () {
 
 // Stakeholders
 Route::prefix('stakeholders')->name('stakeholders.')->group(function () {
-    Route::get('/suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
-    Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
-    Route::put('/suppliers/{supplier}', [SupplierController::class, 'update'])->name('suppliers.update');
-    Route::delete('/suppliers/{supplier}', [SupplierController::class, 'destroy'])->name('suppliers.destroy');
+    Route::prefix('suppliers')->name('suppliers.')->group(function () {
+        Route::get('/', [SupplierController::class, 'index'])->name('index');
+        Route::post('/', [SupplierController::class, 'store'])->name('store');
+        Route::put('/{supplier}', [SupplierController::class, 'update'])->name('update');
+        Route::delete('/{supplier}', [SupplierController::class, 'destroy'])->name('destroy');
+    });
 
-    Route::get('/customers/next-id', [CustomerController::class, 'nextId'])->name('customers.next-id');
-    Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
-    Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store');
-    Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
-    Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
-    Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
+    Route::prefix('customers')->name('customers.')->group(function () {
+        Route::get('/next-id', [CustomerController::class, 'nextId'])->name('next-id');
+        Route::get('/', [CustomerController::class, 'index'])->name('index');
+        Route::post('/', [CustomerController::class, 'store'])->name('store');
+        Route::get('/{customer}', [CustomerController::class, 'show'])->name('show');
+        Route::put('/{customer}', [CustomerController::class, 'update'])->name('update');
+        Route::delete('/{customer}', [CustomerController::class, 'destroy'])->name('destroy');
+    });
 });
 
 // Reports

@@ -29,117 +29,152 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 
 // C&F Jobs
 Route::prefix('cnf')->name('cnf.')->group(function () {
-    Route::get('/jobs/search-customers', [CnfJobController::class,    'searchCustomers'])->name('jobs.search-customers');
-    Route::get('/jobs/search-items', [CnfJobController::class,    'searchItems'])->name('jobs.search-items');
-    Route::get('/job-expenses/search-jobs', [JobExpenseController::class, 'searchJobs'])->name('job-expenses.search-jobs');
-    Route::get('/job-expenses/search-employees', [JobExpenseController::class, 'searchEmployees'])->name('job-expenses.search-employees');
-    Route::get('/job-expenses', [JobExpenseController::class, 'index'])->name('job-expenses.index');
-    Route::get('/job-expenses/create', [JobExpenseController::class, 'create'])->name('job-expenses.create');
-    Route::post('/job-expenses', [JobExpenseController::class, 'store'])->name('job-expenses.store');
-    Route::get('/job-expenses/{jobExpense}/edit', [JobExpenseController::class, 'edit'])->name('job-expenses.edit');
-    Route::put('/job-expenses/{jobExpense}', [JobExpenseController::class, 'update'])->name('job-expenses.update');
-    Route::delete('/job-expenses/{jobExpense}', [JobExpenseController::class, 'destroy'])->name('job-expenses.destroy');
-    Route::get('/money-receipts/search-parties', [MoneyReceiptController::class, 'searchParties'])->name('money-receipts.search-parties');
-    Route::get('/money-receipts/party-payable', [MoneyReceiptController::class, 'getPartyPayable'])->name('money-receipts.party-payable');
-    Route::get('/money-receipts', [MoneyReceiptController::class, 'index'])->name('money-receipts.index');
-    Route::get('/money-receipts/create', [MoneyReceiptController::class, 'create'])->name('money-receipts.create');
-    Route::post('/money-receipts', [MoneyReceiptController::class, 'store'])->name('money-receipts.store');
-    Route::get('/money-receipts/{moneyReceipt}/edit', [MoneyReceiptController::class, 'edit'])->name('money-receipts.edit');
-    Route::put('/money-receipts/{moneyReceipt}', [MoneyReceiptController::class, 'update'])->name('money-receipts.update');
-    Route::delete('/money-receipts/{moneyReceipt}', [MoneyReceiptController::class, 'destroy'])->name('money-receipts.destroy');
-    Route::get('/bills/search-jobs', [BillController::class, 'searchJobs'])->name('bills.search-jobs');
-    Route::get('/bills', [BillController::class, 'index'])->name('bills.index');
-    Route::get('/bills/create', [BillController::class, 'create'])->name('bills.create');
-    Route::post('/bills', [BillController::class, 'store'])->name('bills.store');
-    Route::get('/bills/{bill}/print', [BillController::class, 'print'])->name('bills.print');
-    Route::get('/bills/{bill}/edit', [BillController::class, 'edit'])->name('bills.edit');
-    Route::put('/bills/{bill}', [BillController::class, 'update'])->name('bills.update');
-    Route::delete('/bills/{bill}', [BillController::class, 'destroy'])->name('bills.destroy');
-    Route::get('/jobs', [CnfJobController::class, 'index'])->name('jobs.index');
-    Route::get('/jobs/create', [CnfJobController::class, 'create'])->name('jobs.create');
-    Route::post('/jobs', [CnfJobController::class, 'store'])->name('jobs.store');
-    Route::get('/jobs/{job}/edit', [CnfJobController::class, 'edit'])->name('jobs.edit');
-    Route::put('/jobs/{job}', [CnfJobController::class, 'update'])->name('jobs.update');
-    Route::delete('/jobs/{job}', [CnfJobController::class, 'destroy'])->name('jobs.destroy');
+    Route::prefix('jobs')->name('jobs.')->group(function () {
+        Route::get('/search-customers', [CnfJobController::class, 'searchCustomers'])->name('search-customers');
+        Route::get('/search-items', [CnfJobController::class, 'searchItems'])->name('search-items');
+        Route::get('/', [CnfJobController::class, 'index'])->name('index');
+        Route::get('/create', [CnfJobController::class, 'create'])->name('create');
+        Route::post('/', [CnfJobController::class, 'store'])->name('store');
+        Route::get('/{job}', [CnfJobController::class, 'show'])->name('show');
+        Route::get('/{job}/edit', [CnfJobController::class, 'edit'])->name('edit');
+        Route::get('/{job}/print', [CnfJobController::class, 'print'])->name('print');
+        Route::put('/{job}', [CnfJobController::class, 'update'])->name('update');
+        Route::delete('/{job}', [CnfJobController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('job-expenses')->name('job-expenses.')->group(function () {
+        Route::get('/search-jobs', [JobExpenseController::class, 'searchJobs'])->name('search-jobs');
+        Route::get('/search-employees', [JobExpenseController::class, 'searchEmployees'])->name('search-employees');
+        Route::get('/', [JobExpenseController::class, 'index'])->name('index');
+        Route::get('/create', [JobExpenseController::class, 'create'])->name('create');
+        Route::post('/', [JobExpenseController::class, 'store'])->name('store');
+        Route::get('/{jobExpense}/edit', [JobExpenseController::class, 'edit'])->name('edit');
+        Route::put('/{jobExpense}', [JobExpenseController::class, 'update'])->name('update');
+        Route::delete('/{jobExpense}', [JobExpenseController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('money-receipts')->name('money-receipts.')->group(function () {
+        Route::get('/search-parties', [MoneyReceiptController::class, 'searchParties'])->name('search-parties');
+        Route::get('/party-payable', [MoneyReceiptController::class, 'getPartyPayable'])->name('party-payable');
+        Route::get('/', [MoneyReceiptController::class, 'index'])->name('index');
+        Route::get('/create', [MoneyReceiptController::class, 'create'])->name('create');
+        Route::post('/', [MoneyReceiptController::class, 'store'])->name('store');
+        Route::get('/{moneyReceipt}/edit', [MoneyReceiptController::class, 'edit'])->name('edit');
+        Route::put('/{moneyReceipt}', [MoneyReceiptController::class, 'update'])->name('update');
+        Route::delete('/{moneyReceipt}', [MoneyReceiptController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('bills')->name('bills.')->group(function () {
+        Route::get('/search-jobs', [BillController::class, 'searchJobs'])->name('search-jobs');
+        Route::get('/', [BillController::class, 'index'])->name('index');
+        Route::get('/create', [BillController::class, 'create'])->name('create');
+        Route::post('/', [BillController::class, 'store'])->name('store');
+        Route::get('/{bill}/print', [BillController::class, 'print'])->name('print');
+        Route::get('/{bill}/edit', [BillController::class, 'edit'])->name('edit');
+        Route::put('/{bill}', [BillController::class, 'update'])->name('update');
+        Route::delete('/{bill}', [BillController::class, 'destroy'])->name('destroy');
+    });
 });
 
 // Stakeholders
 Route::prefix('stakeholders')->name('stakeholders.')->group(function () {
-    Route::get('/designations', [DesignationController::class, 'index'])->name('designations.index');
-    Route::post('/designations', [DesignationController::class, 'store'])->name('designations.store');
-    Route::put('/designations/{designation}', [DesignationController::class, 'update'])->name('designations.update');
-    Route::delete('/designations/{designation}', [DesignationController::class, 'destroy'])->name('designations.destroy');
+    Route::prefix('designations')->name('designations.')->group(function () {
+        Route::get('/', [DesignationController::class, 'index'])->name('index');
+        Route::post('/', [DesignationController::class, 'store'])->name('store');
+        Route::put('/{designation}', [DesignationController::class, 'update'])->name('update');
+        Route::delete('/{designation}', [DesignationController::class, 'destroy'])->name('destroy');
+    });
 
-    Route::get('/customers/next-id', [CustomerController::class, 'nextId'])->name('customers.next-id');
-    Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
-    Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
-    Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store');
-    Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
-    Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
+    Route::prefix('customers')->name('customers.')->group(function () {
+        Route::get('/next-id', [CustomerController::class, 'nextId'])->name('next-id');
+        Route::get('/', [CustomerController::class, 'index'])->name('index');
+        Route::post('/', [CustomerController::class, 'store'])->name('store');
+        Route::get('/{customer}', [CustomerController::class, 'show'])->name('show');
+        Route::put('/{customer}', [CustomerController::class, 'update'])->name('update');
+        Route::delete('/{customer}', [CustomerController::class, 'destroy'])->name('destroy');
+    });
 
-    Route::get('/employees/next-id', [EmployeeController::class, 'nextId'])->name('employees.next-id');
-    Route::get('/employees/sample', [EmployeeController::class, 'sampleDownload'])->name('employees.sample');
-    Route::post('/employees/import/preview', [EmployeeController::class, 'importPreview'])->name('employees.import.preview');
-    Route::post('/employees/import', [EmployeeController::class, 'import'])->name('employees.import');
-    Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
-    Route::post('/employees', [EmployeeController::class, 'store'])->name('employees.store');
-    Route::put('/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
-    Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
+    Route::prefix('employees')->name('employees.')->group(function () {
+        Route::get('/next-id', [EmployeeController::class, 'nextId'])->name('next-id');
+        Route::get('/sample', [EmployeeController::class, 'sampleDownload'])->name('sample');
+        Route::post('/import/preview', [EmployeeController::class, 'importPreview'])->name('import.preview');
+        Route::post('/import', [EmployeeController::class, 'import'])->name('import');
+        Route::get('/', [EmployeeController::class, 'index'])->name('index');
+        Route::post('/', [EmployeeController::class, 'store'])->name('store');
+        Route::put('/{employee}', [EmployeeController::class, 'update'])->name('update');
+        Route::delete('/{employee}', [EmployeeController::class, 'destroy'])->name('destroy');
+    });
 });
 
 // Settings
 Route::prefix('settings')->name('settings.')->group(function () {
-    Route::get('/services', [ServiceController::class,  'index'])->name('services.index');
-    Route::post('/services', [ServiceController::class,  'store'])->name('services.store');
-    Route::put('/services/{service}', [ServiceController::class,  'update'])->name('services.update');
-    Route::delete('/services/{service}', [ServiceController::class,  'destroy'])->name('services.destroy');
+    Route::prefix('services')->name('services.')->group(function () {
+        Route::get('/', [ServiceController::class, 'index'])->name('index');
+        Route::post('/', [ServiceController::class, 'store'])->name('store');
+        Route::put('/{service}', [ServiceController::class, 'update'])->name('update');
+        Route::delete('/{service}', [ServiceController::class, 'destroy'])->name('destroy');
+    });
 
-    Route::get('/job-types', [JobTypeController::class, 'index'])->name('job-types.index');
-    Route::post('/job-types', [JobTypeController::class, 'store'])->name('job-types.store');
-    Route::put('/job-types/{jobType}', [JobTypeController::class, 'update'])->name('job-types.update');
-    Route::delete('/job-types/{jobType}', [JobTypeController::class, 'destroy'])->name('job-types.destroy');
+    Route::prefix('job-types')->name('job-types.')->group(function () {
+        Route::get('/', [JobTypeController::class, 'index'])->name('index');
+        Route::post('/', [JobTypeController::class, 'store'])->name('store');
+        Route::put('/{jobType}', [JobTypeController::class, 'update'])->name('update');
+        Route::delete('/{jobType}', [JobTypeController::class, 'destroy'])->name('destroy');
+    });
 
-    Route::get('/ports', [PortController::class, 'index'])->name('ports.index');
-    Route::post('/ports', [PortController::class, 'store'])->name('ports.store');
-    Route::put('/ports/{port}', [PortController::class, 'update'])->name('ports.update');
-    Route::delete('/ports/{port}', [PortController::class, 'destroy'])->name('ports.destroy');
+    Route::prefix('ports')->name('ports.')->group(function () {
+        Route::get('/', [PortController::class, 'index'])->name('index');
+        Route::post('/', [PortController::class, 'store'])->name('store');
+        Route::put('/{port}', [PortController::class, 'update'])->name('update');
+        Route::delete('/{port}', [PortController::class, 'destroy'])->name('destroy');
+    });
 
-    Route::get('/items', [ItemController::class, 'index'])->name('items.index');
-    Route::get('/items/next-code', [ItemController::class, 'nextCode'])->name('items.next-code');
-    Route::get('/items/{item}', [ItemController::class, 'show'])->name('items.show');
-    Route::post('/items/quick', [ItemController::class, 'quickStore'])->name('items.quick-store');
-    Route::post('/items', [ItemController::class, 'store'])->name('items.store');
-    Route::post('/items/{item}', [ItemController::class, 'update'])->name('items.update');
-    Route::delete('/items/{item}', [ItemController::class, 'destroy'])->name('items.destroy');
+    Route::prefix('items')->name('items.')->group(function () {
+        Route::get('/next-code', [ItemController::class, 'nextCode'])->name('next-code');
+        Route::post('/quick', [ItemController::class, 'quickStore'])->name('quick-store');
+        Route::get('/', [ItemController::class, 'index'])->name('index');
+        Route::post('/', [ItemController::class, 'store'])->name('store');
+        Route::get('/{item}', [ItemController::class, 'show'])->name('show');
+        Route::post('/{item}', [ItemController::class, 'update'])->name('update');
+        Route::delete('/{item}', [ItemController::class, 'destroy'])->name('destroy');
+    });
 
-    Route::get('/branches', [BranchController::class, 'index'])->name('branches.index');
-    Route::post('/branches', [BranchController::class, 'store'])->name('branches.store');
-    Route::put('/branches/{branch}', [BranchController::class, 'update'])->name('branches.update');
-    Route::delete('/branches/{branch}', [BranchController::class, 'destroy'])->name('branches.destroy');
+    Route::prefix('branches')->name('branches.')->group(function () {
+        Route::get('/', [BranchController::class, 'index'])->name('index');
+        Route::post('/', [BranchController::class, 'store'])->name('store');
+        Route::put('/{branch}', [BranchController::class, 'update'])->name('update');
+        Route::delete('/{branch}', [BranchController::class, 'destroy'])->name('destroy');
+    });
 
-    Route::get('/expense-heads', [ExpenseHeadController::class, 'index'])->name('expense-heads.index');
-    Route::post('/expense-heads', [ExpenseHeadController::class, 'store'])->name('expense-heads.store');
-    Route::put('/expense-heads/{expenseHead}', [ExpenseHeadController::class, 'update'])->name('expense-heads.update');
-    Route::delete('/expense-heads/{expenseHead}', [ExpenseHeadController::class, 'destroy'])->name('expense-heads.destroy');
-    Route::get('/expense-heads/sample', [ExpenseHeadController::class, 'sampleDownload'])->name('expense-heads.sample');
-    Route::post('/expense-heads/import/preview', [ExpenseHeadController::class, 'importPreview'])->name('expense-heads.import.preview');
-    Route::post('/expense-heads/import', [ExpenseHeadController::class, 'import'])->name('expense-heads.import');
-    Route::get('/expense-heads/employees/search', [ExpenseHeadController::class, 'searchEmployees'])->name('expense-heads.employees.search');
-    Route::get('/expense-heads/{expenseHead}/employees', [ExpenseHeadController::class, 'getEmployees'])->name('expense-heads.employees.get');
-    Route::post('/expense-heads/{expenseHead}/employees', [ExpenseHeadController::class, 'syncEmployees'])->name('expense-heads.employees.sync');
+    Route::prefix('expense-heads')->name('expense-heads.')->group(function () {
+        Route::get('/sample', [ExpenseHeadController::class, 'sampleDownload'])->name('sample');
+        Route::post('/import/preview', [ExpenseHeadController::class, 'importPreview'])->name('import.preview');
+        Route::post('/import', [ExpenseHeadController::class, 'import'])->name('import');
+        Route::get('/employees/search', [ExpenseHeadController::class, 'searchEmployees'])->name('employees.search');
+        Route::get('/', [ExpenseHeadController::class, 'index'])->name('index');
+        Route::post('/', [ExpenseHeadController::class, 'store'])->name('store');
+        Route::put('/{expenseHead}', [ExpenseHeadController::class, 'update'])->name('update');
+        Route::delete('/{expenseHead}', [ExpenseHeadController::class, 'destroy'])->name('destroy');
+        Route::get('/{expenseHead}/employees', [ExpenseHeadController::class, 'getEmployees'])->name('employees.get');
+        Route::post('/{expenseHead}/employees', [ExpenseHeadController::class, 'syncEmployees'])->name('employees.sync');
+    });
 
-    Route::get('/accounts', [AccountController::class, 'index'])->name('accounts.index');
-    Route::post('/accounts', [AccountController::class, 'store'])->name('accounts.store');
-    Route::put('/accounts/{account}', [AccountController::class, 'update'])->name('accounts.update');
-    Route::delete('/accounts/{account}', [AccountController::class, 'destroy'])->name('accounts.destroy');
+    Route::prefix('accounts')->name('accounts.')->group(function () {
+        Route::get('/', [AccountController::class, 'index'])->name('index');
+        Route::post('/', [AccountController::class, 'store'])->name('store');
+        Route::put('/{account}', [AccountController::class, 'update'])->name('update');
+        Route::delete('/{account}', [AccountController::class, 'destroy'])->name('destroy');
+    });
 
-    Route::get('/expense-categories', [ExpenseCategoryController::class, 'index'])->name('expense-categories.index');
-    Route::post('/expense-categories', [ExpenseCategoryController::class, 'store'])->name('expense-categories.store');
-    Route::put('/expense-categories/{expenseCategory}', [ExpenseCategoryController::class, 'update'])->name('expense-categories.update');
-    Route::delete('/expense-categories/{expenseCategory}', [ExpenseCategoryController::class, 'destroy'])->name('expense-categories.destroy');
-    Route::get('/expense-categories/sample', [ExpenseCategoryController::class, 'sampleDownload'])->name('expense-categories.sample');
-    Route::post('/expense-categories/import/preview', [ExpenseCategoryController::class, 'importPreview'])->name('expense-categories.import.preview');
-    Route::post('/expense-categories/import', [ExpenseCategoryController::class, 'import'])->name('expense-categories.import');
+    Route::prefix('expense-categories')->name('expense-categories.')->group(function () {
+        Route::get('/sample', [ExpenseCategoryController::class, 'sampleDownload'])->name('sample');
+        Route::post('/import/preview', [ExpenseCategoryController::class, 'importPreview'])->name('import.preview');
+        Route::post('/import', [ExpenseCategoryController::class, 'import'])->name('import');
+        Route::get('/', [ExpenseCategoryController::class, 'index'])->name('index');
+        Route::post('/', [ExpenseCategoryController::class, 'store'])->name('store');
+        Route::put('/{expenseCategory}', [ExpenseCategoryController::class, 'update'])->name('update');
+        Route::delete('/{expenseCategory}', [ExpenseCategoryController::class, 'destroy'])->name('destroy');
+    });
 });
 
 // Reports
