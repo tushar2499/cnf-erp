@@ -19,7 +19,7 @@
                 <span class="input-group-text"><i class="fa fa-user text-muted"></i></span>
                 <input id="login" type="text" name="login" value="{{ old('login') }}"
                     class="form-control @error('login') is-invalid @enderror"
-                    placeholder="email or username" required autofocus>
+                    placeholder="email or username" autocomplete="username" required autofocus>
             </div>
             @error('login')
                 <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -31,7 +31,7 @@
                 <span class="input-group-text"><i class="fa fa-lock text-muted"></i></span>
                 <input id="password" type="password" name="password"
                     class="form-control @error('password') is-invalid @enderror"
-                    placeholder="••••••••" required>
+                    placeholder="••••••••" autocomplete="current-password" required>
                 <button type="button" class="btn btn-outline-secondary" id="togglePass">
                     <i class="fa fa-eye" id="togglePassIcon"></i>
                 </button>

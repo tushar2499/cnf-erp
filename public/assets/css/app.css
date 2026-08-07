@@ -97,7 +97,7 @@ body {
 }
 .sidebar .nav-section {
     padding: .35rem .85rem .15rem;
-    font-size: .6rem;
+    font-size: 10px;
     font-weight: 700;
     letter-spacing: .08em;
     text-transform: uppercase;
@@ -144,6 +144,26 @@ body {
     transition: margin-left .22s ease;
 }
 
+/* ── Footer offset ── */
+footer {
+    margin-left: var(--sidebar-width);
+    transition: margin-left .22s ease;
+}
+
+/* ── Sidebar backdrop (mobile) ── */
+.sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 1029;
+    cursor: pointer;
+}
+.sidebar-backdrop.show { display: block; }
+
+/* ── Global touch improvement ── */
+button, a, [role="button"], .btn, label { touch-action: manipulation; }
+
 /* ── Sidebar group toggle chevron ── */
 .sidebar .nav-link[data-bs-toggle="collapse"] .fa-chevron-down {
     font-size: .6rem;
@@ -159,6 +179,7 @@ body {
 @media (min-width: 769px) {
     body.sidebar-collapsed .sidebar { width: 46px; }
     body.sidebar-collapsed .main-content { margin-left: 46px; }
+    body.sidebar-collapsed footer { margin-left: 46px; }
 
     body.sidebar-collapsed .sidebar .nav-section { display: none; }
     body.sidebar-collapsed .sidebar .collapse { display: none !important; }
@@ -376,9 +397,45 @@ table.dataTable tfoot input {
         margin-left: 0 !important;
         margin-top: calc(var(--navbar-height) + 28px) !important;
     }
+    footer { margin-left: 0 !important; }
 
     .top-navbar { padding: 0 .5rem; gap: .35rem; }
     .top-navbar .brand { font-size: .78rem; }
     .top-navbar .btn  { padding: .18rem .4rem; }
     .top-navbar .dropdown-menu { font-size: .75rem; min-width: 160px; }
+
+    /* ── Readable body font on mobile ── */
+    body { font-size: 14px; }
+
+    /* ── iOS zoom fix: inputs must be ≥16px to prevent auto-zoom ── */
+    .form-control,
+    .form-select,
+    .form-control-sm,
+    .form-select-sm,
+    .select2-container--bootstrap-5 .select2-selection,
+    .select2-dropdown { font-size: 16px !important; }
+    .input-group-text { font-size: 14px; }
+
+    /* ── Touch targets: minimum 36px height on buttons ── */
+    .btn-sm {
+        padding: .42rem .75rem;
+        min-height: 36px;
+        font-size: .78rem;
+    }
+
+    /* ── Sidebar nav-link touch targets ── */
+    .sidebar .nav-link { padding: .55rem 1rem; }
+
+    /* ── Page header wraps on narrow screens ── */
+    .page-header { flex-wrap: wrap; gap: .4rem; }
+    .page-header h4 { font-size: .88rem; }
+
+    /* ── KPI / stat values scale down on col-6 cards ── */
+    .kpi-card .kpi-value,
+    .kpi-card .kpi-val,
+    .stat-value { font-size: 1.3rem !important; }
+    .kpi-card .kpi-icon { width: 36px; height: 36px; font-size: .9rem; }
+
+    /* ── Dashboard action button rows wrap ── */
+    .d-flex.gap-2 { flex-wrap: wrap; }
 }

@@ -28,12 +28,19 @@ $(function () {
 
     $('#sidebarToggle').on('click', function () {
         if (isMobile()) {
-            $('.sidebar').toggleClass('open');
+            var isOpen = $('.sidebar').toggleClass('open').hasClass('open');
+            $('#sidebarBackdrop').toggleClass('show', isOpen);
         } else {
             $('body').toggleClass('sidebar-collapsed');
             localStorage.setItem('sidebarCollapsed', $('body').hasClass('sidebar-collapsed') ? '1' : '0');
         }
         $flyout.hide();
+    });
+
+    // Tap backdrop to close sidebar on mobile
+    $(document).on('click', '#sidebarBackdrop', function () {
+        $('.sidebar').removeClass('open');
+        $(this).removeClass('show');
     });
 
     function buildFlyout($group) {
@@ -75,11 +82,15 @@ $(function () {
             flyoutHideTimer = setTimeout(function () { $flyout.hide(); }, 120);
         });
 
-    // On resize to mobile: hide flyout and strip sidebar-collapsed so mobile nav is always full
+    // On resize: keep sidebar and backdrop in sync
     $(window).on('resize', function () {
         if (isMobile()) {
             $flyout.hide();
             $('body').removeClass('sidebar-collapsed');
+        } else {
+            // Moving to desktop: close mobile sidebar/backdrop
+            $('.sidebar').removeClass('open');
+            $('#sidebarBackdrop').removeClass('show');
         }
     });
 

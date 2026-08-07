@@ -71,6 +71,11 @@ class JobExpenseController extends Controller
             'rows.*.expense_date'    => ['required', 'date'],
         ]);
 
+        $job = ChevronJob::find($request->job_id);
+        if (! $job || $job->status !== 'Active') {
+            return back()->withInput()->withErrors(['job_id' => 'Selected job is not active.']);
+        }
+
         DB::transaction(function () use ($request) {
             $expense = ChevronJobExpense::create([
                 'expense_no'            => ChevronJobExpense::generateExpenseNo(),
@@ -175,8 +180,9 @@ class JobExpenseController extends Controller
     public function searchJobs(Request $request)
     {
         $q = $request->get('q', '');
-        $results = ChevronJob::where('job_no', 'like', '%'.$q.'%')
-            ->orWhere('party_name', 'like', '%'.$q.'%')
+        $results = ChevronJob::where('status', 'Active')
+            ->where(fn ($s) => $s->where('job_no', 'like', '%'.$q.'%')
+                ->orWhere('party_name', 'like', '%'.$q.'%'))
             ->limit(20)
             ->select(['id', 'job_no', 'be_no', 'invoice_no', 'invoice_value_1', 'bl_no'])
             ->get()

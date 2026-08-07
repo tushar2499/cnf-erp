@@ -53,7 +53,7 @@
         <h4 class="mb-0 fw-bold"><i class="fa fa-tachometer-alt me-2 text-primary"></i> Dashboard</h4>
         <span class="text-muted small">{{ now()->format('l, d F Y') }}</span>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
         <a href="{{ route('chevron.cnf.jobs.create') }}"    class="btn btn-sm btn-primary"><i class="fa fa-plus me-1"></i> New Job</a>
         <a href="{{ route('chevron.cnf.bills.create') }}"   class="btn btn-sm btn-outline-primary"><i class="fa fa-file-invoice me-1"></i> New Bill</a>
         <a href="{{ route('chevron.cnf.money-receipts.create') }}" class="btn btn-sm btn-outline-success"><i class="fa fa-money-bill-wave me-1"></i> New Receipt</a>

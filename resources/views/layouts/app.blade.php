@@ -91,6 +91,9 @@
 </div>
 @endif
 
+{{-- Sidebar backdrop (mobile tap-to-close) --}}
+<div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
 {{-- Sidebar --}}
 <aside class="sidebar">
     @yield('sidebar')
