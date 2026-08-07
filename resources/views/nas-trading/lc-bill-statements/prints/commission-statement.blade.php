@@ -5,11 +5,21 @@
 <title>LC Commission Bill Statement — {{ $lcBillStatement->bill_no }}</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: Arial, sans-serif; font-size: 11px; color: #000; background:#fff; padding:20px; }
-.no-print { margin-bottom:12px; }
-@media print { .no-print { display:none !important; } body { padding:0; } }
-
-.doc { width:100%; max-width:820px; margin:0 auto; }
+@page {
+    size: A4 portrait;
+    margin-top: 1.3in;
+    margin-bottom: 0.9in;
+    margin-left: 0.4in;
+    margin-right: 0.4in;
+}
+body { font-family: Arial, sans-serif; font-size: 11px; color: #000; background: #f2f2f2; }
+.no-print { padding: 10px 20px; background: #fff; border-bottom: 1px solid #ddd; margin-bottom: 16px; }
+@media print {
+    .no-print { display: none !important; }
+    body { background: #fff; }
+    .doc { max-width: 100%; padding: 0; }
+}
+.doc { width: 100%; max-width: 720px; margin: 0 auto; background: #fff; padding: 24px 28px; }
 .header-row { display:flex; justify-content:space-between; margin-bottom:6px; font-size:11px; }
 .to-block { margin:8px 0 12px; font-size:11px; line-height:1.6; }
 .doc-title { text-align:center; font-weight:bold; font-size:13px; margin:10px 0 10px; }
@@ -68,7 +78,7 @@ table tfoot td { font-weight:bold; background:#f5f5f5; }
                         : '-';
                 @endphp
                 <tr>
-                    <td>{{ $item->lc?->lc_no_system ?? '-' }}</td>
+                    <td>{{ $item->serial_number ?? '-' }}</td>
                     <td>{{ $item->lc?->pfi_no ?? '-' }}</td>
                     <td>{{ $item->lc?->lc_no ?? '-' }}</td>
                     <td class="text-center">{{ $item->lc?->lc_open_date?->format('d.m.Y') ?? '-' }}</td>

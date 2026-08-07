@@ -194,6 +194,7 @@ Route::prefix('lc-bill-statements')->name('lc-bill-statements.')->group(function
     Route::delete('/{lcBillStatement}', [LcBillStatementController::class, 'destroy'])->name('destroy');
     Route::get('/{lcBillStatement}/print/cnf-dues', [LcBillStatementController::class, 'printCnfDues'])->name('print.cnf-dues');
     Route::get('/{lcBillStatement}/print/commission-bill', [LcBillStatementController::class, 'printCommissionBill'])->name('print.commission-bill');
+    Route::get('/{lcBillStatement}/print/commission-bill/{item}', [LcBillStatementController::class, 'printCommissionBillItem'])->name('print.commission-bill-item');
     Route::get('/{lcBillStatement}/print/commission-statement', [LcBillStatementController::class, 'printCommissionStatement'])->name('print.commission-statement');
     Route::get('/{lcBillStatement}/print/bill-statement', [LcBillStatementController::class, 'printBillStatement'])->name('print.bill-statement');
 });

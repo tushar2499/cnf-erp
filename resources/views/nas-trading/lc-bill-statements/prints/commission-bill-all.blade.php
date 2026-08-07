@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>LC Commission Bill — {{ $item->serial_number ?? $lcBillStatement->bill_no }}</title>
+<title>LC Commission Bills — {{ $lcBillStatement->bill_no }}</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 @page {
@@ -17,9 +17,11 @@ body { font-family: Arial, sans-serif; font-size: 11px; color: #000; background:
 @media print {
     .no-print { display: none !important; }
     body { background: #fff; }
-    .doc { max-width: 100%; padding: 0; }
+    .doc { max-width: 100%; padding: 0; margin-bottom: 0; }
+    #print-wrap .doc { break-after: page; }
+    #print-wrap .doc:last-child { break-after: auto; }
 }
-.doc { width: 100%; max-width: 720px; margin: 0 auto; background: #fff; padding: 24px 28px; }
+#print-wrap .doc { width: 100%; max-width: 720px; margin: 0 auto 24px; background: #fff; padding: 24px 28px; }
 .header-row { display:flex; justify-content:space-between; margin-bottom:6px; font-size:11px; }
 .to-block { margin:8px 0 12px; font-size:11px; line-height:1.6; }
 .doc-title { text-align:center; font-weight:bold; font-size:13px; margin:10px 0 10px; }
@@ -33,15 +35,16 @@ table tfoot td { font-weight:bold; background:#f5f5f5; }
 </head>
 <body>
 <div class="no-print">
-    <button onclick="window.print()" style="padding:6px 18px;font-size:12px;cursor:pointer;">Print</button>
+    <button onclick="window.print()" style="padding:6px 18px;font-size:12px;cursor:pointer;">Print All</button>
     <button onclick="window.close()" style="padding:6px 18px;font-size:12px;cursor:pointer;margin-left:8px;">Close</button>
 </div>
 
+<div id="print-wrap">
+@foreach ($lcBillStatement->items as $item)
 @php
     $commission = (float) ($item->lc?->lc_commission_flat ?? 0);
     $invoiceValue = $item->lc?->lc_rt_value ? number_format($item->lc->lc_rt_value, 2) : '-';
 @endphp
-
 <div class="doc">
     <div class="header-row">
         <span>Bill No. {{ $item->serial_number ?? $lcBillStatement->bill_no }}</span>
@@ -89,5 +92,8 @@ table tfoot td { font-weight:bold; background:#f5f5f5; }
         </tfoot>
     </table>
 </div>
+@endforeach
+</div>
+
 </body>
 </html>
