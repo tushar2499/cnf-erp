@@ -1457,10 +1457,18 @@
                     }).then(() => {
                         if (r.redirect) window.location.href = r.redirect;
                     }))
-                    .fail(xhr => {
+                    .fail(function(xhr) {
                         $('#btnSave').prop('disabled', false).html(
                             '<i class="fa fa-save me-1"></i> Update LC');
-                        if (xhr.status === 422) {
+                        if (xhr.status === 419) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Session Expired',
+                                text: 'Your session has expired. Please log in again.',
+                                confirmButtonText: 'Go to Login',
+                                allowOutsideClick: false,
+                            }).then(function() { window.location.href = '/login'; });
+                        } else if (xhr.status === 422) {
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Validation Error',

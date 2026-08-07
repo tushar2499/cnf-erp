@@ -19,6 +19,8 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 Route::middleware('auth')->group(function () {
     Route::get('/company/select', [CompanyController::class, 'select'])->name('company.select');
     Route::post('/company/switch/{slug}', [CompanyController::class, 'switch'])->name('company.switch');
+    // Keep-alive: called every 10 min from long-form pages to prevent session expiry
+    Route::get('/keepalive', fn () => response()->json(['ok' => true]))->name('keepalive');
 });
 
 // Admin

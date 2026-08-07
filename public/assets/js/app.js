@@ -1,9 +1,30 @@
 // NAS Group ERP — Global JS
 
-// CSRF for all AJAX
+// CSRF for all AJAX — read dynamically so any page-level token update is picked up
 $.ajaxSetup({
-    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
+    beforeSend: function (xhr) {
+        xhr.setRequestHeader('X-CSRF-TOKEN', $('meta[name="csrf-token"]').attr('content'));
+    }
 });
+
+// Keep the session alive every 10 minutes while any page is open.
+// This prevents CSRF token mismatch errors on long-form pages.
+setInterval(function () {
+    $.get('/keepalive').fail(function (xhr) {
+        // 401 means the session genuinely expired — warn the user
+        if (xhr.status === 401 || xhr.status === 419) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Session Expired',
+                text: 'Your session has expired. Please log in again to continue.',
+                confirmButtonText: 'Go to Login',
+                allowOutsideClick: false,
+            }).then(function () {
+                window.location.href = '/login';
+            });
+        }
+    });
+}, 10 * 60 * 1000);
 
 // Init all Select2 on page
 $(function () {
