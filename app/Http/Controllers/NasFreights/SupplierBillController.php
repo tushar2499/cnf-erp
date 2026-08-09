@@ -84,8 +84,8 @@ class SupplierBillController extends Controller
                 return [
                     'booking_id'       => $b->id,
                     'booking_item_id'  => $item->id,
-                    'booking_date'     => $b->job_date?->format('d-M-Y'),
-                    'entry_date'       => $b->created_at?->format('d-M-Y'),
+                    'booking_date'     => $b->job_date?->format('Y-m-d'),
+                    'entry_date'       => $b->created_at?->format('Y-m-d'),
                     'item_code'        => $item->cover_van_no,
                     'item_name'        => $item->cover_van_no.($item->location_from ? ' || '.$item->location_from : ''),
                     'location'         => $loc,
