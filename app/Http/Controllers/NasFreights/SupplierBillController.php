@@ -64,6 +64,14 @@ class SupplierBillController extends Controller
             'to_date'   => ['required', 'date'],
         ]);
 
+        // (booking_id, cover_van_no) pairs already present in any supplier bill item
+        $billedPairs = NasFreightsSupplierBillItem::select('booking_id', 'item_code')
+            ->whereNotNull('booking_id')
+            ->get()
+            ->map(fn ($r) => $r->booking_id.'_'.$r->item_code)
+            ->flip()
+            ->toArray();
+
         $items = NasFreightsBookingItem::with('booking')
             ->whereHas('booking', function ($q) use ($request) {
                 $q->whereBetween('job_date', [$request->from_date, $request->to_date]);
@@ -73,6 +81,8 @@ class SupplierBillController extends Controller
             })
             ->when($request->supplier_id, fn ($q) => $q->where('supplier_id', $request->supplier_id))
             ->get()
+            ->filter(fn ($item) => ! isset($billedPairs[$item->booking_id.'_'.$item->cover_van_no]))
+            ->values()
             ->map(function ($item) {
                 $b = $item->booking;
                 $loc = trim(
