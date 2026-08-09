@@ -121,6 +121,8 @@
         table.items th {
             background: #000;
             color: #fff;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
             font-size: 9.5px;
             padding: 3px 2px;
             text-align: center;
