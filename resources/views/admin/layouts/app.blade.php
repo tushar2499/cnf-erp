@@ -11,5 +11,11 @@
        class="nav-link {{ request()->routeIs('admin.companies.*') ? 'active' : '' }}">
         <i class="fa fa-building"></i> Companies
     </a>
+
+    <div class="nav-section">Access Control</div>
+    <a href="{{ route('admin.roles.index') }}"
+       class="nav-link {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
+        <i class="fa fa-user-shield"></i> Roles
+    </a>
 </div>
 @endsection

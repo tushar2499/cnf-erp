@@ -16,4 +16,14 @@ class Company extends Model
             ->withPivot('role', 'is_active')
             ->withTimestamps();
     }
+
+    public function permissions()
+    {
+        return $this->hasMany(Permission::class);
+    }
+
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'role_company');
+    }
 }
