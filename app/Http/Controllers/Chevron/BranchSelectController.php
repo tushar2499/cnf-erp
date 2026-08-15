@@ -4,13 +4,20 @@ namespace App\Http\Controllers\Chevron;
 
 use App\Http\Controllers\Controller;
 use App\Models\Chevron\ChevronBranch;
+use App\Models\UserBranchAccess;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class BranchSelectController extends Controller
 {
     public function show()
     {
-        $branches = ChevronBranch::where('is_active', true)->orderBy('name')->get();
+        $branches = $this->allowedBranches();
+
+        if ($branches->isEmpty()) {
+            return redirect()->route('company.select')
+                ->with('error', 'You do not have branch access for Chevron Lines. Please contact your administrator.');
+        }
 
         if ($branches->count() === 1) {
             return $this->setAndRedirect($branches->first());
@@ -21,10 +28,45 @@ class BranchSelectController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate(['branch_id' => ['required', 'exists:chevron_branches,id']]);
-        $branch = ChevronBranch::findOrFail($request->branch_id);
+        $user = Auth::user();
+        $companyId = session('active_company_id') or abort(403, 'No active company in session.');
+        $allowedIds = $user->is_super ? null : UserBranchAccess::where('user_id', $user->id)
+            ->where('company_id', $companyId)
+            ->pluck('branch_id')
+            ->toArray();
 
-        return $this->setAndRedirect($branch);
+        $request->validate([
+            'branch_id' => [
+                'required',
+                'exists:chevron_branches,id',
+                function ($attribute, $value, $fail) use ($allowedIds) {
+                    if ($allowedIds !== null && ! in_array((int) $value, $allowedIds)) {
+                        $fail('You do not have access to that branch.');
+                    }
+                },
+            ],
+        ]);
+
+        return $this->setAndRedirect(ChevronBranch::findOrFail($request->branch_id));
+    }
+
+    private function allowedBranches()
+    {
+        $companyId = session('active_company_id') or abort(403, 'No active company in session.');
+        $user = Auth::user();
+
+        $query = ChevronBranch::where('is_active', true)->orderBy('name');
+
+        if (! $user->is_super) {
+            $allowedIds = UserBranchAccess::where('user_id', $user->id)
+                ->where('company_id', $companyId)
+                ->pluck('branch_id')
+                ->toArray();
+
+            $query->whereIn('id', $allowedIds);
+        }
+
+        return $query->get();
     }
 
     private function setAndRedirect(ChevronBranch $branch)

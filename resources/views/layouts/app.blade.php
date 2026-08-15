@@ -57,12 +57,14 @@
                 <i class="fa fa-user-circle"></i><span class="d-none d-sm-inline ms-1">{{ auth()->user()->name }}</span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
+                @if(auth()->user()->isAdmin())
                 <li>
-                    <a class="dropdown-item" href="{{ route('admin.companies.index') }}">
+                    <a class="dropdown-item" href="{{ route('admin.dashboard') }}">
                         <i class="fa fa-cog me-1"></i> Admin Settings
                     </a>
                 </li>
                 <li><hr class="dropdown-divider"></li>
+                @endif
                 <li>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf

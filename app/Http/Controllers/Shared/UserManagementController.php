@@ -61,9 +61,9 @@ abstract class UserManagementController extends Controller
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')
                 ->addColumn('action', fn ($r) => '
-                    <button class="btn btn-sm btn-outline-primary btn-edit" data-id="'.$r->id.'">
+                    <a href="'.route('admin.users.edit', $r->id).'" class="btn btn-sm btn-outline-primary me-1" title="Edit in Admin Panel" target="_blank">
                         <i class="fa fa-edit"></i>
-                    </button>
+                    </a>
                     <button class="btn btn-sm btn-outline-danger btn-delete"
                         data-url="'.route($prefix.'.users.destroy', $r->id).'"
                         data-name="'.e($r->name).'">
@@ -99,10 +99,12 @@ abstract class UserManagementController extends Controller
     {
         $request->validate([
             'name'     => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:255', 'unique:users,username', 'alpha_dash'],
+            'username' => ['required', 'string', 'max:255', 'unique:users,username', 'regex:/^[a-zA-Z0-9_\-\.]+$/'],
             'email'    => ['nullable', 'email', 'unique:users,email'],
             'password' => ['required', Password::min(6)],
             'role'     => ['required', 'in:admin,user'],
+        ], [
+            'username.regex' => 'The username field must only contain letters, numbers, dashes, underscores, and dots.',
         ]);
 
         $companyId = session('active_company_id');
@@ -128,9 +130,11 @@ abstract class UserManagementController extends Controller
     {
         $request->validate([
             'name'     => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:255', 'unique:users,username,'.$user->id, 'alpha_dash'],
+            'username' => ['required', 'string', 'max:255', 'unique:users,username,'.$user->id, 'regex:/^[a-zA-Z0-9_\-\.]+$/'],
             'email'    => ['nullable', 'email', 'unique:users,email,'.$user->id],
             'role'     => ['required', 'in:admin,user'],
+        ], [
+            'username.regex' => 'The username field must only contain letters, numbers, dashes, underscores, and dots.',
         ]);
 
         $companyId = session('active_company_id');
