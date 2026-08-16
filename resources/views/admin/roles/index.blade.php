@@ -5,9 +5,11 @@
 @section('content')
 <div class="page-header">
     <h4><i class="fa fa-user-shield me-2 text-primary"></i> Roles</h4>
+    @if(auth()->user()->hasPermission('admin.roles.create'))
     <a href="{{ route('admin.roles.create') }}" class="btn btn-sm btn-primary">
         <i class="fa fa-plus me-1"></i> Add Role
     </a>
+    @endif
 </div>
 
 @if(session('success'))

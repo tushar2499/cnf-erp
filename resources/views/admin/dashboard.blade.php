@@ -184,6 +184,7 @@
 
 {{-- Stats strip --}}
 <div class="stats-strip">
+    @if(auth()->user()->hasPermission('admin.companies.list'))
     <a href="{{ route('admin.companies.index') }}" class="stat-card">
         <div class="stat-icon blue"><i class="fa fa-building"></i></div>
         <div>
@@ -191,6 +192,8 @@
             <div class="stat-value">{{ $stats['companies'] }}</div>
         </div>
     </a>
+    @endif
+    @if(auth()->user()->hasPermission('admin.users.list'))
     <a href="{{ route('admin.users.index') }}" class="stat-card">
         <div class="stat-icon green"><i class="fa fa-users"></i></div>
         <div>
@@ -198,6 +201,8 @@
             <div class="stat-value">{{ $stats['users'] }}</div>
         </div>
     </a>
+    @endif
+    @if(auth()->user()->hasPermission('admin.roles.list'))
     <a href="{{ route('admin.roles.index') }}" class="stat-card">
         <div class="stat-icon violet"><i class="fa fa-user-shield"></i></div>
         <div>
@@ -212,6 +217,8 @@
             <div class="stat-value">{{ $stats['permissions'] }}</div>
         </div>
     </a>
+    @endif
+    @if(auth()->user()->hasPermission('admin.employees.list'))
     <a href="#employees-section" class="stat-card">
         <div class="stat-icon slate"><i class="fa fa-id-badge"></i></div>
         <div>
@@ -219,13 +226,14 @@
             <div class="stat-value">{{ $stats['employees'] }}</div>
         </div>
     </a>
+    @endif
 </div>
 
 {{-- Settings section --}}
+@if(auth()->user()->hasPermission('admin.companies.list') || auth()->user()->hasPermission('admin.users.list'))
 <div class="section-title">Settings</div>
 <div class="module-grid">
-
-    {{-- Companies --}}
+    @if(auth()->user()->hasPermission('admin.companies.list'))
     <a href="{{ route('admin.companies.index') }}" class="mod-tile blue">
         <span class="mod-tile-count">{{ $stats['companies'] }}</span>
         <div class="mod-tile-icon"><i class="fa fa-building"></i></div>
@@ -235,8 +243,8 @@
             <span class="mod-action-btn"><i class="fa fa-list me-1"></i>View All</span>
         </div>
     </a>
-
-    {{-- Users --}}
+    @endif
+    @if(auth()->user()->hasPermission('admin.users.list'))
     <a href="{{ route('admin.users.index') }}" class="mod-tile green">
         <span class="mod-tile-count">{{ $stats['users'] }}</span>
         <div class="mod-tile-icon"><i class="fa fa-users"></i></div>
@@ -244,17 +252,19 @@
         <div class="mod-tile-desc">Manage system users, company access, and account status.</div>
         <div class="mod-tile-actions">
             <span class="mod-action-btn"><i class="fa fa-list me-1"></i>View All</span>
+            @if(auth()->user()->hasPermission('admin.users.create'))
             <span class="mod-action-btn"><i class="fa fa-plus me-1"></i>Add User</span>
+            @endif
         </div>
     </a>
-
+    @endif
 </div>
+@endif
 
 {{-- Access Control section --}}
+@if(auth()->user()->hasPermission('admin.roles.list'))
 <div class="section-title">Access Control</div>
 <div class="module-grid">
-
-    {{-- Roles --}}
     <a href="{{ route('admin.roles.index') }}" class="mod-tile violet">
         <span class="mod-tile-count">{{ $stats['roles'] }}</span>
         <div class="mod-tile-icon"><i class="fa fa-user-shield"></i></div>
@@ -262,11 +272,11 @@
         <div class="mod-tile-desc">Define roles with company-scoped permissions for access control.</div>
         <div class="mod-tile-actions">
             <span class="mod-action-btn"><i class="fa fa-list me-1"></i>View All</span>
+            @if(auth()->user()->hasPermission('admin.roles.create'))
             <span class="mod-action-btn"><i class="fa fa-plus me-1"></i>Create Role</span>
+            @endif
         </div>
     </a>
-
-    {{-- Permissions --}}
     <div class="mod-tile amber" style="cursor:default;">
         <span class="mod-tile-count">{{ $stats['permissions'] }}</span>
         <div class="mod-tile-icon"><i class="fa fa-key"></i></div>
@@ -276,14 +286,13 @@
             <span class="mod-action-btn" style="opacity:.5;cursor:not-allowed;"><i class="fa fa-list me-1"></i>Managed via seeder</span>
         </div>
     </div>
-
 </div>
+@endif
 
 {{-- Employees section --}}
+@if(auth()->user()->hasPermission('admin.employees.list'))
 <div class="section-title" id="employees-section">Employees</div>
 <div class="module-grid">
-
-    {{-- Chevron --}}
     <div class="mod-tile teal" style="cursor:default;">
         <div class="mod-tile-icon"><i class="fa fa-id-badge"></i></div>
         <div class="mod-tile-name">Chevron Lines — Employees</div>
@@ -292,8 +301,6 @@
             <span class="mod-action-btn" style="opacity:.5;cursor:not-allowed;"><i class="fa fa-lock me-1"></i>Company Panel</span>
         </div>
     </div>
-
-    {{-- NAS Freights --}}
     <div class="mod-tile rose" style="cursor:default;">
         <div class="mod-tile-icon"><i class="fa fa-id-badge"></i></div>
         <div class="mod-tile-name">NAS Freights — Employees</div>
@@ -302,8 +309,6 @@
             <span class="mod-action-btn" style="opacity:.5;cursor:not-allowed;"><i class="fa fa-lock me-1"></i>Company Panel</span>
         </div>
     </div>
-
-    {{-- NAS Trading --}}
     <div class="mod-tile amber" style="cursor:default;">
         <div class="mod-tile-icon"><i class="fa fa-id-badge"></i></div>
         <div class="mod-tile-name">NAS Trading — Employees</div>
@@ -312,7 +317,7 @@
             <span class="mod-action-btn" style="opacity:.5;cursor:not-allowed;"><i class="fa fa-lock me-1"></i>Company Panel</span>
         </div>
     </div>
-
 </div>
+@endif
 
 @endsection

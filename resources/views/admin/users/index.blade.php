@@ -6,9 +6,11 @@
 
 <div class="page-header">
     <h4><i class="fa fa-users me-2 text-success"></i> Admin Users</h4>
+    @if(auth()->user()->hasPermission('admin.users.create'))
     <a href="{{ route('admin.users.create') }}" class="btn btn-sm btn-success">
         <i class="fa fa-plus me-1"></i> Add New User
     </a>
+    @endif
 </div>
 
 @if(session('success'))

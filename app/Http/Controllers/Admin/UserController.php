@@ -3,6 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\CreateUserRequest;
+use App\Http\Requests\Admin\DestroyUserRequest;
+use App\Http\Requests\Admin\EditUserRequest;
+use App\Http\Requests\Admin\IndexUserRequest;
+use App\Http\Requests\Admin\StoreUserRequest;
+use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\Chevron\ChevronBranch;
 use App\Models\Chevron\ChevronEmployee;
 use App\Models\Company;
@@ -14,19 +20,25 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\UserBranchAccess;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rules\Password;
 use Yajra\DataTables\Facades\DataTables;
 
 class UserController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexUserRequest $request)
     {
         if ($request->ajax()) {
             $users = User::with([
                 'companies' => fn ($q) => $q->withPivot('role', 'role_id', 'is_active'),
             ])->get();
+
+            // role_id → count of system (company_id IS NULL) permissions
+            $sysPermCountByRole = DB::table('role_has_permissions')
+                ->join('permissions', 'permissions.id', '=', 'role_has_permissions.permission_id')
+                ->whereNull('permissions.company_id')
+                ->selectRaw('role_has_permissions.role_id, count(*) as cnt')
+                ->groupBy('role_has_permissions.role_id')
+                ->pluck('cnt', 'role_id');
 
             return DataTables::of($users)
                 ->addIndexColumn()
@@ -45,8 +57,17 @@ class UserController extends Controller
                         ? '<span class="badge" style="background:#ede9fe;color:#6d28d9;">'.e($role->name).'</span>'
                         : '<span class="text-muted small">—</span>';
                 })
-                ->addColumn('companies_badges', function (User $user) {
-                    return $user->companies->map(function ($co) {
+                ->addColumn('companies_badges', function (User $user) use ($sysPermCountByRole) {
+                    $badges = '';
+
+                    $roleId = $user->companies->first()?->pivot->role_id;
+                    $hasSysPerms = $user->is_super || ($roleId && ($sysPermCountByRole[$roleId] ?? 0) > 0);
+
+                    if ($hasSysPerms) {
+                        $badges .= '<span class="badge me-1" style="background:#e2e8f0;color:#475569;font-size:.7rem"><i class="fa fa-gear me-1"></i>System</span>';
+                    }
+
+                    $badges .= $user->companies->map(function ($co) {
                         $color = match ($co->type) {
                             'cnf'     => 'success',
                             'freight' => 'info',
@@ -55,7 +76,9 @@ class UserController extends Controller
                         };
 
                         return '<span class="badge bg-'.$color.' me-1">'.e($co->name).'</span>';
-                    })->implode('') ?: '<span class="text-muted small">—</span>';
+                    })->implode('');
+
+                    return $badges ?: '<span class="text-muted small">—</span>';
                 })
                 ->addColumn('status_badge', fn (User $user) => $user->is_active
                     ? '<span class="badge bg-success">Active</span>'
@@ -63,17 +86,25 @@ class UserController extends Controller
                 ->addColumn('super_badge', fn (User $user) => $user->is_super
                     ? '<span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;"><i class="fa fa-crown me-1"></i>Super</span>'
                     : '<span class="text-muted small">—</span>')
-                ->addColumn('action', fn (User $user) => '
-                    <a href="'.route('admin.users.edit', $user).'" class="btn btn-sm btn-outline-primary me-1" title="Edit">
+                ->addColumn('action', function (User $user) use ($request) {
+                    $html = '';
+                    if ($request->user()->hasPermission('admin.users.edit')) {
+                        $html .= '<a href="'.route('admin.users.edit', $user).'" class="btn btn-sm btn-outline-primary me-1" title="Edit">
                         <i class="fa fa-edit"></i>
-                    </a>
-                    <button class="btn btn-sm btn-outline-danger btn-delete"
+                    </a>';
+                    }
+                    if ($request->user()->hasPermission('admin.users.delete')) {
+                        $html .= '<button class="btn btn-sm btn-outline-danger btn-delete"
                         data-id="'.$user->id.'"
                         data-name="'.e($user->name).'"
                         data-url="'.route('admin.users.destroy', $user).'"
                         title="Delete">
                         <i class="fa fa-trash"></i>
-                    </button>')
+                    </button>';
+                    }
+
+                    return $html;
+                })
                 ->rawColumns(['role_badge', 'companies_badges', 'status_badge', 'super_badge', 'action'])
                 ->make(true);
         }
@@ -81,7 +112,7 @@ class UserController extends Controller
         return view('admin.users.index');
     }
 
-    public function create()
+    public function create(CreateUserRequest $request)
     {
         $roles = Role::with('companies')->orderBy('name')->get();
         $companiesData = $this->buildCompaniesData();
@@ -98,39 +129,26 @@ class UserController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreUserRequest $request)
     {
-        $request->validate([
-            'name'              => ['required', 'string', 'max:255'],
-            'username'          => ['required', 'string', 'max:255', 'unique:users,username', 'regex:/^[a-zA-Z0-9_\-\.]+$/'],
-            'email'             => ['nullable', 'email', 'unique:users,email'],
-            'password'          => ['required', Password::min(6)],
-            'is_active'         => ['boolean'],
-            'role_id'           => ['nullable', 'exists:roles,id'],
-            'employee_link'     => ['nullable', 'string', 'regex:/^\d+:\d+$/'],
-            'branch_access'     => ['nullable', 'array'],
-            'branch_access.*'   => ['nullable', 'array'],
-            'branch_access.*.*' => ['nullable', 'integer'],
-        ], [
-            'username.regex' => 'The username field must only contain letters, numbers, dashes, underscores, and dots.',
-        ]);
+        $validated = $request->validated();
 
         $user = User::create([
-            'name'      => $request->name,
-            'username'  => $request->username,
-            'email'     => $request->filled('email') ? $request->email : null,
-            'password'  => $request->password,
+            'name'      => $validated['name'],
+            'username'  => $validated['username'],
+            'email'     => filled($validated['email'] ?? null) ? $validated['email'] : null,
+            'password'  => $validated['password'],
             'is_active' => $request->boolean('is_active', true),
         ]);
 
-        $this->syncRoleAndCompanies($user, $request->input('role_id'), $request->input('employee_link'));
-        $this->syncBranchAccess($user, $request->input('branch_access', []));
+        $this->syncRoleAndCompanies($user, $validated['role_id'] ?? null, $validated['employee_link'] ?? null);
+        $this->syncBranchAccess($user, $validated['branch_access'] ?? []);
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User "'.$user->name.'" created successfully.');
     }
 
-    public function edit(User $user)
+    public function edit(EditUserRequest $request, User $user)
     {
         $roles = Role::with('companies')->orderBy('name')->get();
         $companiesData = $this->buildCompaniesData();
@@ -156,42 +174,31 @@ class UserController extends Controller
         ));
     }
 
-    public function update(Request $request, User $user)
+    public function update(UpdateUserRequest $request, User $user)
     {
-        $request->validate([
-            'name'              => ['required', 'string', 'max:255'],
-            'username'          => ['required', 'string', 'max:255', 'unique:users,username,'.$user->id, 'regex:/^[a-zA-Z0-9_\-\.]+$/'],
-            'email'             => ['nullable', 'email', 'unique:users,email,'.$user->id],
-            'is_active'         => ['boolean'],
-            'role_id'           => ['nullable', 'exists:roles,id'],
-            'employee_link'     => ['nullable', 'string', 'regex:/^\d+:\d+$/'],
-            'branch_access'     => ['nullable', 'array'],
-            'branch_access.*'   => ['nullable', 'array'],
-            'branch_access.*.*' => ['nullable', 'integer'],
-        ], [
-            'username.regex' => 'The username field must only contain letters, numbers, dashes, underscores, and dots.',
-        ]);
+        $validated = $request->validated();
 
         $userData = [
-            'name'      => $request->name,
-            'username'  => $request->username,
-            'email'     => $request->filled('email') ? $request->email : null,
+            'name'      => $validated['name'],
+            'username'  => $validated['username'],
+            'email'     => filled($validated['email'] ?? null) ? $validated['email'] : null,
             'is_active' => $request->boolean('is_active', true),
         ];
-        if ($request->filled('password')) {
-            $request->validate(['password' => [Password::min(6)]]);
-            $userData['password'] = $request->password;
+
+        if (filled($validated['password'] ?? null)) {
+            $userData['password'] = $validated['password'];
         }
+
         $user->update($userData);
 
-        $this->syncRoleAndCompanies($user, $request->input('role_id'), $request->input('employee_link'));
-        $this->syncBranchAccess($user, $request->input('branch_access', []));
+        $this->syncRoleAndCompanies($user, $validated['role_id'] ?? null, $validated['employee_link'] ?? null);
+        $this->syncBranchAccess($user, $validated['branch_access'] ?? []);
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User "'.$user->name.'" updated successfully.');
     }
 
-    public function destroy(User $user)
+    public function destroy(DestroyUserRequest $request, User $user)
     {
         $user->delete();
 

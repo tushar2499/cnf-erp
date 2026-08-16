@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return auth()->check()
-        ? redirect()->route('company.select')
-        : redirect()->route('login');
+    ? redirect()->route('company.select')
+    : redirect()->route('login');
 });
 
 // Auth
@@ -23,17 +23,18 @@ Route::middleware('auth')->group(function () {
     Route::get('/company/select', [CompanyController::class, 'select'])->name('company.select');
     Route::post('/company/switch/{slug}', [CompanyController::class, 'switch'])->name('company.switch');
     // Keep-alive: called every 10 min from long-form pages to prevent session expiry
-    Route::get('/keepalive', fn () => response()->json(['ok' => true]))->name('keepalive');
+    Route::get('/keepalive', fn() => response()->json(['ok' => true]))->name('keepalive');
 });
 
 // Admin
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Companies
     Route::get('/companies', [App\Http\Controllers\Admin\CompanyController::class, 'index'])->name('companies.index');
     Route::get('/companies/{company}/edit', [App\Http\Controllers\Admin\CompanyController::class, 'edit'])->name('companies.edit');
     Route::post('/companies/{company}', [App\Http\Controllers\Admin\CompanyController::class, 'update'])->name('companies.update');
-
-    // Dashboard
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Users
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');

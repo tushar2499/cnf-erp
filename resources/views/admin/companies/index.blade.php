@@ -49,9 +49,11 @@
                         </span>
                     </td>
                     <td>
+                        @if(auth()->user()->hasPermission('admin.companies.edit'))
                         <a href="{{ route('admin.companies.edit', $company) }}" class="btn btn-sm btn-outline-primary">
                             <i class="fa fa-edit"></i> Edit
                         </a>
+                        @endif
                     </td>
                 </tr>
                 @endforeach

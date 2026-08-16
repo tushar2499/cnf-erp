@@ -3,16 +3,22 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\CreateRoleRequest;
+use App\Http\Requests\Admin\DestroyRoleRequest;
+use App\Http\Requests\Admin\EditRoleRequest;
+use App\Http\Requests\Admin\IndexRoleRequest;
+use App\Http\Requests\Admin\ShowRoleRequest;
+use App\Http\Requests\Admin\StoreRoleRequest;
+use App\Http\Requests\Admin\UpdateRoleRequest;
 use App\Models\Company;
 use App\Models\Permission;
 use App\Models\Role;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
 class RoleController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexRoleRequest $request)
     {
         if ($request->ajax()) {
             $query = Role::with([
@@ -44,20 +50,29 @@ class RoleController extends Controller
 
                     return $badges ?: '<span class="text-muted small">—</span>';
                 })
-                ->addColumn('action', function (Role $role) {
-                    return '<a href="'.route('admin.roles.show', $role).'" class="btn btn-sm btn-outline-secondary me-1" title="View">
+                ->addColumn('action', function (Role $role) use ($request) {
+                    $html = '';
+                    if ($request->user()->hasPermission('admin.roles.view')) {
+                        $html .= '<a href="'.route('admin.roles.show', $role).'" class="btn btn-sm btn-outline-secondary me-1" title="View">
                                 <i class="fa fa-eye"></i>
-                            </a>
-                            <a href="'.route('admin.roles.edit', $role).'" class="btn btn-sm btn-outline-primary me-1" title="Edit">
+                            </a>';
+                    }
+                    if ($request->user()->hasPermission('admin.roles.edit')) {
+                        $html .= '<a href="'.route('admin.roles.edit', $role).'" class="btn btn-sm btn-outline-primary me-1" title="Edit">
                                 <i class="fa fa-edit"></i>
-                            </a>
-                            <button class="btn btn-sm btn-outline-danger btn-delete"
+                            </a>';
+                    }
+                    if ($request->user()->hasPermission('admin.roles.delete')) {
+                        $html .= '<button class="btn btn-sm btn-outline-danger btn-delete"
                                 data-id="'.$role->id.'"
                                 data-name="'.e($role->name).'"
                                 data-url="'.route('admin.roles.destroy', $role).'"
                                 title="Delete">
                                 <i class="fa fa-trash"></i>
                             </button>';
+                    }
+
+                    return $html;
                 })
                 ->rawColumns(['companies_badges', 'action'])
                 ->make(true);
@@ -66,7 +81,7 @@ class RoleController extends Controller
         return view('admin.roles.index');
     }
 
-    public function show(Role $role)
+    public function show(ShowRoleRequest $request, Role $role)
     {
         $role->load(['companies', 'permissions.company']);
 
@@ -76,7 +91,7 @@ class RoleController extends Controller
         return view('admin.roles.show', compact('role', 'systemPermissions', 'companyPermissions'));
     }
 
-    public function create()
+    public function create(CreateRoleRequest $request)
     {
         $companies = $this->companiesWithPermissions();
         $systemPermissions = $this->systemPermissions();
@@ -88,20 +103,15 @@ class RoleController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreRoleRequest $request)
     {
-        $data = $request->validate([
-            'name'             => ['required', 'string', 'max:100', 'unique:roles,name'],
-            'permission_ids'   => ['nullable', 'array'],
-            'permission_ids.*' => ['exists:permissions,id'],
-        ]);
+        $data = $request->validated();
 
         $role = Role::create(['name' => $data['name'], 'guard_name' => 'web']);
 
         $permissionIds = $data['permission_ids'] ?? [];
         if ($permissionIds) {
             $role->permissions()->sync($permissionIds);
-            // derive company_ids from selected permissions (exclude system permissions with null company_id)
             $companyIds = Permission::whereIn('id', $permissionIds)->whereNotNull('company_id')->distinct()->pluck('company_id');
             $role->companies()->sync($companyIds);
         }
@@ -110,7 +120,7 @@ class RoleController extends Controller
             ->with('success', 'Role "'.$role->name.'" created successfully.');
     }
 
-    public function edit(Role $role)
+    public function edit(EditRoleRequest $request, Role $role)
     {
         $companies = $this->companiesWithPermissions();
         $systemPermissions = $this->systemPermissions();
@@ -124,13 +134,9 @@ class RoleController extends Controller
         ]);
     }
 
-    public function update(Request $request, Role $role)
+    public function update(UpdateRoleRequest $request, Role $role)
     {
-        $data = $request->validate([
-            'name'             => ['required', 'string', 'max:100', 'unique:roles,name,'.$role->id],
-            'permission_ids'   => ['nullable', 'array'],
-            'permission_ids.*' => ['exists:permissions,id'],
-        ]);
+        $data = $request->validated();
 
         $role->update(['name' => $data['name']]);
 
@@ -146,7 +152,7 @@ class RoleController extends Controller
             ->with('success', 'Role "'.$role->name.'" updated successfully.');
     }
 
-    public function destroy(Role $role)
+    public function destroy(DestroyRoleRequest $request, Role $role)
     {
         $role->delete();
 
