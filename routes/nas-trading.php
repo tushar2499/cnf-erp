@@ -233,12 +233,6 @@ Route::prefix('import')->name('import.')->group(function () {
     Route::post('/chevron', [ImportController::class, 'import'])->name('chevron');
 });
 
-// Users (read-only list + remove from company — create/edit managed in admin panel)
-Route::prefix('users')->name('users.')->group(function () {
-    Route::get('/', [UserController::class, 'index'])->name('index');
-    Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
-});
-
 // Settings — Branches
 Route::prefix('settings')->name('settings.')->group(function () {
     Route::prefix('branches')->name('branches.')->group(function () {

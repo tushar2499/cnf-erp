@@ -192,12 +192,6 @@ Route::prefix('reports')->name('reports.')->group(function () {
     Route::get('/bill-details/excel', [ReportController::class, 'billDetailsExcel'])->name('bill-details.excel');
 });
 
-// Users (read-only list + remove from company — create/edit managed in admin panel)
-Route::prefix('users')->name('users.')->group(function () {
-    Route::get('/', [UserController::class, 'index'])->name('index');
-    Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
-});
-
 // Import
 Route::prefix('import')->name('import.')->group(function () {
     Route::get('/supplier-payments', [ImportController::class, 'supplierPaymentsIndex'])->name('supplier-payments');

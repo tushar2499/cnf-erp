@@ -57,8 +57,9 @@
 /* ── Permissions card ── */
 .perms-card {
     background: #fff; border: 1px solid #e2e8f0;
-    border-radius: .5rem; overflow: hidden;
+    border-radius: .5rem; overflow: clip;
     box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    min-width: 0;
 }
 .perms-card-header {
     padding: .65rem 1.1rem;
@@ -72,23 +73,45 @@
     padding: .15rem .55rem; border-radius: 999px;
 }
 
-/* ── Company tabs ── */
-.co-tabs {
-    display: flex; gap: 0;
+/* ── Company tabs wrapper ── */
+.co-tabs-wrapper {
+    position: relative;
     border-bottom: 2px solid #e2e8f0;
     background: #fafafa;
-    padding: 0 1.1rem;
 }
+.co-tab-scroll-btn {
+    position: absolute; top: 0; bottom: 2px; z-index: 2;
+    width: 2rem; border: none; background: linear-gradient(to right, #fafafa 60%, transparent);
+    display: none; align-items: center; justify-content: center;
+    cursor: pointer; color: #64748b; font-size: .75rem; padding: 0;
+}
+.co-tab-scroll-btn.right {
+    right: 0;
+    background: linear-gradient(to left, #fafafa 60%, transparent);
+}
+.co-tab-scroll-btn.left  { left: 0; }
+.co-tab-scroll-btn.visible { display: flex; }
+/* ── Company tabs ── */
+.co-tabs {
+    display: flex; gap: 0; flex-wrap: nowrap;
+    overflow-x: auto; scroll-behavior: smooth;
+    padding: 0 1.1rem;
+    scrollbar-width: none;
+}
+.co-tabs::-webkit-scrollbar { display: none; }
 .co-tab-btn {
     display: flex; align-items: center; gap: .45rem;
-    padding: .65rem 1rem; border: none; background: none;
-    border-bottom: 3px solid transparent; margin-bottom: -2px;
+    padding: .5rem .9rem;
+    border: 1.5px solid #d1d5db;
+    border-radius: .4rem;
+    background: #fff;
+    margin: .45rem .3rem;
     font-size: .78rem; font-weight: 600; color: #64748b;
     cursor: pointer; white-space: nowrap;
-    transition: color .15s, border-color .15s;
+    transition: color .15s, border-color .15s, background .15s;
 }
-.co-tab-btn:hover { color: #334155; }
-.co-tab-btn.active { color: #1d4ed8; border-bottom-color: #1d4ed8; }
+.co-tab-btn:hover { color: #334155; border-color: #94a3b8; background: #f1f5f9; }
+.co-tab-btn.active { color: #1d4ed8; border-color: #1d4ed8; background: #eff6ff; }
 
 .co-type-pill {
     font-size: .62rem; font-weight: 800; letter-spacing: .05em;
@@ -98,14 +121,6 @@
 .pill-freight { background: #cffafe; color: #0e7490; }
 .pill-trading { background: #fef9c3; color: #a16207; }
 
-.co-count-badge {
-    font-size: .68rem; font-weight: 700;
-    background: #e2e8f0; color: #475569;
-    min-width: 1.5rem; text-align: center;
-    padding: .1rem .35rem; border-radius: 999px;
-    transition: background .2s, color .2s;
-}
-.co-count-badge.active { background: #1d4ed8; color: #fff; }
 
 /* ── Tab content area ── */
 .co-tab-pane { display: none; padding: 1rem 1.1rem; }
@@ -289,34 +304,40 @@
                 </div>
 
                 {{-- Company tabs --}}
-                <div class="co-tabs" id="coTabs">
-                    {{-- System tab --}}
-                    <button type="button"
-                            class="co-tab-btn active"
-                            data-target="pane-co-system"
-                            data-company="system">
-                        <span class="co-type-pill" style="background:#f1f5f9;color:#475569">SYS</span>
-                        System
-                        <span class="co-count-badge" id="badge-system">0</span>
+                <div class="co-tabs-wrapper">
+                    <button type="button" class="co-tab-scroll-btn left" id="tabScrollLeft">
+                        <i class="fa fa-chevron-left"></i>
                     </button>
-                    @foreach($companies as $co)
-                    @php
-                        $pilClass = match($co->type) {
-                            'cnf'     => 'pill-cnf',
-                            'freight' => 'pill-freight',
-                            'trading' => 'pill-trading',
-                            default   => '',
-                        };
-                    @endphp
-                    <button type="button"
-                            class="co-tab-btn"
-                            data-target="pane-co-{{ $co->id }}"
-                            data-company="{{ $co->id }}">
-                        <span class="co-type-pill {{ $pilClass }}">{{ strtoupper($co->type) }}</span>
-                        {{ $co->name }}
-                        <span class="co-count-badge" id="badge-{{ $co->id }}">0</span>
+                    <div class="co-tabs" id="coTabs">
+                        {{-- System tab --}}
+                        <button type="button"
+                                class="co-tab-btn active"
+                                data-target="pane-co-system"
+                                data-company="system">
+                            <span class="co-type-pill" style="background:#f1f5f9;color:#475569">SYS</span>
+                            System
+                        </button>
+                        @foreach($companies as $co)
+                        @php
+                            $pilClass = match($co->type) {
+                                'cnf'     => 'pill-cnf',
+                                'freight' => 'pill-freight',
+                                'trading' => 'pill-trading',
+                                default   => '',
+                            };
+                        @endphp
+                        <button type="button"
+                                class="co-tab-btn"
+                                data-target="pane-co-{{ $co->id }}"
+                                data-company="{{ $co->id }}">
+                            <span class="co-type-pill {{ $pilClass }}">{{ strtoupper($co->type) }}</span>
+                            {{ $co->name }}
+                        </button>
+                        @endforeach
+                    </div>
+                    <button type="button" class="co-tab-scroll-btn right" id="tabScrollRight">
+                        <i class="fa fa-chevron-right"></i>
                     </button>
-                    @endforeach
                 </div>
 
                 {{-- System tab pane --}}
@@ -508,10 +529,6 @@ $(function () {
             var total   = $perms.length;
             grandTotal += count;
 
-            // badge on tab
-            var $badge = $('#badge-' + cid);
-            $badge.text(count).toggleClass('active', count > 0);
-
             // summary panel
             var $sum = $('#summary-' + cid);
             $sum.text(count).toggleClass('zero', count === 0);
@@ -596,8 +613,43 @@ $(function () {
             .html('<span class="spinner-border spinner-border-sm me-1"></span>Saving...');
     });
 
+    /* ── Tab scroll arrows (click only) ── */
+    var $tabs = $('#coTabs');
+
+    function updateTabArrows() {
+        var el = $tabs[0];
+        $('#tabScrollLeft').toggleClass('visible', el.scrollLeft > 0);
+        $('#tabScrollRight').toggleClass('visible', el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+    }
+
+    $('#tabScrollLeft').on('click', function () { $tabs[0].scrollBy({ left: -150, behavior: 'smooth' }); });
+    $('#tabScrollRight').on('click', function () { $tabs[0].scrollBy({ left: 150, behavior: 'smooth' }); });
+
+    $tabs.on('scroll', updateTabArrows);
+    $(window).on('resize', updateTabArrows);
+
+    /* ── Tab bar drag to scroll ── */
+    var _drag = { active: false, startX: 0, scrollLeft: 0 };
+    $tabs.on('mousedown', function (e) {
+        if ($(e.target).closest('.co-tab-btn').length) { return; }
+        _drag.active    = true;
+        _drag.startX    = e.pageX - $tabs[0].offsetLeft;
+        _drag.scrollLeft = $tabs[0].scrollLeft;
+        $tabs.css('cursor', 'grabbing');
+    });
+    $(document).on('mousemove', function (e) {
+        if (!_drag.active) { return; }
+        e.preventDefault();
+        var x    = e.pageX - $tabs[0].offsetLeft;
+        var walk = x - _drag.startX;
+        $tabs[0].scrollLeft = _drag.scrollLeft - walk;
+    }).on('mouseup mouseleave', function () {
+        if (_drag.active) { _drag.active = false; $tabs.css('cursor', ''); }
+    });
+
     /* ── Init ── */
     updateCounts();
+    updateTabArrows();
 });
 </script>
 @endpush

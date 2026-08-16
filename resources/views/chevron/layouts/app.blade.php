@@ -10,7 +10,7 @@
         $cnfOpsActive      = request()->routeIs('chevron.cnf.jobs.*', 'chevron.cnf.job-expenses.*', 'chevron.cnf.bills.*', 'chevron.cnf.money-receipts.*');
         $reportsActive     = request()->routeIs('chevron.reports.*');
         $stakeholdersActive = request()->routeIs('chevron.stakeholders.*');
-        $settingsActive    = request()->routeIs('chevron.settings.*', 'chevron.users.*');
+        $settingsActive    = request()->routeIs('chevron.settings.*');
     @endphp
 
     <div class="nav-item-group">
@@ -117,10 +117,6 @@
             <a href="{{ route('chevron.settings.branches.index') }}"
                class="nav-link ps-4 {{ request()->routeIs('chevron.settings.branches.*') ? 'active' : '' }}">
                 <i class="fa fa-code-branch"></i> Branches
-            </a>
-            <a href="{{ route('chevron.users.index') }}"
-               class="nav-link ps-4 {{ request()->routeIs('chevron.users.*') ? 'active' : '' }}">
-                <i class="fa fa-users-cog"></i> Users
             </a>
             <a href="{{ route('chevron.settings.items.index') }}"
                class="nav-link ps-4 {{ request()->routeIs('chevron.settings.items.*') ? 'active' : '' }}">
