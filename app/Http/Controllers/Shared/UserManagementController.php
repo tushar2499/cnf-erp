@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Chevron\ChevronEmployee;
 use App\Models\NasFreights\NasFreightsEmployee;
 use App\Models\NasTrading\NasTradingEmployee;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -37,26 +38,33 @@ abstract class UserManagementController extends Controller
         if ($request->ajax()) {
             $users = User::whereHas('companies', fn ($q) => $q->where('company_id', $companyId))
                 ->with(['companies' => fn ($q) => $q->where('companies.id', $companyId)])
-                ->get()
-                ->map(function ($u) use ($employees) {
-                    $pivot = $u->companies->first()?->pivot;
-                    $u->role = $pivot?->role ?? 'user';
-                    $u->company_active = (bool) ($pivot?->is_active ?? true);
-                    $u->employee_id = $pivot?->employee_id;
-                    $u->employee_name = $pivot?->employee_id
-                        ? ($employees->get($pivot->employee_id)?->name ?? '—')
-                        : '—';
+                ->get();
 
-                    return $u;
-                });
+            $roleIds = $users->flatMap(fn ($u) => $u->companies->pluck('pivot.role_id'))->filter()->unique()->values();
+            $rolesById = Role::whereIn('id', $roleIds)->pluck('name', 'id');
+
+            $users = $users->map(function ($u) use ($employees, $rolesById) {
+                $pivot = $u->companies->first()?->pivot;
+                $u->role_id = $pivot?->role_id;
+                $u->role_name = $pivot?->role_id
+                    ? ($rolesById[$pivot->role_id] ?? '—')
+                    : null;
+                $u->company_active = (bool) ($pivot?->is_active ?? true);
+                $u->employee_id = $pivot?->employee_id;
+                $u->employee_name = $pivot?->employee_id
+                    ? ($employees->get($pivot->employee_id)?->name ?? '—')
+                    : '—';
+
+                return $u;
+            });
 
             $prefix = $this->routePrefix();
 
             return DataTables::of($users)
                 ->addIndexColumn()
-                ->addColumn('role_badge', fn ($r) => $r->role === 'admin'
-                    ? '<span class="badge bg-danger">Admin</span>'
-                    : '<span class="badge bg-secondary">User</span>')
+                ->addColumn('role_badge', fn ($r) => $r->role_name
+                    ? '<span class="badge bg-secondary">'.e($r->role_name).'</span>'
+                    : '<span class="text-muted small">—</span>')
                 ->addColumn('status_badge', fn ($r) => ($r->is_active && $r->company_active)
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')
@@ -83,13 +91,18 @@ abstract class UserManagementController extends Controller
         $companyId = session('active_company_id');
         $pivot = $user->companies()->where('companies.id', $companyId)->first()?->pivot;
 
+        $roleName = $pivot?->role_id
+            ? Role::find($pivot->role_id)?->name
+            : null;
+
         return response()->json([
             'id'             => $user->id,
             'name'           => $user->name,
             'username'       => $user->username,
             'email'          => $user->email,
             'is_active'      => $user->is_active,
-            'role'           => $pivot?->role ?? 'user',
+            'role_id'        => $pivot?->role_id,
+            'role_name'      => $roleName,
             'company_active' => (bool) ($pivot?->is_active ?? true),
             'employee_id'    => $pivot?->employee_id,
         ]);
@@ -102,7 +115,6 @@ abstract class UserManagementController extends Controller
             'username' => ['required', 'string', 'max:255', 'unique:users,username', 'regex:/^[a-zA-Z0-9_\-\.]+$/'],
             'email'    => ['nullable', 'email', 'unique:users,email'],
             'password' => ['required', Password::min(6)],
-            'role'     => ['required', 'in:admin,user'],
         ], [
             'username.regex' => 'The username field must only contain letters, numbers, dashes, underscores, and dots.',
         ]);
@@ -118,7 +130,6 @@ abstract class UserManagementController extends Controller
         ]);
 
         $user->companies()->attach($companyId, [
-            'role'        => $request->role,
             'is_active'   => true,
             'employee_id' => $request->filled('employee_id') ? $request->employee_id : null,
         ]);
@@ -132,7 +143,6 @@ abstract class UserManagementController extends Controller
             'name'     => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username,'.$user->id, 'regex:/^[a-zA-Z0-9_\-\.]+$/'],
             'email'    => ['nullable', 'email', 'unique:users,email,'.$user->id],
-            'role'     => ['required', 'in:admin,user'],
         ], [
             'username.regex' => 'The username field must only contain letters, numbers, dashes, underscores, and dots.',
         ]);
@@ -153,7 +163,6 @@ abstract class UserManagementController extends Controller
 
         $user->companies()->syncWithoutDetaching([
             $companyId => [
-                'role'        => $request->role,
                 'is_active'   => $request->boolean('company_active'),
                 'employee_id' => $request->filled('employee_id') ? $request->employee_id : null,
             ],

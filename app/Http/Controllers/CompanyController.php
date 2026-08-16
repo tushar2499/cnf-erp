@@ -10,9 +10,10 @@ class CompanyController extends Controller
 {
     public function select()
     {
-        $companies = Auth::user()
-            ->companies()
+        $user = Auth::user();
+        $companies = $user->companies()
             ->where('companies.is_active', true)
+            ->when(! $user->is_super, fn ($q) => $q->whereNotNull('company_user.role_id'))
             ->get();
 
         return view('company.select', compact('companies'));
@@ -20,10 +21,11 @@ class CompanyController extends Controller
 
     public function switch(Request $request, string $slug)
     {
-        $company = Auth::user()
-            ->companies()
+        $user = Auth::user();
+        $company = $user->companies()
             ->where('companies.slug', $slug)
             ->where('companies.is_active', true)
+            ->when(! $user->is_super, fn ($q) => $q->whereNotNull('company_user.role_id'))
             ->firstOrFail();
 
         session([

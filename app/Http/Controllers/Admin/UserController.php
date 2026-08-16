@@ -29,8 +29,11 @@ class UserController extends Controller
     {
         if ($request->ajax()) {
             $users = User::with([
-                'companies' => fn ($q) => $q->withPivot('role', 'role_id', 'is_active'),
+                'companies' => fn ($q) => $q->withPivot('role_id', 'is_active'),
             ])->get();
+
+            $roleIds = $users->flatMap(fn ($u) => $u->companies->pluck('pivot.role_id'))->filter()->unique();
+            $rolesById = Role::whereIn('id', $roleIds)->get()->keyBy('id');
 
             // role_id → count of system (company_id IS NULL) permissions
             $sysPermCountByRole = DB::table('role_has_permissions')
@@ -42,16 +45,12 @@ class UserController extends Controller
 
             return DataTables::of($users)
                 ->addIndexColumn()
-                ->addColumn('role_badge', function (User $user) {
-                    $roleId = $user->companies->first()?->pivot->role_id;
+                ->addColumn('role_badge', function (User $user) use ($rolesById) {
+                    $roleId = $user->companies->first(fn ($c) => $c->pivot->role_id)?->pivot->role_id;
                     if (! $roleId) {
-                        $oldRole = $user->companies->first()?->pivot->role;
-
-                        return $oldRole
-                            ? '<span class="badge bg-secondary">'.ucfirst($oldRole).'</span>'
-                            : '<span class="text-muted small">—</span>';
+                        return '<span class="text-muted small">—</span>';
                     }
-                    $role = Role::find($roleId);
+                    $role = $rolesById[$roleId] ?? null;
 
                     return $role
                         ? '<span class="badge" style="background:#ede9fe;color:#6d28d9;">'.e($role->name).'</span>'
@@ -60,14 +59,18 @@ class UserController extends Controller
                 ->addColumn('companies_badges', function (User $user) use ($sysPermCountByRole) {
                     $badges = '';
 
-                    $roleId = $user->companies->first()?->pivot->role_id;
+                    $activeCompanies = $user->is_super
+                        ? $user->companies
+                        : $user->companies->filter(fn ($c) => $c->pivot->role_id);
+
+                    $roleId = $activeCompanies->first(fn ($c) => $c->pivot->role_id)?->pivot->role_id;
                     $hasSysPerms = $user->is_super || ($roleId && ($sysPermCountByRole[$roleId] ?? 0) > 0);
 
                     if ($hasSysPerms) {
                         $badges .= '<span class="badge me-1" style="background:#e2e8f0;color:#475569;font-size:.7rem"><i class="fa fa-gear me-1"></i>System</span>';
                     }
 
-                    $badges .= $user->companies->map(function ($co) {
+                    $badges .= $activeCompanies->map(function ($co) {
                         $color = match ($co->type) {
                             'cnf'     => 'success',
                             'freight' => 'info',
@@ -214,6 +217,13 @@ class UserController extends Controller
         }
 
         $role = Role::with('companies')->find($roleId);
+
+        if (! $role) {
+            $user->companies()->detach();
+
+            return;
+        }
+
         $companyIds = $role->companies->pluck('id');
 
         [$empCompanyId, $empId] = $this->parseEmployeeLink($employeeLink);
@@ -222,7 +232,6 @@ class UserController extends Controller
         foreach ($companyIds as $companyId) {
             $sync[$companyId] = [
                 'role_id'     => $roleId,
-                'role'        => 'user',
                 'employee_id' => ($empCompanyId == $companyId) ? $empId : null,
                 'is_active'   => true,
             ];

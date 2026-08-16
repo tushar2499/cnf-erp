@@ -19,11 +19,12 @@ class EnsureCompanyAccess
 
         if ($sessionSlug !== $slug) {
             // Try to auto-switch if user has access
-            $company = $request->user()
-                ->companies()
+            $user = $request->user();
+            $company = $user->companies()
                 ->where('companies.slug', $slug)
                 ->where('companies.is_active', true)
                 ->where('company_user.is_active', true)
+                ->when(! $user->is_super, fn ($q) => $q->whereNotNull('company_user.role_id'))
                 ->first();
 
             if (! $company) {
