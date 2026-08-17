@@ -4,51 +4,76 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Dashboard') — {{ $activeCompany->name ?? 'NAS Group ERP' }}</title>
+    <title>@yield('title', 'My Profile') — NAS Group ERP</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-    <link href="https://cdn.datatables.net/2.0.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet">
     <link href="{{ asset('assets/css/app.css') }}" rel="stylesheet">
+    <style>
+        /* ── Profile layout overrides ── */
+        .profile-main {
+            margin-left: 0;
+            margin-top: var(--navbar-height);
+            min-height: calc(100vh - var(--navbar-height));
+            background: #f0f2f5;
+            padding: 1.25rem 1rem 2rem;
+        }
+        .profile-shell {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+        .profile-back-bar {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            margin-bottom: 1rem;
+        }
+        .profile-back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            font-size: .75rem;
+            font-weight: 600;
+            color: #475569;
+            text-decoration: none;
+            padding: .3rem .65rem;
+            border-radius: .35rem;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,.05);
+            transition: background .12s, color .12s, border-color .12s;
+        }
+        .profile-back-btn:hover {
+            background: #f8fafc;
+            color: #1e293b;
+            border-color: #cbd5e1;
+        }
+        .profile-back-sep {
+            font-size: .7rem;
+            color: #94a3b8;
+        }
+        .profile-back-crumb {
+            font-size: .72rem;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        footer.profile-footer {
+            margin-left: 0;
+        }
+    </style>
     @stack('styles')
 </head>
 <body>
 
-{{-- Top Navbar --}}
+{{-- Top Navbar (identical to app layout — no sidebar toggle) --}}
 <nav class="top-navbar">
-    <button id="sidebarToggle" class="btn btn-sm btn-light me-1" title="Toggle sidebar">
-        <i class="fa fa-bars"></i>
-    </button>
     <span class="brand">
         <i class="fa fa-layer-group me-1 text-primary"></i>
         <span class="d-inline">NAS Group ERP</span>
     </span>
-    @if(isset($activeCompany))
-    <span class="badge company-badge d-none d-md-inline-flex
-        {{ $activeCompany->type === 'cnf' ? 'bg-success' : ($activeCompany->type === 'freight' ? 'bg-info text-dark' : 'bg-warning text-dark') }}">
-        {{ $activeCompany->name }}
-    </span>
-    @endif
-    @if(isset($activeBranch))
-    <span class="badge bg-primary bg-opacity-75 ms-1 d-none d-md-inline-flex" style="font-size:.68rem">
-        <i class="fa fa-code-branch me-1"></i>{{ $activeBranch->name }}
-    </span>
-    @endif
     <div class="ms-auto d-flex align-items-center gap-2 gap-md-3">
-        @if(isset($activeBranch))
-        @php $switchRoute = match(session('active_company_slug')) {
-            'nas-freights' => 'nas-freights.select-branch',
-            'nas-trading'  => 'nas-trading.select-branch',
-            default        => 'chevron.select-branch',
-        }; @endphp
-        <a href="{{ route($switchRoute) }}" class="btn btn-sm btn-outline-secondary" title="Switch Branch">
-            <i class="fa fa-code-branch"></i><span class="d-none d-md-inline ms-1">Switch Branch</span>
-        </a>
-        @endif
         <a href="{{ route('company.select') }}" class="btn btn-sm btn-outline-secondary" title="Switch Company">
             <i class="fa fa-building"></i><span class="d-none d-md-inline ms-1">Switch Company</span>
         </a>
@@ -57,7 +82,6 @@
                 <i class="fa fa-user-circle"></i><span class="d-none d-sm-inline ms-1">{{ auth()->user()->name }}</span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end user-dropdown-menu">
-                {{-- User identity header --}}
                 <li class="user-dropdown-header">
                     <div class="user-dropdown-avatar">{{ strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}</div>
                     <div class="user-dropdown-info">
@@ -69,7 +93,7 @@
                 </li>
                 <li><hr class="dropdown-divider my-1"></li>
                 <li>
-                    <a class="dropdown-item user-dropdown-item" href="{{ route('profile.show') }}">
+                    <a class="dropdown-item user-dropdown-item active" href="{{ route('profile.show') }}">
                         <span class="udi-icon udi-blue"><i class="fa fa-user-circle"></i></span>
                         My Profile
                     </a>
@@ -97,50 +121,46 @@
     </div>
 </nav>
 
-{{-- Mobile context bar (company + branch — CSS shows only on ≤768px) --}}
-@if(isset($activeCompany))
-<div class="mobile-context-bar">
-    <span class="badge company-badge
-        {{ $activeCompany->type === 'cnf' ? 'bg-success' : ($activeCompany->type === 'freight' ? 'bg-info text-dark' : 'bg-warning text-dark') }}">
-        <i class="fa fa-building me-1"></i>{{ $activeCompany->name }}
-    </span>
-    @if(isset($activeBranch))
-    <span class="badge bg-primary bg-opacity-75">
-        <i class="fa fa-code-branch me-1"></i>{{ $activeBranch->name }}
-    </span>
-    @endif
-</div>
-@endif
+<main class="profile-main">
+    <div class="profile-shell">
 
-{{-- Sidebar backdrop (mobile tap-to-close) --}}
-<div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+        {{-- Back breadcrumb --}}
+        <div class="profile-back-bar">
+            @php
+                $backRoute = match(session('active_company_slug')) {
+                    'nas-freights' => ['route' => 'nas-freights.dashboard', 'label' => 'NAS Freights'],
+                    'nas-trading'  => ['route' => 'nas-trading.dashboard',  'label' => 'NAS Trading'],
+                    'chevron-lines'=> ['route' => 'chevron.dashboard',      'label' => 'Chevron Lines'],
+                    default        => null,
+                };
+            @endphp
+            @if($backRoute)
+                <a href="{{ route($backRoute['route']) }}" class="profile-back-btn">
+                    <i class="fa fa-arrow-left" style="font-size:.65rem;"></i> Back
+                </a>
+                <span class="profile-back-sep">/</span>
+                <span class="profile-back-crumb">{{ $backRoute['label'] }} Dashboard</span>
+                <span class="profile-back-sep">/</span>
+                <span class="profile-back-crumb" style="color:#475569;">My Profile</span>
+            @else
+                <a href="{{ route('company.select') }}" class="profile-back-btn">
+                    <i class="fa fa-arrow-left" style="font-size:.65rem;"></i> Select Company
+                </a>
+                <span class="profile-back-sep">/</span>
+                <span class="profile-back-crumb" style="color:#475569;">My Profile</span>
+            @endif
+        </div>
 
-{{-- Sidebar --}}
-<aside class="sidebar">
-    @yield('sidebar')
-</aside>
-
-{{-- Main Content --}}
-<main class="main-content">
-    @yield('content')
+        @yield('content')
+    </div>
 </main>
 
-<footer class="text-center py-2" style="font-size:12px;color:#888;border-top:1px solid #e0e0e0;">
+<footer class="profile-footer text-center py-2" style="font-size:12px;color:#888;border-top:1px solid #e0e0e0;">
     Powered By: <a href="https://a4bbd.com/" target="_blank" style="color:#888;text-decoration:none;font-weight:600;">Advertising For Business - A4B</a>
 </footer>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/2.0.8/js/dataTables.bootstrap5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/3.0.2/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/3.0.2/js/buttons.bootstrap5.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-<script src="https://cdn.datatables.net/buttons/3.0.2/js/buttons.html5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/3.0.2/js/buttons.print.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 <script src="{{ asset('assets/js/app.js') }}"></script>
 @stack('scripts')

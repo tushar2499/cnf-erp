@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -23,7 +24,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/company/select', [CompanyController::class, 'select'])->name('company.select');
     Route::post('/company/switch/{slug}', [CompanyController::class, 'switch'])->name('company.switch');
     // Keep-alive: called every 10 min from long-form pages to prevent session expiry
-    Route::get('/keepalive', fn() => response()->json(['ok' => true]))->name('keepalive');
+    Route::get('/keepalive', fn () => response()->json(['ok' => true]))->name('keepalive');
+
+    // Profile
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 });
 
 // Admin
