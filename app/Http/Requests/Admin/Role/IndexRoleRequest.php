@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Http\Requests\Admin;
+namespace App\Http\Requests\Admin\Role;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class CreateUserRequest extends FormRequest
+class IndexRoleRequest extends FormRequest
 {
     public function authorize(): bool
     {
         $user = $this->user();
 
-        return $user && $user->hasPermission('admin.users.create');
+        return $user && $user->hasPermission('admin.roles.list');
     }
 
     public function rules(): array
@@ -20,6 +20,6 @@ class CreateUserRequest extends FormRequest
 
     protected function failedAuthorization(): void
     {
-        abort(403, 'You do not have permission to create users.');
+        abort(403, 'You do not have permission to view roles.');
     }
 }

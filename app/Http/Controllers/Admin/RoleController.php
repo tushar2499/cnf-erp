@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\CreateRoleRequest;
-use App\Http\Requests\Admin\DestroyRoleRequest;
-use App\Http\Requests\Admin\EditRoleRequest;
-use App\Http\Requests\Admin\IndexRoleRequest;
-use App\Http\Requests\Admin\ShowRoleRequest;
-use App\Http\Requests\Admin\StoreRoleRequest;
-use App\Http\Requests\Admin\UpdateRoleRequest;
+use App\Http\Requests\Admin\Role\CreateRoleRequest;
+use App\Http\Requests\Admin\Role\DestroyRoleRequest;
+use App\Http\Requests\Admin\Role\EditRoleRequest;
+use App\Http\Requests\Admin\Role\IndexRoleRequest;
+use App\Http\Requests\Admin\Role\ShowRoleRequest;
+use App\Http\Requests\Admin\Role\StoreRoleRequest;
+use App\Http\Requests\Admin\Role\UpdateRoleRequest;
 use App\Models\Company;
 use App\Models\Permission;
 use App\Models\Role;

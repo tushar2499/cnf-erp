@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Http\Requests\Admin;
+namespace App\Http\Requests\Admin\User;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class DestroyUserRequest extends FormRequest
+class EditUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
         $user = $this->user();
 
-        return $user && $user->hasPermission('admin.users.delete');
+        return $user && $user->hasPermission('admin.users.edit');
     }
 
     public function rules(): array
@@ -20,6 +20,6 @@ class DestroyUserRequest extends FormRequest
 
     protected function failedAuthorization(): void
     {
-        abort(403, 'You do not have permission to delete users.');
+        abort(403, 'You do not have permission to edit users.');
     }
 }

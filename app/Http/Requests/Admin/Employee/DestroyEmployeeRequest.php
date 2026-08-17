@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Http\Requests\Admin;
+namespace App\Http\Requests\Admin\Employee;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class EditUserRequest extends FormRequest
+class DestroyEmployeeRequest extends FormRequest
 {
     public function authorize(): bool
     {
         $user = $this->user();
 
-        return $user && $user->hasPermission('admin.users.edit');
+        return $user && $user->hasPermission('admin.employees.delete');
     }
 
     public function rules(): array
@@ -20,6 +20,6 @@ class EditUserRequest extends FormRequest
 
     protected function failedAuthorization(): void
     {
-        abort(403, 'You do not have permission to edit users.');
+        abort(403, 'You do not have permission to delete employees.');
     }
 }

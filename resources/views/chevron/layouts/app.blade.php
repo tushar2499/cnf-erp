@@ -73,10 +73,6 @@
                class="nav-link ps-4 {{ request()->routeIs('chevron.stakeholders.designations.*') ? 'active' : '' }}">
                 <i class="fa fa-id-badge"></i> Designations
             </a>
-            <a href="{{ route('chevron.stakeholders.employees.index') }}"
-               class="nav-link ps-4 {{ request()->routeIs('chevron.stakeholders.employees.*') ? 'active' : '' }}">
-                <i class="fa fa-user-tie"></i> Employees
-            </a>
             <a href="{{ route('chevron.stakeholders.customers.index') }}"
                class="nav-link ps-4 {{ request()->routeIs('chevron.stakeholders.customers.*') ? 'active' : '' }}">
                 <i class="fa fa-users"></i> Customers

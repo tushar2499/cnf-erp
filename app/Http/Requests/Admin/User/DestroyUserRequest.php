@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Http\Requests\Admin;
+namespace App\Http\Requests\Admin\User;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class IndexRoleRequest extends FormRequest
+class DestroyUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
         $user = $this->user();
 
-        return $user && $user->hasPermission('admin.roles.list');
+        return $user && $user->hasPermission('admin.users.delete');
     }
 
     public function rules(): array
@@ -20,6 +20,6 @@ class IndexRoleRequest extends FormRequest
 
     protected function failedAuthorization(): void
     {
-        abort(403, 'You do not have permission to view roles.');
+        abort(403, 'You do not have permission to delete users.');
     }
 }

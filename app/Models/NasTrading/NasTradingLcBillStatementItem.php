@@ -13,6 +13,7 @@ class NasTradingLcBillStatementItem extends Model
         'bill_statement_id',
         'lc_id',
         'serial_number',
+        'bill_no',
         'sort_order',
     ];
 

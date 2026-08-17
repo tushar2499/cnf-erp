@@ -4,6 +4,7 @@ namespace App\Http\Controllers\NasTrading;
 
 use App\Http\Controllers\Controller;
 use App\Models\NasTrading\NasTradingCustomer;
+use App\Models\NasTrading\NasTradingCustomerBill;
 use App\Models\NasTrading\NasTradingLc;
 use App\Models\NasTrading\NasTradingLcBillStatement;
 use App\Models\NasTrading\NasTradingLcBillStatementItem;
@@ -19,18 +20,18 @@ class LcBillStatementController extends Controller
         if ($request->ajax()) {
             return DataTables::of(NasTradingLcBillStatement::with('customer')->latest())
                 ->addIndexColumn()
-                ->editColumn('bill_date', fn($r) => $r->bill_date?->format('d-M-Y'))
-                ->addColumn('customer_name', fn($r) => $r->customer?->company_name ?? '-')
-                ->addColumn('status_badge', fn($r) => match ($r->status) {
+                ->editColumn('bill_date', fn ($r) => $r->bill_date?->format('d-M-Y'))
+                ->addColumn('customer_name', fn ($r) => $r->customer?->company_name ?? '-')
+                ->addColumn('status_badge', fn ($r) => match ($r->status) {
                     'Draft'     => '<span class="badge bg-secondary">Draft</span>',
                     'Confirmed' => '<span class="badge bg-success">Confirmed</span>',
                     'Paid'      => '<span class="badge bg-primary">Paid</span>',
                     default     => $r->status,
                 })
-                ->addColumn('action', fn($r) => '<a href="' . route('nas-trading.lc-bill-statements.show', $r->id) . '" class="btn btn-sm btn-outline-info" style="padding:2px 6px;font-size:.7rem"><i class="fa fa-eye"></i></a> ' .
-                    ($r->status === 'Draft' ? '<a href="' . route('nas-trading.lc-bill-statements.edit', $r->id) . '" class="btn btn-sm btn-outline-primary" style="padding:2px 6px;font-size:.7rem"><i class="fa fa-edit"></i></a> ' : '') .
-                    ($r->status === 'Draft' ? '<button class="btn btn-sm btn-outline-success btn-confirm" data-url="' . route('nas-trading.lc-bill-statements.confirm', $r->id) . '" style="padding:2px 6px;font-size:.7rem" title="Confirm"><i class="fa fa-check"></i></button> ' : '') .
-                    ($r->status === 'Draft' ? '<button class="btn btn-sm btn-outline-danger btn-delete" data-url="' . route('nas-trading.lc-bill-statements.destroy', $r->id) . '" data-name="' . e($r->bill_no) . '" style="padding:2px 6px;font-size:.7rem"><i class="fa fa-trash"></i></button>' : ''))
+                ->addColumn('action', fn ($r) => '<a href="'.route('nas-trading.lc-bill-statements.show', $r->id).'" class="btn btn-sm btn-outline-info" style="padding:2px 6px;font-size:.7rem"><i class="fa fa-eye"></i></a> '.
+                    ($r->status === 'Draft' ? '<a href="'.route('nas-trading.lc-bill-statements.edit', $r->id).'" class="btn btn-sm btn-outline-primary" style="padding:2px 6px;font-size:.7rem"><i class="fa fa-edit"></i></a> ' : '').
+                    ($r->status === 'Draft' ? '<button class="btn btn-sm btn-outline-success btn-confirm" data-url="'.route('nas-trading.lc-bill-statements.confirm', $r->id).'" style="padding:2px 6px;font-size:.7rem" title="Confirm"><i class="fa fa-check"></i></button> ' : '').
+                    ($r->status === 'Draft' ? '<button class="btn btn-sm btn-outline-danger btn-delete" data-url="'.route('nas-trading.lc-bill-statements.destroy', $r->id).'" data-name="'.e($r->bill_no).'" style="padding:2px 6px;font-size:.7rem"><i class="fa fa-trash"></i></button>' : ''))
                 ->rawColumns(['status_badge', 'action'])
                 ->make(true);
         }
@@ -67,6 +68,7 @@ class LcBillStatementController extends Controller
                 $statement->items()->create([
                     'lc_id'         => $lcId,
                     'serial_number' => NasTradingLcBillStatementItem::generateSerialNo(),
+                    'bill_no'       => $request->bill_nos[$index] ?? null,
                     'sort_order'    => $index + 1,
                 ]);
             }
@@ -85,7 +87,6 @@ class LcBillStatementController extends Controller
 
     public function edit(NasTradingLcBillStatement $lcBillStatement)
     {
-
         if ($lcBillStatement->status !== 'Draft') {
             return redirect()->route('nas-trading.lc-bill-statements.show', $lcBillStatement->id)
                 ->with('error', 'Only Draft statements can be edited.');
@@ -93,7 +94,13 @@ class LcBillStatementController extends Controller
 
         $lcBillStatement->load(['customer', 'items.lc']);
 
-        return view('nas-trading.lc-bill-statements.edit', compact('lcBillStatement'));
+        $lcIds = $lcBillStatement->items->pluck('lc_id')->filter()->toArray();
+        $billOptionsByLc = NasTradingCustomerBill::whereIn('lc_id', $lcIds)
+            ->get(['lc_id', 'bill_no'])
+            ->groupBy('lc_id')
+            ->map(fn ($bills) => $bills->pluck('bill_no')->toArray());
+
+        return view('nas-trading.lc-bill-statements.edit', compact('lcBillStatement', 'billOptionsByLc'));
     }
 
     public function update(Request $request, NasTradingLcBillStatement $lcBillStatement)
@@ -118,6 +125,7 @@ class LcBillStatementController extends Controller
                 $lcBillStatement->items()->create([
                     'lc_id'         => $lcId,
                     'serial_number' => NasTradingLcBillStatementItem::generateSerialNo(),
+                    'bill_no'       => $request->bill_nos[$index] ?? null,
                     'sort_order'    => $index + 1,
                 ]);
             }
@@ -183,40 +191,76 @@ class LcBillStatementController extends Controller
         return view('nas-trading.lc-bill-statements.prints.bill-statement', compact('lcBillStatement'));
     }
 
+    public function printCnfDuesItem(NasTradingLcBillStatement $lcBillStatement, NasTradingLcBillStatementItem $item)
+    {
+        $lcBillStatement->load('customer');
+        $item->load('lc');
+
+        return view('nas-trading.lc-bill-statements.prints.cnf-dues-item', compact('lcBillStatement', 'item'));
+    }
+
+    public function printLcClosingBill(NasTradingLcBillStatement $lcBillStatement, NasTradingLcBillStatementItem $item)
+    {
+        $lcBillStatement->load('customer');
+        $item->load('lc');
+
+        return view('nas-trading.lc-bill-statements.prints.lc-closing-bill', compact('lcBillStatement', 'item'));
+    }
+
+    public function printLcClosingBillAll(NasTradingLcBillStatement $lcBillStatement)
+    {
+        $lcBillStatement->load(['customer', 'items.lc']);
+
+        return view('nas-trading.lc-bill-statements.prints.lc-closing-bill-all', compact('lcBillStatement'));
+    }
+
+    public function printLcClosingStatement(NasTradingLcBillStatement $lcBillStatement)
+    {
+        $lcBillStatement->load(['customer', 'items.lc']);
+
+        return view('nas-trading.lc-bill-statements.prints.lc-closing-statement', compact('lcBillStatement'));
+    }
+
     public function searchCustomers(Request $request)
     {
         $term = $request->input('q', '');
 
         return response()->json(
             NasTradingCustomer::where('status', 'Active')
-                ->where(fn($q) => $q->where('company_name', 'like', "%{$term}%")->orWhere('code', 'like', "%{$term}%"))
+                ->where(fn ($q) => $q->where('company_name', 'like', "%{$term}%")->orWhere('code', 'like', "%{$term}%"))
                 ->limit(15)->get(['id', 'code', 'company_name', 'address'])
-                ->map(fn($c) => ['id' => $c->id, 'text' => $c->code . ' | ' . $c->company_name, 'address' => $c->address])
+                ->map(fn ($c) => ['id' => $c->id, 'text' => $c->code.' | '.$c->company_name, 'address' => $c->address])
         );
     }
 
     public function searchLcs(Request $request)
     {
-        $term       = $request->input('q', '');
+        $term = $request->input('q', '');
         $customerId = $request->input('customer_id');
 
+        $lcs = NasTradingLc::when($customerId, fn ($q) => $q->where('customer_id', $customerId))
+            ->when($term, fn ($q) => $q->where(fn ($q) => $q->where('lc_no', 'like', "%{$term}%")->orWhere('pfi_no', 'like', "%{$term}%")->orWhere('lc_no_system', 'like', "%{$term}%")))
+            ->orderBy('lc_open_date', 'desc')
+            ->get(['id', 'lc_no_system', 'lc_no', 'pfi_no', 'lc_open_date', 'lc_rt_value', 'lc_commission_percent', 'lc_commission_flat', 'lc_retirement_date']);
+
+        $billOptions = NasTradingCustomerBill::whereIn('lc_id', $lcs->pluck('id'))
+            ->get(['lc_id', 'bill_no'])
+            ->groupBy('lc_id')
+            ->map(fn ($bills) => $bills->pluck('bill_no')->toArray());
+
         return response()->json(
-            NasTradingLc::when($customerId, fn($q) => $q->where('customer_id', $customerId))
-                ->when($term, fn($q) => $q->where(fn($q) => $q->where('lc_no', 'like', "%{$term}%")->orWhere('pfi_no', 'like', "%{$term}%")->orWhere('lc_no_system', 'like', "%{$term}%")))
-                ->orderBy('lc_open_date', 'desc')
-                ->get(['id', 'lc_no_system', 'lc_no', 'pfi_no', 'lc_open_date', 'lc_rt_value', 'lc_commission_percent', 'lc_commission_flat', 'lc_retirement_date'])
-                ->map(fn($l) => [
-                    'id'                    => $l->id,
-                    'text'                  => $l->lc_no_system . ' | ' . $l->lc_no . ' | ' . $l->pfi_no,
-                    'lc_no'                 => $l->lc_no,
-                    'pfi_no'                => $l->pfi_no,
-                    'lc_open_date'          => $l->lc_open_date?->format('d-M-Y'),
-                    'lc_rt_value'           => $l->lc_rt_value,
-                    'lc_commission_percent' => $l->lc_commission_percent,
-                    'lc_commission_flat'    => $l->lc_commission_flat,
-                    'lc_retirement_date'    => $l->lc_retirement_date?->format('d-M-Y'),
-                ])
+            $lcs->map(fn ($l) => [
+                'id'                    => $l->id,
+                'text'                  => $l->lc_no_system.' | '.$l->lc_no.' | '.$l->pfi_no,
+                'lc_no'                 => $l->lc_no,
+                'pfi_no'                => $l->pfi_no,
+                'lc_open_date'          => $l->lc_open_date?->format('d-M-Y'),
+                'lc_rt_value'           => $l->lc_rt_value,
+                'lc_commission_percent' => $l->lc_commission_percent,
+                'lc_commission_flat'    => $l->lc_commission_flat,
+                'lc_retirement_date'    => $l->lc_retirement_date?->format('d-M-Y'),
+                'bill_options'          => $billOptions->get($l->id, []),
+            ])
         );
     }
-
 }

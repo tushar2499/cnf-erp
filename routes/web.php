@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\EmployeeController as AdminEmployeeController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AuthController;
@@ -49,6 +50,37 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
     Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
     Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
+
+    // Employees (all companies)
+    Route::prefix('employees')->name('employees.')->group(function () {
+        // Chevron Lines
+        Route::get('/next-id', [AdminEmployeeController::class, 'nextId'])->name('next-id');
+        Route::get('/sample', [AdminEmployeeController::class, 'sampleDownload'])->name('sample');
+        Route::post('/import/preview', [AdminEmployeeController::class, 'importPreview'])->name('import.preview');
+        Route::post('/import', [AdminEmployeeController::class, 'import'])->name('import');
+        Route::get('/', [AdminEmployeeController::class, 'index'])->name('index');
+        Route::post('/', [AdminEmployeeController::class, 'store'])->name('store');
+        Route::put('/{employee}', [AdminEmployeeController::class, 'update'])->name('update');
+        Route::delete('/{employee}', [AdminEmployeeController::class, 'destroy'])->name('destroy');
+
+        // NAS Freights
+        Route::prefix('nas-freights')->name('nas-freights.')->group(function () {
+            Route::get('/', [AdminEmployeeController::class, 'indexNasFreights'])->name('index');
+            Route::post('/', [AdminEmployeeController::class, 'storeNasFreights'])->name('store');
+            Route::get('/{employee}', [AdminEmployeeController::class, 'showNasFreights'])->name('show');
+            Route::put('/{employee}', [AdminEmployeeController::class, 'updateNasFreights'])->name('update');
+            Route::delete('/{employee}', [AdminEmployeeController::class, 'destroyNasFreights'])->name('destroy');
+        });
+
+        // NAS Trading
+        Route::prefix('nas-trading')->name('nas-trading.')->group(function () {
+            Route::get('/', [AdminEmployeeController::class, 'indexNasTrading'])->name('index');
+            Route::post('/', [AdminEmployeeController::class, 'storeNasTrading'])->name('store');
+            Route::get('/{employee}', [AdminEmployeeController::class, 'showNasTrading'])->name('show');
+            Route::put('/{employee}', [AdminEmployeeController::class, 'updateNasTrading'])->name('update');
+            Route::delete('/{employee}', [AdminEmployeeController::class, 'destroyNasTrading'])->name('destroy');
+        });
+    });
 
     // Roles
     Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');

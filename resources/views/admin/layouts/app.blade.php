@@ -11,7 +11,7 @@
             <i class="fa fa-gauge"></i> Dashboard
         </a>
 
-        @if (auth()->user()->hasPermission('admin.companies.list') || auth()->user()->hasPermission('admin.users.list'))
+        @if (auth()->user()->hasPermission('admin.companies.list') || auth()->user()->hasPermission('admin.users.list') || auth()->user()->hasPermission('admin.employees.list'))
             <div class="nav-section">Settings</div>
         @endif
         @if (auth()->user()->hasPermission('admin.companies.list'))
@@ -24,6 +24,12 @@
             <a href="{{ route('admin.users.index') }}"
                 class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                 <i class="fa fa-users"></i> Users
+            </a>
+        @endif
+        @if (auth()->user()->hasPermission('admin.employees.list'))
+            <a href="{{ route('admin.employees.index') }}"
+                class="nav-link {{ request()->routeIs('admin.employees.*') ? 'active' : '' }}">
+                <i class="fa fa-user-tie"></i> Employees
             </a>
         @endif
 

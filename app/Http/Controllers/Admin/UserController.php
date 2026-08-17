@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\CreateUserRequest;
-use App\Http\Requests\Admin\DestroyUserRequest;
-use App\Http\Requests\Admin\EditUserRequest;
-use App\Http\Requests\Admin\IndexUserRequest;
-use App\Http\Requests\Admin\StoreUserRequest;
-use App\Http\Requests\Admin\UpdateUserRequest;
+use App\Http\Requests\Admin\User\CreateUserRequest;
+use App\Http\Requests\Admin\User\DestroyUserRequest;
+use App\Http\Requests\Admin\User\EditUserRequest;
+use App\Http\Requests\Admin\User\IndexUserRequest;
+use App\Http\Requests\Admin\User\StoreUserRequest;
+use App\Http\Requests\Admin\User\UpdateUserRequest;
 use App\Models\Chevron\ChevronBranch;
 use App\Models\Chevron\ChevronEmployee;
 use App\Models\Company;

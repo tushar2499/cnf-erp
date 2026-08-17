@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\EditCompanyRequest;
-use App\Http\Requests\Admin\IndexCompanyRequest;
-use App\Http\Requests\Admin\UpdateCompanyRequest;
+use App\Http\Requests\Admin\Company\EditCompanyRequest;
+use App\Http\Requests\Admin\Company\IndexCompanyRequest;
+use App\Http\Requests\Admin\Company\UpdateCompanyRequest;
 use App\Models\Company;
 
 class CompanyController extends Controller
@@ -29,7 +29,7 @@ class CompanyController extends Controller
         if ($request->hasFile('logo')) {
 
             if ($company->logo) {
-                $oldPath = public_path('assets/logos/' . $company->logo);
+                $oldPath = public_path('assets/logos/'.$company->logo);
 
                 if (file_exists($oldPath)) {
                     unlink($oldPath);
@@ -37,8 +37,8 @@ class CompanyController extends Controller
 
             }
 
-            $file     = $request->file('logo');
-            $filename = $company->slug . '.' . $file->getClientOriginalExtension();
+            $file = $request->file('logo');
+            $filename = $company->slug.'.'.$file->getClientOriginalExtension();
             $file->move(public_path('assets/logos'), $filename);
             $data['logo'] = $filename;
         }
@@ -48,5 +48,4 @@ class CompanyController extends Controller
 
         return response()->json(['message' => 'Company updated successfully.']);
     }
-
 }

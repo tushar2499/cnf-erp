@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Chevron\ChevronBranch;
 use App\Models\Company;
+use App\Models\NasFreights\NasFreightsBranch;
+use App\Models\NasTrading\NasTradingBranch;
+use App\Models\UserBranchAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -11,22 +15,50 @@ class CompanyController extends Controller
     public function select()
     {
         $user = Auth::user();
-        $companies = $user->companies()
-            ->where('companies.is_active', true)
-            ->when(! $user->is_super, fn ($q) => $q->whereNotNull('company_user.role_id'))
-            ->get();
+
+        if ($user->is_super) {
+            $companies = Company::where('is_active', true)->get();
+        } else {
+            $companies = $user->companies()
+                ->where('companies.is_active', true)
+                ->whereNotNull('company_user.role_id')
+                ->get();
+        }
+
+        $companies = $companies->filter(fn ($company) => $this->companyHasBranchAccess($company, $user))->values();
 
         return view('company.select', compact('companies'));
+    }
+
+    private function companyHasBranchAccess(Company $company, $user): bool
+    {
+        if ($user->is_super) {
+            return match ($company->slug) {
+                'chevron-lines' => ChevronBranch::where('is_active', true)->exists(),
+                'nas-freights'  => NasFreightsBranch::where('is_active', true)->exists(),
+                'nas-trading'   => NasTradingBranch::where('is_active', true)->exists(),
+                default         => false,
+            };
+        }
+
+        return UserBranchAccess::where('user_id', $user->id)
+            ->where('company_id', $company->id)
+            ->exists();
     }
 
     public function switch(Request $request, string $slug)
     {
         $user = Auth::user();
-        $company = $user->companies()
-            ->where('companies.slug', $slug)
-            ->where('companies.is_active', true)
-            ->when(! $user->is_super, fn ($q) => $q->whereNotNull('company_user.role_id'))
-            ->firstOrFail();
+
+        if ($user->is_super) {
+            $company = Company::where('slug', $slug)->where('is_active', true)->firstOrFail();
+        } else {
+            $company = $user->companies()
+                ->where('companies.slug', $slug)
+                ->where('companies.is_active', true)
+                ->whereNotNull('company_user.role_id')
+                ->firstOrFail();
+        }
 
         session([
             'active_company_id'   => $company->id,

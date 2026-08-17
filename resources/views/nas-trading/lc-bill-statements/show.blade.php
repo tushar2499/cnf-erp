@@ -7,8 +7,9 @@
 .info-body { padding:.75rem 1rem; }
 .info-label { font-size:.72rem; color:#6c757d; text-transform:uppercase; }
 .info-value { font-size:.85rem; font-weight:600; }
-.stmt-table th { background:#1a6b60; color:#fff; font-size:.77rem; padding:.4rem .5rem; }
-.stmt-table td { font-size:.8rem; padding:.35rem .5rem; vertical-align:middle; }
+.stmt-table th { background:#1a6b60; color:#fff; font-size:.77rem; padding:.4rem .5rem; white-space:nowrap; }
+.stmt-table td { font-size:.8rem; padding:.35rem .5rem; vertical-align:middle; white-space:nowrap; }
+.table-scroll-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
 
 @media print {
     .top-navbar, .mobile-context-bar, .sidebar, footer, .d-print-none { display:none !important; }
@@ -44,10 +45,17 @@
                 <i class="fa fa-print me-1"></i>View / Print
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
+                <li><h6 class="dropdown-header" style="font-size:.7rem;color:#6c757d;">LC Commission</h6></li>
                 <li><a class="dropdown-item" href="{{ route('nas-trading.lc-bill-statements.print.commission-bill', $lcBillStatement->id) }}" target="_blank"><i class="fa fa-print me-2 text-secondary"></i>LC Commission Bills (All)</a></li>
                 <li><a class="dropdown-item" href="{{ route('nas-trading.lc-bill-statements.print.commission-statement', $lcBillStatement->id) }}" target="_blank"><i class="fa fa-file-alt me-2 text-secondary"></i>LC Commission Bill Statement</a></li>
-                <li><a class="dropdown-item" href="{{ route('nas-trading.lc-bill-statements.print.cnf-dues', $lcBillStatement->id) }}" target="_blank"><i class="fa fa-file-invoice me-2 text-secondary"></i>C&amp;F Bill Statement</a></li>
-                <li><a class="dropdown-item" href="{{ route('nas-trading.lc-bill-statements.print.bill-statement', $lcBillStatement->id) }}" target="_blank"><i class="fa fa-receipt me-2 text-secondary"></i>Bill Statement</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><h6 class="dropdown-header" style="font-size:.7rem;color:#6c757d;">C&amp;F Bill</h6></li>
+                <li><a class="dropdown-item" href="{{ route('nas-trading.lc-bill-statements.print.cnf-dues', $lcBillStatement->id) }}" target="_blank"><i class="fa fa-file-invoice me-2 text-secondary"></i>C&amp;F Bill Statement (All)</a></li>
+                <li><a class="dropdown-item" href="{{ route('nas-trading.lc-bill-statements.print.bill-statement', $lcBillStatement->id) }}" target="_blank"><i class="fa fa-receipt me-2 text-secondary"></i>C&amp;F Bill Statement</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><h6 class="dropdown-header" style="font-size:.7rem;color:#6c757d;">LC Closing Bill</h6></li>
+                <li><a class="dropdown-item" href="{{ route('nas-trading.lc-bill-statements.print.lc-closing-bill-all', $lcBillStatement->id) }}" target="_blank"><i class="fa fa-print me-2 text-secondary"></i>LC Closing Bills (All)</a></li>
+                <li><a class="dropdown-item" href="{{ route('nas-trading.lc-bill-statements.print.lc-closing-statement', $lcBillStatement->id) }}" target="_blank"><i class="fa fa-file-alt me-2 text-secondary"></i>LC Closing Statement</a></li>
             </ul>
         </div>
         <a href="{{ route('nas-trading.lc-bill-statements.index') }}" class="btn btn-sm btn-outline-secondary">
@@ -183,12 +191,13 @@
 
     <div class="info-card">
         <div class="info-header"><i class="fa fa-file-contract me-2"></i> LC Entries</div>
-        <div style="overflow-x:auto">
-            <table class="table table-bordered stmt-table mb-0 w-100">
+        <div class="table-scroll-wrap">
+            <table class="table table-bordered stmt-table mb-0" style="min-width:1100px;width:100%">
                 <thead>
                     <tr>
-                        <th style="width:60px" class="text-center">Print</th>
+                        <th style="width:80px" class="text-center">Print</th>
                         <th style="width:40px">#</th>
+                        <th>LC No</th>
                         <th>Bill No</th>
                         <th>PFI No</th>
                         <th>LC/TT No</th>
@@ -203,12 +212,20 @@
                     @forelse ($lcBillStatement->items as $i => $item)
                     <tr>
                         <td class="text-center">
-                            <a href="{{ route('nas-trading.lc-bill-statements.print.commission-bill-item', [$lcBillStatement->id, $item->id]) }}" target="_blank" class="btn btn-sm btn-outline-secondary" style="padding:2px 7px;font-size:.7rem;" title="Print LC Commission Bill">
-                                <i class="fa fa-print"></i>
-                            </a>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="padding:2px 7px;font-size:.7rem;">
+                                    <i class="fa fa-print"></i>
+                                </button>
+                                <ul class="dropdown-menu" style="font-size:.78rem;min-width:170px;">
+                                    <li><a class="dropdown-item" href="{{ route('nas-trading.lc-bill-statements.print.commission-bill-item', [$lcBillStatement->id, $item->id]) }}" target="_blank"><i class="fa fa-file-alt me-2 text-secondary"></i>LC Commission Bill</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('nas-trading.lc-bill-statements.print.cnf-dues-item', [$lcBillStatement->id, $item->id]) }}" target="_blank"><i class="fa fa-file-invoice me-2 text-secondary"></i>C&amp;F Bill</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('nas-trading.lc-bill-statements.print.lc-closing-bill', [$lcBillStatement->id, $item->id]) }}" target="_blank"><i class="fa fa-file-invoice-dollar me-2 text-secondary"></i>LC Closing Bill</a></li>
+                                </ul>
+                            </div>
                         </td>
                         <td class="text-center">{{ $i + 1 }}</td>
                         <td>{{ $item->serial_number ?? '-' }}</td>
+                        <td>{{ $item->bill_no ?? '-' }}</td>
                         <td>{{ $item->lc?->pfi_no ?? '-' }}</td>
                         <td>{{ $item->lc?->lc_no ?? '-' }}</td>
                         <td>{{ $item->lc?->lc_open_date?->format('d-M-Y') ?? '-' }}</td>
@@ -226,7 +243,7 @@
                 @if ($lcBillStatement->items->count())
                 <tfoot>
                     <tr style="background:#f0f4f8">
-                        <td colspan="9" class="text-end fw-bold" style="font-size:.82rem">Total Commission (BDT)</td>
+                        <td colspan="10" class="text-end fw-bold" style="font-size:.82rem">Total Commission (BDT)</td>
                         <td class="text-end fw-bold text-success" style="font-size:.9rem">
                             {{ number_format($lcBillStatement->items->sum(fn($i) => $i->lc?->lc_commission_flat ?? 0), 2) }}
                         </td>

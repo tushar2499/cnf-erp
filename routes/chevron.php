@@ -8,7 +8,6 @@ use App\Http\Controllers\Chevron\CnfJobController;
 use App\Http\Controllers\Chevron\CustomerController;
 use App\Http\Controllers\Chevron\DashboardController;
 use App\Http\Controllers\Chevron\DesignationController;
-use App\Http\Controllers\Chevron\EmployeeController;
 use App\Http\Controllers\Chevron\ExpenseCategoryController;
 use App\Http\Controllers\Chevron\ExpenseHeadController;
 use App\Http\Controllers\Chevron\ItemController;
@@ -18,7 +17,6 @@ use App\Http\Controllers\Chevron\MoneyReceiptController;
 use App\Http\Controllers\Chevron\PortController;
 use App\Http\Controllers\Chevron\ReportController;
 use App\Http\Controllers\Chevron\ServiceController;
-use App\Http\Controllers\Chevron\UserController;
 use Illuminate\Support\Facades\Route;
 
 // Branch selection (middleware skips these routes)
@@ -94,16 +92,6 @@ Route::prefix('stakeholders')->name('stakeholders.')->group(function () {
         Route::delete('/{customer}', [CustomerController::class, 'destroy'])->name('destroy');
     });
 
-    Route::prefix('employees')->name('employees.')->group(function () {
-        Route::get('/next-id', [EmployeeController::class, 'nextId'])->name('next-id');
-        Route::get('/sample', [EmployeeController::class, 'sampleDownload'])->name('sample');
-        Route::post('/import/preview', [EmployeeController::class, 'importPreview'])->name('import.preview');
-        Route::post('/import', [EmployeeController::class, 'import'])->name('import');
-        Route::get('/', [EmployeeController::class, 'index'])->name('index');
-        Route::post('/', [EmployeeController::class, 'store'])->name('store');
-        Route::put('/{employee}', [EmployeeController::class, 'update'])->name('update');
-        Route::delete('/{employee}', [EmployeeController::class, 'destroy'])->name('destroy');
-    });
 });
 
 // Settings
@@ -182,4 +170,3 @@ Route::prefix('reports')->name('reports.')->group(function () {
     Route::get('/job-expense-summary', [ReportController::class, 'jobExpenseSummary'])->name('job-expense-summary');
     Route::get('/job-expense-summary/print', [ReportController::class, 'jobExpenseSummaryPrint'])->name('job-expense-summary.print');
 });
-

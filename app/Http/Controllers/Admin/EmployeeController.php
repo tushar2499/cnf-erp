@@ -1,12 +1,18 @@
 <?php
 
-namespace App\Http\Controllers\Chevron;
+namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Employee\DestroyEmployeeRequest;
+use App\Http\Requests\Admin\Employee\IndexEmployeeRequest;
+use App\Http\Requests\Admin\Employee\StoreEmployeeRequest;
+use App\Http\Requests\Admin\Employee\UpdateEmployeeRequest;
 use App\Models\Chevron\ChevronBranch;
 use App\Models\Chevron\ChevronCustomer;
 use App\Models\Chevron\ChevronDesignation;
 use App\Models\Chevron\ChevronEmployee;
+use App\Models\NasFreights\NasFreightsEmployee;
+use App\Models\NasTrading\NasTradingEmployee;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +24,9 @@ use Yajra\DataTables\Facades\DataTables;
 
 class EmployeeController extends Controller
 {
-    public function index(Request $request)
+    // ── Chevron Lines ────────────────────────────────────────────────────────
+
+    public function index(IndexEmployeeRequest $request)
     {
         if ($request->ajax()) {
             return DataTables::of(ChevronEmployee::with('designation', 'branch', 'teamLeader', 'customers'))
@@ -37,30 +45,38 @@ class EmployeeController extends Controller
                     default      => '<span class="badge bg-secondary">'.$r->current_status.'</span>',
                 })
                 ->addColumn('customer_ids', fn ($r) => $r->customers->pluck('id')->join(','))
-                ->addColumn('action', fn ($r) => '
-                    <button class="btn btn-sm btn-outline-primary btn-edit"
-                        data-id="'.$r->id.'"
-                        data-employee_prefix="'.e($r->employee_prefix).'"
-                        data-employee_id="'.e($r->employee_id).'"
-                        data-name="'.e($r->name).'"
-                        data-designation_id="'.$r->designation_id.'"
-                        data-joining_date="'.$r->joining_date?->format('Y-m-d').'"
-                        data-short_name="'.e($r->short_name).'"
-                        data-father_name="'.e($r->father_name).'"
-                        data-mother_name="'.e($r->mother_name).'"
-                        data-current_status="'.$r->current_status.'"
-                        data-branch_id="'.$r->branch_id.'"
-                        data-is_active="'.(int) $r->is_active.'"
-                        data-type="'.$r->type.'"
-                        data-team_leader_id="'.$r->team_leader_id.'"
-                        data-customer_ids="'.$r->customers->pluck('id')->join(',').'">
-                        <i class="fa fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger btn-delete"
-                        data-url="'.route('chevron.stakeholders.employees.destroy', $r->id).'"
-                        data-name="'.e($r->name).'">
-                        <i class="fa fa-trash"></i>
-                    </button>')
+                ->addColumn('action', function ($r) use ($request) {
+                    $html = '';
+                    if ($request->user()->hasPermission('admin.employees.edit')) {
+                        $html .= '<button class="btn btn-sm btn-outline-primary btn-edit"
+                            data-id="'.$r->id.'"
+                            data-employee_prefix="'.e($r->employee_prefix).'"
+                            data-employee_id="'.e($r->employee_id).'"
+                            data-name="'.e($r->name).'"
+                            data-designation_id="'.$r->designation_id.'"
+                            data-joining_date="'.$r->joining_date?->format('Y-m-d').'"
+                            data-short_name="'.e($r->short_name).'"
+                            data-father_name="'.e($r->father_name).'"
+                            data-mother_name="'.e($r->mother_name).'"
+                            data-current_status="'.$r->current_status.'"
+                            data-branch_id="'.$r->branch_id.'"
+                            data-is_active="'.(int) $r->is_active.'"
+                            data-type="'.$r->type.'"
+                            data-team_leader_id="'.$r->team_leader_id.'"
+                            data-customer_ids="'.$r->customers->pluck('id')->join(',').'">
+                            <i class="fa fa-edit"></i>
+                        </button>';
+                    }
+                    if ($request->user()->hasPermission('admin.employees.delete')) {
+                        $html .= '<button class="btn btn-sm btn-outline-danger btn-delete"
+                            data-url="'.route('admin.employees.destroy', $r->id).'"
+                            data-name="'.e($r->name).'">
+                            <i class="fa fa-trash"></i>
+                        </button>';
+                    }
+
+                    return $html;
+                })
                 ->editColumn('joining_date', fn ($r) => $r->joining_date?->format('d M, Y'))
                 ->rawColumns(['type_badge', 'status_badge', 'action'])
                 ->make(true);
@@ -71,29 +87,18 @@ class EmployeeController extends Controller
         $teamLeaders = ChevronEmployee::with('designation')->where('type', 'team_leader')->where('is_active', true)->orderBy('name')->get();
         $customers = ChevronCustomer::where('status', 'Active')->orderBy('name')->get(['id', 'name', 'customer_id']);
 
-        return view('chevron.stakeholders.employees.index', compact('designations', 'branches', 'teamLeaders', 'customers'));
+        return view('admin.employees.index', compact('designations', 'branches', 'teamLeaders', 'customers'));
     }
 
-    public function nextId(Request $request)
+    public function nextId(IndexEmployeeRequest $request)
     {
         $prefix = $request->input('prefix', 'EMP-');
 
         return response()->json(['employee_id' => ChevronEmployee::generateEmployeeId($prefix)]);
     }
 
-    public function store(Request $request)
+    public function store(StoreEmployeeRequest $request)
     {
-        $request->validate([
-            'employee_prefix' => ['required', 'string', 'max:20'],
-            'name'            => ['required', 'string', 'max:255'],
-            'designation_id'  => ['required', 'exists:chevron_designations,id'],
-            'joining_date'    => ['required', 'date'],
-            'type'            => ['required', 'in:team_leader,prepare'],
-            'team_leader_id'  => ['nullable', 'required_if:type,prepare', 'exists:chevron_employees,id'],
-            'customer_ids'    => ['nullable', 'array'],
-            'customer_ids.*'  => ['exists:chevron_customers,id'],
-        ]);
-
         DB::transaction(function () use ($request) {
             $employeeId = ChevronEmployee::generateEmployeeId($request->employee_prefix);
             $employee = ChevronEmployee::create([
@@ -120,18 +125,8 @@ class EmployeeController extends Controller
         return response()->json(['message' => 'Employee created successfully.']);
     }
 
-    public function update(Request $request, ChevronEmployee $employee)
+    public function update(UpdateEmployeeRequest $request, ChevronEmployee $employee)
     {
-        $request->validate([
-            'name'           => ['required', 'string', 'max:255'],
-            'designation_id' => ['required', 'exists:chevron_designations,id'],
-            'joining_date'   => ['required', 'date'],
-            'type'           => ['required', 'in:team_leader,prepare'],
-            'team_leader_id' => ['nullable', 'required_if:type,prepare', 'exists:chevron_employees,id'],
-            'customer_ids'   => ['nullable', 'array'],
-            'customer_ids.*' => ['exists:chevron_customers,id'],
-        ]);
-
         DB::transaction(function () use ($request, $employee) {
             $employee->update([
                 'name'           => $request->name,
@@ -157,14 +152,14 @@ class EmployeeController extends Controller
         return response()->json(['message' => 'Employee updated successfully.']);
     }
 
-    public function destroy(ChevronEmployee $employee)
+    public function destroy(DestroyEmployeeRequest $request, ChevronEmployee $employee)
     {
         $employee->delete();
 
         return response()->json(['message' => 'Employee deleted.']);
     }
 
-    public function sampleDownload()
+    public function sampleDownload(IndexEmployeeRequest $request)
     {
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet()->setTitle('Employees');
@@ -200,14 +195,13 @@ class EmployeeController extends Controller
         ]);
     }
 
-    public function importPreview(Request $request)
+    public function importPreview(StoreEmployeeRequest $request)
     {
         $request->validate(['file' => 'required|file|mimes:xlsx,xls,csv|max:5120']);
 
         $spreadsheet = IOFactory::load($request->file('file')->getPathname());
         $rows = $spreadsheet->getActiveSheet()->toArray(null, true, true, false);
 
-        // Lookup maps
         $existingIds = ChevronEmployee::pluck('employee_id')
             ->map(fn ($v) => strtolower(trim($v)))->flip()->all();
         $existingNames = ChevronEmployee::pluck('name')
@@ -243,18 +237,16 @@ class EmployeeController extends Controller
             $desigId = $desigMap[strtolower($desigName)] ?? null;
             $branchId = $branchMap[strtolower($branchName)] ?? $defaultBranchId;
 
-            // Date validation
             $dateValid = false;
             $parsedDate = null;
             if ($joiningDate) {
                 try {
                     $parsedDate = Carbon::parse($joiningDate)->format('Y-m-d');
                     $dateValid = true;
-                } catch (\Exception $e) {
+                } catch (\Exception) {
                 }
             }
 
-            // Exists check: by employee_id if provided, else by name
             $exists = $empId !== ''
                 ? isset($existingIds[strtolower($empId)])
                 : isset($existingNames[strtolower($name)]);
@@ -292,7 +284,7 @@ class EmployeeController extends Controller
         return response()->json(['rows' => $preview]);
     }
 
-    public function import(Request $request)
+    public function import(StoreEmployeeRequest $request)
     {
         $request->validate(['rows' => 'required|array|min:1']);
 
@@ -307,7 +299,6 @@ class EmployeeController extends Controller
                     continue;
                 }
 
-                // Re-check exists
                 if ($empId !== '' && ChevronEmployee::where('employee_id', $empId)->exists()) {
                     continue;
                 }
@@ -315,7 +306,6 @@ class EmployeeController extends Controller
                     continue;
                 }
 
-                // Auto-generate ID if not provided
                 $finalId = $empId !== '' ? $empId : ChevronEmployee::generateEmployeeId($prefix);
 
                 ChevronEmployee::create([
@@ -340,5 +330,167 @@ class EmployeeController extends Controller
             'message'  => "{$inserted} employee(s) imported successfully.",
             'inserted' => $inserted,
         ]);
+    }
+
+    // ── NAS Freights ─────────────────────────────────────────────────────────
+
+    public function indexNasFreights(IndexEmployeeRequest $request)
+    {
+        if ($request->ajax()) {
+            return DataTables::of(NasFreightsEmployee::orderBy('name'))
+                ->addIndexColumn()
+                ->addColumn('status_badge', fn ($r) => $r->status === 'Active'
+                    ? '<span class="badge bg-success">Active</span>'
+                    : '<span class="badge bg-secondary">Inactive</span>')
+                ->addColumn('action', function ($r) use ($request) {
+                    $html = '';
+                    if ($request->user()->hasPermission('admin.employees.edit')) {
+                        $html .= '<button class="btn btn-sm btn-outline-primary btn-edit-nf" data-id="'.$r->id.'"><i class="fa fa-edit"></i></button> ';
+                    }
+                    if ($request->user()->hasPermission('admin.employees.delete')) {
+                        $html .= '<button class="btn btn-sm btn-outline-danger btn-delete-nf"
+                            data-url="'.route('admin.employees.nas-freights.destroy', $r->id).'"
+                            data-name="'.e($r->name).'"><i class="fa fa-trash"></i></button>';
+                    }
+
+                    return $html;
+                })
+                ->rawColumns(['status_badge', 'action'])
+                ->make(true);
+        }
+
+        return redirect()->route('admin.employees.index');
+    }
+
+    public function showNasFreights(IndexEmployeeRequest $request, NasFreightsEmployee $employee)
+    {
+        return response()->json($employee);
+    }
+
+    public function storeNasFreights(Request $request)
+    {
+        abort_unless(auth()->user()->hasPermission('admin.employees.create'), 403);
+
+        $request->validate(['name' => 'required|string|max:255']);
+
+        NasFreightsEmployee::create([
+            'code'        => NasFreightsEmployee::generateCode(),
+            'name'        => $request->name,
+            'designation' => $request->designation,
+            'phone'       => $request->phone,
+            'email'       => $request->email,
+            'status'      => $request->status ?? 'Active',
+        ]);
+
+        return response()->json(['message' => 'Employee created successfully.']);
+    }
+
+    public function updateNasFreights(Request $request, NasFreightsEmployee $employee)
+    {
+        abort_unless(auth()->user()->hasPermission('admin.employees.edit'), 403);
+
+        $request->validate(['name' => 'required|string|max:255']);
+
+        $employee->update([
+            'name'        => $request->name,
+            'designation' => $request->designation,
+            'phone'       => $request->phone,
+            'email'       => $request->email,
+            'status'      => $request->status ?? 'Active',
+        ]);
+
+        return response()->json(['message' => 'Employee updated successfully.']);
+    }
+
+    public function destroyNasFreights(Request $request, NasFreightsEmployee $employee)
+    {
+        abort_unless(auth()->user()->hasPermission('admin.employees.delete'), 403);
+
+        $employee->delete();
+
+        return response()->json(['message' => 'Employee deleted.']);
+    }
+
+    // ── NAS Trading ──────────────────────────────────────────────────────────
+
+    public function indexNasTrading(IndexEmployeeRequest $request)
+    {
+        if ($request->ajax()) {
+            return DataTables::of(NasTradingEmployee::orderBy('name'))
+                ->addIndexColumn()
+                ->addColumn('status_badge', fn ($r) => $r->status === 'Active'
+                    ? '<span class="badge bg-success">Active</span>'
+                    : '<span class="badge bg-secondary">Inactive</span>')
+                ->addColumn('action', function ($r) use ($request) {
+                    $html = '';
+                    if ($request->user()->hasPermission('admin.employees.edit')) {
+                        $html .= '<button class="btn btn-sm btn-outline-primary btn-edit-nt" data-id="'.$r->id.'"><i class="fa fa-edit"></i></button> ';
+                    }
+                    if ($request->user()->hasPermission('admin.employees.delete')) {
+                        $html .= '<button class="btn btn-sm btn-outline-danger btn-delete-nt"
+                            data-url="'.route('admin.employees.nas-trading.destroy', $r->id).'"
+                            data-name="'.e($r->name).'"><i class="fa fa-trash"></i></button>';
+                    }
+
+                    return $html;
+                })
+                ->rawColumns(['status_badge', 'action'])
+                ->make(true);
+        }
+
+        return redirect()->route('admin.employees.index');
+    }
+
+    public function showNasTrading(IndexEmployeeRequest $request, NasTradingEmployee $employee)
+    {
+        return response()->json($employee);
+    }
+
+    public function storeNasTrading(Request $request)
+    {
+        abort_unless(auth()->user()->hasPermission('admin.employees.create'), 403);
+
+        $request->validate(['name' => 'required|string|max:255']);
+
+        NasTradingEmployee::create([
+            'code'         => NasTradingEmployee::generateCode(),
+            'name'         => $request->name,
+            'designation'  => $request->designation,
+            'phone'        => $request->phone,
+            'email'        => $request->email,
+            'address'      => $request->address,
+            'joining_date' => $request->joining_date ?: null,
+            'status'       => $request->status ?? 'Active',
+        ]);
+
+        return response()->json(['message' => 'Employee created successfully.']);
+    }
+
+    public function updateNasTrading(Request $request, NasTradingEmployee $employee)
+    {
+        abort_unless(auth()->user()->hasPermission('admin.employees.edit'), 403);
+
+        $request->validate(['name' => 'required|string|max:255']);
+
+        $employee->update([
+            'name'         => $request->name,
+            'designation'  => $request->designation,
+            'phone'        => $request->phone,
+            'email'        => $request->email,
+            'address'      => $request->address,
+            'joining_date' => $request->joining_date ?: null,
+            'status'       => $request->status ?? 'Active',
+        ]);
+
+        return response()->json(['message' => 'Employee updated successfully.']);
+    }
+
+    public function destroyNasTrading(Request $request, NasTradingEmployee $employee)
+    {
+        abort_unless(auth()->user()->hasPermission('admin.employees.delete'), 403);
+
+        $employee->delete();
+
+        return response()->json(['message' => 'Employee deleted.']);
     }
 }

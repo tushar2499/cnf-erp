@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests\Admin;
+namespace App\Http\Requests\Admin\Role;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreRoleRequest extends FormRequest
+class CreateRoleRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -15,11 +15,7 @@ class StoreRoleRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-            'name'             => ['required', 'string', 'max:100', 'unique:roles,name'],
-            'permission_ids'   => ['nullable', 'array'],
-            'permission_ids.*' => ['exists:permissions,id'],
-        ];
+        return [];
     }
 
     protected function failedAuthorization(): void

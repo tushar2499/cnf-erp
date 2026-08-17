@@ -8,7 +8,6 @@ use App\Http\Controllers\NasFreights\CustomerBillController;
 use App\Http\Controllers\NasFreights\CustomerController;
 use App\Http\Controllers\NasFreights\DashboardController;
 use App\Http\Controllers\NasFreights\DueListController;
-use App\Http\Controllers\NasFreights\EmployeeController;
 use App\Http\Controllers\NasFreights\FreightBookingController;
 use App\Http\Controllers\NasFreights\ImportController;
 use App\Http\Controllers\NasFreights\MoneyReceiptController;
@@ -20,7 +19,6 @@ use App\Http\Controllers\NasFreights\ShippingCarrierController;
 use App\Http\Controllers\NasFreights\SupplierBillController;
 use App\Http\Controllers\NasFreights\SupplierController;
 use App\Http\Controllers\NasFreights\SupplierPaymentController;
-use App\Http\Controllers\NasFreights\UserController;
 use App\Http\Controllers\NasFreights\VehicleController;
 use Illuminate\Support\Facades\Route;
 
@@ -146,15 +144,6 @@ Route::prefix('vehicles')->name('vehicles.')->group(function () {
     Route::get('/{vehicle}', [VehicleController::class, 'show'])->name('show');
     Route::put('/{vehicle}', [VehicleController::class, 'update'])->name('update');
     Route::delete('/{vehicle}', [VehicleController::class, 'destroy'])->name('destroy');
-});
-
-// Employees
-Route::prefix('employees')->name('employees.')->group(function () {
-    Route::get('/', [EmployeeController::class, 'index'])->name('index');
-    Route::post('/', [EmployeeController::class, 'store'])->name('store');
-    Route::get('/{employee}', [EmployeeController::class, 'show'])->name('show');
-    Route::put('/{employee}', [EmployeeController::class, 'update'])->name('update');
-    Route::delete('/{employee}', [EmployeeController::class, 'destroy'])->name('destroy');
 });
 
 // Stakeholders

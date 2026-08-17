@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>LC Commission Bill — {{ $item->serial_number ?? $lcBillStatement->bill_no }}</title>
+<title>C&F Bill — {{ $item->serial_number ?? $lcBillStatement->bill_no }}</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 @page {
@@ -26,7 +26,8 @@ body { font-family: Arial, sans-serif; font-size: 11px; color: #000; background:
 }
 .doc { width: 100%; max-width: 720px; margin: 0 auto; background: #fff; padding: 24px 28px; }
 .header-row { display:flex; justify-content:space-between; margin-bottom:6px; font-size:11px; }
-.to-block { margin:8px 0 12px; font-size:11px; line-height:1.6; }
+.to-block { margin:8px 0 6px; font-size:11px; line-height:1.7; }
+.subject { margin:8px 0 10px; font-size:11px; }
 .doc-title { text-align:center; font-weight:bold; font-size:13px; margin:10px 0 10px; }
 table { width:100%; border-collapse:collapse; }
 table th, table td { border:1px solid #000; padding:4px 6px; font-size:10px; }
@@ -43,8 +44,9 @@ table tfoot td { font-weight:bold; background:#f5f5f5; }
 </div>
 
 @php
-    $commission = (float) ($item->lc?->lc_commission_flat ?? 0);
-    $invoiceValue = $item->lc?->lc_rt_value ? number_format($item->lc->lc_rt_value, 2) : '-';
+    $cnf     = (float) ($item->lc?->total_lc_cost ?? 0);
+    $advance = (float) ($item->lc?->advance_received_bdt ?? 0);
+    $dues    = $cnf - $advance;
 @endphp
 
 <div class="doc">
@@ -56,40 +58,42 @@ table tfoot td { font-weight:bold; background:#f5f5f5; }
     <div class="to-block">
         To,<br>
         {{ $lcBillStatement->customer?->company_name }}<br>
-        {{ $lcBillStatement->customer?->address }};
+        {{ $lcBillStatement->customer?->address }}
     </div>
 
-    <div class="doc-title">LC Commission Bill</div>
+    <div class="subject">
+        Sub: C&amp;F Bill for LC No. {{ $item->lc?->lc_no ?? '-' }} / PFI No. {{ $item->lc?->pfi_no ?? '-' }}
+    </div>
+
+    <div class="doc-title">C&amp;F Bill</div>
 
     <table>
         <thead>
             <tr>
-                <th>PFI NO.</th>
-                <th>LC No</th>
-                <th>LC Date</th>
-                <th>LC Retirement<br>Invoice Value</th>
-                <th>LC Retirement<br>Date</th>
-                <th>LC Retirement<br>Value BDT</th>
-                <th>Commission</th>
-                <th>Commission<br>Amount BDT</th>
+                <th style="width:30px">SL</th>
+                <th>PFI No.</th>
+                <th>LC/TT No.</th>
+                <th>Total C&amp;F Bill BDT</th>
+                <th>Advance From DIIL BDT</th>
+                <th>Dues BDT</th>
             </tr>
         </thead>
         <tbody>
             <tr>
+                <td class="text-center">1</td>
                 <td>{{ $item->lc?->pfi_no ?? '-' }}</td>
                 <td>{{ $item->lc?->lc_no ?? '-' }}</td>
-                <td class="text-center">{{ $item->lc?->lc_open_date?->format('d.m.Y') ?? '-' }}</td>
-                <td class="text-right">{{ $invoiceValue }}</td>
-                <td class="text-center">{{ $item->lc?->lc_retirement_date?->format('d.m.Y') ?? '-' }}</td>
-                <td class="text-right">{{ $item->lc?->lc_rt_value ? number_format($item->lc->lc_rt_value, 2) : '-' }}</td>
-                <td class="text-center">{{ $item->lc?->lc_commission_percent ? rtrim(rtrim(number_format($item->lc->lc_commission_percent, 4), '0'), '.').'%' : '-' }}</td>
-                <td class="text-right">{{ $commission ? number_format($commission, 2) : '-' }}</td>
+                <td class="text-right">{{ $cnf ? number_format($cnf, 2) : '-' }}</td>
+                <td class="text-right">{{ $advance ? number_format($advance, 2) : '-' }}</td>
+                <td class="text-right">{{ number_format($dues, 2) }}</td>
             </tr>
         </tbody>
         <tfoot>
             <tr>
-                <td colspan="7" class="text-right">Total Commission Amount BDT</td>
-                <td class="text-right">{{ $commission ? number_format($commission, 2) : '-' }}</td>
+                <td colspan="3" class="text-right">Total</td>
+                <td class="text-right">{{ $cnf ? number_format($cnf, 2) : '-' }}</td>
+                <td class="text-right">{{ $advance ? number_format($advance, 2) : '-' }}</td>
+                <td class="text-right">{{ number_format($dues, 2) }}</td>
             </tr>
         </tfoot>
     </table>

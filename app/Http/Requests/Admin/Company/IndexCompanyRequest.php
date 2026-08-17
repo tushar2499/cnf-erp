@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Http\Requests\Admin;
+namespace App\Http\Requests\Admin\Company;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class DestroyRoleRequest extends FormRequest
+class IndexCompanyRequest extends FormRequest
 {
     public function authorize(): bool
     {
         $user = $this->user();
 
-        return $user && $user->hasPermission('admin.roles.delete');
+        return $user && $user->hasPermission('admin.companies.list');
     }
 
     public function rules(): array
@@ -20,6 +20,6 @@ class DestroyRoleRequest extends FormRequest
 
     protected function failedAuthorization(): void
     {
-        abort(403, 'You do not have permission to delete roles.');
+        abort(403, 'You do not have permission to view companies.');
     }
 }

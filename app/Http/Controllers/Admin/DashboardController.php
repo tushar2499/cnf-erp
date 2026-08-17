@@ -13,14 +13,17 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        $chevronEmployees = DB::table('chevron_employees')->count();
+
         $stats = [
-            'users'       => User::count(),
-            'companies'   => Company::count(),
-            'roles'       => Role::count(),
-            'permissions' => Permission::count(),
-            'employees'   => DB::table('chevron_employees')->count()
-                           + DB::table('nas_freights_employees')->count()
-                           + DB::table('nas_trading_employees')->count(),
+            'users'             => User::count(),
+            'companies'         => Company::count(),
+            'roles'             => Role::count(),
+            'permissions'       => Permission::count(),
+            'chevron_employees' => $chevronEmployees,
+            'employees'         => $chevronEmployees
+                                 + DB::table('nas_freights_employees')->count()
+                                 + DB::table('nas_trading_employees')->count(),
         ];
 
         return view('admin.dashboard', compact('stats'));

@@ -293,14 +293,18 @@
 @if(auth()->user()->hasPermission('admin.employees.list'))
 <div class="section-title" id="employees-section">Employees</div>
 <div class="module-grid">
-    <div class="mod-tile teal" style="cursor:default;">
+    <a href="{{ route('admin.employees.index') }}" class="mod-tile teal">
+        <span class="mod-tile-count">{{ $stats['chevron_employees'] }}</span>
         <div class="mod-tile-icon"><i class="fa fa-id-badge"></i></div>
         <div class="mod-tile-name">Chevron Lines — Employees</div>
         <div class="mod-tile-desc">C&F division employee records and department management.</div>
         <div class="mod-tile-actions">
-            <span class="mod-action-btn" style="opacity:.5;cursor:not-allowed;"><i class="fa fa-lock me-1"></i>Company Panel</span>
+            <span class="mod-action-btn"><i class="fa fa-list me-1"></i>View All</span>
+            @if(auth()->user()->hasPermission('admin.employees.create'))
+            <span class="mod-action-btn"><i class="fa fa-plus me-1"></i>Add Employee</span>
+            @endif
         </div>
-    </div>
+    </a>
     <div class="mod-tile rose" style="cursor:default;">
         <div class="mod-tile-icon"><i class="fa fa-id-badge"></i></div>
         <div class="mod-tile-name">NAS Freights — Employees</div>

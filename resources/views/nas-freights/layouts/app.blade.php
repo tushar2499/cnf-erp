@@ -169,15 +169,6 @@
             </a>
         </div>
 
-        {{-- HR (single item — flat) --}}
-        <div class="nav-item-group">
-            <div class="nav-section">HR</div>
-            <a href="{{ route('nas-freights.employees.index') }}"
-                class="nav-link {{ request()->routeIs('nas-freights.employees.*') ? 'active' : '' }}">
-                <i class="fa fa-user-tie"></i> Employees
-            </a>
-        </div>
-
         {{-- Stakeholders --}}
         <div class="nav-item-group">
             <div class="nav-section">Stakeholders</div>
