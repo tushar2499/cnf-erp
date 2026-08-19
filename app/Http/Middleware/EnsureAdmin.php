@@ -15,13 +15,7 @@ class EnsureAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $isAdmin = $request->user()
-            ->companies()
-            ->wherePivot('role', 'admin')
-            ->wherePivot('is_active', true)
-            ->exists();
-
-        if (! $isAdmin) {
+        if (! $request->user()->isAdmin()) {
             abort(403, 'Admin access required.');
         }
 

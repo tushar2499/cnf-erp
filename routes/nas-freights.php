@@ -8,7 +8,6 @@ use App\Http\Controllers\NasFreights\CustomerBillController;
 use App\Http\Controllers\NasFreights\CustomerController;
 use App\Http\Controllers\NasFreights\DashboardController;
 use App\Http\Controllers\NasFreights\DueListController;
-use App\Http\Controllers\NasFreights\EmployeeController;
 use App\Http\Controllers\NasFreights\FreightBookingController;
 use App\Http\Controllers\NasFreights\ImportController;
 use App\Http\Controllers\NasFreights\MoneyReceiptController;
@@ -20,7 +19,6 @@ use App\Http\Controllers\NasFreights\ShippingCarrierController;
 use App\Http\Controllers\NasFreights\SupplierBillController;
 use App\Http\Controllers\NasFreights\SupplierController;
 use App\Http\Controllers\NasFreights\SupplierPaymentController;
-use App\Http\Controllers\NasFreights\UserController;
 use App\Http\Controllers\NasFreights\VehicleController;
 use Illuminate\Support\Facades\Route;
 
@@ -148,28 +146,23 @@ Route::prefix('vehicles')->name('vehicles.')->group(function () {
     Route::delete('/{vehicle}', [VehicleController::class, 'destroy'])->name('destroy');
 });
 
-// Employees
-Route::prefix('employees')->name('employees.')->group(function () {
-    Route::get('/', [EmployeeController::class, 'index'])->name('index');
-    Route::post('/', [EmployeeController::class, 'store'])->name('store');
-    Route::get('/{employee}', [EmployeeController::class, 'show'])->name('show');
-    Route::put('/{employee}', [EmployeeController::class, 'update'])->name('update');
-    Route::delete('/{employee}', [EmployeeController::class, 'destroy'])->name('destroy');
-});
-
 // Stakeholders
 Route::prefix('stakeholders')->name('stakeholders.')->group(function () {
-    Route::get('/suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
-    Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
-    Route::put('/suppliers/{supplier}', [SupplierController::class, 'update'])->name('suppliers.update');
-    Route::delete('/suppliers/{supplier}', [SupplierController::class, 'destroy'])->name('suppliers.destroy');
+    Route::prefix('suppliers')->name('suppliers.')->group(function () {
+        Route::get('/', [SupplierController::class, 'index'])->name('index');
+        Route::post('/', [SupplierController::class, 'store'])->name('store');
+        Route::put('/{supplier}', [SupplierController::class, 'update'])->name('update');
+        Route::delete('/{supplier}', [SupplierController::class, 'destroy'])->name('destroy');
+    });
 
-    Route::get('/customers/next-id', [CustomerController::class, 'nextId'])->name('customers.next-id');
-    Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
-    Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store');
-    Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
-    Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
-    Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
+    Route::prefix('customers')->name('customers.')->group(function () {
+        Route::get('/next-id', [CustomerController::class, 'nextId'])->name('next-id');
+        Route::get('/', [CustomerController::class, 'index'])->name('index');
+        Route::post('/', [CustomerController::class, 'store'])->name('store');
+        Route::get('/{customer}', [CustomerController::class, 'show'])->name('show');
+        Route::put('/{customer}', [CustomerController::class, 'update'])->name('update');
+        Route::delete('/{customer}', [CustomerController::class, 'destroy'])->name('destroy');
+    });
 });
 
 // Reports
@@ -186,15 +179,6 @@ Route::prefix('reports')->name('reports.')->group(function () {
     Route::get('/bill-details/print', [ReportController::class, 'billDetailsPrint'])->name('bill-details.print');
     Route::get('/bill-details/pdf', [ReportController::class, 'billDetailsPdf'])->name('bill-details.pdf');
     Route::get('/bill-details/excel', [ReportController::class, 'billDetailsExcel'])->name('bill-details.excel');
-});
-
-// Users
-Route::prefix('users')->name('users.')->group(function () {
-    Route::get('/', [UserController::class, 'index'])->name('index');
-    Route::post('/', [UserController::class, 'store'])->name('store');
-    Route::get('/{user}', [UserController::class, 'show'])->name('show');
-    Route::put('/{user}', [UserController::class, 'update'])->name('update');
-    Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
 });
 
 // Import

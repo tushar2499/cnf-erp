@@ -56,18 +56,39 @@
             <button class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown" title="{{ auth()->user()->name }}">
                 <i class="fa fa-user-circle"></i><span class="d-none d-sm-inline ms-1">{{ auth()->user()->name }}</span>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end">
+            <ul class="dropdown-menu dropdown-menu-end user-dropdown-menu">
+                {{-- User identity header --}}
+                <li class="user-dropdown-header">
+                    <div class="user-dropdown-avatar">{{ strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}</div>
+                    <div class="user-dropdown-info">
+                        <div class="user-dropdown-name">{{ auth()->user()->name }}</div>
+                        <div class="user-dropdown-sub">
+                            {{ auth()->user()->email ?: auth()->user()->username }}
+                        </div>
+                    </div>
+                </li>
+                <li><hr class="dropdown-divider my-1"></li>
                 <li>
-                    <a class="dropdown-item" href="{{ route('admin.companies.index') }}">
-                        <i class="fa fa-cog me-1"></i> Admin Settings
+                    <a class="dropdown-item user-dropdown-item" href="{{ route('profile.show') }}">
+                        <span class="udi-icon udi-blue"><i class="fa fa-user-circle"></i></span>
+                        My Profile
                     </a>
                 </li>
-                <li><hr class="dropdown-divider"></li>
+                @if(auth()->user()->isAdmin())
+                <li>
+                    <a class="dropdown-item user-dropdown-item" href="{{ route('admin.dashboard') }}">
+                        <span class="udi-icon udi-slate"><i class="fa fa-cog"></i></span>
+                        Admin Settings
+                    </a>
+                </li>
+                @endif
+                <li><hr class="dropdown-divider my-1"></li>
                 <li>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button class="dropdown-item text-danger" type="submit">
-                            <i class="fa fa-sign-out-alt me-1"></i> Logout
+                        <button class="dropdown-item user-dropdown-item user-dropdown-logout" type="submit">
+                            <span class="udi-icon udi-red"><i class="fa fa-sign-out-alt"></i></span>
+                            Logout
                         </button>
                     </form>
                 </li>
@@ -90,6 +111,9 @@
     @endif
 </div>
 @endif
+
+{{-- Sidebar backdrop (mobile tap-to-close) --}}
+<div id="sidebarBackdrop" class="sidebar-backdrop"></div>
 
 {{-- Sidebar --}}
 <aside class="sidebar">
@@ -122,12 +146,12 @@
 @stack('scripts')
 @if(session('success'))
 <script>
-Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: @json(session('success')), showConfirmButton: false, timer: 3500, timerProgressBar: true });
+Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: @json(session('success')), showConfirmButton: false, showCloseButton: true, timer: 3500, timerProgressBar: true });
 </script>
 @endif
 @if(session('error'))
 <script>
-Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: @json(session('error')), showConfirmButton: false, timer: 4500, timerProgressBar: true });
+Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: @json(session('error')), showConfirmButton: false, showCloseButton: true, timer: 4500, timerProgressBar: true });
 </script>
 @endif
 </body>

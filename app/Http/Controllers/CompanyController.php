@@ -3,28 +3,60 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
+use App\Models\EmployeeBranchAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class CompanyController extends Controller
 {
     public function select()
     {
-        $companies = Auth::user()
-            ->companies()
-            ->where('companies.is_active', true)
-            ->get();
+        $user = Auth::user();
+
+        if ($user->is_super) {
+            $companies = Company::where('is_active', true)->get();
+        } else {
+            $employeeCompanyIds = EmployeeBranchAccess::where('employee_id', $user->employee_id)
+                ->pluck('company_id')
+                ->unique();
+
+            $roleCompanyIds = DB::table('role_company')
+                ->where('role_id', $user->role_id)
+                ->pluck('company_id');
+
+            $visibleCompanyIds = $employeeCompanyIds->intersect($roleCompanyIds);
+
+            $companies = Company::whereIn('id', $visibleCompanyIds)
+                ->where('is_active', true)
+                ->get();
+        }
 
         return view('company.select', compact('companies'));
     }
 
     public function switch(Request $request, string $slug)
     {
-        $company = Auth::user()
-            ->companies()
-            ->where('companies.slug', $slug)
-            ->where('companies.is_active', true)
-            ->firstOrFail();
+        $user = Auth::user();
+
+        if ($user->is_super) {
+            $company = Company::where('slug', $slug)->where('is_active', true)->firstOrFail();
+        } else {
+            $employeeCompanyIds = EmployeeBranchAccess::where('employee_id', $user->employee_id)
+                ->pluck('company_id')
+                ->unique();
+
+            $roleCompanyIds = DB::table('role_company')
+                ->where('role_id', $user->role_id)
+                ->pluck('company_id');
+
+            $visibleCompanyIds = $employeeCompanyIds->intersect($roleCompanyIds);
+
+            $company = Company::where('slug', $slug)
+                ->where('is_active', true)
+                ->whereIn('id', $visibleCompanyIds)
+                ->firstOrFail();
+        }
 
         session([
             'active_company_id'   => $company->id,
@@ -33,7 +65,6 @@ class CompanyController extends Controller
             'active_company_type' => $company->type,
         ]);
 
-        // Clear old branch when switching company
         session()->forget(['active_branch_id', 'active_branch_name', 'active_branch_code']);
 
         $dashboard = match ($company->slug) {

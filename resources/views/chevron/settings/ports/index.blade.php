@@ -123,6 +123,7 @@ $(function () {
             this.api().columns().every(function (i) {
                 const $input = $('thead tr:eq(1) th:eq(' + i + ') input', this.table().container());
                 if ($input.length) {
+                    $input.on('click mousedown', e => e.stopPropagation());
                     $input.on('keyup change', () => this.search($input.val()).draw());
                 }
             });

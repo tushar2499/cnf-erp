@@ -7,8 +7,10 @@
 .card-panel-body { padding:1rem; }
 .form-label { font-size:.8rem; font-weight:600; color:#374151; margin-bottom:.2rem; }
 .form-control, .form-select { font-size:.82rem; }
-.lc-table th { background:#e9ecef; font-size:.76rem; padding:.35rem .5rem; }
-.lc-table td { font-size:.8rem; padding:.3rem .5rem; vertical-align:middle; }
+.lc-table th { background:#e9ecef; font-size:.76rem; padding:.35rem .5rem; white-space:nowrap; }
+.lc-table td { font-size:.8rem; padding:.3rem .5rem; vertical-align:middle; white-space:nowrap; }
+.lc-table td .bill-no-input { min-width:120px; }
+.table-scroll-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
 </style>
 @endpush
 
@@ -76,12 +78,13 @@
                 </div>
             </div>
 
-            <div style="overflow-x:auto">
-                <table class="table table-bordered lc-table w-100" id="lcTable">
+            <div class="table-scroll-wrap">
+                <table class="table table-bordered lc-table" id="lcTable" style="min-width:1020px;width:100%">
                     <thead>
                         <tr>
                             <th style="width:35px">#</th>
                             <th>PFI No</th>
+                            <th style="min-width:140px">Bill No</th>
                             <th>LC/TT No</th>
                             <th>LC/TT Date</th>
                             <th>LC Retirement Date</th>
@@ -117,6 +120,8 @@ $existingLcsJson = json_encode($lcBillStatement->items->map(fn($item) => [
     'lc_rt_value'           => $item->lc?->lc_rt_value,
     'lc_commission_percent' => $item->lc?->lc_commission_percent,
     'lc_commission_flat'    => $item->lc?->lc_commission_flat,
+    'bill_no'               => $item->bill_no,
+    'bill_options'          => $billOptionsByLc->get($item->lc_id, []),
 ]));
 @endphp
 @push('scripts')
@@ -179,7 +184,10 @@ $(function () {
         }
         $('#btnSave').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Updating...');
         var data = $(this).serialize();
-        addedLcIds.forEach(id => { data += '&lc_ids[]=' + id; });
+        $('#lcBody tr[data-lc-id]').each(function () {
+            data += '&lc_ids[]=' + $(this).data('lc-id');
+            data += '&bill_nos[]=' + encodeURIComponent($(this).find('.bill-no-input').val() || '');
+        });
         $.ajax({ url: '{{ route('nas-trading.lc-bill-statements.update', $lcBillStatement->id) }}', method: 'POST', data })
             .done(r => Swal.fire({ icon: 'success', title: r.message, timer: 1500, showConfirmButton: false })
                 .then(() => { if (r.redirect) window.location.href = r.redirect; }))
@@ -204,7 +212,7 @@ function updateTotal() {
     if ($('#lcBody tr[data-lc-id]').length > 0) {
         $('#lcTfoot').remove();
         $('#lcTable').append(`<tfoot id="lcTfoot"><tr style="background:#f0f4f8">
-            <td colspan="7" class="text-end fw-bold" style="font-size:.82rem">Total Commission (BDT)</td>
+            <td colspan="8" class="text-end fw-bold" style="font-size:.82rem">Total Commission (BDT)</td>
             <td class="text-end fw-bold text-success" style="font-size:.9rem">${total.toLocaleString('en-BD', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
             <td></td>
         </tr></tfoot>`);
@@ -217,10 +225,17 @@ function addLcRow(lc) {
     addedLcIds.push(lc.id);
     var idx = addedLcIds.length;
     var commFlat = lc.lc_commission_flat ? parseFloat(lc.lc_commission_flat) : null;
+    var dlId = 'bill-opts-' + lc.id;
+    var opts = (lc.bill_options || []).map(b => `<option value="${b}"></option>`).join('');
+    var billVal = lc.bill_no || '';
     $('#lcBody').append(`
         <tr data-lc-id="${lc.id}" data-commission-flat="${commFlat || ''}">
             <td class="text-center">${idx}</td>
             <td>${lc.pfi_no || '-'}</td>
+            <td>
+                <input type="text" list="${dlId}" class="form-control form-control-sm bill-no-input" placeholder="Bill No" autocomplete="off" value="${billVal}">
+                <datalist id="${dlId}">${opts}</datalist>
+            </td>
             <td>${lc.lc_no || '-'}</td>
             <td>${lc.lc_open_date || '-'}</td>
             <td>${lc.lc_retirement_date || '-'}</td>

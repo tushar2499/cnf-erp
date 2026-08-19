@@ -254,7 +254,11 @@ $(function () {
         initComplete: function () {
             this.api().columns().every(function (i) {
                 const $input = $('thead tr:eq(1) th:eq(' + i + ') input', this.table().container());
-                if ($input.length) $input.on('keyup change', () => this.search($input.val()).draw());
+                if ($input.length) {
+                    $input.on('click mousedown', e => e.stopPropagation());
+                    $input.on('click mousedown', e => e.stopPropagation());
+                    $input.on('keyup change', () => this.search($input.val()).draw());
+                }
             });
         },
         language: { emptyTable: '<div class="text-center py-3 text-muted"><i class="fa fa-inbox fa-2x mb-2 d-block"></i>No items yet.</div>' },

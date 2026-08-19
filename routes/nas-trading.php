@@ -9,7 +9,6 @@ use App\Http\Controllers\NasTrading\CustomerController;
 use App\Http\Controllers\NasTrading\DashboardController;
 use App\Http\Controllers\NasTrading\DeliveryController;
 use App\Http\Controllers\NasTrading\DueListController;
-use App\Http\Controllers\NasTrading\EmployeeController;
 use App\Http\Controllers\NasTrading\ExpenseHeadController;
 use App\Http\Controllers\NasTrading\ImportController;
 use App\Http\Controllers\NasTrading\ImporterController;
@@ -23,7 +22,6 @@ use App\Http\Controllers\NasTrading\PsiCompanyController;
 use App\Http\Controllers\NasTrading\ShipmentController;
 use App\Http\Controllers\NasTrading\SupplierController;
 use App\Http\Controllers\NasTrading\TransportCompanyController;
-use App\Http\Controllers\NasTrading\UserController;
 use Illuminate\Support\Facades\Route;
 
 // Branch select
@@ -31,15 +29,6 @@ Route::get('/select-branch', [BranchSelectController::class, 'show'])->name('sel
 Route::post('/select-branch', [BranchSelectController::class, 'store'])->name('select-branch.store');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
-// Employees
-Route::prefix('employees')->name('employees.')->group(function () {
-    Route::get('/', [EmployeeController::class, 'index'])->name('index');
-    Route::post('/', [EmployeeController::class, 'store'])->name('store');
-    Route::get('/{employee}', [EmployeeController::class, 'show'])->name('show');
-    Route::put('/{employee}', [EmployeeController::class, 'update'])->name('update');
-    Route::delete('/{employee}', [EmployeeController::class, 'destroy'])->name('destroy');
-});
 
 // Customers
 Route::prefix('customers')->name('customers.')->group(function () {
@@ -194,8 +183,13 @@ Route::prefix('lc-bill-statements')->name('lc-bill-statements.')->group(function
     Route::delete('/{lcBillStatement}', [LcBillStatementController::class, 'destroy'])->name('destroy');
     Route::get('/{lcBillStatement}/print/cnf-dues', [LcBillStatementController::class, 'printCnfDues'])->name('print.cnf-dues');
     Route::get('/{lcBillStatement}/print/commission-bill', [LcBillStatementController::class, 'printCommissionBill'])->name('print.commission-bill');
+    Route::get('/{lcBillStatement}/print/commission-bill/{item}', [LcBillStatementController::class, 'printCommissionBillItem'])->name('print.commission-bill-item');
     Route::get('/{lcBillStatement}/print/commission-statement', [LcBillStatementController::class, 'printCommissionStatement'])->name('print.commission-statement');
     Route::get('/{lcBillStatement}/print/bill-statement', [LcBillStatementController::class, 'printBillStatement'])->name('print.bill-statement');
+    Route::get('/{lcBillStatement}/print/cnf-dues/{item}', [LcBillStatementController::class, 'printCnfDuesItem'])->name('print.cnf-dues-item');
+    Route::get('/{lcBillStatement}/print/lc-closing-bill/{item}', [LcBillStatementController::class, 'printLcClosingBill'])->name('print.lc-closing-bill');
+    Route::get('/{lcBillStatement}/print/lc-closing-bill-all', [LcBillStatementController::class, 'printLcClosingBillAll'])->name('print.lc-closing-bill-all');
+    Route::get('/{lcBillStatement}/print/lc-closing-statement', [LcBillStatementController::class, 'printLcClosingStatement'])->name('print.lc-closing-statement');
 });
 
 // Deliveries
@@ -212,8 +206,8 @@ Route::prefix('deliveries')->name('deliveries.')->group(function () {
 
 // Due List
 Route::prefix('due-lists')->name('due-lists.')->group(function () {
-    Route::get('/customer', [DueListController::class, 'customerDue'])->name('customer');
     Route::get('/search-customers', [DueListController::class, 'searchCustomers'])->name('search-customers');
+    Route::get('/customer', [DueListController::class, 'customerDue'])->name('customer');
 });
 
 // Money Receipts
@@ -230,15 +224,6 @@ Route::prefix('money-receipts')->name('money-receipts.')->group(function () {
 Route::prefix('import')->name('import.')->group(function () {
     Route::get('/chevron', [ImportController::class, 'preview'])->name('chevron.preview');
     Route::post('/chevron', [ImportController::class, 'import'])->name('chevron');
-});
-
-// Users
-Route::prefix('users')->name('users.')->group(function () {
-    Route::get('/', [UserController::class, 'index'])->name('index');
-    Route::post('/', [UserController::class, 'store'])->name('store');
-    Route::get('/{user}', [UserController::class, 'show'])->name('show');
-    Route::put('/{user}', [UserController::class, 'update'])->name('update');
-    Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
 });
 
 // Settings — Branches

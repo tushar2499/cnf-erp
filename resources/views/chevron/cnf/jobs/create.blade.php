@@ -196,6 +196,10 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                         {{-- <option value="Closed"  {{ old('status', $job?->status)              === 'Closed'  ? 'selected' : '' }}>Closed</option> --}}
                     </select>
                 </div>
+                <div class="col-md-4">
+                    <label class="form-label">Remark</label>
+                    <textarea name="remarks" class="form-control form-control-sm" rows="1" placeholder="Remarks">{{ old('remarks', $job?->remarks) }}</textarea>
+                </div>
             </div>
         </div>
     </div>
@@ -264,11 +268,11 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     {{-- ── GROUP B: Documents ───────────────────────────────────────────── --}}
     <div class="form-grp-lbl"><i class="fa fa-folder-open"></i> Documents</div>
 
-    {{-- 3. Document Dates & Weight --}}
+    {{-- 3. Custom Document & Detail --}}
     <div class="job-card ac-violet">
         <div class="job-card-hdr">
-            <i class="fa fa-calendar-alt" style="color:#7c3aed;"></i>
-            <span>Document Dates &amp; Weight</span>
+            <i class="fa fa-file-alt" style="color:#7c3aed;"></i>
+            <span>Custom Document &amp; Detail</span>
         </div>
         <div class="job-card-body">
             <div class="row g-3">
@@ -308,18 +312,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                     <label class="form-label">Invoice Date</label>
                     <input type="date" name="invoice_date" class="form-control form-control-sm" value="{{ old('invoice_date', $job?->invoice_date?->format('Y-m-d')) }}">
                 </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- 4. Customs Documents --}}
-    <div class="job-card ac-violet">
-        <div class="job-card-hdr">
-            <i class="fa fa-stamp" style="color:#7c3aed;"></i>
-            <span>Customs Documents</span>
-        </div>
-        <div class="job-card-body">
-            <div class="row g-3">
                 <div class="col-md-3">
                     <label class="form-label">B/E No</label>
                     <input type="text" name="be_no" class="form-control form-control-sm" value="{{ old('be_no', $job?->be_no) }}" placeholder="B/E No">
@@ -493,10 +485,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                 <div class="col-md-3">
                     <label class="form-label">Delivery Date</label>
                     <input type="date" name="delivery_date" class="form-control form-control-sm" value="{{ old('delivery_date', $job?->delivery_date?->format('Y-m-d')) }}">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Remarks</label>
-                    <textarea name="remarks" class="form-control form-control-sm" rows="1" placeholder="Remarks">{{ old('remarks', $job?->remarks) }}</textarea>
                 </div>
             </div>
         </div>

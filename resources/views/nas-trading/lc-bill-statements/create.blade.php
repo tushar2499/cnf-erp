@@ -7,8 +7,10 @@
 .card-panel-body { padding:1rem; }
 .form-label { font-size:.8rem; font-weight:600; color:#374151; margin-bottom:.2rem; }
 .form-control, .form-select { font-size:.82rem; }
-.lc-table th { background:#e9ecef; font-size:.76rem; padding:.35rem .5rem; }
-.lc-table td { font-size:.8rem; padding:.3rem .5rem; vertical-align:middle; }
+.lc-table th { background:#e9ecef; font-size:.76rem; padding:.35rem .5rem; white-space:nowrap; }
+.lc-table td { font-size:.8rem; padding:.3rem .5rem; vertical-align:middle; white-space:nowrap; }
+.lc-table td .bill-no-input { min-width:120px; }
+.table-scroll-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
 </style>
 @endpush
 
@@ -76,12 +78,13 @@
                 </div>
             </div>
 
-            <div style="overflow-x:auto">
-                <table class="table table-bordered lc-table w-100" id="lcTable">
+            <div class="table-scroll-wrap">
+                <table class="table table-bordered lc-table" id="lcTable" style="min-width:1020px;width:100%">
                     <thead>
                         <tr>
                             <th style="width:35px">#</th>
                             <th>PFI No</th>
+                            <th style="min-width:140px">Bill No</th>
                             <th>LC/TT No</th>
                             <th>LC/TT Date</th>
                             <th>LC Retirement Date</th>
@@ -93,7 +96,7 @@
                     </thead>
                     <tbody id="lcBody">
                         <tr id="emptyRow">
-                            <td colspan="9" class="text-center text-muted py-3" style="font-size:.8rem">
+                            <td colspan="10" class="text-center text-muted py-3" style="font-size:.8rem">
                                 Select a customer above to load available LCs.
                             </td>
                         </tr>
@@ -154,7 +157,10 @@ $(function () {
 
         $('#btnSave').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Saving...');
         var data = $(this).serialize();
-        addedLcIds.forEach(id => { data += '&lc_ids[]=' + id; });
+        $('#lcBody tr[data-lc-id]').each(function () {
+            data += '&lc_ids[]=' + $(this).data('lc-id');
+            data += '&bill_nos[]=' + encodeURIComponent($(this).find('.bill-no-input').val() || '');
+        });
 
         $.ajax({ url: '{{ route('nas-trading.lc-bill-statements.store') }}', method: 'POST', data })
             .done(r => Swal.fire({ icon: 'success', title: r.message, timer: 1500, showConfirmButton: false })
@@ -197,7 +203,7 @@ function loadCustomerLcs(customerId) {
 
             $('#lcLoadingHint').hide();
             if (data.length === 0) {
-                $('#lcBody').html(`<tr id="emptyRow"><td colspan="9" class="text-center text-muted py-3" style="font-size:.8rem">No LC entries found for this customer.</td></tr>`);
+                $('#lcBody').html(`<tr id="emptyRow"><td colspan="10" class="text-center text-muted py-3" style="font-size:.8rem">No LC entries found for this customer.</td></tr>`);
             }
         })
         .fail(function () {
@@ -212,7 +218,7 @@ function resetLcSection() {
     $('#lcSearch').select2('destroy').empty().append('<option value=""></option>')
         .select2({ theme: 'bootstrap-5', placeholder: '-- Select customer first --' })
         .prop('disabled', true);
-    $('#lcBody').html(`<tr id="emptyRow"><td colspan="9" class="text-center text-muted py-3" style="font-size:.8rem">Select a customer above to load available LCs.</td></tr>`);
+    $('#lcBody').html(`<tr id="emptyRow"><td colspan="10" class="text-center text-muted py-3" style="font-size:.8rem">Select a customer above to load available LCs.</td></tr>`);
 }
 
 function formatCommissionPercent(val) {
@@ -230,10 +236,9 @@ function updateTotal() {
     });
     if ($('#lcBody tr[data-lc-id]').length > 0) {
         // 9 columns total: # | PFI | LC/TT No | LC/TT Date | Retirement | RT Value | Comm% | Comm Amt | Remove
-        // colspan=7 spans cols 1-7, value in col 8, empty cell for col 9 (remove button)
         $('#lcTfoot').remove();
         $('#lcTable').append(`<tfoot id="lcTfoot"><tr style="background:#f0f4f8">
-            <td colspan="7" class="text-end fw-bold" style="font-size:.82rem">Total Commission (BDT)</td>
+            <td colspan="8" class="text-end fw-bold" style="font-size:.82rem">Total Commission (BDT)</td>
             <td class="text-end fw-bold text-success" style="font-size:.9rem">${total.toLocaleString('en-BD', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
             <td></td>
         </tr></tfoot>`);
@@ -247,10 +252,16 @@ function addLcRow(lc) {
     addedLcIds.push(lc.id);
     var idx = addedLcIds.length;
     var commFlat = lc.lc_commission_flat ? parseFloat(lc.lc_commission_flat) : null;
+    var dlId = 'bill-opts-' + lc.id;
+    var opts = (lc.bill_options || []).map(b => `<option value="${b}"></option>`).join('');
     $('#lcBody').append(`
         <tr data-lc-id="${lc.id}" data-commission-flat="${commFlat || ''}">
             <td class="text-center">${idx}</td>
             <td>${lc.pfi_no || '-'}</td>
+            <td>
+                <input type="text" list="${dlId}" class="form-control form-control-sm bill-no-input" placeholder="Bill No" autocomplete="off">
+                <datalist id="${dlId}">${opts}</datalist>
+            </td>
             <td>${lc.lc_no || '-'}</td>
             <td>${lc.lc_open_date || '-'}</td>
             <td>${lc.lc_retirement_date || '-'}</td>
@@ -273,7 +284,7 @@ $(document).on('click', '.btn-remove-lc', function () {
     addedLcIds = addedLcIds.filter(id => id !== lcId);
     row.remove();
     if (addedLcIds.length === 0) {
-        $('#lcBody').html(`<tr id="emptyRow"><td colspan="9" class="text-center text-muted py-3" style="font-size:.8rem">No LC entries added yet.</td></tr>`);
+        $('#lcBody').html(`<tr id="emptyRow"><td colspan="10" class="text-center text-muted py-3" style="font-size:.8rem">No LC entries added yet.</td></tr>`);
     }
     $('#lcBody tr[data-lc-id]').each((i, tr) => $(tr).find('td:first').text(i + 1));
     updateTotal();

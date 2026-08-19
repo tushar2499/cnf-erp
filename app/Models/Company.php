@@ -10,10 +10,13 @@ class Company extends Model
         'name', 'slug', 'type', 'logo', 'address', 'phone', 'email', 'is_active',
     ];
 
-    public function users()
+    public function permissions()
     {
-        return $this->belongsToMany(User::class, 'company_user')
-            ->withPivot('role', 'is_active')
-            ->withTimestamps();
+        return $this->hasMany(Permission::class);
+    }
+
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'role_company');
     }
 }

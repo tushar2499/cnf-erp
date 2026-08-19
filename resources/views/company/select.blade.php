@@ -14,6 +14,14 @@
         </p>
     </div>
 
+    @if(session('error'))
+    <div class="alert alert-danger d-flex align-items-center gap-2 mb-4 py-2 px-3"
+         style="border-radius:.5rem; font-size:.82rem; max-width:540px; margin-inline:auto;">
+        <i class="fa fa-exclamation-circle flex-shrink-0"></i>
+        {{ session('error') }}
+    </div>
+    @endif
+
     <div class="row g-4 justify-content-center">
         @forelse($companies as $company)
         <div class="col-12 col-sm-6 col-md-4">

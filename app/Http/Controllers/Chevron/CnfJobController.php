@@ -68,10 +68,12 @@ class CnfJobController extends Controller
                     default   => '<span class="badge bg-secondary">Closed</span>',
                 })
                 ->addColumn('action', fn ($r) => '
-                    <a href="'.route('chevron.cnf.jobs.edit', $r->id).'" class="btn btn-sm btn-outline-primary py-0 px-1"><i class="fa fa-edit"></i></a>
+                    <a href="'.route('chevron.cnf.jobs.show', $r->id).'" class="btn btn-sm btn-outline-secondary py-0 px-1" title="View"><i class="fa fa-eye"></i></a>
+                    <a href="'.route('chevron.cnf.jobs.print', $r->id).'" target="_blank" class="btn btn-sm btn-outline-dark py-0 px-1" title="Print"><i class="fa fa-print"></i></a>
+                    <a href="'.route('chevron.cnf.jobs.edit', $r->id).'" class="btn btn-sm btn-outline-primary py-0 px-1" title="Edit"><i class="fa fa-edit"></i></a>
                     <button class="btn btn-sm btn-outline-danger py-0 px-1 btn-delete"
                         data-url="'.route('chevron.cnf.jobs.destroy', $r->id).'"
-                        data-name="'.e($r->job_no).'"><i class="fa fa-trash"></i></button>')
+                        data-name="'.e($r->job_no).'" title="Delete"><i class="fa fa-trash"></i></button>')
                 ->rawColumns(['status_badge', 'action'])
                 ->make(true);
         }
@@ -109,6 +111,20 @@ class CnfJobController extends Controller
 
         return redirect()->route('chevron.cnf.jobs.index')
             ->with('success', 'Job '.$job->job_no.' created successfully.');
+    }
+
+    public function show(ChevronJob $job)
+    {
+        $job->load(['jobType', 'port', 'customer', 'item']);
+
+        return view('chevron.cnf.jobs.show', compact('job'));
+    }
+
+    public function print(ChevronJob $job)
+    {
+        $job->load(['jobType', 'port', 'customer', 'item']);
+
+        return view('chevron.cnf.jobs.print', compact('job'));
     }
 
     public function edit(ChevronJob $job)

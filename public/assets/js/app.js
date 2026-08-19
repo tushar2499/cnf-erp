@@ -1,9 +1,30 @@
 // NAS Group ERP — Global JS
 
-// CSRF for all AJAX
+// CSRF for all AJAX — read dynamically so any page-level token update is picked up
 $.ajaxSetup({
-    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
+    beforeSend: function (xhr) {
+        xhr.setRequestHeader('X-CSRF-TOKEN', $('meta[name="csrf-token"]').attr('content'));
+    }
 });
+
+// Keep the session alive every 10 minutes while any page is open.
+// This prevents CSRF token mismatch errors on long-form pages.
+setInterval(function () {
+    $.get('/keepalive').fail(function (xhr) {
+        // 401 means the session genuinely expired — warn the user
+        if (xhr.status === 401 || xhr.status === 419) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Session Expired',
+                text: 'Your session has expired. Please log in again to continue.',
+                confirmButtonText: 'Go to Login',
+                allowOutsideClick: false,
+            }).then(function () {
+                window.location.href = '/login';
+            });
+        }
+    });
+}, 10 * 60 * 1000);
 
 // Init all Select2 on page
 $(function () {
@@ -28,12 +49,19 @@ $(function () {
 
     $('#sidebarToggle').on('click', function () {
         if (isMobile()) {
-            $('.sidebar').toggleClass('open');
+            var isOpen = $('.sidebar').toggleClass('open').hasClass('open');
+            $('#sidebarBackdrop').toggleClass('show', isOpen);
         } else {
             $('body').toggleClass('sidebar-collapsed');
             localStorage.setItem('sidebarCollapsed', $('body').hasClass('sidebar-collapsed') ? '1' : '0');
         }
         $flyout.hide();
+    });
+
+    // Tap backdrop to close sidebar on mobile
+    $(document).on('click', '#sidebarBackdrop', function () {
+        $('.sidebar').removeClass('open');
+        $(this).removeClass('show');
     });
 
     function buildFlyout($group) {
@@ -75,11 +103,15 @@ $(function () {
             flyoutHideTimer = setTimeout(function () { $flyout.hide(); }, 120);
         });
 
-    // On resize to mobile: hide flyout and strip sidebar-collapsed so mobile nav is always full
+    // On resize: keep sidebar and backdrop in sync
     $(window).on('resize', function () {
         if (isMobile()) {
             $flyout.hide();
             $('body').removeClass('sidebar-collapsed');
+        } else {
+            // Moving to desktop: close mobile sidebar/backdrop
+            $('.sidebar').removeClass('open');
+            $('#sidebarBackdrop').removeClass('show');
         }
     });
 

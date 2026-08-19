@@ -81,6 +81,67 @@ body {
 .top-navbar .dropdown-menu .dropdown-item.text-danger { color: #f87171 !important; }
 .top-navbar .dropdown-menu .dropdown-divider { border-color: rgba(255,255,255,.1); }
 
+/* ── User dropdown ── */
+.user-dropdown-menu {
+    min-width: 220px;
+    padding-top: 0;
+    border-radius: .55rem;
+    overflow: hidden;
+}
+.user-dropdown-header {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    padding: .85rem 1rem;
+    background: rgba(255,255,255,.05);
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    list-style: none;
+}
+.user-dropdown-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .85rem; font-weight: 800; color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(99,102,241,.4);
+}
+.user-dropdown-info { min-width: 0; }
+.user-dropdown-name {
+    font-size: .78rem; font-weight: 700; color: #f1f5f9;
+    line-height: 1.2; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+}
+.user-dropdown-sub {
+    font-size: .68rem; color: #64748b;
+    margin-top: .1rem; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+}
+.user-dropdown-item {
+    display: flex !important;
+    align-items: center;
+    gap: .65rem;
+    padding: .45rem 1rem !important;
+    font-size: .78rem !important;
+    color: #cbd5e1 !important;
+    transition: background .12s, color .12s;
+}
+.user-dropdown-item:hover { background: rgba(255,255,255,.08) !important; color: #f1f5f9 !important; }
+.user-dropdown-item.active { background: rgba(255,255,255,.12) !important; color: #fff !important; }
+.user-dropdown-item:hover .udi-icon,
+.user-dropdown-item.active .udi-icon { opacity: 1; }
+.udi-icon {
+    width: 26px; height: 26px; border-radius: .3rem;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .75rem; flex-shrink: 0; opacity: .85;
+    transition: opacity .12s;
+}
+.udi-blue  { background: rgba(59,130,246,.18);  color: #60a5fa; }
+.udi-slate { background: rgba(148,163,184,.15); color: #94a3b8; }
+.udi-red   { background: rgba(239,68,68,.15);   color: #f87171; }
+.user-dropdown-logout { color: #f87171 !important; width: 100%; text-align: left; background: none; border: none; }
+.user-dropdown-logout:hover { background: rgba(239,68,68,.1) !important; color: #fca5a5 !important; }
+
 /* ── Sidebar ── */
 .sidebar {
     width: var(--sidebar-width);
@@ -97,7 +158,7 @@ body {
 }
 .sidebar .nav-section {
     padding: .35rem .85rem .15rem;
-    font-size: .6rem;
+    font-size: 10px;
     font-weight: 700;
     letter-spacing: .08em;
     text-transform: uppercase;
@@ -144,6 +205,26 @@ body {
     transition: margin-left .22s ease;
 }
 
+/* ── Footer offset ── */
+footer {
+    margin-left: var(--sidebar-width);
+    transition: margin-left .22s ease;
+}
+
+/* ── Sidebar backdrop (mobile) ── */
+.sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 1029;
+    cursor: pointer;
+}
+.sidebar-backdrop.show { display: block; }
+
+/* ── Global touch improvement ── */
+button, a, [role="button"], .btn, label { touch-action: manipulation; }
+
 /* ── Sidebar group toggle chevron ── */
 .sidebar .nav-link[data-bs-toggle="collapse"] .fa-chevron-down {
     font-size: .6rem;
@@ -159,6 +240,7 @@ body {
 @media (min-width: 769px) {
     body.sidebar-collapsed .sidebar { width: 46px; }
     body.sidebar-collapsed .main-content { margin-left: 46px; }
+    body.sidebar-collapsed footer { margin-left: 46px; }
 
     body.sidebar-collapsed .sidebar .nav-section { display: none; }
     body.sidebar-collapsed .sidebar .collapse { display: none !important; }
@@ -376,9 +458,45 @@ table.dataTable tfoot input {
         margin-left: 0 !important;
         margin-top: calc(var(--navbar-height) + 28px) !important;
     }
+    footer { margin-left: 0 !important; }
 
     .top-navbar { padding: 0 .5rem; gap: .35rem; }
     .top-navbar .brand { font-size: .78rem; }
     .top-navbar .btn  { padding: .18rem .4rem; }
     .top-navbar .dropdown-menu { font-size: .75rem; min-width: 160px; }
+
+    /* ── Readable body font on mobile ── */
+    body { font-size: 14px; }
+
+    /* ── iOS zoom fix: inputs must be ≥16px to prevent auto-zoom ── */
+    .form-control,
+    .form-select,
+    .form-control-sm,
+    .form-select-sm,
+    .select2-container--bootstrap-5 .select2-selection,
+    .select2-dropdown { font-size: 16px !important; }
+    .input-group-text { font-size: 14px; }
+
+    /* ── Touch targets: minimum 36px height on buttons ── */
+    .btn-sm {
+        padding: .42rem .75rem;
+        min-height: 36px;
+        font-size: .78rem;
+    }
+
+    /* ── Sidebar nav-link touch targets ── */
+    .sidebar .nav-link { padding: .55rem 1rem; }
+
+    /* ── Page header wraps on narrow screens ── */
+    .page-header { flex-wrap: wrap; gap: .4rem; }
+    .page-header h4 { font-size: .88rem; }
+
+    /* ── KPI / stat values scale down on col-6 cards ── */
+    .kpi-card .kpi-value,
+    .kpi-card .kpi-val,
+    .stat-value { font-size: 1.3rem !important; }
+    .kpi-card .kpi-icon { width: 36px; height: 36px; font-size: .9rem; }
+
+    /* ── Dashboard action button rows wrap ── */
+    .d-flex.gap-2 { flex-wrap: wrap; }
 }

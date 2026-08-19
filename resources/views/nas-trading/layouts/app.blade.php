@@ -9,8 +9,8 @@
     @php
         $lcOpsActive       = request()->routeIs('nas-trading.lcs.*', 'nas-trading.shipments.*');
         $billingActive     = request()->routeIs('nas-trading.customer-bills.*', 'nas-trading.lc-bill-statements.*', 'nas-trading.due-lists.*', 'nas-trading.money-receipts.*');
-        $mastersActive     = request()->routeIs('nas-trading.customers.*', 'nas-trading.suppliers.*', 'nas-trading.items.*', 'nas-trading.expense-heads.*', 'nas-trading.banks.*', 'nas-trading.importers.*', 'nas-trading.employees.*', 'nas-trading.ports.*', 'nas-trading.cnf-agents.*', 'nas-trading.transport-companies.*', 'nas-trading.psi-companies.*');
-        $settingsActive    = request()->routeIs('nas-trading.users.*', 'nas-trading.settings.*');
+        $mastersActive     = request()->routeIs('nas-trading.customers.*', 'nas-trading.suppliers.*', 'nas-trading.items.*', 'nas-trading.expense-heads.*', 'nas-trading.banks.*', 'nas-trading.importers.*', 'nas-trading.ports.*', 'nas-trading.cnf-agents.*', 'nas-trading.transport-companies.*', 'nas-trading.psi-companies.*');
+        $settingsActive    = request()->routeIs('nas-trading.settings.*');
         $dataActive        = request()->routeIs('nas-trading.import.*');
     @endphp
 
@@ -115,10 +115,6 @@
                class="nav-link ps-4 {{ request()->routeIs('nas-trading.importers.*') ? 'active' : '' }}">
                 <i class="fa fa-building"></i> Importers
             </a>
-            <a href="{{ route('nas-trading.employees.index') }}"
-               class="nav-link ps-4 {{ request()->routeIs('nas-trading.employees.*') ? 'active' : '' }}">
-                <i class="fa fa-user-tie"></i> Employees
-            </a>
             <a href="{{ route('nas-trading.ports.index') }}"
                class="nav-link ps-4 {{ request()->routeIs('nas-trading.ports.*') ? 'active' : '' }}">
                 <i class="fa fa-anchor"></i> Ports
@@ -148,10 +144,6 @@
             <i class="fa fa-chevron-down ms-auto"></i>
         </a>
         <div class="collapse {{ $settingsActive ? 'show' : '' }}" id="tradingSettingsMenu">
-            <a href="{{ route('nas-trading.users.index') }}"
-               class="nav-link ps-4 {{ request()->routeIs('nas-trading.users.*') ? 'active' : '' }}">
-                <i class="fa fa-users-cog"></i> Users
-            </a>
             <a href="{{ route('nas-trading.settings.branches.index') }}"
                class="nav-link ps-4 {{ request()->routeIs('nas-trading.settings.branches.*') ? 'active' : '' }}">
                 <i class="fa fa-code-branch"></i> Branches

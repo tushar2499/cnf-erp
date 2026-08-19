@@ -24,7 +24,7 @@
             $reportsActive = request()->routeIs('nas-freights.reports.*');
             $stakeholdersActive = request()->routeIs('nas-freights.stakeholders.*');
             $importActive = request()->routeIs('nas-freights.import.*');
-            $settingsActive = request()->routeIs('nas-freights.users.*', 'nas-freights.settings.*');
+            $settingsActive = request()->routeIs('nas-freights.settings.*');
         @endphp
 
         <div class="nav-item-group">
@@ -169,15 +169,6 @@
             </a>
         </div>
 
-        {{-- HR (single item — flat) --}}
-        <div class="nav-item-group">
-            <div class="nav-section">HR</div>
-            <a href="{{ route('nas-freights.employees.index') }}"
-                class="nav-link {{ request()->routeIs('nas-freights.employees.*') ? 'active' : '' }}">
-                <i class="fa fa-user-tie"></i> Employees
-            </a>
-        </div>
-
         {{-- Stakeholders --}}
         <div class="nav-item-group">
             <div class="nav-section">Stakeholders</div>
@@ -245,10 +236,6 @@
                 <i class="fa fa-chevron-down ms-auto"></i>
             </a>
             <div class="collapse {{ $settingsActive ? 'show' : '' }}" id="freightSettingsMenu">
-                <a href="{{ route('nas-freights.users.index') }}"
-                    class="nav-link ps-4 {{ request()->routeIs('nas-freights.users.*') ? 'active' : '' }}">
-                    <i class="fa fa-users-cog"></i> Users
-                </a>
                 <a href="{{ route('nas-freights.settings.branches.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.settings.branches.*') ? 'active' : '' }}">
                     <i class="fa fa-code-branch"></i> Branches
