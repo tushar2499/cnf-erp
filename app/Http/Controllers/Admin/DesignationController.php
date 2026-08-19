@@ -3,16 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Designation\DestroyDesignationRequest;
+use App\Http\Requests\Admin\Designation\IndexDesignationRequest;
+use App\Http\Requests\Admin\Designation\StoreDesignationRequest;
+use App\Http\Requests\Admin\Designation\UpdateDesignationRequest;
 use App\Models\Designation;
-use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
 class DesignationController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexDesignationRequest $request)
     {
-        abort_unless($request->user()->hasPermission('admin.designations.list'), 403);
-
         if ($request->ajax()) {
             return DataTables::of(Designation::query())
                 ->addIndexColumn()
@@ -40,38 +41,32 @@ class DesignationController extends Controller
         return view('admin.designations.index');
     }
 
-    public function store(Request $request)
+    public function store(StoreDesignationRequest $request)
     {
-        abort_unless($request->user()->hasPermission('admin.designations.create'), 403);
-
-        $request->validate(['name' => ['required', 'string', 'max:255']]);
+        $validated = $request->validated();
 
         Designation::create([
-            'name'      => $request->name,
+            'name'      => $validated['name'],
             'is_active' => $request->boolean('is_active', true),
         ]);
 
         return response()->json(['message' => 'Designation created successfully.']);
     }
 
-    public function update(Request $request, Designation $designation)
+    public function update(UpdateDesignationRequest $request, Designation $designation)
     {
-        abort_unless($request->user()->hasPermission('admin.designations.edit'), 403);
-
-        $request->validate(['name' => ['required', 'string', 'max:255']]);
+        $validated = $request->validated();
 
         $designation->update([
-            'name'      => $request->name,
+            'name'      => $validated['name'],
             'is_active' => $request->boolean('is_active', true),
         ]);
 
         return response()->json(['message' => 'Designation updated successfully.']);
     }
 
-    public function destroy(Request $request, Designation $designation)
+    public function destroy(DestroyDesignationRequest $request, Designation $designation)
     {
-        abort_unless($request->user()->hasPermission('admin.designations.delete'), 403);
-
         $designation->delete();
 
         return response()->json(['message' => 'Designation deleted.']);

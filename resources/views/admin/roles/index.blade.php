@@ -55,7 +55,8 @@ $(function () {
             { data: 'permissions_count', name: 'permissions_count', searchable: false, className: 'text-center' },
             { data: 'action',            name: 'action',            orderable: false, searchable: false },
         ],
-        dom: "<'row mb-2'<'col-sm-6'><'col-sm-6'f>><'row'<'col-12'tr>><'row mt-2'<'col-sm-5'i><'col-sm-7'p>>",
+        dom: "<'row mb-2'<'col-sm-6'l><'col-sm-6'f>><'row'<'col-12'tr>><'row mt-2'<'col-sm-5'i><'col-sm-7'p>>",
+        pageLength: 25,
         language: {
             emptyTable: '<div class="text-center py-4 text-muted"><i class="fa fa-user-shield fa-2x mb-2 d-block"></i>No roles yet.</div>'
         },

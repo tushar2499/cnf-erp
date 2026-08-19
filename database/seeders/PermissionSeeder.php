@@ -15,9 +15,10 @@ class PermissionSeeder extends Seeder
 
             // Admin Users
             ['company_id' => null, 'module' => 'Admin Users', 'name' => 'admin.users.list',   'sorting_order' => 10],
-            ['company_id' => null, 'module' => 'Admin Users', 'name' => 'admin.users.create', 'sorting_order' => 11],
-            ['company_id' => null, 'module' => 'Admin Users', 'name' => 'admin.users.edit',   'sorting_order' => 12],
-            ['company_id' => null, 'module' => 'Admin Users', 'name' => 'admin.users.delete', 'sorting_order' => 13],
+            ['company_id' => null, 'module' => 'Admin Users', 'name' => 'admin.users.view',   'sorting_order' => 11],
+            ['company_id' => null, 'module' => 'Admin Users', 'name' => 'admin.users.create', 'sorting_order' => 12],
+            ['company_id' => null, 'module' => 'Admin Users', 'name' => 'admin.users.edit',   'sorting_order' => 13],
+            ['company_id' => null, 'module' => 'Admin Users', 'name' => 'admin.users.delete', 'sorting_order' => 14],
 
             // Roles
             ['company_id' => null, 'module' => 'Roles', 'name' => 'admin.roles.list',   'sorting_order' => 20],

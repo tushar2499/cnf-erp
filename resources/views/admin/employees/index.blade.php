@@ -327,7 +327,8 @@ $(function () {
             { data: 'status_badge',  name: 'current_status', orderable: false, searchable: false },
             { data: 'action',        name: 'action', orderable: false, searchable: false, width: '120px' },
         ],
-        dom: "<'row mb-0'<'col-sm-6'><'col-sm-6'f>><'row'<'col-12'tr>><'row mt-2'<'col-sm-5'i><'col-sm-7'p>>",
+        dom: "<'row mb-0'<'col-sm-6'l><'col-sm-6'f>><'row'<'col-12'tr>><'row mt-2'<'col-sm-5'i><'col-sm-7'p>>",
+        pageLength: 25,
         buttons: [{ extend: 'csv' }, { extend: 'excel' }, { extend: 'pdf' }, { extend: 'print' }],
         initComplete: function () {
             this.api().columns().every(function (i) {

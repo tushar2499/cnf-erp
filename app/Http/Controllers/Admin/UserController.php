@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\User\CreateUserRequest;
 use App\Http\Requests\Admin\User\DestroyUserRequest;
 use App\Http\Requests\Admin\User\EditUserRequest;
 use App\Http\Requests\Admin\User\IndexUserRequest;
+use App\Http\Requests\Admin\User\ShowUserRequest;
 use App\Http\Requests\Admin\User\StoreUserRequest;
 use App\Http\Requests\Admin\User\UpdateUserRequest;
 use App\Models\Employee;
@@ -80,6 +81,11 @@ class UserController extends Controller
                     : '<span class="text-muted small">—</span>')
                 ->addColumn('action', function (User $user) use ($request) {
                     $html = '';
+                    if ($request->user()->hasPermission('admin.users.view')) {
+                        $html .= '<a href="'.route('admin.users.show', $user).'" class="btn btn-sm btn-outline-secondary me-1" title="View Permissions">
+                        <i class="fa fa-eye"></i>
+                    </a>';
+                    }
                     if ($request->user()->hasPermission('admin.users.edit')) {
                         $html .= '<a href="'.route('admin.users.edit', $user).'" class="btn btn-sm btn-outline-primary me-1" title="Edit">
                         <i class="fa fa-edit"></i>
@@ -102,6 +108,48 @@ class UserController extends Controller
         }
 
         return view('admin.users.index');
+    }
+
+    public function show(ShowUserRequest $request, User $user)
+    {
+        $user->load(['role.permissions.company', 'role.companies', 'employee']);
+
+        $systemPermissions = collect();
+        $companyPermissions = collect();
+
+        if ($user->role) {
+            $systemPermissions = $user->role->permissions->whereNull('company_id')->groupBy('module');
+            $companyPermissions = $user->role->permissions->whereNotNull('company_id')->groupBy('company_id');
+        }
+
+        $branchAccess = [];
+        if ($user->employee_id) {
+            $branchTableMap = [
+                1 => 'chevron_branches',
+                2 => 'nas_freights_branches',
+                3 => 'nas_trading_branches',
+            ];
+
+            $accesses = DB::table('employee_branch_access')
+                ->where('employee_id', $user->employee_id)
+                ->get()
+                ->groupBy('company_id');
+
+            foreach ($accesses as $coId => $rows) {
+                $table = $branchTableMap[$coId] ?? null;
+                if (! $table) {
+                    continue;
+                }
+                $branchIds = $rows->pluck('branch_id')->toArray();
+                $branchAccess[$coId] = DB::table($table)
+                    ->whereIn('id', $branchIds)
+                    ->orderBy('name')
+                    ->pluck('name')
+                    ->toArray();
+            }
+        }
+
+        return view('admin.users.show', compact('user', 'systemPermissions', 'companyPermissions', 'branchAccess'));
     }
 
     public function create(CreateUserRequest $request)
