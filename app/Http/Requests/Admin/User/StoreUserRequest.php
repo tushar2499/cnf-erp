@@ -23,10 +23,7 @@ class StoreUserRequest extends FormRequest
             'password'          => ['required', Password::min(6)],
             'is_active'         => ['boolean'],
             'role_id'           => ['nullable', 'exists:roles,id'],
-            'employee_link'     => ['nullable', 'string', 'regex:/^\d+:\d+$/'],
-            'branch_access'     => ['nullable', 'array'],
-            'branch_access.*'   => ['nullable', 'array'],
-            'branch_access.*.*' => ['nullable', 'integer'],
+            'employee_id'       => ['required', 'integer', 'exists:employees,id'],
         ];
     }
 

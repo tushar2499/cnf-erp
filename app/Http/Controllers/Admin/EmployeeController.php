@@ -8,10 +8,14 @@ use App\Http\Requests\Admin\Employee\IndexEmployeeRequest;
 use App\Http\Requests\Admin\Employee\StoreEmployeeRequest;
 use App\Http\Requests\Admin\Employee\UpdateEmployeeRequest;
 use App\Models\Chevron\ChevronBranch;
-use App\Models\Chevron\ChevronCustomer;
-use App\Models\Chevron\ChevronDesignation;
 use App\Models\Chevron\ChevronEmployee;
+use App\Models\Company;
+use App\Models\Designation;
+use App\Models\Employee;
+use App\Models\EmployeeBranchAccess;
+use App\Models\NasFreights\NasFreightsBranch;
 use App\Models\NasFreights\NasFreightsEmployee;
+use App\Models\NasTrading\NasTradingBranch;
 use App\Models\NasTrading\NasTradingEmployee;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -24,52 +28,33 @@ use Yajra\DataTables\Facades\DataTables;
 
 class EmployeeController extends Controller
 {
-    // ── Chevron Lines ────────────────────────────────────────────────────────
+    // ── Unified Employees (access management) ────────────────────────────────
 
-    public function index(IndexEmployeeRequest $request)
+    public function indexUnified(IndexEmployeeRequest $request)
     {
         if ($request->ajax()) {
-            return DataTables::of(ChevronEmployee::with('designation', 'branch', 'teamLeader', 'customers'))
+            return DataTables::of(Employee::with('users')->orderBy('name'))
                 ->addIndexColumn()
-                ->addColumn('designation_name', fn ($r) => $r->designation?->name ?? '-')
-                ->addColumn('branch_name', fn ($r) => $r->branch?->name ?? '-')
-                ->addColumn('type_badge', fn ($r) => $r->type === 'team_leader'
-                    ? '<span class="badge bg-primary">Team Leader</span>'
-                    : '<span class="badge bg-info text-dark">Prepare</span>')
-                ->addColumn('team_leader_name', fn ($r) => $r->teamLeader?->name ?? '-')
-                ->addColumn('status_badge', fn ($r) => match ($r->current_status) {
-                    'Active'     => '<span class="badge bg-success">Active</span>',
-                    'Inactive'   => '<span class="badge bg-secondary">Inactive</span>',
-                    'Resigned'   => '<span class="badge bg-warning text-dark">Resigned</span>',
-                    'Terminated' => '<span class="badge bg-danger">Terminated</span>',
-                    default      => '<span class="badge bg-secondary">'.$r->current_status.'</span>',
+                ->addColumn('company_type_badge', fn (Employee $r) => match ($r->company_type) {
+                    'chevron'      => '<span class="badge bg-success">Chevron Lines</span>',
+                    'nas_freights' => '<span class="badge bg-info text-dark">NAS Freights</span>',
+                    'nas_trading'  => '<span class="badge bg-warning text-dark">NAS Trading</span>',
+                    default        => e($r->company_type),
                 })
-                ->addColumn('customer_ids', fn ($r) => $r->customers->pluck('id')->join(','))
-                ->addColumn('action', function ($r) use ($request) {
-                    $html = '';
-                    if ($request->user()->hasPermission('admin.employees.edit')) {
-                        $html .= '<button class="btn btn-sm btn-outline-primary btn-edit"
-                            data-id="'.$r->id.'"
-                            data-employee_prefix="'.e($r->employee_prefix).'"
-                            data-employee_id="'.e($r->employee_id).'"
-                            data-name="'.e($r->name).'"
-                            data-designation_id="'.$r->designation_id.'"
-                            data-joining_date="'.$r->joining_date?->format('Y-m-d').'"
-                            data-short_name="'.e($r->short_name).'"
-                            data-father_name="'.e($r->father_name).'"
-                            data-mother_name="'.e($r->mother_name).'"
-                            data-current_status="'.$r->current_status.'"
-                            data-branch_id="'.$r->branch_id.'"
-                            data-is_active="'.(int) $r->is_active.'"
-                            data-type="'.$r->type.'"
-                            data-team_leader_id="'.$r->team_leader_id.'"
-                            data-customer_ids="'.$r->customers->pluck('id')->join(',').'">
-                            <i class="fa fa-edit"></i>
-                        </button>';
-                    }
-                    if ($request->user()->hasPermission('admin.employees.delete')) {
-                        $html .= '<button class="btn btn-sm btn-outline-danger btn-delete"
-                            data-url="'.route('admin.employees.destroy', $r->id).'"
+                ->addColumn('users_count', fn (Employee $r) => $r->users->count())
+                ->addColumn('status_badge', fn (Employee $r) => $r->is_active
+                    ? '<span class="badge bg-success">Active</span>'
+                    : '<span class="badge bg-secondary">Inactive</span>')
+                ->addColumn('action', function (Employee $r) use ($request) {
+                    $html = '<button class="btn btn-sm btn-outline-primary btn-manage-access me-1"
+                        data-id="'.$r->id.'"
+                        data-name="'.e($r->name).'"
+                        title="Manage Branch Access">
+                        <i class="fa fa-code-branch"></i>
+                    </button>';
+                    if ($request->user()->hasPermission('admin.employees.delete') && $r->users->isEmpty()) {
+                        $html .= '<button class="btn btn-sm btn-outline-danger btn-delete-unified"
+                            data-url="'.route('admin.employees.unified.destroy', $r->id).'"
                             data-name="'.e($r->name).'">
                             <i class="fa fa-trash"></i>
                         </button>';
@@ -77,17 +62,247 @@ class EmployeeController extends Controller
 
                     return $html;
                 })
-                ->editColumn('joining_date', fn ($r) => $r->joining_date?->format('d M, Y'))
-                ->rawColumns(['type_badge', 'status_badge', 'action'])
+                ->rawColumns(['company_type_badge', 'status_badge', 'action'])
                 ->make(true);
         }
 
-        $designations = ChevronDesignation::where('is_active', true)->orderBy('name')->get();
-        $branches = ChevronBranch::where('is_active', true)->orderBy('name')->get();
-        $teamLeaders = ChevronEmployee::with('designation')->where('type', 'team_leader')->where('is_active', true)->orderBy('name')->get();
-        $customers = ChevronCustomer::where('status', 'Active')->orderBy('name')->get(['id', 'name', 'customer_id']);
+        return redirect()->route('admin.employees.index');
+    }
 
-        return view('admin.employees.index', compact('designations', 'branches', 'teamLeaders', 'customers'));
+    public function branchAccess(IndexEmployeeRequest $request, Employee $employee)
+    {
+        $companies = Company::where('is_active', true)->orderBy('name')->get(['id', 'name', 'type']);
+
+        $branchLoaders = [
+            'cnf'     => fn () => ChevronBranch::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'freight' => fn () => NasFreightsBranch::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'trading' => fn () => NasTradingBranch::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+        ];
+
+        $granted = EmployeeBranchAccess::where('employee_id', $employee->id)
+            ->get()
+            ->groupBy('company_id')
+            ->map(fn ($rows) => $rows->pluck('branch_id')->toArray());
+
+        $data = $companies->map(fn ($co) => [
+            'id'       => $co->id,
+            'name'     => $co->name,
+            'type'     => $co->type,
+            'branches' => isset($branchLoaders[$co->type]) ? ($branchLoaders[$co->type])() : collect(),
+            'granted'  => $granted[$co->id] ?? [],
+        ]);
+
+        return response()->json(['employee' => $employee, 'companies' => $data]);
+    }
+
+    public function saveBranchAccess(Request $request, Employee $employee)
+    {
+        abort_unless(auth()->user()->hasPermission('admin.employees.edit'), 403);
+
+        $request->validate([
+            'access'                => ['nullable', 'array'],
+            'access.*.company_id'   => ['required', 'exists:companies,id'],
+            'access.*.branch_ids'   => ['nullable', 'array'],
+            'access.*.branch_ids.*' => ['integer'],
+        ]);
+
+        DB::transaction(function () use ($request, $employee) {
+            EmployeeBranchAccess::where('employee_id', $employee->id)->delete();
+
+            $rows = [];
+            foreach ($request->input('access', []) as $entry) {
+                foreach ($entry['branch_ids'] ?? [] as $branchId) {
+                    $rows[] = [
+                        'employee_id' => $employee->id,
+                        'company_id'  => $entry['company_id'],
+                        'branch_id'   => $branchId,
+                        'created_at'  => now(),
+                        'updated_at'  => now(),
+                    ];
+                }
+            }
+
+            if ($rows) {
+                EmployeeBranchAccess::insert($rows);
+            }
+        });
+
+        return response()->json(['message' => 'Branch access saved.']);
+    }
+
+    public function destroyUnified(DestroyEmployeeRequest $request, Employee $employee)
+    {
+        if ($employee->users()->exists()) {
+            return response()->json(['message' => 'Cannot delete: employee has linked users.'], 422);
+        }
+
+        $employee->delete();
+
+        return response()->json(['message' => 'Employee deleted.']);
+    }
+
+    // ── All Employees (unified) ──────────────────────────────────────────────
+
+    public function index(IndexEmployeeRequest $request)
+    {
+        if ($request->ajax()) {
+            return DataTables::of(Employee::with('users', 'designation')->orderBy('name'))
+                ->addIndexColumn()
+                ->addColumn('designation_name', fn (Employee $r) => $r->designation?->name ?? '—')
+                ->editColumn('joining_date', fn (Employee $r) => $r->joining_date?->format('d M, Y'))
+                ->addColumn('status_badge', fn (Employee $r) => $r->is_active
+                    ? '<span class="badge bg-success">Active</span>'
+                    : '<span class="badge bg-secondary">Inactive</span>')
+                ->addColumn('action', function (Employee $r) use ($request) {
+                    $html = '';
+
+                    if ($request->user()->hasPermission('admin.employees.edit')) {
+                        $html .= '<button class="btn btn-sm btn-outline-secondary btn-edit me-1"
+                            data-id="'.$r->id.'"
+                            data-name="'.e($r->name).'"
+                            data-code="'.e((string) $r->code).'"
+                            data-designation_id="'.($r->designation_id ?? '').'"
+                            data-joining_date="'.($r->joining_date?->format('Y-m-d') ?? '').'"
+                            data-short_name="'.e((string) $r->short_name).'"
+                            data-father_name="'.e((string) $r->father_name).'"
+                            data-mother_name="'.e((string) $r->mother_name).'"
+                            data-phone="'.e((string) $r->phone).'"
+                            data-email="'.e((string) $r->email).'"
+                            data-address="'.e((string) $r->address).'"
+                            data-current_status="'.e($r->current_status ?? 'Active').'"
+                            data-type="'.e($r->type ?? 'team_leader').'"
+                            data-team_leader_id="'.($r->team_leader_id ?? '').'"
+                            data-is_active="'.(int) $r->is_active.'"
+                            title="Edit">
+                            <i class="fa fa-edit"></i>
+                        </button>';
+
+                        $html .= '<button class="btn btn-sm btn-outline-primary btn-manage-access me-1"
+                            data-id="'.$r->id.'"
+                            data-name="'.e($r->name).'"
+                            title="Branch Access">
+                            <i class="fa fa-code-branch"></i>
+                        </button>';
+                    }
+
+                    if ($request->user()->hasPermission('admin.employees.delete') && $r->users->isEmpty()) {
+                        $html .= '<button class="btn btn-sm btn-outline-danger btn-delete"
+                            data-url="'.route('admin.employees.unified.destroy', $r->id).'"
+                            data-name="'.e($r->name).'"
+                            title="Delete">
+                            <i class="fa fa-trash"></i>
+                        </button>';
+                    }
+
+                    return $html;
+                })
+                ->rawColumns(['status_badge', 'action'])
+                ->make(true);
+        }
+
+        $designations = Designation::where('is_active', true)->orderBy('name')->get(['id', 'name']);
+
+        return view('admin.employees.index', compact('designations'));
+    }
+
+    public function updateUnified(Request $request, Employee $employee)
+    {
+        abort_unless($request->user()->hasPermission('admin.employees.edit'), 403);
+
+        $type = $request->input('type', 'team_leader');
+
+        $request->validate([
+            'name'           => ['required', 'string', 'max:255'],
+            'code'           => ['nullable', 'string', 'max:100'],
+            'type'           => ['required', 'in:team_leader,prepare'],
+            'designation_id' => ['nullable', 'exists:designations,id'],
+            'joining_date'   => ['nullable', 'date'],
+            'short_name'     => ['nullable', 'string', 'max:255'],
+            'father_name'    => ['nullable', 'string', 'max:255'],
+            'mother_name'    => ['nullable', 'string', 'max:255'],
+            'phone'          => ['nullable', 'string', 'max:30'],
+            'email'          => ['nullable', 'email', 'max:150'],
+            'address'        => ['nullable', 'string'],
+            'current_status' => ['nullable', 'in:Active,Inactive,Resigned,Terminated'],
+            'team_leader_id' => [$type === 'prepare' ? 'required' : 'nullable', 'exists:employees,id'],
+            'is_active'      => ['boolean'],
+        ]);
+
+        $employee->update([
+            'name'           => $request->name,
+            'code'           => $request->code ?: null,
+            'type'           => $type,
+            'designation_id' => $request->designation_id ?: null,
+            'joining_date'   => $request->joining_date ?: null,
+            'short_name'     => $request->short_name,
+            'father_name'    => $request->father_name,
+            'mother_name'    => $request->mother_name,
+            'phone'          => $request->phone,
+            'email'          => $request->email,
+            'address'        => $request->address,
+            'current_status' => $request->current_status ?? $employee->current_status,
+            'team_leader_id' => $type === 'prepare' ? $request->team_leader_id : null,
+            'is_active'      => $request->boolean('is_active', true),
+        ]);
+
+        return response()->json(['message' => 'Employee updated successfully.']);
+    }
+
+    public function store(Request $request)
+    {
+        abort_unless($request->user()->hasPermission('admin.employees.create'), 403);
+
+        $type = $request->input('type', 'team_leader');
+
+        $request->validate([
+            'name'           => ['required', 'string', 'max:255'],
+            'code'           => ['nullable', 'string', 'max:100'],
+            'type'           => ['required', 'in:team_leader,prepare'],
+            'designation_id' => ['nullable', 'exists:designations,id'],
+            'joining_date'   => ['nullable', 'date'],
+            'short_name'     => ['nullable', 'string', 'max:255'],
+            'father_name'    => ['nullable', 'string', 'max:255'],
+            'mother_name'    => ['nullable', 'string', 'max:255'],
+            'phone'          => ['nullable', 'string', 'max:30'],
+            'email'          => ['nullable', 'email', 'max:150'],
+            'address'        => ['nullable', 'string'],
+            'current_status' => ['nullable', 'in:Active,Inactive,Resigned,Terminated'],
+            'team_leader_id' => [$type === 'prepare' ? 'required' : 'nullable', 'exists:employees,id'],
+            'is_active'      => ['boolean'],
+        ]);
+
+        Employee::create([
+            'name'           => $request->name,
+            'code'           => $request->code ?: null,
+            'type'           => $type,
+            'designation_id' => $request->designation_id ?: null,
+            'joining_date'   => $request->joining_date ?: null,
+            'short_name'     => $request->short_name,
+            'father_name'    => $request->father_name,
+            'mother_name'    => $request->mother_name,
+            'phone'          => $request->phone,
+            'email'          => $request->email,
+            'address'        => $request->address,
+            'current_status' => $request->current_status ?? 'Active',
+            'team_leader_id' => $type === 'prepare' ? $request->team_leader_id : null,
+            'is_active'      => $request->boolean('is_active', true),
+        ]);
+
+        return response()->json(['message' => 'Employee created successfully.']);
+    }
+
+    public function search(IndexEmployeeRequest $request)
+    {
+        $exclude = $request->integer('exclude', 0);
+
+        return response()->json(
+            Employee::where('is_active', true)
+                ->when($exclude, fn ($q) => $q->where('id', '!=', $exclude))
+                ->when($request->q, fn ($q) => $q->where('name', 'like', '%'.$request->q.'%'))
+                ->orderBy('name')
+                ->limit(200)
+                ->get(['id', 'name', 'code'])
+        );
     }
 
     public function nextId(IndexEmployeeRequest $request)
@@ -97,7 +312,7 @@ class EmployeeController extends Controller
         return response()->json(['employee_id' => ChevronEmployee::generateEmployeeId($prefix)]);
     }
 
-    public function store(StoreEmployeeRequest $request)
+    public function storeChevron(StoreEmployeeRequest $request)
     {
         DB::transaction(function () use ($request) {
             $employeeId = ChevronEmployee::generateEmployeeId($request->employee_prefix);
@@ -135,8 +350,8 @@ class EmployeeController extends Controller
                 'short_name'     => $request->short_name,
                 'father_name'    => $request->father_name,
                 'mother_name'    => $request->mother_name,
-                'current_status' => $request->current_status ?? 'Active',
-                'branch_id'      => $request->branch_id ?: null,
+                'current_status' => $request->current_status ?? $employee->current_status,
+                'branch_id'      => $request->filled('branch_id') ? $request->branch_id : $employee->branch_id,
                 'is_active'      => $request->boolean('is_active', true),
                 'type'           => $request->type,
                 'team_leader_id' => $request->type === 'prepare' ? $request->team_leader_id : null,
@@ -172,7 +387,7 @@ class EmployeeController extends Controller
             ->getStartColor()->setARGB('FF0D2626');
         $sheet->getStyle('A1:J1')->getFont()->getColor()->setARGB('FFFFFFFF');
 
-        $desig = ChevronDesignation::first()?->name ?? 'Manager';
+        $desig = Designation::first()?->name ?? 'Manager';
         $branch = ChevronBranch::first()?->name ?? 'Head Office';
 
         $sheet->fromArray([
@@ -207,7 +422,7 @@ class EmployeeController extends Controller
         $existingNames = ChevronEmployee::pluck('name')
             ->map(fn ($v) => strtolower(trim($v)))->flip()->all();
 
-        $desigMap = ChevronDesignation::pluck('id', 'name')
+        $desigMap = Designation::pluck('id', 'name')
             ->mapWithKeys(fn ($id, $n) => [strtolower(trim($n)) => $id])->all();
         $branchMap = ChevronBranch::pluck('id', 'name')
             ->mapWithKeys(fn ($id, $n) => [strtolower(trim($n)) => $id])->all();

@@ -29,7 +29,9 @@
                         <div class="col-md-8">
                             <label class="form-label">Company Name <span class="text-danger">*</span></label>
                             <input type="text" name="name" class="form-control"
-                                   value="{{ old('name', $company->name) }}" required>
+                                   value="{{ old('name', $company->name) }}"
+                                   placeholder="e.g. NAS Trading Ltd."
+                                   required>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Type</label>

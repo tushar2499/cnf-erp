@@ -37,6 +37,12 @@ class PermissionSeeder extends Seeder
             ['company_id' => null, 'module' => 'Employees', 'name' => 'admin.employees.edit',   'sorting_order' => 43],
             ['company_id' => null, 'module' => 'Employees', 'name' => 'admin.employees.delete', 'sorting_order' => 44],
 
+            // Designations
+            ['company_id' => null, 'module' => 'Designations', 'name' => 'admin.designations.list',   'sorting_order' => 50],
+            ['company_id' => null, 'module' => 'Designations', 'name' => 'admin.designations.create', 'sorting_order' => 51],
+            ['company_id' => null, 'module' => 'Designations', 'name' => 'admin.designations.edit',   'sorting_order' => 52],
+            ['company_id' => null, 'module' => 'Designations', 'name' => 'admin.designations.delete', 'sorting_order' => 53],
+
             // ── Chevron Lines (C&F) — company_id = 1 ──────────────────────
 
             // Jobs

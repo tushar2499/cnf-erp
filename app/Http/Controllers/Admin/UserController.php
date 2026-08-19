@@ -9,17 +9,9 @@ use App\Http\Requests\Admin\User\EditUserRequest;
 use App\Http\Requests\Admin\User\IndexUserRequest;
 use App\Http\Requests\Admin\User\StoreUserRequest;
 use App\Http\Requests\Admin\User\UpdateUserRequest;
-use App\Models\Chevron\ChevronBranch;
-use App\Models\Chevron\ChevronEmployee;
-use App\Models\Company;
-use App\Models\NasFreights\NasFreightsBranch;
-use App\Models\NasFreights\NasFreightsEmployee;
-use App\Models\NasTrading\NasTradingBranch;
-use App\Models\NasTrading\NasTradingEmployee;
+use App\Models\Employee;
 use App\Models\Role;
 use App\Models\User;
-use App\Models\UserBranchAccess;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -28,14 +20,8 @@ class UserController extends Controller
     public function index(IndexUserRequest $request)
     {
         if ($request->ajax()) {
-            $users = User::with([
-                'companies' => fn ($q) => $q->withPivot('role_id', 'is_active'),
-            ])->get();
+            $users = User::with('role.companies', 'employee')->get();
 
-            $roleIds = $users->flatMap(fn ($u) => $u->companies->pluck('pivot.role_id'))->filter()->unique();
-            $rolesById = Role::whereIn('id', $roleIds)->get()->keyBy('id');
-
-            // role_id → count of system (company_id IS NULL) permissions
             $sysPermCountByRole = DB::table('role_has_permissions')
                 ->join('permissions', 'permissions.id', '=', 'role_has_permissions.permission_id')
                 ->whereNull('permissions.company_id')
@@ -45,41 +31,44 @@ class UserController extends Controller
 
             return DataTables::of($users)
                 ->addIndexColumn()
-                ->addColumn('role_badge', function (User $user) use ($rolesById) {
-                    $roleId = $user->companies->first(fn ($c) => $c->pivot->role_id)?->pivot->role_id;
-                    if (! $roleId) {
+                ->addColumn('employee_badge', function (User $user) {
+                    if (! $user->employee) {
                         return '<span class="text-muted small">—</span>';
                     }
-                    $role = $rolesById[$roleId] ?? null;
+                    $emp = $user->employee;
+                    $label = $emp->code ? e($emp->code).' — '.e($emp->name) : e($emp->name);
+                    $color = match ($emp->company_type) {
+                        'chevron'      => 'success',
+                        'nas_freights' => 'info',
+                        'nas_trading'  => 'warning',
+                        default        => 'secondary',
+                    };
 
-                    return $role
-                        ? '<span class="badge" style="background:#ede9fe;color:#6d28d9;">'.e($role->name).'</span>'
-                        : '<span class="text-muted small">—</span>';
+                    return '<span class="badge bg-'.$color.' me-1" style="font-size:.7rem">'.e($label).'</span>';
                 })
+                ->addColumn('role_badge', fn (User $user) => $user->role
+                    ? '<span class="badge" style="background:#ede9fe;color:#6d28d9;">'.e($user->role->name).'</span>'
+                    : '<span class="text-muted small">—</span>')
                 ->addColumn('companies_badges', function (User $user) use ($sysPermCountByRole) {
-                    $badges = '';
+                    $hasSysPerms = $user->is_super
+                        || ($user->role_id && ($sysPermCountByRole[$user->role_id] ?? 0) > 0);
 
-                    $activeCompanies = $user->is_super
-                        ? $user->companies
-                        : $user->companies->filter(fn ($c) => $c->pivot->role_id);
+                    $badges = $hasSysPerms
+                        ? '<span class="badge me-1" style="background:#e2e8f0;color:#475569;font-size:.7rem"><i class="fa fa-gear me-1"></i>System</span>'
+                        : '';
 
-                    $roleId = $activeCompanies->first(fn ($c) => $c->pivot->role_id)?->pivot->role_id;
-                    $hasSysPerms = $user->is_super || ($roleId && ($sysPermCountByRole[$roleId] ?? 0) > 0);
+                    if ($user->role) {
+                        $badges .= $user->role->companies->map(function ($co) {
+                            $color = match ($co->type) {
+                                'cnf'     => 'success',
+                                'freight' => 'info',
+                                'trading' => 'warning',
+                                default   => 'secondary',
+                            };
 
-                    if ($hasSysPerms) {
-                        $badges .= '<span class="badge me-1" style="background:#e2e8f0;color:#475569;font-size:.7rem"><i class="fa fa-gear me-1"></i>System</span>';
+                            return '<span class="badge bg-'.$color.' me-1">'.e($co->name).'</span>';
+                        })->implode('');
                     }
-
-                    $badges .= $activeCompanies->map(function ($co) {
-                        $color = match ($co->type) {
-                            'cnf'     => 'success',
-                            'freight' => 'info',
-                            'trading' => 'warning',
-                            default   => 'secondary',
-                        };
-
-                        return '<span class="badge bg-'.$color.' me-1">'.e($co->name).'</span>';
-                    })->implode('');
 
                     return $badges ?: '<span class="text-muted small">—</span>';
                 })
@@ -96,7 +85,7 @@ class UserController extends Controller
                         <i class="fa fa-edit"></i>
                     </a>';
                     }
-                    if ($request->user()->hasPermission('admin.users.delete')) {
+                    if (! $user->is_super && $request->user()->hasPermission('admin.users.delete')) {
                         $html .= '<button class="btn btn-sm btn-outline-danger btn-delete"
                         data-id="'.$user->id.'"
                         data-name="'.e($user->name).'"
@@ -108,7 +97,7 @@ class UserController extends Controller
 
                     return $html;
                 })
-                ->rawColumns(['role_badge', 'companies_badges', 'status_badge', 'super_badge', 'action'])
+                ->rawColumns(['employee_badge', 'role_badge', 'companies_badges', 'status_badge', 'super_badge', 'action'])
                 ->make(true);
         }
 
@@ -118,17 +107,14 @@ class UserController extends Controller
     public function create(CreateUserRequest $request)
     {
         $roles = Role::with('companies')->orderBy('name')->get();
-        $companiesData = $this->buildCompaniesData();
-        $rolesJson = $this->buildRolesJson($roles);
+        $employees = Employee::where('is_active', true)->orderBy('name')->get(['id', 'name', 'code', 'company_type']);
 
         return view('admin.users.form', [
             'user'          => null,
             'roles'         => $roles,
-            'companiesData' => $companiesData,
-            'rolesJson'     => $rolesJson,
+            'employees'     => $employees,
             'currentRoleId' => null,
-            'employeeLink'  => null,
-            'branchAccess'  => [],
+            'employeeId'    => null,
         ]);
     }
 
@@ -137,15 +123,14 @@ class UserController extends Controller
         $validated = $request->validated();
 
         $user = User::create([
-            'name'      => $validated['name'],
-            'username'  => $validated['username'],
-            'email'     => filled($validated['email'] ?? null) ? $validated['email'] : null,
-            'password'  => $validated['password'],
-            'is_active' => $request->boolean('is_active', true),
+            'name'        => $validated['name'],
+            'username'    => $validated['username'],
+            'email'       => filled($validated['email'] ?? null) ? $validated['email'] : null,
+            'password'    => $validated['password'],
+            'is_active'   => $request->boolean('is_active', true),
+            'role_id'     => $validated['role_id'] ?? null,
+            'employee_id' => $validated['employee_id'] ?? null,
         ]);
-
-        $this->syncRoleAndCompanies($user, $validated['role_id'] ?? null, $validated['employee_link'] ?? null);
-        $this->syncBranchAccess($user, $validated['branch_access'] ?? []);
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User "'.$user->name.'" created successfully.');
@@ -154,27 +139,15 @@ class UserController extends Controller
     public function edit(EditUserRequest $request, User $user)
     {
         $roles = Role::with('companies')->orderBy('name')->get();
-        $companiesData = $this->buildCompaniesData();
-        $rolesJson = $this->buildRolesJson($roles);
+        $employees = Employee::where('is_active', true)->orderBy('name')->get(['id', 'name', 'code', 'company_type']);
 
-        $companyUserRow = $user->companies()->withPivot('role_id', 'employee_id')->get()->first();
-        $currentRoleId = $companyUserRow?->pivot->role_id;
-
-        $employeeLink = null;
-        if ($companyUserRow && $companyUserRow->pivot->employee_id) {
-            $employeeLink = $companyUserRow->id.':'.$companyUserRow->pivot->employee_id;
-        }
-
-        $branchAccess = UserBranchAccess::where('user_id', $user->id)
-            ->get()
-            ->groupBy('company_id')
-            ->map(fn ($rows) => $rows->pluck('branch_id')->toArray())
-            ->toArray();
-
-        return view('admin.users.form', compact(
-            'user', 'roles', 'companiesData', 'rolesJson',
-            'currentRoleId', 'employeeLink', 'branchAccess'
-        ));
+        return view('admin.users.form', [
+            'user'          => $user,
+            'roles'         => $roles,
+            'employees'     => $employees,
+            'currentRoleId' => $user->role_id,
+            'employeeId'    => $user->employee_id,
+        ]);
     }
 
     public function update(UpdateUserRequest $request, User $user)
@@ -192,10 +165,12 @@ class UserController extends Controller
             $userData['password'] = $validated['password'];
         }
 
-        $user->update($userData);
+        if (! $user->is_super) {
+            $userData['role_id'] = $validated['role_id'] ?? null;
+            $userData['employee_id'] = $validated['employee_id'] ?? null;
+        }
 
-        $this->syncRoleAndCompanies($user, $validated['role_id'] ?? null, $validated['employee_link'] ?? null);
-        $this->syncBranchAccess($user, $validated['branch_access'] ?? []);
+        $user->update($userData);
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User "'.$user->name.'" updated successfully.');
@@ -206,110 +181,5 @@ class UserController extends Controller
         $user->delete();
 
         return response()->json(['message' => 'User deleted successfully.']);
-    }
-
-    private function syncRoleAndCompanies(User $user, ?string $roleId, ?string $employeeLink): void
-    {
-        if (! $roleId) {
-            $user->companies()->detach();
-
-            return;
-        }
-
-        $role = Role::with('companies')->find($roleId);
-
-        if (! $role) {
-            $user->companies()->detach();
-
-            return;
-        }
-
-        $companyIds = $role->companies->pluck('id');
-
-        [$empCompanyId, $empId] = $this->parseEmployeeLink($employeeLink);
-
-        $sync = [];
-        foreach ($companyIds as $companyId) {
-            $sync[$companyId] = [
-                'role_id'     => $roleId,
-                'employee_id' => ($empCompanyId == $companyId) ? $empId : null,
-                'is_active'   => true,
-            ];
-        }
-
-        $user->companies()->sync($sync);
-    }
-
-    private function syncBranchAccess(User $user, array $branchAccess): void
-    {
-        DB::transaction(function () use ($user, $branchAccess) {
-            UserBranchAccess::where('user_id', $user->id)->delete();
-
-            $rows = [];
-            foreach ($branchAccess as $companyId => $branchIds) {
-                foreach ((array) $branchIds as $branchId) {
-                    if ($branchId) {
-                        $rows[] = [
-                            'user_id'    => $user->id,
-                            'company_id' => $companyId,
-                            'branch_id'  => $branchId,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ];
-                    }
-                }
-            }
-
-            if ($rows) {
-                UserBranchAccess::insert($rows);
-            }
-        });
-    }
-
-    private function parseEmployeeLink(?string $employeeLink): array
-    {
-        if (! $employeeLink) {
-            return [null, null];
-        }
-        $parts = explode(':', $employeeLink, 2);
-
-        return [intval($parts[0]), intval($parts[1])];
-    }
-
-    private function buildCompaniesData(): array
-    {
-        $branches = [
-            1 => ChevronBranch::where('is_active', true)->orderBy('name')->get(['id', 'name']),
-            2 => NasFreightsBranch::where('is_active', true)->orderBy('name')->get(['id', 'name']),
-            3 => NasTradingBranch::where('is_active', true)->orderBy('name')->get(['id', 'name']),
-        ];
-
-        $employees = [
-            1 => ChevronEmployee::orderBy('name')->get(['id', 'employee_id as emp_code', 'name']),
-            2 => NasFreightsEmployee::orderBy('name')->get(['id', 'code as emp_code', 'name']),
-            3 => NasTradingEmployee::orderBy('name')->get(['id', 'code as emp_code', 'name']),
-        ];
-
-        $companies = Company::where('is_active', true)->orderBy('id')->get();
-        $data = [];
-
-        foreach ($companies as $co) {
-            $data[$co->id] = [
-                'id'        => $co->id,
-                'name'      => $co->name,
-                'type'      => $co->type,
-                'branches'  => $branches[$co->id] ?? collect(),
-                'employees' => $employees[$co->id] ?? collect(),
-            ];
-        }
-
-        return $data;
-    }
-
-    private function buildRolesJson(Collection $roles): string
-    {
-        return $roles->mapWithKeys(fn ($role) => [
-            $role->id => $role->companies->pluck('id')->toArray(),
-        ])->toJson();
     }
 }

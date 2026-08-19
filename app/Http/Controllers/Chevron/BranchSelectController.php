@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Chevron;
 
 use App\Http\Controllers\Controller;
 use App\Models\Chevron\ChevronBranch;
-use App\Models\UserBranchAccess;
+use App\Models\EmployeeBranchAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -30,7 +30,7 @@ class BranchSelectController extends Controller
     {
         $user = Auth::user();
         $companyId = session('active_company_id') or abort(403, 'No active company in session.');
-        $allowedIds = $user->is_super ? null : UserBranchAccess::where('user_id', $user->id)
+        $allowedIds = $user->is_super ? null : EmployeeBranchAccess::where('employee_id', $user->employee_id)
             ->where('company_id', $companyId)
             ->pluck('branch_id')
             ->toArray();
@@ -58,7 +58,7 @@ class BranchSelectController extends Controller
         $query = ChevronBranch::where('is_active', true)->orderBy('name');
 
         if (! $user->is_super) {
-            $allowedIds = UserBranchAccess::where('user_id', $user->id)
+            $allowedIds = EmployeeBranchAccess::where('employee_id', $user->employee_id)
                 ->where('company_id', $companyId)
                 ->pluck('branch_id')
                 ->toArray();

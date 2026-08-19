@@ -11,8 +11,25 @@
             <i class="fa fa-gauge"></i> Dashboard
         </a>
 
-        @if (auth()->user()->hasPermission('admin.companies.list') || auth()->user()->hasPermission('admin.users.list') || auth()->user()->hasPermission('admin.employees.list'))
+        @if (auth()->user()->hasPermission('admin.companies.list') ||
+                auth()->user()->hasPermission('admin.users.list') ||
+                auth()->user()->hasPermission('admin.employees.list') ||
+                auth()->user()->hasPermission('admin.designations.list'))
             <div class="nav-section">Settings</div>
+        @endif
+
+        @if (auth()->user()->hasPermission('admin.users.list'))
+            <a href="{{ route('admin.users.index') }}"
+                class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                <i class="fa fa-users"></i> Users
+            </a>
+        @endif
+
+        @if (auth()->user()->hasPermission('admin.roles.list'))
+            <a href="{{ route('admin.roles.index') }}"
+                class="nav-link {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
+                <i class="fa fa-user-shield"></i> Roles
+            </a>
         @endif
         @if (auth()->user()->hasPermission('admin.companies.list'))
             <a href="{{ route('admin.companies.index') }}"
@@ -20,25 +37,20 @@
                 <i class="fa fa-building"></i> Companies
             </a>
         @endif
-        @if (auth()->user()->hasPermission('admin.users.list'))
-            <a href="{{ route('admin.users.index') }}"
-                class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-                <i class="fa fa-users"></i> Users
-            </a>
-        @endif
+
         @if (auth()->user()->hasPermission('admin.employees.list'))
             <a href="{{ route('admin.employees.index') }}"
                 class="nav-link {{ request()->routeIs('admin.employees.*') ? 'active' : '' }}">
                 <i class="fa fa-user-tie"></i> Employees
             </a>
         @endif
-
-        @if (auth()->user()->hasPermission('admin.roles.list'))
-            <div class="nav-section">Access Control</div>
-            <a href="{{ route('admin.roles.index') }}"
-                class="nav-link {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
-                <i class="fa fa-user-shield"></i> Roles
+        @if (auth()->user()->hasPermission('admin.designations.list'))
+            <a href="{{ route('admin.designations.index') }}"
+                class="nav-link {{ request()->routeIs('admin.designations.*') ? 'active' : '' }}">
+                <i class="fa fa-id-badge"></i> Designations
             </a>
         @endif
+
+
     </div>
 @endsection

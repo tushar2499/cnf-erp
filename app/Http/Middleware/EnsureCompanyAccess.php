@@ -2,8 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Company;
+use App\Models\EmployeeBranchAccess;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureCompanyAccess
@@ -18,16 +21,10 @@ class EnsureCompanyAccess
         $sessionSlug = session('active_company_slug');
 
         if ($sessionSlug !== $slug) {
-            // Try to auto-switch if user has access
             $user = $request->user();
-            $company = $user->companies()
-                ->where('companies.slug', $slug)
-                ->where('companies.is_active', true)
-                ->where('company_user.is_active', true)
-                ->when(! $user->is_super, fn ($q) => $q->whereNotNull('company_user.role_id'))
-                ->first();
+            $company = Company::where('slug', $slug)->where('is_active', true)->first();
 
-            if (! $company) {
+            if (! $company || ! $this->userCanAccessCompany($user, $company)) {
                 return redirect()->route('company.select')
                     ->with('error', 'You do not have access to that company.');
             }
@@ -41,5 +38,23 @@ class EnsureCompanyAccess
         }
 
         return $next($request);
+    }
+
+    private function userCanAccessCompany($user, Company $company): bool
+    {
+        if ($user->is_super) {
+            return true;
+        }
+
+        $hasEmployeeAccess = EmployeeBranchAccess::where('employee_id', $user->employee_id)
+            ->where('company_id', $company->id)
+            ->exists();
+
+        $hasRoleAccess = DB::table('role_company')
+            ->where('role_id', $user->role_id)
+            ->where('company_id', $company->id)
+            ->exists();
+
+        return $hasEmployeeAccess && $hasRoleAccess;
     }
 }

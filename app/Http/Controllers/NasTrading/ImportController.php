@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\NasTrading;
 
 use App\Http\Controllers\Controller;
-use App\Models\Chevron\ChevronDesignation;
 use App\Models\Chevron\ChevronEmployee;
+use App\Models\Designation;
 use App\Models\NasFreights\NasFreightsEmployee;
 use App\Models\NasTrading\NasTradingDepartment;
 use App\Models\NasTrading\NasTradingEmployee;
@@ -139,7 +139,7 @@ class ImportController extends Controller
             // --- Chevron Lines ---
             $designationId = null;
             if ($emp['designation']) {
-                $designationId = ChevronDesignation::firstOrCreate(
+                $designationId = Designation::firstOrCreate(
                     ['name' => $emp['designation']],
                     ['is_active' => true]
                 )->id;

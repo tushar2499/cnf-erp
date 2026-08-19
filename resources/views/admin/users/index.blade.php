@@ -30,6 +30,7 @@
                     <th>Name</th>
                     <th>Username</th>
                     <th>Email</th>
+                    <th>Employee</th>
                     <th>Role</th>
                     <th>Companies</th>
                     <th style="width:80px">Super</th>
@@ -56,6 +57,7 @@ $(function () {
             { data: 'name',             name: 'name' },
             { data: 'username',         name: 'username' },
             { data: 'email',            name: 'email', defaultContent: '—' },
+            { data: 'employee_badge',   name: 'employee', orderable: false, searchable: false },
             { data: 'role_badge',       name: 'role', orderable: false, searchable: false },
             { data: 'companies_badges', name: 'companies', orderable: false, searchable: false },
             { data: 'super_badge',      name: 'is_super',  orderable: false, searchable: false },

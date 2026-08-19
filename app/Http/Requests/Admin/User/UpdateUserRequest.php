@@ -17,7 +17,9 @@ class UpdateUserRequest extends FormRequest
 
     public function rules(): array
     {
-        $userId = $this->route('user')?->id;
+        $targetUser = $this->route('user');
+        $userId = $targetUser?->id;
+        $isSuper = (bool) $targetUser?->is_super;
 
         return [
             'name'              => ['required', 'string', 'max:255'],
@@ -26,10 +28,9 @@ class UpdateUserRequest extends FormRequest
             'password'          => ['nullable', Password::min(6)],
             'is_active'         => ['boolean'],
             'role_id'           => ['nullable', 'exists:roles,id'],
-            'employee_link'     => ['nullable', 'string', 'regex:/^\d+:\d+$/'],
-            'branch_access'     => ['nullable', 'array'],
-            'branch_access.*'   => ['nullable', 'array'],
-            'branch_access.*.*' => ['nullable', 'integer'],
+            'employee_id'       => $isSuper
+                ? ['nullable', 'integer', 'exists:employees,id']
+                : ['required', 'integer', 'exists:employees,id'],
         ];
     }
 

@@ -10,13 +10,6 @@ class Company extends Model
         'name', 'slug', 'type', 'logo', 'address', 'phone', 'email', 'is_active',
     ];
 
-    public function users()
-    {
-        return $this->belongsToMany(User::class, 'company_user')
-            ->withPivot('is_active')
-            ->withTimestamps();
-    }
-
     public function permissions()
     {
         return $this->hasMany(Permission::class);

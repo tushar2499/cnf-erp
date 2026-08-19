@@ -9,8 +9,9 @@ class DestroyUserRequest extends FormRequest
     public function authorize(): bool
     {
         $user = $this->user();
+        $target = $this->route('user');
 
-        return $user && $user->hasPermission('admin.users.delete');
+        return $user && $user->hasPermission('admin.users.delete') && ! $target?->is_super;
     }
 
     public function rules(): array

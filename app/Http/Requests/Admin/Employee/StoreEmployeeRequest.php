@@ -18,7 +18,7 @@ class StoreEmployeeRequest extends FormRequest
         return [
             'employee_prefix' => ['required', 'string', 'max:20'],
             'name'            => ['required', 'string', 'max:255'],
-            'designation_id'  => ['required', 'exists:chevron_designations,id'],
+            'designation_id'  => ['required', 'exists:designations,id'],
             'joining_date'    => ['required', 'date'],
             'type'            => ['required', 'in:team_leader,prepare'],
             'team_leader_id'  => ['nullable', 'required_if:type,prepare', 'exists:chevron_employees,id'],

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DesignationController as AdminDesignationController;
 use App\Http\Controllers\Admin\EmployeeController as AdminEmployeeController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -43,6 +44,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/companies/{company}/edit', [App\Http\Controllers\Admin\CompanyController::class, 'edit'])->name('companies.edit');
     Route::post('/companies/{company}', [App\Http\Controllers\Admin\CompanyController::class, 'update'])->name('companies.update');
 
+    // Designations
+    Route::get('/designations', [AdminDesignationController::class, 'index'])->name('designations.index');
+    Route::post('/designations', [AdminDesignationController::class, 'store'])->name('designations.store');
+    Route::put('/designations/{designation}', [AdminDesignationController::class, 'update'])->name('designations.update');
+    Route::delete('/designations/{designation}', [AdminDesignationController::class, 'destroy'])->name('designations.destroy');
+
     // Users
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
     Route::get('/users/create', [AdminUserController::class, 'create'])->name('users.create');
@@ -53,7 +60,17 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
 
     // Employees (all companies)
     Route::prefix('employees')->name('employees.')->group(function () {
+        // Unified employee access management
+        Route::prefix('unified')->name('unified.')->group(function () {
+            Route::get('/', [AdminEmployeeController::class, 'indexUnified'])->name('index');
+            Route::put('/{employee}', [AdminEmployeeController::class, 'updateUnified'])->name('update');
+            Route::get('/{employee}/branch-access', [AdminEmployeeController::class, 'branchAccess'])->name('branch-access');
+            Route::post('/{employee}/branch-access', [AdminEmployeeController::class, 'saveBranchAccess'])->name('branch-access.save');
+            Route::delete('/{employee}', [AdminEmployeeController::class, 'destroyUnified'])->name('destroy');
+        });
+
         // Chevron Lines
+        Route::get('/search', [AdminEmployeeController::class, 'search'])->name('search');
         Route::get('/next-id', [AdminEmployeeController::class, 'nextId'])->name('next-id');
         Route::get('/sample', [AdminEmployeeController::class, 'sampleDownload'])->name('sample');
         Route::post('/import/preview', [AdminEmployeeController::class, 'importPreview'])->name('import.preview');

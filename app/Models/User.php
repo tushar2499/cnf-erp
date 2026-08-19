@@ -24,6 +24,8 @@ class User extends Authenticatable
         'email',
         'password',
         'is_active',
+        'employee_id',
+        'role_id',
     ];
 
     /**
@@ -51,11 +53,14 @@ class User extends Authenticatable
         ];
     }
 
-    public function companies()
+    public function employee()
     {
-        return $this->belongsToMany(Company::class, 'company_user')
-            ->withPivot('role_id', 'employee_id', 'is_active')
-            ->withTimestamps();
+        return $this->belongsTo(Employee::class, 'employee_id');
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'role_id');
     }
 
     public function hasPermission(string $permission): bool
@@ -86,20 +91,12 @@ class User extends Authenticatable
             return $this->resolvedPermissionsCache;
         }
 
-        $roleIds = $this->companies()
-            ->wherePivot('is_active', true)
-            ->get()
-            ->pluck('pivot.role_id')
-            ->filter()
-            ->unique()
-            ->toArray();
-
-        if (empty($roleIds)) {
+        if (! $this->role_id) {
             return $this->resolvedPermissionsCache = [];
         }
 
         return $this->resolvedPermissionsCache = Permission::whereHas(
-            'roles', fn ($q) => $q->whereIn('roles.id', $roleIds)
+            'roles', fn ($q) => $q->where('roles.id', $this->role_id)
         )->pluck('name')->toArray();
     }
 }

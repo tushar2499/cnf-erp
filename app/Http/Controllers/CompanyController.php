@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Chevron\ChevronBranch;
 use App\Models\Company;
-use App\Models\NasFreights\NasFreightsBranch;
-use App\Models\NasTrading\NasTradingBranch;
-use App\Models\UserBranchAccess;
+use App\Models\EmployeeBranchAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class CompanyController extends Controller
 {
@@ -19,31 +17,22 @@ class CompanyController extends Controller
         if ($user->is_super) {
             $companies = Company::where('is_active', true)->get();
         } else {
-            $companies = $user->companies()
-                ->where('companies.is_active', true)
-                ->whereNotNull('company_user.role_id')
+            $employeeCompanyIds = EmployeeBranchAccess::where('employee_id', $user->employee_id)
+                ->pluck('company_id')
+                ->unique();
+
+            $roleCompanyIds = DB::table('role_company')
+                ->where('role_id', $user->role_id)
+                ->pluck('company_id');
+
+            $visibleCompanyIds = $employeeCompanyIds->intersect($roleCompanyIds);
+
+            $companies = Company::whereIn('id', $visibleCompanyIds)
+                ->where('is_active', true)
                 ->get();
         }
 
-        $companies = $companies->filter(fn ($company) => $this->companyHasBranchAccess($company, $user))->values();
-
         return view('company.select', compact('companies'));
-    }
-
-    private function companyHasBranchAccess(Company $company, $user): bool
-    {
-        if ($user->is_super) {
-            return match ($company->slug) {
-                'chevron-lines' => ChevronBranch::where('is_active', true)->exists(),
-                'nas-freights'  => NasFreightsBranch::where('is_active', true)->exists(),
-                'nas-trading'   => NasTradingBranch::where('is_active', true)->exists(),
-                default         => false,
-            };
-        }
-
-        return UserBranchAccess::where('user_id', $user->id)
-            ->where('company_id', $company->id)
-            ->exists();
     }
 
     public function switch(Request $request, string $slug)
@@ -53,10 +42,19 @@ class CompanyController extends Controller
         if ($user->is_super) {
             $company = Company::where('slug', $slug)->where('is_active', true)->firstOrFail();
         } else {
-            $company = $user->companies()
-                ->where('companies.slug', $slug)
-                ->where('companies.is_active', true)
-                ->whereNotNull('company_user.role_id')
+            $employeeCompanyIds = EmployeeBranchAccess::where('employee_id', $user->employee_id)
+                ->pluck('company_id')
+                ->unique();
+
+            $roleCompanyIds = DB::table('role_company')
+                ->where('role_id', $user->role_id)
+                ->pluck('company_id');
+
+            $visibleCompanyIds = $employeeCompanyIds->intersect($roleCompanyIds);
+
+            $company = Company::where('slug', $slug)
+                ->where('is_active', true)
+                ->whereIn('id', $visibleCompanyIds)
                 ->firstOrFail();
         }
 
@@ -67,7 +65,6 @@ class CompanyController extends Controller
             'active_company_type' => $company->type,
         ]);
 
-        // Clear old branch when switching company
         session()->forget(['active_branch_id', 'active_branch_name', 'active_branch_code']);
 
         $dashboard = match ($company->slug) {
