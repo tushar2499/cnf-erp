@@ -337,8 +337,15 @@ $(document).on('click', '.btn-del-row', function () {
 $existingItems = $customerBill->items->map(fn($i) => [
     'booking_id'       => $i->booking_id,
     'booking_item_id'  => $i->booking_item_id,
-    'booking_date'     => $i->booking_date ? \Carbon\Carbon::parse($i->booking_date)->format('Y-m-d') : '',
-    'delivery_date'    => $i->delivery_date ? \Carbon\Carbon::parse($i->delivery_date)->format('Y-m-d') : '',
+    // Older rows can have a null booking_date/delivery_date (saved before a
+    // date-format bug fix) — fall back to the linked booking's own dates so
+    // the field still shows something instead of a blank input.
+    'booking_date'     => $i->booking_date
+        ? \Carbon\Carbon::parse($i->booking_date)->format('Y-m-d')
+        : ($i->booking?->job_date?->format('Y-m-d') ?? ''),
+    'delivery_date'    => $i->delivery_date
+        ? \Carbon\Carbon::parse($i->delivery_date)->format('Y-m-d')
+        : ($i->booking?->delivery_date?->format('Y-m-d') ?? ''),
     'item_code'        => $i->item_code,
     'item_name'        => $i->item_name,
     'location'         => $i->location,
@@ -369,13 +376,16 @@ $('#btnLoadData').on('click', function () {
         data: { _token: CSRF, from_date: fromDate, to_date: toDate, customer_id: $('#fldCustomerId').val() },
     })
     .done(function (r) {
-        $('#rowsBody').empty(); rowIdx = 0;
+        // Append newly available bookings for the (possibly widened) date
+        // range rather than wiping the table — this bill's own items are
+        // already loaded above, and the server already excludes anything
+        // billed (including this bill's own rows), so there's no overlap.
         if (r.items && r.items.length) r.items.forEach(item => addRow(item));
         if (r.delivery_type) $('#fldDeliveryType').val(r.delivery_type);
         if (r.tds_percent !== undefined) $('#fldTdsPct').val(r.tds_percent);
         if (r.vat_percent !== undefined) $('#fldVatPct').val(r.vat_percent);
         recalcBill();
-        if (!r.items || !r.items.length) Swal.fire({ icon: 'info', title: 'No booking items found.' });
+        if (!r.items || !r.items.length) Swal.fire({ icon: 'info', title: 'No new booking items found for this range.' });
     })
     .fail(function (xhr) { Swal.fire({ icon: 'error', title: xhr.responseJSON?.message || 'Failed to load.' }); })
     .always(function () { $btn.prop('disabled', false).html('<i class="fa fa-sync me-1"></i> Reload Data'); });

@@ -536,8 +536,11 @@
             if (!rows.length) return;
 
             var pxPerMm = pageEl.getBoundingClientRect().width / 210;
-            // 5% safety buffer against any minor screen/print rendering variance.
-            var contentHeightPx = (297 - 51 - 28) * pxPerMm * 0.95;
+            // Flat 16mm safety buffer against screen/print rendering variance —
+            // a percentage-based buffer (e.g. * 0.95) scales with content size
+            // and isn't reliably enough margin to guard against an extra row
+            // slipping onto a page it doesn't actually physically fit on.
+            var contentHeightPx = (297 - 51 - 28 - 16) * pxPerMm;
 
             var billTitle = document.querySelector('.bill-title');
             var headerOuter = document.querySelector('.header-outer');
@@ -548,20 +551,7 @@
             var firstPageBudget = contentHeightPx - headerBlockHeight - theadHeight;
             var otherPageBudget = contentHeightPx - theadHeight;
 
-            var breakIndexes = [];
-            var used = firstPageBudget;
-            rows.forEach(function (row, idx) {
-                var h = row.getBoundingClientRect().height;
-                if (idx > 0 && (used - h) < 0) {
-                    breakIndexes.push(idx);
-                    used = otherPageBudget;
-                }
-                used -= h;
-            });
-
-            var totalPages = breakIndexes.length + 1;
-
-            function buildFooterRow(pageNum) {
+            function buildFooterRow(pageNum, totalPages) {
                 var tr = document.createElement('tr');
                 tr.innerHTML = '<td colspan="12" style="border:none;padding:0">' +
                     '<div class="page-footer"><table><tr>' +
@@ -572,10 +562,32 @@
                 return tr;
             }
 
+            // A footer row gets inserted at the end of every page but the
+            // last — its own height must be reserved too, or it can end up
+            // spilling onto a near-empty page by itself when a page's rows
+            // otherwise fit exactly up to the edge of the budget.
+            var sampleFooter = buildFooterRow(1, 1);
+            tbody.appendChild(sampleFooter);
+            var footerRowHeight = sampleFooter.getBoundingClientRect().height;
+            sampleFooter.remove();
+
+            var breakIndexes = [];
+            var used = firstPageBudget;
+            rows.forEach(function (row, idx) {
+                var h = row.getBoundingClientRect().height;
+                if (idx > 0 && (used - h - footerRowHeight) < 0) {
+                    breakIndexes.push(idx);
+                    used = otherPageBudget;
+                }
+                used -= h;
+            });
+
+            var totalPages = breakIndexes.length + 1;
+
             var pageNum = 1;
             breakIndexes.forEach(function (idx) {
                 var breakRow = rows[idx];
-                breakRow.parentNode.insertBefore(buildFooterRow(pageNum), breakRow);
+                breakRow.parentNode.insertBefore(buildFooterRow(pageNum, totalPages), breakRow);
                 breakRow.classList.add('force-break');
                 pageNum++;
             });

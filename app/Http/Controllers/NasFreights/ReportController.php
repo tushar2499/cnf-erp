@@ -437,7 +437,7 @@ class ReportController extends Controller
 
     private function getBills(Request $request): array
     {
-        if (! $request->hasAny(['from_date', 'to_date', 'customer_id', 'bill_type'])) {
+        if (! $request->hasAny(['from_date', 'to_date', 'customer_id', 'sales_type'])) {
             return [collect(), null];
         }
         $query = NasFreightsCustomerBill::with(['items.booking'])
@@ -451,8 +451,8 @@ class ReportController extends Controller
         if ($request->filled('customer_id')) {
             $query->where('customer_id', $request->customer_id);
         }
-        if ($request->filled('bill_type')) {
-            $query->where('bill_type', $request->bill_type);
+        if ($request->filled('sales_type')) {
+            $query->where('delivery_type', $request->sales_type);
         }
 
         $bills = $query->orderBy('id')->get();

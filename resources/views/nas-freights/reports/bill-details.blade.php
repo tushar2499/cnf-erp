@@ -42,11 +42,11 @@ table.report-table tfoot td { background:#e4ede4; font-weight:700; padding:6px 8
             <input type="hidden" name="customer_name" id="customer_name_val" value="{{ request('customer_name') }}">
         </div>
         <div class="col-md-2">
-            <label class="form-label fw-semibold mb-1" style="font-size:12px">Bill Type</label>
-            <select name="bill_type" class="form-select form-select-sm">
+            <label class="form-label fw-semibold mb-1" style="font-size:12px">Sales Type</label>
+            <select name="sales_type" class="form-select form-select-sm">
                 <option value="">All Types</option>
-                @foreach(\App\Models\NasFreights\NasFreightsCustomerBill::billTypes() as $t)
-                    <option value="{{ $t }}" {{ request('bill_type') === $t ? 'selected' : '' }}>{{ $t }}</option>
+                @foreach(\App\Models\NasFreights\NasFreightsBooking::salesTypes() as $t)
+                    <option value="{{ $t }}" {{ request('sales_type') === $t ? 'selected' : '' }}>{{ $t }}</option>
                 @endforeach
             </select>
         </div>
@@ -161,7 +161,7 @@ table.report-table tfoot td { background:#e4ede4; font-weight:700; padding:6px 8
 </table>
 </div>
 
-@elseif(request()->hasAny(['from_date','to_date','customer_id','bill_type']))
+@elseif(request()->hasAny(['from_date','to_date','customer_id','sales_type']))
 <div class="alert alert-info">No records found for the selected filters.</div>
 @else
 <div class="text-center text-muted py-5">

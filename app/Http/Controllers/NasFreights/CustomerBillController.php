@@ -224,7 +224,7 @@ class CustomerBillController extends Controller
 
     public function edit(NasFreightsCustomerBill $customerBill)
     {
-        $customerBill->load('items');
+        $customerBill->load('items.booking');
 
         return view('nas-freights.customer-bills.edit', [
             'customerBill'  => $customerBill,
