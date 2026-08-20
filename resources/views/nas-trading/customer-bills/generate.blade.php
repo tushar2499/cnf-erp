@@ -179,7 +179,7 @@
 
                     @php
                         $advancePayment = $lc->payments->where('payment_type', 'advance')->sum('amount');
-                        $dutyAdvance = (float) ($lc->duty_advance ?? 0);
+                        $dutyAdvance = $lc->billOfEntries->flatMap->dutyAdvances->sum('amount');
                         $totalAdvance = $advancePayment + $dutyAdvance;
                     @endphp
                     <hr class="my-2">
@@ -281,16 +281,18 @@
                         amount: {{ $lc->insurance_amt }}
                     },
                 @endif
-                @if ($lc->customs_duty)
+                @php $totalCustomsDuty = $lc->billOfEntries->sum('customs_duty'); @endphp
+                @if ($totalCustomsDuty)
                     {
                         description: 'Customs Duty',
-                        amount: {{ $lc->customs_duty }}
+                        amount: {{ $totalCustomsDuty }}
                     },
                 @endif
-                @if ($lc->cnf_total_cost)
+                @php $totalCnfCost = $lc->billOfEntries->sum('cnf_total_costing'); @endphp
+                @if ($totalCnfCost)
                     {
                         description: 'C&F Total Cost',
-                        amount: {{ $lc->cnf_total_cost }}
+                        amount: {{ $totalCnfCost }}
                     },
                 @endif
                 @if ($lc->income_tax)

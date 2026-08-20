@@ -35,12 +35,6 @@ class EmployeeController extends Controller
         if ($request->ajax()) {
             return DataTables::of(Employee::with('users')->orderBy('name'))
                 ->addIndexColumn()
-                ->addColumn('company_type_badge', fn (Employee $r) => match ($r->company_type) {
-                    'chevron'      => '<span class="badge bg-success">Chevron Lines</span>',
-                    'nas_freights' => '<span class="badge bg-info text-dark">NAS Freights</span>',
-                    'nas_trading'  => '<span class="badge bg-warning text-dark">NAS Trading</span>',
-                    default        => e($r->company_type),
-                })
                 ->addColumn('users_count', fn (Employee $r) => $r->users->count())
                 ->addColumn('status_badge', fn (Employee $r) => $r->is_active
                     ? '<span class="badge bg-success">Active</span>'
@@ -62,7 +56,7 @@ class EmployeeController extends Controller
 
                     return $html;
                 })
-                ->rawColumns(['company_type_badge', 'status_badge', 'action'])
+                ->rawColumns(['status_badge', 'action'])
                 ->make(true);
         }
 
@@ -146,13 +140,20 @@ class EmployeeController extends Controller
     public function index(IndexEmployeeRequest $request)
     {
         if ($request->ajax()) {
-            return DataTables::of(Employee::with('users', 'designation')->orderBy('name'))
+            return DataTables::of(Employee::with('users', 'designation', 'teamLeader')->orderBy('name'))
                 ->addIndexColumn()
                 ->addColumn('designation_name', fn (Employee $r) => $r->designation?->name ?? '—')
+                ->addColumn('type_badge', fn (Employee $r) => match ($r->type) {
+                    'team_leader' => '<span class="badge bg-primary"><i class="fa fa-user-tie me-1"></i>Team Leader</span>',
+                    'prepare'     => '<span class="badge bg-warning text-dark"><i class="fa fa-user-check me-1"></i>Prepare</span>',
+                    default       => '<span class="badge bg-secondary">—</span>',
+                })
+                ->addColumn('team_leader_name', fn (Employee $r) => $r->teamLeader?->name ?? '—')
                 ->editColumn('joining_date', fn (Employee $r) => $r->joining_date?->format('d M, Y'))
                 ->addColumn('status_badge', fn (Employee $r) => $r->is_active
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-secondary">Inactive</span>')
+                ->rawColumns(['type_badge', 'status_badge', 'action'])
                 ->addColumn('action', function (Employee $r) use ($request) {
                     $html = '';
 
@@ -196,7 +197,6 @@ class EmployeeController extends Controller
 
                     return $html;
                 })
-                ->rawColumns(['status_badge', 'action'])
                 ->make(true);
         }
 

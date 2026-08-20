@@ -146,7 +146,7 @@
     function fmtAmt($v, $prefix = 'BDT', $dec = 2) { return $v ? $prefix . ' ' . number_format((float)$v, $dec) : '—'; }
 
     $totalLcCost = (float)($lc->lc_rt_value ?? 0)
-                 + (float)($lc->bank_charge ?? 0)
+                 + (float)($lc->lc_open_cost_bdt ?? 0)
                  + (float)($lc->insurance_amt ?? 0)
                  + (float)($lc->lc_amendment_charge ?? 0)
                  + (float)($lc->credit_report_charge ?? 0)
@@ -476,7 +476,19 @@
                         <div class="col-6 col-md-3"><div class="info-label">Landed Cost</div><div class="info-value">{{ fmtAmt($lc->landed_cost) }}</div></div>
                         <div class="col-6 col-md-3"><div class="info-label">LC Rate Amount</div><div class="info-value">{{ fmtAmt($lc->lc_rate_amount) }}</div></div>
                         <div class="col-6 col-md-3"><div class="info-label">Doc RT Rate</div><div class="info-value">{{ $lc->doc_rt_rate ? 'BDT ' . number_format((float)$lc->doc_rt_rate, 4) : $dash }}</div></div>
-                        <div class="col-6 col-md-3"><div class="info-label">LC RT Value</div><div class="info-value">{{ fmtAmt($lc->lc_rt_value) }}</div></div>
+                        <div class="col-6 col-md-3">
+                            <div class="info-label">LC RT Value</div>
+                            @if($lc->rtValues->isNotEmpty())
+                                @foreach($lc->rtValues as $rtv)
+                                    <div class="info-value" style="margin-bottom:2px">BDT {{ number_format((float)$rtv->amount, 2) }}</div>
+                                @endforeach
+                                @if($lc->rtValues->count() > 1)
+                                    <div class="info-value fw-bold border-top mt-1 pt-1" style="font-size:.78rem">Total: BDT {{ number_format($lc->rtValues->sum('amount'), 2) }}</div>
+                                @endif
+                            @else
+                                <div class="info-value">—</div>
+                            @endif
+                        </div>
                         <div class="col-6 col-md-3">
                             <div class="info-label">LC Commission</div>
                             <div class="info-value">

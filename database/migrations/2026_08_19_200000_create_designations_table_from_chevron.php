@@ -18,21 +18,10 @@ return new class extends Migration
 
         // Copy all rows preserving IDs
         DB::statement('INSERT INTO designations (id, name, is_active, created_at, updated_at) SELECT id, name, is_active, created_at, updated_at FROM chevron_designations');
-
-        // Re-point employees.designation_id FK from chevron_designations to designations
-        Schema::table('employees', function (Blueprint $table) {
-            $table->dropForeign('employees_designation_id_foreign');
-            $table->foreign('designation_id')->references('id')->on('designations')->nullOnDelete();
-        });
     }
 
     public function down(): void
     {
-        Schema::table('employees', function (Blueprint $table) {
-            $table->dropForeign(['designation_id']);
-            $table->foreign('designation_id')->references('id')->on('chevron_designations')->nullOnDelete();
-        });
-
         Schema::dropIfExists('designations');
     }
 };

@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 class Employee extends Model
 {
     protected $fillable = [
-        'company_type',
         'name',
         'code',
         'designation_id',
@@ -50,15 +49,5 @@ class Employee extends Model
     public function users()
     {
         return $this->hasMany(User::class, 'employee_id');
-    }
-
-    public function getCompanyTypeLabelAttribute(): string
-    {
-        return match ($this->company_type) {
-            'chevron'      => 'Chevron Lines',
-            'nas_freights' => 'NAS Freights',
-            'nas_trading'  => 'NAS Trading',
-            default        => $this->company_type,
-        };
     }
 }
