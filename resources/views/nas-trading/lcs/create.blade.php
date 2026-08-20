@@ -424,13 +424,22 @@
                                 <span class="input-group-text">BDT</span>
                             </div>
                         </div>
-                        <div class="col-6 col-md-3">
+                        <div class="col-12 col-md-6">
                             <label class="form-label">LC RT Value</label>
-                            <div class="input-group input-group-sm">
-                                <input type="number" name="lc_rt_value" id="lcRtValue"
-                                    class="form-control form-control-sm" step="0.01" placeholder="0.00">
-                                <span class="input-group-text">BDT</span>
+                            <div id="rtValueRows">
+                                <div class="rt-value-row d-flex gap-1 mb-1 align-items-center">
+                                    <div class="input-group input-group-sm flex-grow-1">
+                                        <input type="number" name="rt_values[0][amount]" class="form-control form-control-sm rt-value-amount" step="0.01" placeholder="0.00">
+                                        <span class="input-group-text">BDT</span>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger btn-remove-rt-value p-0" style="width:24px;height:24px;flex-shrink:0" title="Remove"><i class="fa fa-times" style="font-size:.65rem"></i></button>
+                                </div>
                             </div>
+                            <div class="d-flex justify-content-between align-items-center mt-1">
+                                <button type="button" class="btn btn-secondary btn-sm py-0 px-2" id="btnAddRtValue" style="font-size:.75rem"><i class="fa fa-plus me-1"></i>Add RT Value</button>
+                                <span class="fw-semibold" style="font-size:.82rem">Total: <span id="rtValueTotal">0.00</span> BDT</span>
+                            </div>
+                            <input type="hidden" name="lc_rt_value" id="lcRtValue" value="0">
                         </div>
                         <div class="col-6 col-md-3">
                             <label class="form-label">LC Commission</label>
@@ -589,8 +598,8 @@
                             <span style="font-size:.82rem;font-weight:700;color:#1a6b60">
                                 <i class="fa fa-file-invoice me-1"></i>Bill of Entries
                             </span>
-                            <button type="button" id="btnAddBoe" class="btn btn-sm py-0 px-2"
-                                style="font-size:.77rem;background:#1a6b60;color:#fff;border:1px solid #1a6b60">
+                            <button type="button" id="btnAddBoe" class="btn btn-secondary btn-sm py-0 px-2"
+                                style="font-size:.77rem">
                                 <i class="fa fa-plus me-1"></i>Add Bill of Entry
                             </button>
                         </div>
@@ -606,11 +615,12 @@
 
                     {{-- Multi-row payment table --}}
                     <div class="lc-card" style="margin-bottom:0">
-                        <div class="lc-section-header" style="justify-content:space-between">
+                        <div class="lc-section-header">
                             <span><i class="fa fa-money-bill-wave me-2"></i>Payment Receipts</span>
-                            <button type="button" class="btn btn-sm py-0 px-2" id="btnAddPayment"
-                                style="font-size:.77rem;color:#fff;border:1px solid rgba(255,255,255,.5)"><i
-                                    class="fa fa-plus me-1"></i>Add Payment</button>
+                        </div>
+                        <div class="d-flex justify-content-end mt-2 mb-1">
+                            <button type="button" class="btn btn-secondary btn-sm py-0 px-2" id="btnAddPayment"
+                                style="font-size:.77rem"><i class="fa fa-plus me-1"></i>Add Payment</button>
                         </div>
                         <div class="p-0" style="overflow-x:auto">
                             <table class="table table-sm table-bordered items-table mb-0 w-100" id="paymentTable">
@@ -746,7 +756,7 @@
                 <div class="tab-pane fade" id="tab-items">
                     <div class="lc-card mt-2" style="margin-bottom:0">
                         <div class="d-flex justify-content-end mt-2 mb-1">
-                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" id="btnAddItem"
+                            <button type="button" class="btn btn-sm btn-secondary py-0 px-2" id="btnAddItem"
                                 style="font-size:.75rem"><i class="fa fa-plus me-1"></i>Add Row</button>
                         </div>
                         <div class="p-0" style="overflow-x:auto">
@@ -1083,7 +1093,7 @@
                     <span style="font-size:.78rem;font-weight:600;color:#495057">
                         <i class="fa fa-coins me-1 text-muted"></i>Duty Advances
                     </span>
-                    <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 btn-add-da"
+                    <button type="button" class="btn btn-secondary btn-sm py-0 px-2 btn-add-da"
                             data-boe-idx="${idx}" style="font-size:.74rem">
                         <i class="fa fa-plus me-1"></i>Add Duty Advance
                     </button>
@@ -1281,9 +1291,33 @@
             $('[name=pfi_value],[name=lc_open_rate],[name=margin_percent],[name=freight_value]').on('input',
                 calcFinancials);
 
-            $('#lcRtValue,#lcCommissionPct').on('input', function() {
-                var rtVal = parseFloat($('#lcRtValue').val()) || 0;
+            function calcRtTotal() {
+                var total = 0;
+                $('.rt-value-amount').each(function() { total += parseFloat($(this).val()) || 0; });
+                $('#rtValueTotal').text(total.toFixed(2));
+                $('#lcRtValue').val(total.toFixed(2));
                 var pct = parseFloat($('#lcCommissionPct').val()) || 0;
+                $('#lcCommission').val(total && pct ? (total * pct / 100).toFixed(2) : '');
+            }
+            var rtValueIdx = {{ 1 }};
+            $('#btnAddRtValue').on('click', function() {
+                $('#rtValueRows').append(
+                    '<div class="rt-value-row d-flex gap-1 mb-1 align-items-center">' +
+                    '<div class="input-group input-group-sm flex-grow-1">' +
+                    '<input type="number" name="rt_values[' + rtValueIdx + '][amount]" class="form-control form-control-sm rt-value-amount" step="0.01" placeholder="0.00">' +
+                    '<span class="input-group-text">BDT</span></div>' +
+                    '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-rt-value p-0" style="width:24px;height:24px;flex-shrink:0" title="Remove"><i class="fa fa-times" style="font-size:.65rem"></i></button>' +
+                    '</div>'
+                );
+                rtValueIdx++;
+            });
+            $(document).on('input', '.rt-value-amount', calcRtTotal);
+            $(document).on('click', '.btn-remove-rt-value', function() {
+                if ($('.rt-value-row').length > 1) { $(this).closest('.rt-value-row').remove(); calcRtTotal(); }
+            });
+            $('#lcCommissionPct').on('input', function() {
+                var rtVal = parseFloat($('#lcRtValue').val()) || 0;
+                var pct = parseFloat($(this).val()) || 0;
                 $('#lcCommission').val(rtVal && pct ? (rtVal * pct / 100).toFixed(2) : '');
             });
             $('#lcCommission').on('input', function() {

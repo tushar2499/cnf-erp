@@ -30,6 +30,8 @@
                         <th>#</th>
                         <th>Code</th>
                         <th>Name</th>
+                        <th>Type</th>
+                        <th>Team Leader</th>
                         <th>Designation</th>
                         <th>Joining Date</th>
                         <th>Status</th>
@@ -38,6 +40,8 @@
                     <tr>
                         <th></th>
                         <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                        <th></th>
                         <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                         <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                         <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
@@ -319,13 +323,15 @@ $(function () {
         processing: true, serverSide: true, autoWidth: false,
         ajax: '{{ route('admin.employees.index') }}',
         columns: [
-            { data: 'DT_RowIndex',   name: 'DT_RowIndex',   orderable: false, searchable: false, width: '50px' },
-            { data: 'code',          name: 'code' },
-            { data: 'name',          name: 'name' },
-            { data: 'designation_name', name: 'designation.name', defaultContent: '—' },
-            { data: 'joining_date',  name: 'joining_date', defaultContent: '—' },
-            { data: 'status_badge',  name: 'current_status', orderable: false, searchable: false },
-            { data: 'action',        name: 'action', orderable: false, searchable: false, width: '120px' },
+            { data: 'DT_RowIndex',      name: 'DT_RowIndex',      orderable: false, searchable: false, width: '50px' },
+            { data: 'code',             name: 'code' },
+            { data: 'name',             name: 'name' },
+            { data: 'type_badge',       name: 'type',              orderable: false, searchable: false },
+            { data: 'team_leader_name', name: 'teamLeader.name',   defaultContent: '—' },
+            { data: 'designation_name', name: 'designation.name',  defaultContent: '—' },
+            { data: 'joining_date',     name: 'joining_date',      defaultContent: '—' },
+            { data: 'status_badge',     name: 'current_status',    orderable: false, searchable: false },
+            { data: 'action',           name: 'action',            orderable: false, searchable: false, width: '120px' },
         ],
         dom: "<'row mb-0'<'col-sm-6'l><'col-sm-6'f>><'row'<'col-12'tr>><'row mt-2'<'col-sm-5'i><'col-sm-7'p>>",
         pageLength: 25,

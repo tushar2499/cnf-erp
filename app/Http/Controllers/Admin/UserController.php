@@ -38,14 +38,8 @@ class UserController extends Controller
                     }
                     $emp = $user->employee;
                     $label = $emp->code ? e($emp->code).' — '.e($emp->name) : e($emp->name);
-                    $color = match ($emp->company_type) {
-                        'chevron'      => 'success',
-                        'nas_freights' => 'info',
-                        'nas_trading'  => 'warning',
-                        default        => 'secondary',
-                    };
 
-                    return '<span class="badge bg-'.$color.' me-1" style="font-size:.7rem">'.e($label).'</span>';
+                    return '<span class="badge bg-secondary me-1" style="font-size:.7rem">'.e($label).'</span>';
                 })
                 ->addColumn('role_badge', fn (User $user) => $user->role
                     ? '<span class="badge" style="background:#ede9fe;color:#6d28d9;">'.e($user->role->name).'</span>'
@@ -155,7 +149,7 @@ class UserController extends Controller
     public function create(CreateUserRequest $request)
     {
         $roles = Role::with('companies')->orderBy('name')->get();
-        $employees = Employee::where('is_active', true)->orderBy('name')->get(['id', 'name', 'code', 'company_type']);
+        $employees = Employee::where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']);
 
         return view('admin.users.form', [
             'user'          => null,
@@ -187,7 +181,7 @@ class UserController extends Controller
     public function edit(EditUserRequest $request, User $user)
     {
         $roles = Role::with('companies')->orderBy('name')->get();
-        $employees = Employee::where('is_active', true)->orderBy('name')->get(['id', 'name', 'code', 'company_type']);
+        $employees = Employee::where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']);
 
         return view('admin.users.form', [
             'user'          => $user,

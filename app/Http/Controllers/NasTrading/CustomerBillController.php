@@ -102,7 +102,7 @@ class CustomerBillController extends Controller
             return redirect()->route('nas-trading.customer-bills.show', $customerBill->id)
                 ->with('error', 'Only Draft bills can be edited.');
         }
-        $customerBill->load(['items', 'lc.payments']);
+        $customerBill->load(['items', 'lc.payments', 'lc.billOfEntries.dutyAdvances']);
         $expenseHeads = NasTradingExpenseHead::where('status', 'Active')->get();
 
         return view('nas-trading.customer-bills.edit', compact('customerBill', 'expenseHeads'));

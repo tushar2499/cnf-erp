@@ -181,7 +181,7 @@
                     @php
                         $advancePayment =
                             $customerBill->lc?->payments?->where('payment_type', 'advance')->sum('amount') ?? 0;
-                        $dutyAdvance = (float) ($customerBill->lc?->duty_advance ?? 0);
+                        $dutyAdvance = (float) ($customerBill->lc?->billOfEntries->flatMap->dutyAdvances->sum('amount') ?? 0);
                         $totalAdvance = $advancePayment + $dutyAdvance;
                     @endphp
                     <hr class="my-2">

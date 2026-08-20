@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -32,6 +33,12 @@ return new class extends Migration
         Schema::table('employees', function (Blueprint $table) {
             $table->dropForeign(['team_leader_id']);
             $table->dropColumn(['designation', 'joining_date', 'short_name', 'father_name', 'mother_name', 'phone', 'email', 'address', 'current_status', 'team_leader_id']);
+        });
+
+        // Unified employees (no company_type) didn't exist before this migration — remove them
+        DB::table('employees')->whereNull('company_type')->delete();
+
+        Schema::table('employees', function (Blueprint $table) {
             $table->enum('company_type', ['chevron', 'nas_freights', 'nas_trading'])->nullable(false)->change();
         });
     }

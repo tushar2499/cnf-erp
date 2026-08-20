@@ -80,6 +80,11 @@ class NasTradingLc extends Model
         return $this->hasOne(NasTradingCustomerBill::class, 'lc_id');
     }
 
+    public function rtValues()
+    {
+        return $this->hasMany(NasTradingLcRtValue::class, 'lc_id');
+    }
+
     public function billOfEntries()
     {
         return $this->hasMany(NasTradingLcBillOfEntry::class, 'lc_id');

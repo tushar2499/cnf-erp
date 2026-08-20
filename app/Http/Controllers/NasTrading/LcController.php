@@ -58,8 +58,14 @@ class LcController extends Controller
         DB::transaction(function () use ($request) {
             $lc = NasTradingLc::create(array_merge(
                 ['lc_no_system' => NasTradingLc::generateLcNo(), 'created_by' => auth()->user()?->id],
-                $request->except(['_token', 'items', 'payments', 'other_charge_items', 'invoices', 'bill_of_entries'])
+                $request->except(['_token', 'items', 'payments', 'other_charge_items', 'invoices', 'bill_of_entries', 'rt_values'])
             ));
+
+            foreach ($request->input('rt_values', []) as $rtv) {
+                if (isset($rtv['amount']) && $rtv['amount'] !== '') {
+                    $lc->rtValues()->create(['amount' => $rtv['amount']]);
+                }
+            }
 
             foreach ($request->input('items', []) as $item) {
                 if (! empty($item['product_name'])) {
@@ -115,7 +121,7 @@ class LcController extends Controller
 
     public function show(NasTradingLc $lc)
     {
-        $lc->load('items', 'payments', 'otherChargeItems', 'invoiceValues', 'expenses.expenseHead', 'billOfEntries.dutyAdvances');
+        $lc->load('items', 'payments', 'otherChargeItems', 'invoiceValues', 'expenses.expenseHead', 'billOfEntries.dutyAdvances', 'rtValues');
         $banks = NasTradingBank::where('status', 'Active')->get();
         $importers = NasTradingImporter::where('status', 'Active')->get();
         $psiCompanies = NasTradingPsiCompany::where('status', 'Active')->get();
@@ -127,7 +133,7 @@ class LcController extends Controller
 
     public function edit(NasTradingLc $lc)
     {
-        $lc->load('items', 'payments', 'otherChargeItems', 'invoiceValues', 'billOfEntries.dutyAdvances');
+        $lc->load('items', 'payments', 'otherChargeItems', 'invoiceValues', 'billOfEntries.dutyAdvances', 'rtValues');
         $banks = NasTradingBank::where('status', 'Active')->get();
         $importers = NasTradingImporter::where('status', 'Active')->get();
         $psiCompanies = NasTradingPsiCompany::where('status', 'Active')->get();
@@ -139,7 +145,14 @@ class LcController extends Controller
     public function update(StoreNasTradingLcRequest $request, NasTradingLc $lc)
     {
         DB::transaction(function () use ($request, $lc) {
-            $lc->update($request->except(['_token', '_method', 'items', 'payments', 'other_charge_items', 'invoices', 'bill_of_entries']));
+            $lc->update($request->except(['_token', '_method', 'items', 'payments', 'other_charge_items', 'invoices', 'bill_of_entries', 'rt_values']));
+
+            $lc->rtValues()->delete();
+            foreach ($request->input('rt_values', []) as $rtv) {
+                if (isset($rtv['amount']) && $rtv['amount'] !== '') {
+                    $lc->rtValues()->create(['amount' => $rtv['amount']]);
+                }
+            }
 
             $lc->items()->delete();
             foreach ($request->input('items', []) as $item) {
@@ -247,7 +260,7 @@ class LcController extends Controller
 
     public function generateBill(NasTradingLc $lc)
     {
-        $lc->load('items', 'expenses.expenseHead', 'payments');
+        $lc->load('items', 'expenses.expenseHead', 'payments', 'billOfEntries.dutyAdvances');
         $expenseHeads = NasTradingExpenseHead::where('status', 'Active')->get();
 
         return view('nas-trading.customer-bills.generate', compact('lc', 'expenseHeads'));
