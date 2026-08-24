@@ -144,6 +144,13 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 <script src="{{ asset('assets/js/app.js') }}"></script>
 @stack('scripts')
+<script>
+document.addEventListener('wheel', function (e) {
+    if (document.activeElement.type === 'number') {
+        document.activeElement.blur();
+    }
+}, { passive: true });
+</script>
 @if(session('success'))
 <script>
 Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: @json(session('success')), showConfirmButton: false, showCloseButton: true, timer: 3500, timerProgressBar: true });

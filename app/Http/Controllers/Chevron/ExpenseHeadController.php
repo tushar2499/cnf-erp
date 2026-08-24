@@ -18,11 +18,11 @@ class ExpenseHeadController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            return DataTables::of(ChevronExpenseHead::with(['expenseCategory', 'employees.designation']))
+            return DataTables::of(ChevronExpenseHead::with(['expenseCategory', 'employees.designation'])->latest())
                 ->addIndexColumn()
                 ->addColumn('category_name', fn ($row) => $row->expenseCategory?->name ?? '-')
                 ->addColumn('category_type_badge', fn ($row) => $row->expenseCategory
-                    ? $row->expenseCategory->type->badge()
+                    ? $row->expenseCategory->typeBadge()
                     : '-')
                 ->addColumn('employees_list', function ($row) {
                     if ($row->employees->isEmpty()) {

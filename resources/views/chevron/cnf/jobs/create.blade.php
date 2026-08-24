@@ -556,7 +556,8 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 </div>
 {{-- end col-md-8 --}}
 
-<div class="col-md-4" style="position:sticky;top:70px;align-self:start;max-height:calc(100vh - 80px);overflow-y:auto;">
+<div class="col-md-4" style="position:sticky;top:70px;align-self:start;max-height:calc(100vh - 80px);display:flex;flex-direction:column;">
+<div style="flex:1;overflow-y:auto;min-height:0;">
 
     {{-- 11. Financial --}}
     <div class="job-card ac-amber">
@@ -643,8 +644,10 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <input type="hidden" name="total_payable_1_hidden" id="totalPayable1h">
     </div>
 
+</div>{{-- end inner scroll --}}
+
     {{-- Submit bar --}}
-    <div class="submit-bar">
+    <div class="submit-bar" style="flex-shrink:0;margin-bottom:0;">
         <a href="{{ route('chevron.cnf.jobs.index') }}" class="btn btn-outline-secondary btn-sm px-4">
             <i class="fa fa-times me-1"></i> Cancel
         </a>

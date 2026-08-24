@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\Chevron;
 
-use App\Enums\Chevron\ChevronExpenseCategoryType;
 use App\Http\Controllers\Controller;
 use App\Models\Chevron\ChevronCustomer;
 use App\Models\Chevron\ChevronEmployee;
@@ -307,7 +306,8 @@ class JobExpenseImportController extends Controller
                 if (! $cat) {
                     $cat = ChevronExpenseCategory::create([
                         'name'      => $name,
-                        'type'      => ChevronExpenseCategoryType::Job,
+                        'is_bill'   => false,
+                        'is_job'    => true,
                         'is_active' => true,
                     ]);
                     $stats['new_categories']++;
@@ -361,7 +361,8 @@ class JobExpenseImportController extends Controller
                         $fallback = ChevronExpenseCategory::whereRaw('LOWER(TRIM(name)) = ?', ['general'])->first()
                             ?? ChevronExpenseCategory::create([
                                 'name'      => 'General',
-                                'type'      => ChevronExpenseCategoryType::Job,
+                                'is_bill'   => false,
+                                'is_job'    => true,
                                 'is_active' => true,
                             ]);
                         $fallbackCatId = $fallback->id;

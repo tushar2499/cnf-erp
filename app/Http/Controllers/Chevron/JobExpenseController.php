@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Chevron;
 
-use App\Enums\Chevron\ChevronExpenseCategoryType;
 use App\Http\Controllers\Controller;
 use App\Models\Chevron\ChevronEmployee;
 use App\Models\Chevron\ChevronExpenseHead;
@@ -48,7 +47,7 @@ class JobExpenseController extends Controller
     public function create()
     {
         $heads = ChevronExpenseHead::where('is_active', true)
-            ->whereHas('expenseCategory', fn ($q) => $q->where('type', ChevronExpenseCategoryType::Job))
+            ->whereHas('expenseCategory', fn ($q) => $q->where('is_job', true))
             ->orderBy('name')
             ->get();
 
@@ -115,7 +114,7 @@ class JobExpenseController extends Controller
         $jobExpense->load('items');
 
         $heads = ChevronExpenseHead::where('is_active', true)
-            ->whereHas('expenseCategory', fn ($q) => $q->where('type', ChevronExpenseCategoryType::Job))
+            ->whereHas('expenseCategory', fn ($q) => $q->where('is_job', true))
             ->orderBy('name')
             ->get();
 

@@ -41,7 +41,7 @@ class ChevronBill extends Model
 
     public static function billTypes(): array
     {
-        return ['Import', 'Export', 'Re-Export', 'Freight', 'Port Service', 'Other'];
+        return ['C&F', 'Transport', 'Advance', 'Others'];
     }
 
     public static function commissionOnOptions(): array
