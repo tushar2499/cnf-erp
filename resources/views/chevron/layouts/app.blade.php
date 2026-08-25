@@ -1,9 +1,63 @@
 @extends('layouts.app')
 
+@push('styles')
+<style>
+.sidebar-search-wrap { padding: 4px 8px 6px; }
+.sidebar-search-input-wrap { position: relative; display: flex; align-items: center; }
+.sidebar-search-icon { position: absolute; left: 10px; font-size: .68rem; color: #6b7a99; pointer-events: none; z-index: 1; }
+.sidebar-search-input {
+    width: 100%; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
+    border-radius: 6px; color: #b2d8d8; font-size: .77rem; padding: 7px 26px 7px 28px;
+    outline: none; transition: border-color .15s, background .15s; min-height: 34px;
+}
+.sidebar-search-input::placeholder { color: #6b7a99; }
+.sidebar-search-input:focus { border-color: #14b8a6; background: rgba(20,184,166,.08); color: #fff; }
+.sidebar-search-clear {
+    position: absolute; right: 7px; background: none; border: none; color: #6b7a99;
+    cursor: pointer; padding: 2px 4px; font-size: .62rem; line-height: 1;
+}
+.sidebar-search-clear:hover { color: #b2d8d8; }
+.sidebar-search-results { overflow-y: auto; max-height: calc(100vh - 160px); }
+.sidebar-search-result-item {
+    display: flex; align-items: center; gap: 8px; padding: 7px 12px;
+    color: #b2d8d8; font-size: .78rem; cursor: pointer; text-decoration: none;
+    border-left: 3px solid transparent; transition: background .12s;
+}
+.sidebar-search-result-item:hover,
+.sidebar-search-result-item.kb-focus { background: #1a3d3d; color: #fff; }
+.sidebar-search-result-item i { width: 14px; text-align: center; font-size: .68rem; opacity: .8; flex-shrink: 0; }
+.sidebar-search-result-label { flex: 1; min-width: 0; }
+.sidebar-search-result-label mark { background: rgba(20,184,166,.28); color: #14b8a6; padding: 0 2px; border-radius: 2px; }
+.sidebar-search-result-section { font-size: .6rem; color: #6b7a99; white-space: nowrap; }
+.sidebar-search-empty { padding: 16px 12px; color: #6b7a99; font-size: .74rem; text-align: center; }
+.sidebar-search-empty i { display: block; font-size: 1.1rem; opacity: .35; margin-bottom: 4px; }
+body.sidebar-collapsed .sidebar-search-wrap,
+body.sidebar-collapsed .sidebar-search-results { display: none !important; }
+</style>
+@endpush
+
 @section('sidebar')
 <div class="pt-2 pb-4">
     <div class="px-3 py-2 mb-1" style="font-size:.7rem; color:#6b7a99; font-weight:700; letter-spacing:.08em; text-transform:uppercase;">
         Chevron Lines
+    </div>
+
+    {{-- Menu Search --}}
+    <div class="sidebar-search-wrap">
+        <div class="sidebar-search-input-wrap">
+            <i class="fa fa-search sidebar-search-icon"></i>
+            <input type="text" id="sidebarMenuSearch" class="sidebar-search-input"
+                   placeholder="Search menu..." autocomplete="off" spellcheck="false" aria-label="Search menu">
+            <button id="sidebarSearchClear" class="sidebar-search-clear" style="display:none" aria-label="Clear search">
+                <i class="fa fa-times"></i>
+            </button>
+        </div>
+    </div>
+    <div id="sidebarSearchResults" style="display:none">
+        <div id="sidebarSearchResultsList" class="sidebar-search-results"></div>
+        <div id="sidebarSearchEmpty" class="sidebar-search-empty" style="display:none">
+            <i class="fa fa-search-minus"></i>No results
+        </div>
     </div>
 
     @php
@@ -126,3 +180,116 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    var items = [
+        { label: 'Dashboard',          section: 'Main',             url: '{{ route("chevron.dashboard") }}',                             icon: 'fa-tachometer-alt' },
+        { label: 'C&F Jobs',           section: 'C&F Operations',   url: '{{ route("chevron.cnf.jobs.index") }}',                        icon: 'fa-file-alt' },
+        { label: 'Job Expenses',       section: 'C&F Operations',   url: '{{ route("chevron.cnf.job-expenses.index") }}',                icon: 'fa-money-check-alt' },
+        { label: 'Bills',              section: 'C&F Operations',   url: '{{ route("chevron.cnf.bills.index") }}',                       icon: 'fa-file-invoice' },
+        { label: 'Money Receipts',     section: 'C&F Operations',   url: '{{ route("chevron.cnf.money-receipts.index") }}',              icon: 'fa-money-bill-wave' },
+        { label: 'Expense Summary',    section: 'Reports',          url: '{{ route("chevron.reports.job-expense-summary") }}',           icon: 'fa-chart-line' },
+        { label: 'Designations',       section: 'Stakeholders',     url: '{{ route("chevron.stakeholders.designations.index") }}',       icon: 'fa-id-badge' },
+        { label: 'Customers',          section: 'Stakeholders',     url: '{{ route("chevron.stakeholders.customers.index") }}',          icon: 'fa-users' },
+        { label: 'Services',           section: 'Settings',         url: '{{ route("chevron.settings.services.index") }}',              icon: 'fa-concierge-bell' },
+        { label: 'Job Types',          section: 'Settings',         url: '{{ route("chevron.settings.job-types.index") }}',             icon: 'fa-tags' },
+        { label: 'Ports',              section: 'Settings',         url: '{{ route("chevron.settings.ports.index") }}',                 icon: 'fa-anchor' },
+        { label: 'Expense Categories', section: 'Settings',         url: '{{ route("chevron.settings.expense-categories.index") }}',   icon: 'fa-receipt' },
+        { label: 'Expense Heads',      section: 'Settings',         url: '{{ route("chevron.settings.expense-heads.index") }}',        icon: 'fa-money-bill' },
+        { label: 'Branches',           section: 'Settings',         url: '{{ route("chevron.settings.branches.index") }}',             icon: 'fa-code-branch' },
+        { label: 'Items',              section: 'Settings',         url: '{{ route("chevron.settings.items.index") }}',                icon: 'fa-boxes' },
+        { label: 'Account No',         section: 'Settings',         url: '{{ route("chevron.settings.accounts.index") }}',             icon: 'fa-university' },
+    ];
+
+    var input       = document.getElementById('sidebarMenuSearch');
+    var clearBtn    = document.getElementById('sidebarSearchClear');
+    var resultsWrap = document.getElementById('sidebarSearchResults');
+    var resultsList = document.getElementById('sidebarSearchResultsList');
+    var emptyEl     = document.getElementById('sidebarSearchEmpty');
+    var navGroups   = document.querySelectorAll('.sidebar .nav-item-group');
+    var focusIdx    = -1;
+
+    function esc(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function highlight(text, q) {
+        if (!q) { return esc(text); }
+        var re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+        return esc(text).replace(re, function (m) { return '<mark>' + m + '</mark>'; });
+    }
+
+    function showNormal() {
+        navGroups.forEach(function (g) { g.style.display = ''; });
+        resultsWrap.style.display = 'none';
+        clearBtn.style.display    = 'none';
+        focusIdx = -1;
+    }
+
+    function renderResults(q) {
+        var raw = q.trim();
+        if (!raw) { showNormal(); return; }
+        var lower    = raw.toLowerCase();
+        var filtered = items.filter(function (item) {
+            return item.label.toLowerCase().includes(lower) || item.section.toLowerCase().includes(lower);
+        });
+        navGroups.forEach(function (g) { g.style.display = 'none'; });
+        resultsWrap.style.display = 'block';
+        focusIdx = -1;
+
+        if (!filtered.length) {
+            resultsList.innerHTML   = '';
+            emptyEl.style.display   = '';
+            return;
+        }
+        emptyEl.style.display = 'none';
+        resultsList.innerHTML = filtered.map(function (item, i) {
+            return '<a href="' + item.url + '" class="sidebar-search-result-item" data-idx="' + i + '">' +
+                '<i class="fa ' + item.icon + '"></i>' +
+                '<span class="sidebar-search-result-label">' + highlight(item.label, raw) + '</span>' +
+                '<span class="sidebar-search-result-section">' + esc(item.section) + '</span>' +
+                '</a>';
+        }).join('');
+    }
+
+    function getResultItems() {
+        return resultsList.querySelectorAll('.sidebar-search-result-item');
+    }
+
+    function applyFocus(items) {
+        items.forEach(function (el, i) { el.classList.toggle('kb-focus', i === focusIdx); });
+        if (items[focusIdx]) { items[focusIdx].scrollIntoView({ block: 'nearest' }); }
+    }
+
+    input.addEventListener('input', function () {
+        clearBtn.style.display = this.value ? '' : 'none';
+        renderResults(this.value);
+    });
+
+    clearBtn.addEventListener('click', function () {
+        input.value = '';
+        input.focus();
+        showNormal();
+    });
+
+    input.addEventListener('keydown', function (e) {
+        var els = getResultItems();
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            focusIdx = Math.min(focusIdx + 1, els.length - 1);
+            applyFocus(els);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            focusIdx = Math.max(focusIdx - 1, -1);
+            applyFocus(els);
+        } else if (e.key === 'Enter') {
+            if (focusIdx >= 0 && els[focusIdx]) { els[focusIdx].click(); }
+        } else if (e.key === 'Escape') {
+            input.value = '';
+            showNormal();
+            input.blur();
+        }
+    });
+})();
+</script>
+@endpush

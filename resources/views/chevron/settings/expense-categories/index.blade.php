@@ -36,7 +36,7 @@
                     <tr>
                         <th>#</th>
                         <th>Name</th>
-                        <th>Type</th>
+                        <th>Applicable To</th>
                         <th>Description</th>
                         <th>Status</th>
                         <th>Action</th>
@@ -74,12 +74,22 @@
                             <input type="text" id="categoryName" class="form-control" placeholder="e.g. Port Charges" required>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Type <span class="text-danger">*</span></label>
-                            <select id="categoryType" class="form-select" required>
-                                @foreach($types as $type)
-                                    <option value="{{ $type->value }}">{{ $type->label() }}</option>
-                                @endforeach
-                            </select>
+                            <label class="form-label">Applicable To <span class="text-danger">*</span></label>
+                            <div class="d-flex gap-4 mt-1">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="categoryIsBill">
+                                    <label class="form-check-label" for="categoryIsBill">
+                                        <span class="badge text-white" style="background-color:#0891b2">Bill</span>
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="categoryIsJob">
+                                    <label class="form-check-label" for="categoryIsJob">
+                                        <span class="badge bg-primary">Job</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="invalid-feedback d-block d-none" id="categoryTypeError"></div>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Description</label>
@@ -119,7 +129,7 @@
                     <div class="alert alert-info d-flex gap-2 align-items-start" style="font-size:12px">
                         <i class="fa fa-info-circle mt-1"></i>
                         <div>
-                            Upload an Excel file (.xlsx / .xls) with columns: <strong>Name</strong>, <strong>Type</strong> (bill/job), <strong>Description</strong>, <strong>Status</strong> (Active/Inactive).<br>
+                            Upload an Excel file (.xlsx / .xls) with columns: <strong>Name</strong>, <strong>Type</strong> (bill / job / both), <strong>Description</strong>, <strong>Status</strong> (Active/Inactive).<br>
                             <a href="{{ route('chevron.settings.expense-categories.sample') }}" class="fw-semibold">
                                 <i class="fa fa-download me-1"></i>Download sample file
                             </a>
@@ -152,7 +162,7 @@
                                 <tr>
                                     <th style="width:4%">#</th>
                                     <th>Name</th>
-                                    <th style="width:8%">Type</th>
+                                    <th style="width:10%">Applicable To</th>
                                     <th>Description</th>
                                     <th style="width:10%">Status</th>
                                     <th style="width:12%">Result</th>
@@ -191,11 +201,12 @@ $(function () {
         columns: [
             { data: 'DT_RowIndex',  name: 'DT_RowIndex', orderable: false, searchable: false, width: '50px' },
             { data: 'name',         name: 'name' },
-            { data: 'type_badge',   name: 'type' },
+            { data: 'type_badge',   name: 'type_badge', orderable: false },
             { data: 'description',  name: 'description' },
             { data: 'status_badge', name: 'is_active', searchable: false },
             { data: 'action',       name: 'action', orderable: false, searchable: false, width: '90px' },
         ],
+        order: [],
         dom: "<'row mb-0'<'col-sm-6'><'col-sm-6'f>>" +
              "<'row'<'col-12'tr>>" +
              "<'row mt-2'<'col-sm-5'i><'col-sm-7'p>>",
@@ -222,10 +233,12 @@ $(function () {
         $('#modalTitle').html('<i class="fa fa-plus me-2"></i>Add Expense Category');
         $('#categoryId').val('');
         $('#categoryName').val('').removeClass('is-invalid');
-        $('#categoryType').val('bill');
+        $('#categoryIsBill').prop('checked', true);
+        $('#categoryIsJob').prop('checked', false);
         $('#categoryDescription').val('');
         $('#categoryActive').prop('checked', true);
-        $('.invalid-feedback').remove();
+        $('#categoryTypeError').text('').addClass('d-none');
+        $('.invalid-feedback').not('#categoryTypeError').remove();
     });
 
     $(document).on('click', '.btn-edit', function () {
@@ -233,10 +246,12 @@ $(function () {
         $('#modalTitle').html('<i class="fa fa-edit me-2"></i>Edit Expense Category');
         $('#categoryId').val(d.id);
         $('#categoryName').val(d.name).removeClass('is-invalid');
-        $('#categoryType').val(d.type);
+        $('#categoryIsBill').prop('checked', d.is_bill == 1);
+        $('#categoryIsJob').prop('checked', d.is_job == 1);
         $('#categoryDescription').val(d.description);
         $('#categoryActive').prop('checked', d.is_active == 1);
-        $('.invalid-feedback').remove();
+        $('#categoryTypeError').text('').addClass('d-none');
+        $('.invalid-feedback').not('#categoryTypeError').remove();
         $('#expenseCategoryModal').modal('show');
     });
 
@@ -263,13 +278,23 @@ $(function () {
 
     $('#expenseCategoryForm').on('submit', function (e) {
         e.preventDefault();
+
+        const isBill = $('#categoryIsBill').is(':checked');
+        const isJob  = $('#categoryIsJob').is(':checked');
+
+        if (!isBill && !isJob) {
+            $('#categoryTypeError').text('Select at least one: Bill or Job (or both).').removeClass('d-none');
+            return;
+        }
+        $('#categoryTypeError').text('').addClass('d-none');
+
         const id  = $('#categoryId').val();
         const url = id
             ? '{{ url('chevron/settings/expense-categories') }}/' + id
             : '{{ route('chevron.settings.expense-categories.store') }}';
 
         $('#categoryName').removeClass('is-invalid');
-        $('.invalid-feedback').remove();
+        $('.invalid-feedback').not('#categoryTypeError').remove();
         $('#btnSave').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Saving...');
 
         $.ajax({
@@ -278,7 +303,8 @@ $(function () {
             data: {
                 _token:      $('meta[name="csrf-token"]').attr('content'),
                 name:        $('#categoryName').val(),
-                type:        $('#categoryType').val(),
+                is_bill:     isBill ? 1 : 0,
+                is_job:      isJob  ? 1 : 0,
                 description: $('#categoryDescription').val(),
                 is_active:   $('#categoryActive').is(':checked') ? 1 : 0,
             },
@@ -290,7 +316,13 @@ $(function () {
         })
         .fail(function (xhr) {
             if (xhr.status === 422) {
-                $('#categoryName').addClass('is-invalid').after('<div class="invalid-feedback">' + (xhr.responseJSON.errors.name?.[0] ?? '') + '</div>');
+                const errors = xhr.responseJSON?.errors ?? {};
+                if (errors.name) {
+                    $('#categoryName').addClass('is-invalid').after('<div class="invalid-feedback">' + errors.name[0] + '</div>');
+                }
+                if (errors.type) {
+                    $('#categoryTypeError').text(errors.type[0]).removeClass('d-none');
+                }
             } else {
                 Swal.fire({ icon: 'error', title: xhr.responseJSON?.message || 'Something went wrong.' });
             }
@@ -357,20 +389,30 @@ $(function () {
         });
     });
 
+    function typeBadge(row) {
+        if (row.is_bill && row.is_job) {
+            return '<span class="badge bg-info text-white">Bill & Job</span>';
+        }
+        if (row.is_bill) {
+            return '<span class="badge text-white" style="background-color:#0891b2">Bill</span>';
+        }
+        if (row.is_job) {
+            return '<span class="badge bg-primary">Job</span>';
+        }
+        return '<span class="badge bg-secondary">None</span>';
+    }
+
     function renderPreview(rows) {
         let html = '';
         let newCnt = 0, existCnt = 0;
 
         rows.forEach(function (row, i) {
-            const typeBadge = row.type === 'job'
-                ? '<span class="badge bg-primary">Job</span>'
-                : '<span class="badge text-white" style="background-color:#0891b2">Bill</span>';
             if (row.exists) {
                 existCnt++;
                 html += `<tr class="table-warning">
                     <td class="text-center">${i + 1}</td>
                     <td>${escHtml(row.name)}</td>
-                    <td class="text-center">${typeBadge}</td>
+                    <td class="text-center">${typeBadge(row)}</td>
                     <td>${escHtml(row.description)}</td>
                     <td class="text-center"><span class="badge bg-secondary">${escHtml(row.status)}</span></td>
                     <td class="text-center"><span class="badge bg-warning text-dark"><i class="fa fa-clock me-1"></i>Exists</span></td>
@@ -380,7 +422,7 @@ $(function () {
                 html += `<tr>
                     <td class="text-center">${i + 1}</td>
                     <td>${escHtml(row.name)}</td>
-                    <td class="text-center">${typeBadge}</td>
+                    <td class="text-center">${typeBadge(row)}</td>
                     <td>${escHtml(row.description)}</td>
                     <td class="text-center"><span class="badge ${row.status === 'Active' ? 'bg-success' : 'bg-danger'}">${escHtml(row.status)}</span></td>
                     <td class="text-center"><span class="badge bg-success"><i class="fa fa-plus me-1"></i>New</span></td>
@@ -396,7 +438,6 @@ $(function () {
         $('#newCount').text(newCnt + ' New');
         $('#existCount').text(existCnt + ' Already Exist');
 
-        // Disable confirm if nothing new
         $('#btnConfirmImport').prop('disabled', newCnt === 0);
     }
 

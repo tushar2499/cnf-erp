@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Chevron;
 
-use App\Enums\Chevron\ChevronExpenseCategoryType;
 use App\Helpers\NumberHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Chevron\ChevronBill;
@@ -18,14 +17,14 @@ class BillController extends Controller
     private function formData(): array
     {
         $heads = ChevronExpenseHead::where('is_active', true)
-            ->whereHas('expenseCategory', fn ($q) => $q->where('type', ChevronExpenseCategoryType::Bill))
+            ->whereHas('expenseCategory', fn ($q) => $q->where('is_bill', true))
             ->orderBy('name')
             ->get();
 
         return [
             'billTypes'           => ChevronBill::billTypes(),
             'commissionOnOptions' => ChevronBill::commissionOnOptions(),
-            'expenseCategories'   => ChevronExpenseCategory::where('is_active', true)->where('type', ChevronExpenseCategoryType::Bill)->orderBy('name')->get(),
+            'expenseCategories'   => ChevronExpenseCategory::where('is_active', true)->where('is_bill', true)->orderBy('name')->get(),
             'expenseHeads'        => $heads,
             'expenseHeadsJson'    => $heads->map(fn ($h) => ['id' => $h->id, 'name' => $h->name, 'cat' => $h->expense_category_id, 'amount' => (float) $h->amount])->values(),
             'today'               => now()->format('Y-m-d'),
@@ -156,7 +155,7 @@ class BillController extends Controller
                 'hbi_hawb_no', 'invoice_no', 'invoice_date',
                 'mbl_mawb_no', 'bl_no', 'bl_date',
                 'assessable_value_bdt', 'invoice_value_1', 'invoice_value_2',
-                'currency_type', 'currency_rate',
+                'currency_type', 'currency_rate', 'delivery_date',
             ]);
 
         return response()->json($jobs->map(fn ($j) => [
@@ -175,13 +174,14 @@ class BillController extends Controller
             'lc_no'             => $j->lc_no,
             'lc_ref'            => $j->lca_no,
             'be_no'             => $j->be_no,
-            'be_date'           => $j->be_date,
+            'be_date'           => $j->be_date?->format('Y-m-d'),
             'invoice_no'        => $j->invoice_no,
             'invoice_ref'       => $j->hbi_hawb_no,
-            'invoice_date'      => $j->invoice_date,
+            'invoice_date'      => $j->invoice_date?->format('Y-m-d'),
             'bl_no'             => $j->bl_no,
             'bl_ref'            => $j->mbl_mawb_no,
-            'bl_date'           => $j->bl_date,
+            'bl_date'           => $j->bl_date?->format('Y-m-d'),
+            'delivery_date'     => $j->delivery_date?->format('Y-m-d'),
             'assessable_value'  => $j->assessable_value_bdt,
             'invoice_value'     => $j->invoice_value_1,
             'invoice_value_bdt' => $j->invoice_value_2,

@@ -360,25 +360,31 @@ $(function () {
         <tr data-row="${rowCount}">
             <td><button type="button" class="row-del-btn" onclick="delRow(this)"><i class="fa fa-times"></i></button></td>
             <td class="sl-no text-center fw-bold">${sl}</td>
-            <td><input type="text" name="items[${rowCount}][cover_van_no]" class="form-control form-control-sm" value="${vanNo}"></td>
-            <td><input type="text" name="items[${rowCount}][capacity]" class="form-control form-control-sm" value="${i.capacity || ''}"></td>
+            <td><input type="text" name="items[${rowCount}][cover_van_no]" class="form-control form-control-sm" value="${vanNo}" placeholder="Van No"></td>
+            <td><input type="text" name="items[${rowCount}][capacity]" class="form-control form-control-sm" value="${i.capacity || ''}" placeholder="Capacity"></td>
             <td>
                 <select name="items[${rowCount}][supplier_id]" class="form-select form-select-sm row-supplier">
                     ${supplierOpts(i.supplier_id)}
                 </select>
                 <input type="hidden" name="items[${rowCount}][supplier_name]" class="row-supplier-name" value="${i.supplier_name || ''}">
             </td>
-            <td><input type="number" name="items[${rowCount}][qty]" class="form-control form-control-sm row-qty" value="${i.qty || 1}" min="0" step="0.01"></td>
-            <td><input type="number" name="items[${rowCount}][supplier_rate]" class="form-control form-control-sm row-sup-rate" value="${i.supplier_rate || 0}" min="0" step="0.01"></td>
-            <td><input type="number" name="items[${rowCount}][customer_rate]" class="form-control form-control-sm row-cus-rate" value="${i.customer_rate || 0}" min="0" step="0.01"></td>
-            <td><input type="number" name="items[${rowCount}][demurrage_days]" class="form-control form-control-sm" value="${i.demurrage_days || 0}" min="0"></td>
-            <td><input type="number" name="items[${rowCount}][cus_demurrage_charge]" class="form-control form-control-sm" value="${i.cus_demurrage_charge || 0}" min="0" step="0.01"></td>
-            <td><input type="number" name="items[${rowCount}][sup_demurrage_charge]" class="form-control form-control-sm" value="${i.sup_demurrage_charge || 0}" min="0" step="0.01"></td>
-            <td><input type="number" name="items[${rowCount}][amount]" class="form-control form-control-sm row-amount bg-light" readonly value="${i.amount || 0}"></td>
-            <td><input type="text" name="items[${rowCount}][location_from]" class="form-control form-control-sm" value="${i.location_from || ''}"></td>
-            <td><input type="text" name="items[${rowCount}][location_to]" class="form-control form-control-sm" value="${i.location_to || ''}"></td>
+            <td><input type="number" name="items[${rowCount}][qty]" class="form-control form-control-sm row-qty" value="${i.qty || 1}" min="0" step="0.01" placeholder="0"></td>
+            <td><input type="number" name="items[${rowCount}][supplier_rate]" class="form-control form-control-sm row-sup-rate" value="${i.supplier_rate || 0}" min="0" step="0.01" placeholder="0.00"></td>
+            <td><input type="number" name="items[${rowCount}][customer_rate]" class="form-control form-control-sm row-cus-rate" value="${i.customer_rate || 0}" min="0" step="0.01" placeholder="0.00"></td>
+            <td><input type="number" name="items[${rowCount}][demurrage_days]" class="form-control form-control-sm" value="${i.demurrage_days || 0}" min="0" placeholder="0"></td>
+            <td><input type="number" name="items[${rowCount}][cus_demurrage_charge]" class="form-control form-control-sm" value="${i.cus_demurrage_charge || 0}" min="0" step="0.01" placeholder="0.00"></td>
+            <td><input type="number" name="items[${rowCount}][sup_demurrage_charge]" class="form-control form-control-sm" value="${i.sup_demurrage_charge || 0}" min="0" step="0.01" placeholder="0.00"></td>
+            <td><input type="number" name="items[${rowCount}][amount]" class="form-control form-control-sm row-amount bg-light" readonly value="${i.amount || 0}" placeholder="0.00"></td>
+            <td><input type="text" name="items[${rowCount}][location_from]" class="form-control form-control-sm" value="${i.location_from || ''}" placeholder="From"></td>
+            <td><input type="text" name="items[${rowCount}][location_to]" class="form-control form-control-sm" value="${i.location_to || ''}" placeholder="To"></td>
         </tr>`;
         $('#rowsBody').append(row);
+        $(`#rowsBody tr[data-row="${rowCount}"] .row-supplier`).select2({
+            placeholder: '--Select Supplier--',
+            allowClear: true,
+            width: '100%',
+            dropdownParent: $('body')
+        });
         reindexSL();
         recalc();
     }

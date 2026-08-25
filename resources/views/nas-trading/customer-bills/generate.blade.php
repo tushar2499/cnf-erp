@@ -230,7 +230,7 @@
         <td><select name="items[${i}][expense_head_id]" class="form-select form-select-sm">${headOpts}</select></td>
         <td><input type="number" name="items[${i}][amount]" class="form-control form-control-sm line-amount" id="lineAmt_${i}" value="${d.amount||0}" step="0.01"></td>
         <td><input type="text" name="items[${i}][note]" class="form-control form-control-sm" value="${d.note||''}"></td>
-        <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger btn-remove-line p-0" style="width:22px;height:22px"><i class="fa fa-times" style="font-size:.6rem"></i></button></td>
+        <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger btn-remove-line" style="width:30px;height:30px;padding:0"><i class="fa fa-times" style="font-size:.7rem"></i></button></td>
     </tr>`);
             recalc();
         }
@@ -247,7 +247,9 @@
             $('#dispSubTotal').text(sub.toFixed(2));
             $('#dispVat').text(vat.toFixed(2));
             $('#dispTotal').text(total.toFixed(2));
-            $('#dispFinalAmount').text(net.toFixed(2));
+            $('#dispFinalAmount').text(net.toFixed(2))
+                .removeClass('text-success text-danger')
+                .addClass(net < 0 ? 'text-danger' : 'text-success');
             $('#subTotal').val(sub.toFixed(2));
             $('#vatAmount').val(vat.toFixed(2));
             $('#totalAmount').val(net.toFixed(2));
@@ -305,6 +307,24 @@
                     {
                         description: 'LC Commission',
                         amount: {{ $lc->lc_commission }}
+                    },
+                @endif
+                @if ($lc->lc_amendment_charge)
+                    {
+                        description: 'LC Amendment Charge',
+                        amount: {{ $lc->lc_amendment_charge }}
+                    },
+                @endif
+                @if ($lc->credit_report_charge)
+                    {
+                        description: 'Credit Report Charge',
+                        amount: {{ $lc->credit_report_charge }}
+                    },
+                @endif
+                @if ($lc->other_charges)
+                    {
+                        description: 'Other Charges',
+                        amount: {{ $lc->other_charges }}
                     },
                 @endif
                 @foreach ($lc->expenses as $exp)

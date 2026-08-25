@@ -2,7 +2,7 @@
 @section('title', 'Dashboard')
 @push('styles')
 <style>
-.stat-card { border-left:4px solid #dee2e6; border-radius:.5rem; background:#fff; overflow:hidden; }
+.stat-card { border-left:4px solid #dee2e6; border-radius:.5rem; background:#fff; overflow:hidden; position:relative; }
 .stat-value { font-size:1.8rem; font-weight:700; line-height:1; }
 .stat-label { font-size:.78rem; color:#6c757d; margin-top:.25rem; text-transform:uppercase; letter-spacing:.04em; }
 .panel { background:#fff; border:1px solid #dee2e6; border-radius:.5rem; overflow:hidden; }

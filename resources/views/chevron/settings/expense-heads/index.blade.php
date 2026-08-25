@@ -96,7 +96,7 @@
                                 <select id="headCategory" class="form-select select2">
                                     <option value="">-- Select Category --</option>
                                     @foreach ($categories as $cat)
-                                        <option value="{{ $cat->id }}">{{ $cat->name }} ({{ $cat->type->label() }})
+                                        <option value="{{ $cat->id }}">{{ $cat->name }} ({{ $cat->is_bill && $cat->is_job ? 'Bill & Job' : ($cat->is_bill ? 'Bill' : 'Job') }})
                                         </option>
                                     @endforeach
                                 </select>
@@ -323,6 +323,7 @@
                         width: '90px'
                     },
                 ],
+                order: [],
                 dom: "<'row mb-0'<'col-sm-6'><'col-sm-6'f>>" +
                     "<'row'<'col-12'tr>>" +
                     "<'row mt-2'<'col-sm-5'i><'col-sm-7'p>>",

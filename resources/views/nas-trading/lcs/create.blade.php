@@ -353,7 +353,7 @@
                             <label class="form-label">LC Margin Amt</label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="lc_margin_amt" id="lcMarginAmt"
-                                    class="form-control form-control-sm bg-light" readonly step="0.01"
+                                    class="form-control form-control-sm bg-light" readonly step="0.0001"
                                     placeholder="0.00">
                                 <span class="input-group-text">BDT</span>
                             </div>
@@ -362,7 +362,7 @@
                             <label class="form-label">LC Opening Bank Cost</label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="lc_open_cost_bdt" class="form-control form-control-sm"
-                                    step="0.01" placeholder="0.00">
+                                    step="0.0001" placeholder="0.00">
                                 <span class="input-group-text">BDT</span>
                             </div>
                         </div>
@@ -387,7 +387,7 @@
                             <label class="form-label">Amount (calc)</label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="amount_bdt" id="amountBdt"
-                                    class="form-control form-control-sm bg-light" readonly step="0.01"
+                                    class="form-control form-control-sm bg-light" readonly step="0.0001"
                                     placeholder="0.00">
                                 <span class="input-group-text">BDT</span>
                             </div>
@@ -396,7 +396,7 @@
                             <label class="form-label">Total LC Cost</label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="total_lc_cost" class="form-control form-control-sm"
-                                    step="0.01" placeholder="0.00">
+                                    step="0.0001" placeholder="0.00">
                                 <span class="input-group-text">BDT</span>
                             </div>
                         </div>
@@ -404,7 +404,7 @@
                             <label class="form-label">Landed Cost</label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="landed_cost" class="form-control form-control-sm"
-                                    step="0.01" placeholder="0.00">
+                                    step="0.0001" placeholder="0.00">
                                 <span class="input-group-text">BDT</span>
                             </div>
                         </div>
@@ -412,7 +412,7 @@
                             <label class="form-label">LC Rate Amount</label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="lc_rate_amount" class="form-control form-control-sm"
-                                    step="0.01" placeholder="0.00">
+                                    step="0.0001" placeholder="0.00">
                                 <span class="input-group-text">BDT</span>
                             </div>
                         </div>
@@ -429,7 +429,7 @@
                             <div id="rtValueRows">
                                 <div class="rt-value-row d-flex gap-1 mb-1 align-items-center">
                                     <div class="input-group input-group-sm flex-grow-1">
-                                        <input type="number" name="rt_values[0][amount]" class="form-control form-control-sm rt-value-amount" step="0.01" placeholder="0.00">
+                                        <input type="number" name="rt_values[0][amount]" class="form-control form-control-sm rt-value-amount" step="0.0001" placeholder="0.00">
                                         <span class="input-group-text">BDT</span>
                                     </div>
                                     <button type="button" class="btn btn-sm btn-outline-danger btn-remove-rt-value p-0" style="width:24px;height:24px;flex-shrink:0" title="Remove"><i class="fa fa-times" style="font-size:.65rem"></i></button>
@@ -451,7 +451,7 @@
                             </div>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="lc_commission_flat" id="lcCommission"
-                                    class="form-control form-control-sm" step="0.01" placeholder="0.00"
+                                    class="form-control form-control-sm" step="0.0001" placeholder="0.00"
                                     title="Auto-filled from % or enter flat amount directly">
                                 <span class="input-group-text">BDT</span>
                             </div>
@@ -466,7 +466,7 @@
                             <label class="form-label">Insurance Amount</label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="insurance_amt" class="form-control form-control-sm"
-                                    step="0.01" placeholder="0.00">
+                                    step="0.0001" placeholder="0.00">
                                 <span class="input-group-text">BDT</span>
                             </div>
                         </div>
@@ -488,7 +488,7 @@
                             <label class="form-label">Comm. Amount</label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="comm_amount" class="form-control form-control-sm"
-                                    step="0.01" placeholder="0.00">
+                                    step="0.0001" placeholder="0.00">
                                 <span class="input-group-text">BDT</span>
                             </div>
                         </div>
@@ -496,7 +496,7 @@
                             <label class="form-label">LC Amendment Charge</label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="lc_amendment_charge" class="form-control form-control-sm"
-                                    step="0.01" placeholder="0.00">
+                                    step="0.0001" placeholder="0.00">
                                 <span class="input-group-text">BDT</span>
                             </div>
                         </div>
@@ -504,7 +504,7 @@
                             <label class="form-label">Credit Report Charge</label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="credit_report_charge" class="form-control form-control-sm"
-                                    step="0.01" placeholder="0.00">
+                                    step="0.0001" placeholder="0.00">
                                 <span class="input-group-text">BDT</span>
                             </div>
                         </div>
@@ -537,7 +537,7 @@
                                     Charges:</label>
                                 <div class="input-group input-group-sm" style="width:160px">
                                     <input type="number" name="other_charges" id="otherChargesTotal"
-                                        class="form-control form-control-sm bg-light fw-bold" readonly step="0.01"
+                                        class="form-control form-control-sm bg-light fw-bold" readonly step="0.0001"
                                         placeholder="0.00">
                                     <span class="input-group-text">BDT</span>
                                 </div>
@@ -582,7 +582,7 @@
                             <label class="form-label">LC Closing Bill</label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="lc_closing_bill" class="form-control form-control-sm"
-                                    step="0.01" placeholder="0.00">
+                                    step="0.0001" placeholder="0.00">
                                 <span class="input-group-text">BDT</span>
                             </div>
                         </div>
@@ -644,7 +644,7 @@
                         <label class="form-label me-2 mb-0 fw-semibold" style="font-size:.82rem">Total Received:</label>
                         <div class="input-group input-group-sm" style="width:180px">
                             <input type="number" name="total_received_bdt" id="totalReceived"
-                                class="form-control form-control-sm bg-light fw-bold" readonly step="0.01"
+                                class="form-control form-control-sm bg-light fw-bold" readonly step="0.0001"
                                 placeholder="0.00">
                             <span class="input-group-text">BDT</span>
                         </div>
@@ -661,7 +661,7 @@
                             <label class="form-label">Payable / Receivable</label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="payable_receivable" class="form-control form-control-sm"
-                                    step="0.01" placeholder="0.00">
+                                    step="0.0001" placeholder="0.00">
                                 <span class="input-group-text">BDT</span>
                             </div>
                         </div>
@@ -669,7 +669,7 @@
                             <label class="form-label">Received Amount</label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="received_amount" class="form-control form-control-sm"
-                                    step="0.01" placeholder="0.00">
+                                    step="0.0001" placeholder="0.00">
                                 <span class="input-group-text">BDT</span>
                             </div>
                         </div>
@@ -682,7 +682,7 @@
                             <label class="form-label">VAT Return</label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="vat_return" class="form-control form-control-sm"
-                                    step="0.01" placeholder="0.00">
+                                    step="0.0001" placeholder="0.00">
                                 <span class="input-group-text">BDT</span>
                             </div>
                         </div>
@@ -699,7 +699,7 @@
                             <label class="form-label">Income Tax</label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="income_tax" class="form-control form-control-sm"
-                                    step="0.01" placeholder="0.00">
+                                    step="0.0001" placeholder="0.00">
                                 <span class="input-group-text">BDT</span>
                             </div>
                         </div>
@@ -707,7 +707,7 @@
                             <label class="form-label">Bank Statement Amt</label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="bank_statement_amt" class="form-control form-control-sm"
-                                    step="0.01" placeholder="0.00">
+                                    step="0.0001" placeholder="0.00">
                                 <span class="input-group-text">BDT</span>
                             </div>
                         </div>
@@ -715,7 +715,7 @@
                             <label class="form-label">LC Commission</label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="lc_commission" class="form-control form-control-sm"
-                                    step="0.01" placeholder="0.00">
+                                    step="0.0001" placeholder="0.00">
                                 <span class="input-group-text">BDT</span>
                             </div>
                         </div>
@@ -727,7 +727,7 @@
                             <label class="form-label">Sales Amount</label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="sales_amount" class="form-control form-control-sm"
-                                    step="0.01" placeholder="0.00">
+                                    step="0.0001" placeholder="0.00">
                                 <span class="input-group-text">BDT</span>
                             </div>
                         </div>
@@ -740,7 +740,7 @@
                             <label class="form-label">COSS Amount</label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="coss_amount" class="form-control form-control-sm"
-                                    step="0.01" placeholder="0.00">
+                                    step="0.0001" placeholder="0.00">
                                 <span class="input-group-text">BDT</span>
                             </div>
                         </div>
@@ -895,6 +895,10 @@
             return valid;
         }
 
+        function fmtQty(v) {
+            return (v !== null && v !== '' && v !== undefined) ? parseFloat(v).toString() : '';
+        }
+
         // ── Other Charges ────────────────────────────────────────────────────────
         function addOtherChargeRow(data) {
             data = data || {};
@@ -906,7 +910,7 @@
                 <td><input type="text" class="form-control form-control-sm" name="other_charge_items[${idx}][name]" value="${data.name || ''}" placeholder="e.g. Port Charges"></td>
                 <td>
                     <div class="input-group input-group-sm">
-                        <input type="number" class="form-control form-control-sm other-charge-amount" name="other_charge_items[${idx}][amount]" value="${data.amount || ''}" step="0.01" min="0" placeholder="0.00">
+                        <input type="number" class="form-control form-control-sm other-charge-amount" name="other_charge_items[${idx}][amount]" value="${data.amount || ''}" step="0.0001" min="0" placeholder="0.00">
                         <span class="input-group-text">BDT</span>
                     </div>
                 </td>
@@ -945,7 +949,7 @@
                 <td><input type="text" class="form-control form-control-sm" name="invoices[${idx}][invoice_no]" value="${data.invoice_no || ''}" placeholder="e.g. INV-001"></td>
                 <td>
                     <div class="input-group input-group-sm">
-                        <input type="number" class="form-control form-control-sm" name="invoices[${idx}][invoice_value]" value="${data.invoice_value || ''}" step="0.0001" min="0" placeholder="0.00">
+                        <input type="number" class="form-control form-control-sm" name="invoices[${idx}][invoice_value]" value="${fmtQty(data.invoice_value)}" step="0.0001" min="0" placeholder="0.00">
                         <span class="input-group-text invoice-fcy-label">${fcy}</span>
                     </div>
                 </td>
@@ -982,7 +986,7 @@
                 <td><input type="date" class="form-control form-control-sm" name="payments[${idx}][date]" value="${data.date || ''}"></td>
                 <td>
                     <div class="input-group input-group-sm">
-                        <input type="number" class="form-control form-control-sm payment-amount" name="payments[${idx}][amount]" value="${data.amount || ''}" step="0.01" min="0" placeholder="0.00">
+                        <input type="number" class="form-control form-control-sm payment-amount" name="payments[${idx}][amount]" value="${data.amount || ''}" step="0.0001" min="0" placeholder="0.00">
                         <span class="input-group-text">BDT</span>
                     </div>
                 </td>
@@ -1054,7 +1058,7 @@
                     <label class="form-label">Customs Duty</label>
                     <div class="input-group input-group-sm">
                         <input type="number" name="bill_of_entries[${idx}][customs_duty]"
-                               class="form-control form-control-sm" step="0.01" placeholder="0.00"
+                               class="form-control form-control-sm" step="0.0001" placeholder="0.00"
                                value="${data.customs_duty || ''}">
                         <span class="input-group-text">BDT</span>
                     </div>
@@ -1075,7 +1079,7 @@
                     <label class="form-label">CNF Total Costing</label>
                     <div class="input-group input-group-sm">
                         <input type="number" name="bill_of_entries[${idx}][cnf_total_costing]"
-                               class="form-control form-control-sm" step="0.01" placeholder="0.00"
+                               class="form-control form-control-sm" step="0.0001" placeholder="0.00"
                                value="${data.cnf_total_costing || ''}">
                         <span class="input-group-text">BDT</span>
                     </div>
@@ -1136,7 +1140,7 @@
             <div class="input-group input-group-sm">
                 <input type="number" class="form-control form-control-sm"
                        name="bill_of_entries[${boeIndex}][duty_advances][${idx}][amount]"
-                       value="${data.amount || ''}" step="0.01" min="0" placeholder="0.00">
+                       value="${data.amount || ''}" step="0.0001" min="0" placeholder="0.00">
                 <span class="input-group-text">BDT</span>
             </div>
         </td>
@@ -1188,7 +1192,7 @@
         <td><input type="number" class="form-control form-control-sm" name="items[${idx}][weight]" value="${data.weight || ''}" step="0.0001" min="0" placeholder="0.00"></td>
         <td><input type="text" class="form-control form-control-sm" name="items[${idx}][weight_unit]" value="${data.weight_unit || ''}" placeholder="KG"></td>
         <td><input type="number" class="form-control form-control-sm item-uprice" name="items[${idx}][unit_price]" value="${data.unit_price || ''}" step="0.0001" min="0" placeholder="0.00"></td>
-        <td><input type="number" class="form-control form-control-sm item-amount bg-light" name="items[${idx}][line_amount]" value="${data.line_amount || ''}" step="0.01" readonly tabindex="-1" placeholder="0.00"></td>
+        <td><input type="number" class="form-control form-control-sm item-amount bg-light" name="items[${idx}][line_amount]" value="${data.line_amount || ''}" step="0.0001" readonly tabindex="-1" placeholder="0.00"></td>
         <td>
             <select class="form-select form-select-sm" name="items[${idx}][currency]">
                 ${['USD','EUR','GBP','CNY','BDT'].map(c => `<option value="${c}" ${(data.currency||'USD')===c?'selected':''}>${c}</option>`).join('')}
@@ -1304,7 +1308,7 @@
                 $('#rtValueRows').append(
                     '<div class="rt-value-row d-flex gap-1 mb-1 align-items-center">' +
                     '<div class="input-group input-group-sm flex-grow-1">' +
-                    '<input type="number" name="rt_values[' + rtValueIdx + '][amount]" class="form-control form-control-sm rt-value-amount" step="0.01" placeholder="0.00">' +
+                    '<input type="number" name="rt_values[' + rtValueIdx + '][amount]" class="form-control form-control-sm rt-value-amount" step="0.0001" placeholder="0.00">' +
                     '<span class="input-group-text">BDT</span></div>' +
                     '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-rt-value p-0" style="width:24px;height:24px;flex-shrink:0" title="Remove"><i class="fa fa-times" style="font-size:.65rem"></i></button>' +
                     '</div>'
