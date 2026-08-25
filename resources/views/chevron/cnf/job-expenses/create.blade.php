@@ -222,7 +222,14 @@ var SEARCH_JOBS      = '{{ route('chevron.cnf.job-expenses.search-jobs') }}';
 var SEARCH_EMPLOYEES = '{{ route('chevron.cnf.job-expenses.search-employees') }}';
 var TODAY            = '{{ $today }}';
 
+function initExpenseHeadSelect($sel) {
+    $sel.select2({ theme: 'bootstrap-5', width: '100%', placeholder: '-- Select --' });
+}
+
 $(function () {
+
+    // Init Select2 on existing expense head selects
+    $('.expense-head-select').each(function () { initExpenseHeadSelect($(this)); });
 
     // ── Job No Select2 ──
     $('#jobSelect').select2({
@@ -287,6 +294,7 @@ $(function () {
 
         $('#rowsBody').append($tr);
         reindex();
+        initExpenseHeadSelect($tr.find('.expense-head-select'));
     });
 
     // ── Remove Row ──

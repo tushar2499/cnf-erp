@@ -358,14 +358,9 @@
                     </div>
                 </div>
 
-                {{-- Row 8: B/L Date | Remarks --}}
+                {{-- Row 8: Remarks --}}
                 <div class="row g-2">
-                    <div class="col-md-3">
-                        <div class="bill-form-label">B/L Date</div>
-                        <input type="date" name="bl_date" id="blDate" class="form-control bill-input"
-                            value="{{ old('bl_date', $bill?->bl_date?->format('Y-m-d')) }}">
-                    </div>
-                    <div class="col-md-9">
+                    <div class="col-md-12">
                         <div class="bill-form-label">Remarks</div>
                         <input type="text" name="remarks" class="form-control bill-input"
                             value="{{ old('remarks', $bill?->remarks) }}">
@@ -561,6 +556,11 @@
         var allHeads = @json($expenseHeadsJson);
         var existingRows = @json($existingRows);
 
+        function initRowSelects($row) {
+            $row.find('.cat-select').select2({ theme: 'bootstrap-5', width: '100%', placeholder: '-- Category --' });
+            $row.find('.head-select').select2({ theme: 'bootstrap-5', width: '100%', placeholder: '-- Head --' });
+        }
+
         $(function() {
             // Job No Select2 AJAX
             $('#jobSelect').select2({
@@ -602,7 +602,6 @@
                 $('#invoiceValueBdt').val(d.invoice_value_bdt || '');
                 $('#blNo').val(d.bl_no || '');
                 $('#blRef').val(d.bl_ref || '');
-                $('#blDate').val(d.bl_date || '');
                 $('#invoiceValue').val(d.invoice_value || '');
                 $('#currencyType').val(d.currency_type || '');
                 $('#currencyRate').val(d.currency_rate || '');
@@ -699,6 +698,7 @@
                 $row.find('input[type=text]').last().val(data.note);
             }
             reindex();
+            initRowSelects($row);
         }
 
         function reindex() {
@@ -721,7 +721,7 @@
                     $head.append('<option value="' + h.id + '">' + h.name + '</option>');
                 }
             });
-            $head.val(curVal);
+            $head.val(curVal).trigger('change');
         }
 
         function recalcAll() {
