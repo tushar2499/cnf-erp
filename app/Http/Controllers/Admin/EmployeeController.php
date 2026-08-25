@@ -157,6 +157,14 @@ class EmployeeController extends Controller
                 ->addColumn('action', function (Employee $r) use ($request) {
                     $html = '';
 
+                    $html .= '<button class="btn btn-sm btn-outline-info btn-view-employee me-1"
+                        data-id="'.$r->id.'"
+                        data-name="'.e($r->name).'"
+                        data-type="'.e($r->type ?? '').'"
+                        title="View">
+                        <i class="fa fa-eye"></i>
+                    </button>';
+
                     if ($request->user()->hasPermission('admin.employees.edit')) {
                         $html .= '<button class="btn btn-sm btn-outline-secondary btn-edit me-1"
                             data-id="'.$r->id.'"
@@ -289,6 +297,46 @@ class EmployeeController extends Controller
         ]);
 
         return response()->json(['message' => 'Employee created successfully.']);
+    }
+
+    public function showEmployee(IndexEmployeeRequest $request, Employee $employee)
+    {
+        $employee->load(['designation', 'teamLeader']);
+
+        $members = $employee->type === 'team_leader'
+            ? $employee->teamMembers()->with('designation')->orderBy('name')
+                ->get(['id', 'name', 'code', 'designation_id', 'joining_date', 'current_status', 'is_active'])
+                ->map(fn (Employee $m) => [
+                    'id'             => $m->id,
+                    'name'           => $m->name,
+                    'code'           => $m->code ?: null,
+                    'designation'    => $m->designation?->name,
+                    'joining_date'   => $m->joining_date?->format('d M, Y'),
+                    'current_status' => $m->current_status ?? 'Active',
+                    'is_active'      => $m->is_active,
+                ])
+            : collect();
+
+        return response()->json([
+            'employee' => [
+                'id'             => $employee->id,
+                'name'           => $employee->name,
+                'code'           => $employee->code ?: null,
+                'short_name'     => $employee->short_name ?: null,
+                'type'           => $employee->type,
+                'designation'    => $employee->designation?->name,
+                'joining_date'   => $employee->joining_date?->format('d M, Y'),
+                'current_status' => $employee->current_status ?? 'Active',
+                'is_active'      => $employee->is_active,
+                'father_name'    => $employee->father_name ?: null,
+                'mother_name'    => $employee->mother_name ?: null,
+                'phone'          => $employee->phone ?: null,
+                'email'          => $employee->email ?: null,
+                'address'        => $employee->address ?: null,
+                'team_leader'    => $employee->teamLeader ? ['id' => $employee->teamLeader->id, 'name' => $employee->teamLeader->name] : null,
+            ],
+            'members' => $members,
+        ]);
     }
 
     public function search(IndexEmployeeRequest $request)

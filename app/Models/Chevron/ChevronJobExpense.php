@@ -2,6 +2,7 @@
 
 namespace App\Models\Chevron;
 
+use App\Models\Employee;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
@@ -26,7 +27,7 @@ class ChevronJobExpense extends Model
 
     public function employee()
     {
-        return $this->belongsTo(ChevronEmployee::class, 'employee_id');
+        return $this->belongsTo(Employee::class, 'employee_id');
     }
 
     public function items()

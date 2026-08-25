@@ -71,6 +71,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
         });
 
         // Chevron Lines
+        Route::get('/{employee}/view', [AdminEmployeeController::class, 'showEmployee'])->name('show');
         Route::get('/search', [AdminEmployeeController::class, 'search'])->name('search');
         Route::get('/next-id', [AdminEmployeeController::class, 'nextId'])->name('next-id');
         Route::get('/sample', [AdminEmployeeController::class, 'sampleDownload'])->name('sample');

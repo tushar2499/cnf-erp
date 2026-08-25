@@ -230,6 +230,28 @@
         </div>
     </div>
 </div>
+{{-- Team Members Modal --}}
+<div class="modal fade" id="teamMembersModal" tabindex="-1" aria-labelledby="teamMembersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h6 class="modal-title mb-0 fw-600" id="teamMembersModalLabel">
+                        <i class="fa fa-eye me-2 text-primary"></i> <span id="teamMembersLeaderName"></span>
+                    </h6>
+                    <small class="text-muted" id="teamMembersCount" style="font-size:.74rem;"></small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" id="teamMembersBody">
+                <div class="text-center py-5"><span class="spinner-border spinner-border-sm text-primary"></span> Loading...</div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('styles')
@@ -273,6 +295,16 @@
     transition: background .18s, color .18s;
 }
 .emp-type-card.active .type-icon { background: #0369A1; color: #fff; }
+.team-member-row { transition: background .15s; }
+.team-member-row:hover { background: #F0F9FF; }
+.team-member-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: #DBEAFE; color: #1D4ED8;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: .78rem; flex-shrink: 0;
+}
+.team-empty-state { padding: 40px 20px; text-align: center; color: #94A3B8; }
+.team-empty-state i { font-size: 2.5rem; margin-bottom: 10px; opacity: .4; display: block; }
 </style>
 @endpush
 
@@ -496,6 +528,128 @@ $(function () {
             })
             .fail(function () {
                 $('#branchAccessModalBody').html('<p class="text-danger">Failed to load branch access data.</p>');
+            });
+    });
+
+    // ── Employee View Modal ───────────────────────────────────────────────────
+    function esc(v) { return $('<span>').text(v || '').html(); }
+    function ini(name) { return (name||'').split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase(); }
+    function statusBadge(s) {
+        var cls = {'Active':'bg-success','Inactive':'bg-secondary','Resigned':'bg-warning text-dark','Terminated':'bg-danger'}[s]||'bg-secondary';
+        return '<span class="badge ' + cls + '">' + esc(s) + '</span>';
+    }
+    // Only renders if value is truthy
+    function vf(label, value, cols) {
+        if (!value) { return ''; }
+        return '<div class="col-md-' + (cols||6) + '">' +
+            '<label class="form-label form-label-sm text-muted mb-0">' + label + '</label>' +
+            '<div class="fw-500" style="font-size:.875rem;">' + esc(value) + '</div></div>';
+    }
+    function empViewSection(iconCls, title, bodyHtml) {
+        return '<div class="emp-section">' +
+            '<div class="emp-section-header"><i class="fa ' + iconCls + '"></i> ' + title + '</div>' +
+            bodyHtml + '</div>';
+    }
+
+    $(document).on('click', '.btn-view-employee', function () {
+        var id = $(this).data('id');
+        $('#teamMembersLeaderName').text($(this).data('name'));
+        $('#teamMembersCount').text('');
+        $('#teamMembersBody').html('<div class="text-center py-5"><span class="spinner-border spinner-border-sm text-primary"></span></div>');
+        $('#teamMembersModal').modal('show');
+
+        $.get('{{ url('admin/employees') }}/' + id + '/view')
+            .done(function (res) {
+                var e = res.employee, members = res.members;
+
+                var html = '<div class="d-flex flex-column gap-2 p-3" style="background:#F8FAFC;">';
+
+                // ── Section 1: Employee Identity ──────────────────────────────
+                var identityBody = '<div class="row g-2">' +
+                    vf('Employee Code', e.code, 6) +
+                    vf('Short Name', e.short_name, 6) +
+                    '<div class="col-12"><label class="form-label form-label-sm text-muted mb-0">Full Name</label>' +
+                    '<div class="fw-600" style="font-size:.95rem;">' + esc(e.name) + '</div></div>' +
+                    '</div>';
+                html += empViewSection('fa-id-badge', 'Employee Identity', identityBody);
+
+                // ── Section 2: Role & Assignment ──────────────────────────────
+                var isLeader = e.type === 'team_leader';
+                var typeCardLeader = '<div class="d-flex align-items-center gap-3 flex-fill p-2 rounded border ' + (isLeader ? 'border-primary bg-white' : 'border-light bg-light opacity-50') + '" style="' + (isLeader ? 'box-shadow:0 0 0 2px rgba(3,105,161,.15);' : '') + '">' +
+                    '<div style="width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:' + (isLeader ? '#0369A1' : '#E0F2FE') + ';color:' + (isLeader ? '#fff' : '#0369A1') + ';font-size:.82rem;flex-shrink:0;"><i class="fa fa-user-tie"></i></div>' +
+                    '<div><div class="fw-600" style="font-size:.84rem;">Team Leader</div><div class="text-muted" style="font-size:.72rem;">Manages a team</div></div></div>';
+                var typeCardPrepare = '<div class="d-flex align-items-center gap-3 flex-fill p-2 rounded border ' + (!isLeader ? 'border-warning bg-white' : 'border-light bg-light opacity-50') + '" style="' + (!isLeader ? 'box-shadow:0 0 0 2px rgba(202,138,4,.15);' : '') + '">' +
+                    '<div style="width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:' + (!isLeader ? '#FEF9C3' : '#F1F5F9') + ';color:' + (!isLeader ? '#854D0E' : '#94A3B8') + ';font-size:.82rem;flex-shrink:0;"><i class="fa fa-user-check"></i></div>' +
+                    '<div><div class="fw-600" style="font-size:.84rem;">Prepare</div><div class="text-muted" style="font-size:.72rem;">Reports to a team leader</div></div></div>';
+                var roleBody = '<div class="d-flex gap-2 mb-2">' + typeCardLeader + typeCardPrepare + '</div>';
+                if (e.team_leader) {
+                    roleBody += '<div><label class="form-label form-label-sm text-muted mb-0">Team Leader</label>' +
+                        '<div class="fw-500" style="font-size:.875rem;"><i class="fa fa-user-tie me-1 text-primary" style="font-size:.8rem;"></i>' + esc(e.team_leader.name) + '</div></div>';
+                }
+                html += empViewSection('fa-sitemap', 'Role &amp; Assignment', roleBody);
+
+                // ── Section 3: Work Details ───────────────────────────────────
+                var workBody = '<div class="row g-2">' +
+                    vf('Designation', e.designation, 6) +
+                    vf('Joining Date', e.joining_date, 6) +
+                    '<div class="col-md-6"><label class="form-label form-label-sm text-muted mb-0">Current Status</label><div>' + statusBadge(e.current_status) + '</div></div>' +
+                    '<div class="col-md-6"><label class="form-label form-label-sm text-muted mb-0">Active Employee</label><div>' +
+                    (e.is_active ? '<span class="badge bg-success"><i class="fa fa-check me-1"></i>Active</span>' : '<span class="badge bg-secondary"><i class="fa fa-times me-1"></i>Inactive</span>') +
+                    '</div></div></div>';
+                html += empViewSection('fa-briefcase', 'Work Details', workBody);
+
+                // ── Section 4: Personal Details (always show) ────────────────
+                var personalFields = vf('Father\'s Name', e.father_name, 6) + vf('Mother\'s Name', e.mother_name, 6);
+                var personalBody = personalFields
+                    ? '<div class="row g-2">' + personalFields + '</div>'
+                    : '<div class="text-muted" style="font-size:.8rem;">No personal details recorded.</div>';
+                html += empViewSection('fa-user', 'Personal Details', personalBody);
+
+                // ── Section 5: Contact (always show) ─────────────────────────
+                var contactFields = vf('Phone', e.phone, 6) + vf('Email', e.email, 6) + vf('Address', e.address, 12);
+                var contactBody = contactFields
+                    ? '<div class="row g-2">' + contactFields + '</div>'
+                    : '<div class="text-muted" style="font-size:.8rem;">No contact details recorded.</div>';
+                html += empViewSection('fa-phone', 'Contact', contactBody);
+
+                // ── Section 6: Team Members (team leader only) ────────────────
+                if (isLeader) {
+                    var count = members.length;
+                    $('#teamMembersCount').text(count + ' member' + (count !== 1 ? 's' : ''));
+                    var membersBody;
+                    if (count === 0) {
+                        membersBody = '<div class="team-empty-state" style="padding:20px 10px;"><i class="fa fa-user-plus"></i><div class="fw-500 mb-1">No team members yet</div><small>Assign employees to this team leader.</small></div>';
+                    } else {
+                        var rows = members.map(function (m) {
+                            var inaBadge = m.is_active ? '' : '<span class="badge bg-secondary ms-1" style="font-size:.6rem;">Inactive</span>';
+                            return '<tr class="team-member-row">' +
+                                '<td class="ps-2"><div class="d-flex align-items-center gap-2">' +
+                                    '<div class="team-member-avatar">' + ini(m.name) + '</div>' +
+                                    '<div><div class="fw-500" style="font-size:.82rem;">' + esc(m.name) + inaBadge + '</div>' +
+                                    (m.code ? '<div class="text-muted" style="font-size:.7rem;">' + esc(m.code) + '</div>' : '') +
+                                    '</div></div></td>' +
+                                '<td style="font-size:.8rem;">' + (m.designation ? esc(m.designation) : '<span class="text-muted">—</span>') + '</td>' +
+                                '<td style="font-size:.8rem;">' + (m.joining_date ? esc(m.joining_date) : '<span class="text-muted">—</span>') + '</td>' +
+                                '<td>' + statusBadge(m.current_status) + '</td>' +
+                            '</tr>';
+                        }).join('');
+                        membersBody = '<div class="table-responsive" style="margin:0 -14px -12px;">' +
+                            '<table class="table table-hover mb-0" style="font-size:.82rem;">' +
+                            '<thead class="table-light"><tr>' +
+                            '<th class="ps-3" style="font-size:.72rem;font-weight:600;">Employee</th>' +
+                            '<th style="font-size:.72rem;font-weight:600;">Designation</th>' +
+                            '<th style="font-size:.72rem;font-weight:600;">Joining</th>' +
+                            '<th style="font-size:.72rem;font-weight:600;">Status</th>' +
+                            '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+                    }
+                    html += empViewSection('fa-users', 'Team Members <span class="badge bg-primary ms-1" style="font-size:.65rem;font-weight:600;vertical-align:middle;">' + count + '</span>', membersBody);
+                }
+
+                html += '</div>';
+                $('#teamMembersBody').html(html);
+            })
+            .fail(function () {
+                $('#teamMembersBody').html('<div class="text-center py-4 text-danger"><i class="fa fa-exclamation-circle me-1"></i> Failed to load employee details.</div>');
             });
     });
 

@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Chevron;
 
 use App\Http\Controllers\Controller;
-use App\Models\Chevron\ChevronEmployee;
 use App\Models\Chevron\ChevronExpenseHead;
 use App\Models\Chevron\ChevronJob;
 use App\Models\Chevron\ChevronJobExpense;
+use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
@@ -51,10 +51,16 @@ class JobExpenseController extends Controller
             ->orderBy('name')
             ->get();
 
+        $employees = Employee::whereHas('branchAccess', fn ($q) => $q->where('branch_id', session('active_branch_id')))
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'code', 'name']);
+
         return view('chevron.cnf.job-expenses.create', [
             'expense'          => null,
             'expenseHeads'     => $heads,
             'expenseHeadsJson' => $heads->map(fn ($h) => ['id' => $h->id, 'name' => $h->name, 'amount' => (float) $h->amount])->values(),
+            'employees'        => $employees,
             'today'            => now()->format('Y-m-d'),
         ]);
     }
@@ -73,6 +79,11 @@ class JobExpenseController extends Controller
         $job = ChevronJob::find($request->job_id);
         if (! $job || $job->status !== 'Active') {
             return back()->withInput()->withErrors(['job_id' => 'Selected job is not active.']);
+        }
+
+        $employee = Employee::find($request->employee_id);
+        if (! $employee || ! $employee->branchAccess()->where('branch_id', session('active_branch_id'))->exists()) {
+            return back()->withInput()->withErrors(['employee_id' => 'Selected employee does not belong to the active branch.']);
         }
 
         DB::transaction(function () use ($request) {
@@ -118,10 +129,16 @@ class JobExpenseController extends Controller
             ->orderBy('name')
             ->get();
 
+        $employees = Employee::whereHas('branchAccess', fn ($q) => $q->where('branch_id', session('active_branch_id')))
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'code', 'name']);
+
         return view('chevron.cnf.job-expenses.create', [
             'expense'          => $jobExpense,
             'expenseHeads'     => $heads,
             'expenseHeadsJson' => $heads->map(fn ($h) => ['id' => $h->id, 'name' => $h->name, 'amount' => (float) $h->amount])->values(),
+            'employees'        => $employees,
             'today'            => now()->format('Y-m-d'),
         ]);
     }
@@ -136,6 +153,11 @@ class JobExpenseController extends Controller
             'rows.*.expense_head_id' => ['required'],
             'rows.*.expense_date'    => ['required', 'date'],
         ]);
+
+        $employee = Employee::find($request->employee_id);
+        if (! $employee || ! $employee->branchAccess()->where('branch_id', session('active_branch_id'))->exists()) {
+            return back()->withInput()->withErrors(['employee_id' => 'Selected employee does not belong to the active branch.']);
+        }
 
         DB::transaction(function () use ($request, $jobExpense) {
             $jobExpense->update([
@@ -200,15 +222,16 @@ class JobExpenseController extends Controller
     public function searchEmployees(Request $request)
     {
         $q = $request->get('q', '');
-        $results = ChevronEmployee::where('name', 'like', '%'.$q.'%')
-            ->orWhere('employee_id', 'like', '%'.$q.'%')
+
+        $results = Employee::whereHas('branchAccess', fn ($q2) => $q2->where('branch_id', session('active_branch_id')))
             ->where('is_active', true)
+            ->where(fn ($s) => $s->where('name', 'like', '%'.$q.'%')
+                ->orWhere('code', 'like', '%'.$q.'%'))
             ->limit(20)
-            ->select(['id', 'name', 'employee_id'])
-            ->get()
+            ->get(['id', 'code', 'name'])
             ->map(fn ($e) => [
                 'id'   => $e->id,
-                'text' => $e->employee_id.' — '.$e->name,
+                'text' => $e->code.' — '.$e->name,
                 'name' => $e->name,
             ]);
 
