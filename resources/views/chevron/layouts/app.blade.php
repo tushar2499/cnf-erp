@@ -123,11 +123,7 @@ body.sidebar-collapsed .sidebar-search-results { display: none !important; }
             <i class="fa fa-chevron-down ms-auto"></i>
         </a>
         <div class="collapse {{ $stakeholdersActive ? 'show' : '' }}" id="stakeholdersMenu">
-            <a href="{{ route('chevron.stakeholders.designations.index') }}"
-               class="nav-link ps-4 {{ request()->routeIs('chevron.stakeholders.designations.*') ? 'active' : '' }}">
-                <i class="fa fa-id-badge"></i> Designations
-            </a>
-            <a href="{{ route('chevron.stakeholders.customers.index') }}"
+<a href="{{ route('chevron.stakeholders.customers.index') }}"
                class="nav-link ps-4 {{ request()->routeIs('chevron.stakeholders.customers.*') ? 'active' : '' }}">
                 <i class="fa fa-users"></i> Customers
             </a>
@@ -191,8 +187,7 @@ body.sidebar-collapsed .sidebar-search-results { display: none !important; }
         { label: 'Bills',              section: 'C&F Operations',   url: '{{ route("chevron.cnf.bills.index") }}',                       icon: 'fa-file-invoice' },
         { label: 'Money Receipts',     section: 'C&F Operations',   url: '{{ route("chevron.cnf.money-receipts.index") }}',              icon: 'fa-money-bill-wave' },
         { label: 'Expense Summary',    section: 'Reports',          url: '{{ route("chevron.reports.job-expense-summary") }}',           icon: 'fa-chart-line' },
-        { label: 'Designations',       section: 'Stakeholders',     url: '{{ route("chevron.stakeholders.designations.index") }}',       icon: 'fa-id-badge' },
-        { label: 'Customers',          section: 'Stakeholders',     url: '{{ route("chevron.stakeholders.customers.index") }}',          icon: 'fa-users' },
+{ label: 'Customers',          section: 'Stakeholders',     url: '{{ route("chevron.stakeholders.customers.index") }}',          icon: 'fa-users' },
         { label: 'Services',           section: 'Settings',         url: '{{ route("chevron.settings.services.index") }}',              icon: 'fa-concierge-bell' },
         { label: 'Job Types',          section: 'Settings',         url: '{{ route("chevron.settings.job-types.index") }}',             icon: 'fa-tags' },
         { label: 'Ports',              section: 'Settings',         url: '{{ route("chevron.settings.ports.index") }}',                 icon: 'fa-anchor' },

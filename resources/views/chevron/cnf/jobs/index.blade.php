@@ -6,6 +6,8 @@
 <style>
 #jobsTable th, #jobsTable td { white-space: nowrap; font-size: .73rem; padding: .3rem .5rem; }
 #jobsTable thead th { background: #e9ecef; font-weight: 600; position: sticky; z-index: 2; top: 0; }
+#jobsTable thead tr:last-child th { background: #f8f9fa; }
+#jobsTable thead tr:last-child th input.form-control { min-width: 72px; width: 100%; box-sizing: border-box; }
 .jobs-table-wrapper { max-height: 65vh; overflow: auto; }
 .jobs-table-wrapper::-webkit-scrollbar { width: 6px; height: 6px; }
 .jobs-table-wrapper::-webkit-scrollbar-track { background: #f1f1f1; }
@@ -33,10 +35,18 @@
             <button id="btnFilter" class="btn btn-sm btn-primary"><i class="fa fa-filter me-1"></i>Filter</button>
             <button id="btnReset"  class="btn btn-sm btn-outline-secondary"><i class="fa fa-times me-1"></i>Reset</button>
             <div class="vr"></div>
-            <button onclick="$('#jobsTable').DataTable().button('.buttons-csv').trigger()"   class="btn btn-sm btn-outline-secondary"><i class="fa fa-file-csv me-1"></i>CSV</button>
-            <button onclick="$('#jobsTable').DataTable().button('.buttons-excel').trigger()" class="btn btn-sm btn-outline-success"><i class="fa fa-file-excel me-1"></i>Excel</button>
-            <button onclick="$('#jobsTable').DataTable().button('.buttons-pdf').trigger()"   class="btn btn-sm btn-outline-danger"><i class="fa fa-file-pdf me-1"></i>PDF</button>
-            <button onclick="$('#jobsTable').DataTable().button('.buttons-print').trigger()" class="btn btn-sm btn-outline-secondary"><i class="fa fa-print me-1"></i>Print</button>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fa fa-download me-1"></i> Export
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><button class="dropdown-item" onclick="$('#jobsTable').DataTable().button('.buttons-csv').trigger()"><i class="fa fa-file-csv me-2 text-secondary"></i>CSV</button></li>
+                    <li><button class="dropdown-item" onclick="$('#jobsTable').DataTable().button('.buttons-excel').trigger()"><i class="fa fa-file-excel me-2 text-success"></i>Excel</button></li>
+                    <li><button class="dropdown-item" onclick="$('#jobsTable').DataTable().button('.buttons-pdf').trigger()"><i class="fa fa-file-pdf me-2 text-danger"></i>PDF</button></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><button class="dropdown-item" onclick="$('#jobsTable').DataTable().button('.buttons-print').trigger()"><i class="fa fa-print me-2"></i>Print</button></li>
+                </ul>
+            </div>
         </div>
     </div>
     <div class="card-body p-0">
@@ -45,6 +55,7 @@
             <thead>
                 <tr>
                     <th>#</th>
+                    <th>Action</th>
                     <th>Job No</th>
                     <th>Job Date</th>
                     <th>Party Name</th>
@@ -72,11 +83,10 @@
                     <th>ETA</th>
                     <th>Delivery</th>
                     <th>Status</th>
-                    <th>Action</th>
                 </tr>
                 <tr>
                     <th></th>
-                    <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                    <th></th>
                     <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                     <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                     <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
@@ -122,6 +132,7 @@ $(function () {
         autoWidth: false,
         pageLength: 15,
         order: [],
+        orderCellsTop: true,
         lengthMenu: [[15, 25, 50, 100, 200, 500, 1000, -1], [15, 25, 50, 100, 200, 500, 1000, 'All']],
         ajax: {
             url: '{{ route('chevron.cnf.jobs.index') }}',
@@ -132,11 +143,12 @@ $(function () {
         },
         columns: [
             { data: 'DT_RowIndex',             name: 'DT_RowIndex',          orderable: false, searchable: false, width: '40px', className: 'text-center' },
+            { data: 'action',                  name: 'action',               orderable: false, searchable: false, width: '70px', className: 'text-center' },
             { data: 'job_no',                  name: 'job_no' },
             { data: 'job_date',                name: 'job_date' },
             { data: 'party_name',              name: 'party_name' },
             { data: 'goods_name',              name: 'goods_name' },
-            { data: 'hbi_hawb_no',              name: 'hbi_hawb_no' },
+            { data: 'hbi_hawb_no',             name: 'hbi_hawb_no' },
             { data: 'job_type_name',           name: 'job_type_name' },
             { data: 'port_name',               name: 'port_name' },
             { data: 'country_of_origin',       name: 'country_of_origin' },
@@ -159,7 +171,6 @@ $(function () {
             { data: 'eta_date',                name: 'eta_date' },
             { data: 'delivery_date',           name: 'delivery_date' },
             { data: 'status_badge',            name: 'status',               orderable: false, searchable: false },
-            { data: 'action',                  name: 'action',               orderable: false, searchable: false, width: '70px', className: 'text-center' },
         ],
         dom: "<'row mb-1'<'col-sm-6'l><'col-sm-6'f>>" +
              "<'row'<'col-12'tr>>" +
@@ -174,12 +185,18 @@ $(function () {
             const firstRowH = $('#jobsTable thead tr:first-child').outerHeight();
             $('#jobsTable thead tr:last-child th').css('top', firstRowH + 'px');
 
-            this.api().columns().every(function (i) {
-                const $in = $('thead tr:eq(1) th:eq(' + i + ') input', this.table().container());
+            var self = this.api();
+            self.columns().every(function (i) {
+                var col = this;
+                var $in = $('thead tr:eq(1) th:eq(' + i + ') input', self.table().container());
                 if ($in.length) {
-                        $in.on('click mousedown', e => e.stopPropagation());
-                        $in.on('keyup change', () => this.search($in.val()).draw());
-                    }
+                    $in.on('click mousedown keydown', function (e) { e.stopPropagation(); });
+                    var timer;
+                    $in.on('input', function () {
+                        clearTimeout(timer);
+                        timer = setTimeout(function () { col.search($in.val()).draw(); }, 400);
+                    });
+                }
             });
         },
     });

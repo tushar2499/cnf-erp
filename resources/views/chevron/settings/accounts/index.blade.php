@@ -26,11 +26,11 @@
                 <thead>
                     <tr>
                         <th>#</th>
+                        <th>Type</th>
                         <th>Account No</th>
                         <th>Account Name</th>
                         <th>Bank Name</th>
                         <th>Branch</th>
-                        <th>Type</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
@@ -119,11 +119,11 @@ $(function () {
         ajax: '{{ route('chevron.settings.accounts.index') }}',
         columns: [
             { data: 'DT_RowIndex',  name: 'DT_RowIndex',  orderable: false, searchable: false, width: '45px' },
+            { data: 'account_type', name: 'account_type' },
             { data: 'account_no',   name: 'account_no' },
             { data: 'account_name', name: 'account_name' },
             { data: 'bank_name',    name: 'bank_name' },
             { data: 'branch_name',  name: 'branch_name' },
-            { data: 'account_type', name: 'account_type' },
             { data: 'status_badge', name: 'is_active', searchable: false, orderable: false },
             { data: 'action',       name: 'action',    orderable: false, searchable: false, width: '90px' },
         ],

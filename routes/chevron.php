@@ -7,7 +7,6 @@ use App\Http\Controllers\Chevron\BranchSelectController;
 use App\Http\Controllers\Chevron\CnfJobController;
 use App\Http\Controllers\Chevron\CustomerController;
 use App\Http\Controllers\Chevron\DashboardController;
-use App\Http\Controllers\Chevron\DesignationController;
 use App\Http\Controllers\Chevron\ExpenseCategoryController;
 use App\Http\Controllers\Chevron\ExpenseHeadController;
 use App\Http\Controllers\Chevron\ItemController;
@@ -76,13 +75,6 @@ Route::prefix('cnf')->name('cnf.')->group(function () {
 
 // Stakeholders
 Route::prefix('stakeholders')->name('stakeholders.')->group(function () {
-    Route::prefix('designations')->name('designations.')->group(function () {
-        Route::get('/', [DesignationController::class, 'index'])->name('index');
-        Route::post('/', [DesignationController::class, 'store'])->name('store');
-        Route::put('/{designation}', [DesignationController::class, 'update'])->name('update');
-        Route::delete('/{designation}', [DesignationController::class, 'destroy'])->name('destroy');
-    });
-
     Route::prefix('customers')->name('customers.')->group(function () {
         Route::get('/next-id', [CustomerController::class, 'nextId'])->name('next-id');
         Route::get('/', [CustomerController::class, 'index'])->name('index');
