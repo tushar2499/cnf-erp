@@ -3,17 +3,22 @@
 namespace App\Http\Controllers\Chevron;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Chevron\MoneyReceipt\CreateMoneyReceiptRequest;
+use App\Http\Requests\Chevron\MoneyReceipt\DestroyMoneyReceiptRequest;
+use App\Http\Requests\Chevron\MoneyReceipt\EditMoneyReceiptRequest;
+use App\Http\Requests\Chevron\MoneyReceipt\IndexMoneyReceiptRequest;
+use App\Http\Requests\Chevron\MoneyReceipt\StoreMoneyReceiptRequest;
+use App\Http\Requests\Chevron\MoneyReceipt\UpdateMoneyReceiptRequest;
 use App\Models\Chevron\ChevronAccount;
 use App\Models\Chevron\ChevronBill;
 use App\Models\Chevron\ChevronCustomer;
 use App\Models\Chevron\ChevronMoneyReceipt;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
 class MoneyReceiptController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexMoneyReceiptRequest $request)
     {
         if ($request->ajax()) {
             $query = ChevronMoneyReceipt::where('branch_id', session('active_branch_id'));
@@ -30,13 +35,17 @@ class MoneyReceiptController extends Controller
                         default     => '<span class="badge bg-primary">Active</span>',
                     };
                 })
-                ->addColumn('action', fn ($r) => '
-                    <a href="'.route('chevron.cnf.money-receipts.edit', $r->id).'" class="btn btn-sm btn-outline-primary"><i class="fa fa-edit"></i></a>
-                    <button class="btn btn-sm btn-outline-danger btn-delete"
-                        data-url="'.route('chevron.cnf.money-receipts.destroy', $r->id).'"
-                        data-name="'.e($r->receipt_no).'">
-                        <i class="fa fa-trash"></i>
-                    </button>')
+                ->addColumn('action', function ($r) use ($request) {
+                    $html = '';
+                    if ($request->user()->hasPermission('cnf.money-receipt.edit')) {
+                        $html .= '<a href="'.route('chevron.cnf.money-receipts.edit', $r->id).'" class="btn btn-sm btn-outline-primary py-0 px-1" title="Edit"><i class="fa fa-edit"></i></a> ';
+                    }
+                    if ($request->user()->hasPermission('cnf.money-receipt.delete')) {
+                        $html .= '<button class="btn btn-sm btn-outline-danger py-0 px-1 btn-delete" data-url="'.route('chevron.cnf.money-receipts.destroy', $r->id).'" data-name="'.e($r->receipt_no).'" title="Delete"><i class="fa fa-trash"></i></button>';
+                    }
+
+                    return $html;
+                })
                 ->rawColumns(['status_badge', 'action'])
                 ->make(true);
         }
@@ -44,21 +53,13 @@ class MoneyReceiptController extends Controller
         return view('chevron.cnf.money-receipts.index');
     }
 
-    public function create()
+    public function create(CreateMoneyReceiptRequest $request)
     {
         return view('chevron.cnf.money-receipts.create', $this->formData());
     }
 
-    public function store(Request $request)
+    public function store(StoreMoneyReceiptRequest $request)
     {
-        $request->validate([
-            'receipt_date'         => ['required', 'date'],
-            'party_name'           => ['required', 'string', 'max:255'],
-            'pay_type'             => ['required', 'string'],
-            'items'                => ['required', 'array', 'min:1'],
-            'items.*.payment_type' => ['required', 'string'],
-            'items.*.amount'       => ['required', 'numeric', 'min:0.01'],
-        ]);
 
         DB::transaction(function () use ($request) {
             $totalAmount = collect($request->items)->sum('amount');
@@ -93,7 +94,7 @@ class MoneyReceiptController extends Controller
             ->with('success', 'Money receipt created successfully.');
     }
 
-    public function edit(ChevronMoneyReceipt $moneyReceipt)
+    public function edit(EditMoneyReceiptRequest $request, ChevronMoneyReceipt $moneyReceipt)
     {
         $existingItems = $moneyReceipt->items->map(fn ($i) => [
             'payment_type'       => $i->payment_type,
@@ -111,16 +112,8 @@ class MoneyReceiptController extends Controller
         ));
     }
 
-    public function update(Request $request, ChevronMoneyReceipt $moneyReceipt)
+    public function update(UpdateMoneyReceiptRequest $request, ChevronMoneyReceipt $moneyReceipt)
     {
-        $request->validate([
-            'receipt_date'         => ['required', 'date'],
-            'party_name'           => ['required', 'string', 'max:255'],
-            'pay_type'             => ['required', 'string'],
-            'items'                => ['required', 'array', 'min:1'],
-            'items.*.payment_type' => ['required', 'string'],
-            'items.*.amount'       => ['required', 'numeric', 'min:0.01'],
-        ]);
 
         DB::transaction(function () use ($request, $moneyReceipt) {
             $totalAmount = collect($request->items)->sum('amount');
@@ -154,14 +147,14 @@ class MoneyReceiptController extends Controller
             ->with('success', 'Money receipt updated successfully.');
     }
 
-    public function destroy(ChevronMoneyReceipt $moneyReceipt)
+    public function destroy(DestroyMoneyReceiptRequest $request, ChevronMoneyReceipt $moneyReceipt)
     {
         $moneyReceipt->delete();
 
         return response()->json(['message' => 'Money receipt deleted.']);
     }
 
-    public function searchParties(Request $request)
+    public function searchParties(IndexMoneyReceiptRequest $request)
     {
         $term = $request->q ?? '';
         $results = ChevronCustomer::where('name', 'like', "%{$term}%")
@@ -172,7 +165,7 @@ class MoneyReceiptController extends Controller
         return response()->json(['results' => $results]);
     }
 
-    public function getPartyPayable(Request $request)
+    public function getPartyPayable(IndexMoneyReceiptRequest $request)
     {
         $partyName = $request->party_name ?? '';
         $payable = ChevronBill::where('party_name', $partyName)->sum('due_amount');

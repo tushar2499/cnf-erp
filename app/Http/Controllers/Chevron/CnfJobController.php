@@ -3,6 +3,14 @@
 namespace App\Http\Controllers\Chevron;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Chevron\Job\CreateJobRequest;
+use App\Http\Requests\Chevron\Job\DestroyJobRequest;
+use App\Http\Requests\Chevron\Job\EditJobRequest;
+use App\Http\Requests\Chevron\Job\IndexJobRequest;
+use App\Http\Requests\Chevron\Job\PrintJobRequest;
+use App\Http\Requests\Chevron\Job\ShowJobRequest;
+use App\Http\Requests\Chevron\Job\StoreJobRequest;
+use App\Http\Requests\Chevron\Job\UpdateJobRequest;
 use App\Models\Chevron\ChevronCustomer;
 use App\Models\Chevron\ChevronItem;
 use App\Models\Chevron\ChevronJob;
@@ -27,7 +35,7 @@ class CnfJobController extends Controller
         ];
     }
 
-    public function index(Request $request)
+    public function index(IndexJobRequest $request)
     {
 
         if ($request->ajax()) {
@@ -67,13 +75,23 @@ class CnfJobController extends Controller
                     'Pending' => '<span class="badge bg-warning text-dark">Pending</span>',
                     default   => '<span class="badge bg-secondary">Closed</span>',
                 })
-                ->addColumn('action', fn ($r) => '
-                    <a href="'.route('chevron.cnf.jobs.show', $r->id).'" class="btn btn-sm btn-outline-secondary py-0 px-1" title="View"><i class="fa fa-eye"></i></a>
-                    <a href="'.route('chevron.cnf.jobs.print', $r->id).'" target="_blank" class="btn btn-sm btn-outline-dark py-0 px-1" title="Print"><i class="fa fa-print"></i></a>
-                    <a href="'.route('chevron.cnf.jobs.edit', $r->id).'" class="btn btn-sm btn-outline-primary py-0 px-1" title="Edit"><i class="fa fa-edit"></i></a>
-                    <button class="btn btn-sm btn-outline-danger py-0 px-1 btn-delete"
-                        data-url="'.route('chevron.cnf.jobs.destroy', $r->id).'"
-                        data-name="'.e($r->job_no).'" title="Delete"><i class="fa fa-trash"></i></button>')
+                ->addColumn('action', function ($r) use ($request) {
+                    $html = '';
+                    if ($request->user()->hasPermission('cnf.job.view')) {
+                        $html .= '<a href="'.route('chevron.cnf.jobs.show', $r->id).'" class="btn btn-sm btn-outline-secondary py-0 px-1" title="View"><i class="fa fa-eye"></i></a> ';
+                    }
+                    if ($request->user()->hasPermission('cnf.job.print')) {
+                        $html .= '<a href="'.route('chevron.cnf.jobs.print', $r->id).'" target="_blank" class="btn btn-sm btn-outline-dark py-0 px-1" title="Print"><i class="fa fa-print"></i></a> ';
+                    }
+                    if ($request->user()->hasPermission('cnf.job.edit')) {
+                        $html .= '<a href="'.route('chevron.cnf.jobs.edit', $r->id).'" class="btn btn-sm btn-outline-primary py-0 px-1" title="Edit"><i class="fa fa-edit"></i></a> ';
+                    }
+                    if ($request->user()->hasPermission('cnf.job.delete')) {
+                        $html .= '<button class="btn btn-sm btn-outline-danger py-0 px-1 btn-delete" data-url="'.route('chevron.cnf.jobs.destroy', $r->id).'" data-name="'.e($r->job_no).'" title="Delete"><i class="fa fa-trash"></i></button>';
+                    }
+
+                    return $html;
+                })
                 ->rawColumns(['status_badge', 'action'])
                 ->make(true);
         }
@@ -81,23 +99,13 @@ class CnfJobController extends Controller
         return view('chevron.cnf.jobs.index');
     }
 
-    public function create()
+    public function create(CreateJobRequest $request)
     {
         return view('chevron.cnf.jobs.create', array_merge($this->formData(), ['job' => null]));
     }
 
-    public function store(Request $request)
+    public function store(StoreJobRequest $request)
     {
-        $request->validate([
-            'job_type_id'      => ['required'],
-            'port_id'          => ['required'],
-            'party_name'       => ['required', 'string', 'max:255'],
-            'goods_name'       => ['required', 'string', 'max:255'],
-            'job_date'         => ['required', 'date'],
-            'hbi_hawb_no'      => ['required', 'string', 'max:255', 'unique:chevron_jobs,hbi_hawb_no'],
-            'received_amount'  => ['nullable', 'numeric', 'min:0'],
-            'assessable_value' => ['nullable', 'numeric', 'min:0'],
-        ]);
 
         $data = $this->prepareData($request);
         $jobTypeId = (int) $request->job_type_id;
@@ -113,37 +121,27 @@ class CnfJobController extends Controller
             ->with('success', 'Job '.$job->job_no.' created successfully.');
     }
 
-    public function show(ChevronJob $job)
+    public function show(ShowJobRequest $request, ChevronJob $job)
     {
         $job->load(['jobType', 'port', 'customer', 'item']);
 
         return view('chevron.cnf.jobs.show', compact('job'));
     }
 
-    public function print(ChevronJob $job)
+    public function print(PrintJobRequest $request, ChevronJob $job)
     {
         $job->load(['jobType', 'port', 'customer', 'item']);
 
         return view('chevron.cnf.jobs.print', compact('job'));
     }
 
-    public function edit(ChevronJob $job)
+    public function edit(EditJobRequest $request, ChevronJob $job)
     {
         return view('chevron.cnf.jobs.create', array_merge($this->formData(), ['job' => $job]));
     }
 
-    public function update(Request $request, ChevronJob $job)
+    public function update(UpdateJobRequest $request, ChevronJob $job)
     {
-        $request->validate([
-            'job_type_id'      => ['required'],
-            'port_id'          => ['required'],
-            'party_name'       => ['required', 'string', 'max:255'],
-            'goods_name'       => ['required', 'string', 'max:255'],
-            'job_date'         => ['required', 'date'],
-            'hbi_hawb_no'      => ['required', 'string', 'max:255', 'unique:chevron_jobs,hbi_hawb_no,'.$job->id],
-            'received_amount'  => ['nullable', 'numeric', 'min:0'],
-            'assessable_value' => ['nullable', 'numeric', 'min:0'],
-        ]);
 
         $job->update($this->prepareData($request));
 
@@ -151,14 +149,14 @@ class CnfJobController extends Controller
             ->with('success', 'Job '.$job->job_no.' updated successfully.');
     }
 
-    public function destroy(ChevronJob $job)
+    public function destroy(DestroyJobRequest $request, ChevronJob $job)
     {
         $job->delete();
 
         return response()->json(['message' => 'Job '.$job->job_no.' deleted.']);
     }
 
-    public function searchCustomers(Request $request)
+    public function searchCustomers(IndexJobRequest $request)
     {
         $q = $request->get('q', '');
         $results = ChevronCustomer::where('name', 'like', '%'.$q.'%')
@@ -176,7 +174,7 @@ class CnfJobController extends Controller
         return response()->json($results);
     }
 
-    public function searchItems(Request $request)
+    public function searchItems(IndexJobRequest $request)
     {
         $q = $request->get('q', '');
         $results = ChevronItem::where('item_code', 'like', '%'.$q.'%')

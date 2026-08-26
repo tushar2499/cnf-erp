@@ -19,9 +19,11 @@
 @section('content')
 <div class="page-header">
     <h4><i class="fa fa-file-alt me-2 text-primary"></i> C&amp;F Jobs</h4>
+    @if(auth()->user()->hasPermission('cnf.job.create'))
     <a href="{{ route('chevron.cnf.jobs.create') }}" class="btn btn-sm btn-primary">
         <i class="fa fa-plus me-1"></i> New Job
     </a>
+    @endif
 </div>
 
 

@@ -19,9 +19,11 @@
 @section('content')
 <div class="page-header">
     <h4><i class="fa fa-money-bill-wave me-2 text-primary"></i> Money Receipts</h4>
+    @if(auth()->user()->hasPermission('cnf.money-receipt.create'))
     <a href="{{ route('chevron.cnf.money-receipts.create') }}" class="btn btn-sm btn-primary">
         <i class="fa fa-plus me-1"></i> New Receipt
     </a>
+    @endif
 </div>
 
 <div class="card">

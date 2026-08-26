@@ -15,59 +15,64 @@ class DashboardController extends Controller
     public function index()
     {
         $branchId = session('active_branch_id');
+        $user = auth()->user();
+
+        $canJob = $user->hasPermission('cnf.job.list');
+        $canBill = $user->hasPermission('cnf.bill.list');
+        $canReceipt = $user->hasPermission('cnf.money-receipt.list');
+        $canJobExpense = $user->hasPermission('cnf.job-expense.list');
+        $canCustomer = $user->hasPermission('cnf.customer.list');
 
         // --- Stat cards ---
-        $totalJobs = ChevronJob::where('branch_id', $branchId)->count();
-        $jobsThisMonth = ChevronJob::where('branch_id', $branchId)->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count();
-        $activeJobs = ChevronJob::where('branch_id', $branchId)->where('status', 'Active')->count();
-        $pendingJobs = ChevronJob::where('branch_id', $branchId)->where('status', 'Pending')->count();
-        $closedJobs = ChevronJob::where('branch_id', $branchId)->where('status', 'Closed')->count();
+        $totalJobs = $canJob ? ChevronJob::where('branch_id', $branchId)->count() : null;
+        $jobsThisMonth = $canJob ? ChevronJob::where('branch_id', $branchId)->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count() : null;
+        $activeJobs = $canJob ? ChevronJob::where('branch_id', $branchId)->where('status', 'Active')->count() : null;
+        $pendingJobs = $canJob ? ChevronJob::where('branch_id', $branchId)->where('status', 'Pending')->count() : null;
+        $closedJobs = $canJob ? ChevronJob::where('branch_id', $branchId)->where('status', 'Closed')->count() : null;
 
-        $totalBills = ChevronBill::where('branch_id', $branchId)->count();
-        $totalReceivable = ChevronBill::where('branch_id', $branchId)->sum('due_amount');
-        $totalNetPayable = ChevronBill::where('branch_id', $branchId)->sum('net_payable');
+        $totalBills = $canBill ? ChevronBill::where('branch_id', $branchId)->count() : null;
+        $totalReceivable = $canBill ? ChevronBill::where('branch_id', $branchId)->sum('due_amount') : null;
+        $totalNetPayable = $canBill ? ChevronBill::where('branch_id', $branchId)->sum('net_payable') : null;
 
-        $totalReceipts = ChevronMoneyReceipt::where('branch_id', $branchId)->sum('total_amount');
-        $receiptsThisMonth = ChevronMoneyReceipt::where('branch_id', $branchId)->whereMonth('receipt_date', now()->month)
-            ->whereYear('receipt_date', now()->year)->sum('total_amount');
+        $totalReceipts = $canReceipt ? ChevronMoneyReceipt::where('branch_id', $branchId)->sum('total_amount') : null;
+        $receiptsThisMonth = $canReceipt ? ChevronMoneyReceipt::where('branch_id', $branchId)->whereMonth('receipt_date', now()->month)->whereYear('receipt_date', now()->year)->sum('total_amount') : null;
 
-        $totalCustomers = ChevronCustomer::count();
+        $totalCustomers = $canCustomer ? ChevronCustomer::count() : null;
         $totalEmployees = ChevronEmployee::where('branch_id', $branchId)->count();
 
-        $approvedExpenses = ChevronJobExpense::where('branch_id', $branchId)->where('status', 'Approved')->sum('total_approved_amount');
+        $approvedExpenses = $canJobExpense ? ChevronJobExpense::where('branch_id', $branchId)->where('status', 'Approved')->sum('total_approved_amount') : null;
 
-        // --- Monthly jobs last 6 months (for chart) ---
+        // --- Monthly chart (last 6 months) ---
         $monthlyLabels = [];
         $monthlyJobData = [];
         $monthlyBillData = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $d = now()->subMonths($i);
-            $monthlyLabels[] = $d->format('M y');
-            $monthlyJobData[] = ChevronJob::whereMonth('created_at', $d->month)->whereYear('created_at', $d->year)->count();
-            $monthlyBillData[] = round(
-                ChevronBill::whereMonth('created_at', $d->month)->whereYear('created_at', $d->year)->sum('net_payable'),
-                2
-            );
+        if ($canJob || $canBill) {
+            for ($i = 5; $i >= 0; $i--) {
+                $d = now()->subMonths($i);
+                $monthlyLabels[] = $d->format('M y');
+                $monthlyJobData[] = $canJob ? ChevronJob::whereMonth('created_at', $d->month)->whereYear('created_at', $d->year)->count() : 0;
+                $monthlyBillData[] = $canBill ? round(ChevronBill::whereMonth('created_at', $d->month)->whereYear('created_at', $d->year)->sum('net_payable'), 2) : 0;
+            }
         }
 
-        // --- Bill status breakdown (for donut) ---
-        $billStatusCounts = ChevronBill::selectRaw('status, COUNT(*) as cnt')
-            ->groupBy('status')->pluck('cnt', 'status');
+        // --- Bill status breakdown (donut) ---
+        $billStatusCounts = $canBill
+            ? ChevronBill::selectRaw('status, COUNT(*) as cnt')->groupBy('status')->pluck('cnt', 'status')
+            : collect();
 
         // --- Top 5 customers by job count ---
-        $topCustomers = ChevronJob::selectRaw('party_name, COUNT(*) as job_count')
-            ->groupBy('party_name')
-            ->orderByDesc('job_count')
-            ->limit(5)
-            ->get();
+        $topCustomers = $canJob
+            ? ChevronJob::selectRaw('party_name, COUNT(*) as job_count')->groupBy('party_name')->orderByDesc('job_count')->limit(5)->get()
+            : collect();
 
         // --- Recent jobs ---
-        $recentJobs = ChevronJob::with('port')->latest()->limit(8)->get();
+        $recentJobs = $canJob ? ChevronJob::with('port')->latest()->limit(8)->get() : collect();
 
         // --- Recent bills ---
-        $recentBills = ChevronBill::latest()->limit(6)->get();
+        $recentBills = $canBill ? ChevronBill::latest()->limit(6)->get() : collect();
 
         return view('chevron.dashboard', compact(
+            'canJob', 'canBill', 'canReceipt', 'canJobExpense', 'canCustomer',
             'totalJobs', 'jobsThisMonth', 'activeJobs', 'pendingJobs', 'closedJobs',
             'totalBills', 'totalReceivable', 'totalNetPayable',
             'totalReceipts', 'receiptsThisMonth',

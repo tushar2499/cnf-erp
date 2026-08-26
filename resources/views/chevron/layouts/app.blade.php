@@ -4,14 +4,14 @@
 <style>
 .sidebar-search-wrap { padding: 4px 8px 6px; }
 .sidebar-search-input-wrap { position: relative; display: flex; align-items: center; }
-.sidebar-search-icon { position: absolute; left: 10px; font-size: .68rem; color: #6b7a99; pointer-events: none; z-index: 1; }
+.sidebar-search-icon { position: absolute; left: 10px; font-size: .68rem; color: #a8c8cc; pointer-events: none; z-index: 1; }
 .sidebar-search-input {
-    width: 100%; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
-    border-radius: 6px; color: #b2d8d8; font-size: .77rem; padding: 7px 26px 7px 28px;
+    width: 100%; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.30);
+    border-radius: 6px; color: #e0f0f0; font-size: .77rem; padding: 7px 26px 7px 28px;
     outline: none; transition: border-color .15s, background .15s; min-height: 34px;
 }
-.sidebar-search-input::placeholder { color: #6b7a99; }
-.sidebar-search-input:focus { border-color: #14b8a6; background: rgba(20,184,166,.08); color: #fff; }
+.sidebar-search-input::placeholder { color: #a8c8cc; }
+.sidebar-search-input:focus { border-color: #14b8a6; background: rgba(20,184,166,.14); color: #fff; outline: 2px solid rgba(20,184,166,.35); outline-offset: 0; }
 .sidebar-search-clear {
     position: absolute; right: 7px; background: none; border: none; color: #6b7a99;
     cursor: pointer; padding: 2px 4px; font-size: .62rem; line-height: 1;
@@ -61,10 +61,17 @@ body.sidebar-collapsed .sidebar-search-results { display: none !important; }
     </div>
 
     @php
-        $cnfOpsActive      = request()->routeIs('chevron.cnf.jobs.*', 'chevron.cnf.job-expenses.*', 'chevron.cnf.bills.*', 'chevron.cnf.money-receipts.*');
-        $reportsActive     = request()->routeIs('chevron.reports.*');
+        $user               = auth()->user();
+        $cnfOpsActive       = request()->routeIs('chevron.cnf.jobs.*', 'chevron.cnf.job-expenses.*', 'chevron.cnf.bills.*', 'chevron.cnf.money-receipts.*');
+        $reportsActive      = request()->routeIs('chevron.reports.*');
         $stakeholdersActive = request()->routeIs('chevron.stakeholders.*');
-        $settingsActive    = request()->routeIs('chevron.settings.*');
+        $settingsActive     = request()->routeIs('chevron.settings.*');
+
+        $canSeeJob         = $user->hasPermission('cnf.job.list');
+        $canSeeJobExpense  = $user->hasPermission('cnf.job-expense.list');
+        $canSeeBill        = $user->hasPermission('cnf.bill.list');
+        $canSeeReceipt     = $user->hasPermission('cnf.money-receipt.list');
+        $canSeeCnfOps      = $canSeeJob || $canSeeJobExpense || $canSeeBill || $canSeeReceipt;
     @endphp
 
     <div class="nav-item-group">
@@ -76,6 +83,7 @@ body.sidebar-collapsed .sidebar-search-results { display: none !important; }
     </div>
 
     {{-- C&F Operations --}}
+    @if($canSeeCnfOps)
     <div class="nav-item-group">
         <div class="nav-section">C&amp;F Operations</div>
         <a href="#chevronCnfOpsMenu"
@@ -85,24 +93,33 @@ body.sidebar-collapsed .sidebar-search-results { display: none !important; }
             <i class="fa fa-chevron-down ms-auto"></i>
         </a>
         <div class="collapse {{ $cnfOpsActive ? 'show' : '' }}" id="chevronCnfOpsMenu">
+            @if($canSeeJob)
             <a href="{{ route('chevron.cnf.jobs.index') }}"
                class="nav-link ps-4 {{ request()->routeIs('chevron.cnf.jobs.*') ? 'active' : '' }}">
                 <i class="fa fa-file-alt"></i> C&amp;F Jobs
             </a>
+            @endif
+            @if($canSeeJobExpense)
             <a href="{{ route('chevron.cnf.job-expenses.index') }}"
                class="nav-link ps-4 {{ request()->routeIs('chevron.cnf.job-expenses.*') ? 'active' : '' }}">
                 <i class="fa fa-money-check-alt"></i> Job Expenses
             </a>
+            @endif
+            @if($canSeeBill)
             <a href="{{ route('chevron.cnf.bills.index') }}"
                class="nav-link ps-4 {{ request()->routeIs('chevron.cnf.bills.*') ? 'active' : '' }}">
                 <i class="fa fa-file-invoice"></i> Bills
             </a>
+            @endif
+            @if($canSeeReceipt)
             <a href="{{ route('chevron.cnf.money-receipts.index') }}"
                class="nav-link ps-4 {{ request()->routeIs('chevron.cnf.money-receipts.*') ? 'active' : '' }}">
                 <i class="fa fa-money-bill-wave"></i> Money Receipts
             </a>
+            @endif
         </div>
     </div>
+    @endif
 
     {{-- Reports (single item — flat) --}}
     <div class="nav-item-group">

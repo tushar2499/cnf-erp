@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Employee\DestroyEmployeeRequest;
 use App\Http\Requests\Admin\Employee\IndexEmployeeRequest;
+use App\Http\Requests\Admin\Employee\SaveBranchAccessRequest;
+use App\Http\Requests\Admin\Employee\ShowBranchAccessRequest;
 use App\Http\Requests\Admin\Employee\StoreEmployeeRequest;
 use App\Http\Requests\Admin\Employee\UpdateEmployeeRequest;
 use App\Models\Chevron\ChevronBranch;
@@ -32,6 +34,7 @@ class EmployeeController extends Controller
 
     public function indexUnified(IndexEmployeeRequest $request)
     {
+
         if ($request->ajax()) {
             return DataTables::of(Employee::with('users')->orderBy('name'))
                 ->addIndexColumn()
@@ -40,12 +43,17 @@ class EmployeeController extends Controller
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-secondary">Inactive</span>')
                 ->addColumn('action', function (Employee $r) use ($request) {
-                    $html = '<button class="btn btn-sm btn-outline-primary btn-manage-access me-1"
-                        data-id="'.$r->id.'"
-                        data-name="'.e($r->name).'"
-                        title="Manage Branch Access">
-                        <i class="fa fa-code-branch"></i>
-                    </button>';
+                    $html = '';
+
+                    if ($request->user()->hasPermission('admin.employees.branch-access')) {
+                        $html .= '<button class="btn btn-sm btn-outline-primary btn-manage-access me-1"
+                            data-id="'.$r->id.'"
+                            data-name="'.e($r->name).'"
+                            title="Manage Branch Access">
+                            <i class="fa fa-code-branch"></i>
+                        </button>';
+                    }
+
                     if ($request->user()->hasPermission('admin.employees.delete') && $r->users->isEmpty()) {
                         $html .= '<button class="btn btn-sm btn-outline-danger btn-delete-unified"
                             data-url="'.route('admin.employees.unified.destroy', $r->id).'"
@@ -63,7 +71,7 @@ class EmployeeController extends Controller
         return redirect()->route('admin.employees.index');
     }
 
-    public function branchAccess(IndexEmployeeRequest $request, Employee $employee)
+    public function branchAccess(ShowBranchAccessRequest $request, Employee $employee)
     {
         $companies = Company::where('is_active', true)->orderBy('name')->get(['id', 'name', 'type']);
 
@@ -89,22 +97,16 @@ class EmployeeController extends Controller
         return response()->json(['employee' => $employee, 'companies' => $data]);
     }
 
-    public function saveBranchAccess(Request $request, Employee $employee)
+    public function saveBranchAccess(SaveBranchAccessRequest $request, Employee $employee)
     {
-        abort_unless(auth()->user()->hasPermission('admin.employees.edit'), 403);
-
-        $request->validate([
-            'access'                => ['nullable', 'array'],
-            'access.*.company_id'   => ['required', 'exists:companies,id'],
-            'access.*.branch_ids'   => ['nullable', 'array'],
-            'access.*.branch_ids.*' => ['integer'],
-        ]);
 
         DB::transaction(function () use ($request, $employee) {
             EmployeeBranchAccess::where('employee_id', $employee->id)->delete();
 
             $rows = [];
+
             foreach ($request->input('access', []) as $entry) {
+
                 foreach ($entry['branch_ids'] ?? [] as $branchId) {
                     $rows[] = [
                         'employee_id' => $employee->id,
@@ -114,11 +116,13 @@ class EmployeeController extends Controller
                         'updated_at'  => now(),
                     ];
                 }
+
             }
 
             if ($rows) {
                 EmployeeBranchAccess::insert($rows);
             }
+
         });
 
         return response()->json(['message' => 'Branch access saved.']);
@@ -126,6 +130,7 @@ class EmployeeController extends Controller
 
     public function destroyUnified(DestroyEmployeeRequest $request, Employee $employee)
     {
+
         if ($employee->users()->exists()) {
             return response()->json(['message' => 'Cannot delete: employee has linked users.'], 422);
         }
@@ -139,6 +144,7 @@ class EmployeeController extends Controller
 
     public function index(IndexEmployeeRequest $request)
     {
+
         if ($request->ajax()) {
             return DataTables::of(Employee::with('users', 'designation', 'teamLeader')->orderBy('name'))
                 ->addIndexColumn()
@@ -185,7 +191,9 @@ class EmployeeController extends Controller
                             title="Edit">
                             <i class="fa fa-edit"></i>
                         </button>';
+                    }
 
+                    if ($request->user()->hasPermission('admin.employees.branch-access')) {
                         $html .= '<button class="btn btn-sm btn-outline-primary btn-manage-access me-1"
                             data-id="'.$r->id.'"
                             data-name="'.e($r->name).'"
@@ -304,18 +312,18 @@ class EmployeeController extends Controller
         $employee->load(['designation', 'teamLeader']);
 
         $members = $employee->type === 'team_leader'
-            ? $employee->teamMembers()->with('designation')->orderBy('name')
-                ->get(['id', 'name', 'code', 'designation_id', 'joining_date', 'current_status', 'is_active'])
-                ->map(fn (Employee $m) => [
-                    'id'             => $m->id,
-                    'name'           => $m->name,
-                    'code'           => $m->code ?: null,
-                    'designation'    => $m->designation?->name,
-                    'joining_date'   => $m->joining_date?->format('d M, Y'),
-                    'current_status' => $m->current_status ?? 'Active',
-                    'is_active'      => $m->is_active,
-                ])
-            : collect();
+        ? $employee->teamMembers()->with('designation')->orderBy('name')
+            ->get(['id', 'name', 'code', 'designation_id', 'joining_date', 'current_status', 'is_active'])
+            ->map(fn (Employee $m) => [
+                'id'             => $m->id,
+                'name'           => $m->name,
+                'code'           => $m->code ?: null,
+                'designation'    => $m->designation?->name,
+                'joining_date'   => $m->joining_date?->format('d M, Y'),
+                'current_status' => $m->current_status ?? 'Active',
+                'is_active'      => $m->is_active,
+            ])
+        : collect();
 
         return response()->json([
             'employee' => [
@@ -335,7 +343,7 @@ class EmployeeController extends Controller
                 'address'        => $employee->address ?: null,
                 'team_leader'    => $employee->teamLeader ? ['id' => $employee->teamLeader->id, 'name' => $employee->teamLeader->name] : null,
             ],
-            'members' => $members,
+            'members'  => $members,
         ]);
     }
 
@@ -383,6 +391,7 @@ class EmployeeController extends Controller
             if ($request->type === 'team_leader') {
                 $employee->customers()->sync($request->input('customer_ids', []));
             }
+
         });
 
         return response()->json(['message' => 'Employee created successfully.']);
@@ -410,6 +419,7 @@ class EmployeeController extends Controller
             } else {
                 $employee->customers()->detach();
             }
+
         });
 
         return response()->json(['message' => 'Employee updated successfully.']);
@@ -439,12 +449,13 @@ class EmployeeController extends Controller
         $branch = ChevronBranch::first()?->name ?? 'Head Office';
 
         $sheet->fromArray([
-            ['EMP-',     '',              'Mr. John Doe',   $desig, $branch, '2024-01-15', 'John',  '', '', 'Active'],
-            ['CLCNFCTG', 'CLCNFCTG07',   'Ms. Jane Smith', $desig, $branch, '2023-06-01', 'Jane',  '', '', 'Active'],
-            ['MGT',      '',              'Mr. ABC Khan',   $desig, $branch, '2022-03-10', 'ABC',   '', '', 'Active'],
+            ['EMP-', '', 'Mr. John Doe', $desig, $branch, '2024-01-15', 'John', '', '', 'Active'],
+            ['CLCNFCTG', 'CLCNFCTG07', 'Ms. Jane Smith', $desig, $branch, '2023-06-01', 'Jane', '', '', 'Active'],
+            ['MGT', '', 'Mr. ABC Khan', $desig, $branch, '2022-03-10', 'ABC', '', '', 'Active'],
         ], null, 'A2');
 
         $widths = ['A' => 16, 'B' => 14, 'C' => 28, 'D' => 24, 'E' => 20, 'F' => 14, 'G' => 16, 'H' => 22, 'I' => 22, 'J' => 12];
+
         foreach ($widths as $col => $w) {
             $spreadsheet->getActiveSheet()->getColumnDimension($col)->setWidth($w);
         }
@@ -478,11 +489,15 @@ class EmployeeController extends Controller
         $defaultBranchId = ChevronBranch::value('id');
 
         $preview = [];
+
         foreach ($rows as $i => $row) {
+
             if ($i === 0) {
                 continue;
             }
+
             $name = trim($row[2] ?? '');
+
             if ($name === '') {
                 continue;
             }
@@ -502,25 +517,30 @@ class EmployeeController extends Controller
 
             $dateValid = false;
             $parsedDate = null;
+
             if ($joiningDate) {
                 try {
                     $parsedDate = Carbon::parse($joiningDate)->format('Y-m-d');
                     $dateValid = true;
                 } catch (\Exception) {
                 }
+
             }
 
             $exists = $empId !== ''
-                ? isset($existingIds[strtolower($empId)])
-                : isset($existingNames[strtolower($name)]);
+            ? isset($existingIds[strtolower($empId)])
+            : isset($existingNames[strtolower($name)]);
 
             $warns = [];
+
             if (! $desigId) {
                 $warns[] = 'Designation not found';
             }
+
             if (! $branchName) {
                 $warns[] = 'No branch — default used';
             }
+
             if (! $dateValid && $joiningDate) {
                 $warns[] = 'Invalid date';
             }
@@ -553,6 +573,7 @@ class EmployeeController extends Controller
 
         $inserted = 0;
         DB::transaction(function () use ($request, &$inserted) {
+
             foreach ($request->rows as $row) {
                 $name = trim($row['name'] ?? '');
                 $empId = trim($row['employee_id'] ?? '');
@@ -565,6 +586,7 @@ class EmployeeController extends Controller
                 if ($empId !== '' && ChevronEmployee::where('employee_id', $empId)->exists()) {
                     continue;
                 }
+
                 if ($empId === '' && ChevronEmployee::whereRaw('LOWER(name) = ?', [strtolower($name)])->exists()) {
                     continue;
                 }
@@ -587,6 +609,7 @@ class EmployeeController extends Controller
                 ]);
                 $inserted++;
             }
+
         });
 
         return response()->json([
@@ -599,6 +622,7 @@ class EmployeeController extends Controller
 
     public function indexNasFreights(IndexEmployeeRequest $request)
     {
+
         if ($request->ajax()) {
             return DataTables::of(NasFreightsEmployee::orderBy('name'))
                 ->addIndexColumn()
@@ -607,9 +631,11 @@ class EmployeeController extends Controller
                     : '<span class="badge bg-secondary">Inactive</span>')
                 ->addColumn('action', function ($r) use ($request) {
                     $html = '';
+
                     if ($request->user()->hasPermission('admin.employees.edit')) {
                         $html .= '<button class="btn btn-sm btn-outline-primary btn-edit-nf" data-id="'.$r->id.'"><i class="fa fa-edit"></i></button> ';
                     }
+
                     if ($request->user()->hasPermission('admin.employees.delete')) {
                         $html .= '<button class="btn btn-sm btn-outline-danger btn-delete-nf"
                             data-url="'.route('admin.employees.nas-freights.destroy', $r->id).'"
@@ -678,6 +704,7 @@ class EmployeeController extends Controller
 
     public function indexNasTrading(IndexEmployeeRequest $request)
     {
+
         if ($request->ajax()) {
             return DataTables::of(NasTradingEmployee::orderBy('name'))
                 ->addIndexColumn()
@@ -686,9 +713,11 @@ class EmployeeController extends Controller
                     : '<span class="badge bg-secondary">Inactive</span>')
                 ->addColumn('action', function ($r) use ($request) {
                     $html = '';
+
                     if ($request->user()->hasPermission('admin.employees.edit')) {
                         $html .= '<button class="btn btn-sm btn-outline-primary btn-edit-nt" data-id="'.$r->id.'"><i class="fa fa-edit"></i></button> ';
                     }
+
                     if ($request->user()->hasPermission('admin.employees.delete')) {
                         $html .= '<button class="btn btn-sm btn-outline-danger btn-delete-nt"
                             data-url="'.route('admin.employees.nas-trading.destroy', $r->id).'"

@@ -3,17 +3,22 @@
 namespace App\Http\Controllers\Chevron;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Chevron\JobExpense\CreateJobExpenseRequest;
+use App\Http\Requests\Chevron\JobExpense\DestroyJobExpenseRequest;
+use App\Http\Requests\Chevron\JobExpense\EditJobExpenseRequest;
+use App\Http\Requests\Chevron\JobExpense\IndexJobExpenseRequest;
+use App\Http\Requests\Chevron\JobExpense\StoreJobExpenseRequest;
+use App\Http\Requests\Chevron\JobExpense\UpdateJobExpenseRequest;
 use App\Models\Chevron\ChevronExpenseHead;
 use App\Models\Chevron\ChevronJob;
 use App\Models\Chevron\ChevronJobExpense;
 use App\Models\Employee;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
 class JobExpenseController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexJobExpenseRequest $request)
     {
         if ($request->ajax()) {
             $query = ChevronJobExpense::with('employee')
@@ -32,11 +37,17 @@ class JobExpenseController extends Controller
                     'Approved'  => '<span class="badge bg-success">Approved</span>',
                     default     => '<span class="badge bg-secondary">Draft</span>',
                 })
-                ->addColumn('action', fn ($r) => '
-                    <a href="'.route('chevron.cnf.job-expenses.edit', $r->id).'" class="btn btn-sm btn-outline-primary py-0 px-1"><i class="fa fa-edit"></i></a>
-                    <button class="btn btn-sm btn-outline-danger py-0 px-1 btn-delete"
-                        data-url="'.route('chevron.cnf.job-expenses.destroy', $r->id).'"
-                        data-name="'.e($r->expense_no).'"><i class="fa fa-trash"></i></button>')
+                ->addColumn('action', function ($r) use ($request) {
+                    $html = '';
+                    if ($request->user()->hasPermission('cnf.job-expense.edit')) {
+                        $html .= '<a href="'.route('chevron.cnf.job-expenses.edit', $r->id).'" class="btn btn-sm btn-outline-primary py-0 px-1" title="Edit"><i class="fa fa-edit"></i></a> ';
+                    }
+                    if ($request->user()->hasPermission('cnf.job-expense.delete')) {
+                        $html .= '<button class="btn btn-sm btn-outline-danger py-0 px-1 btn-delete" data-url="'.route('chevron.cnf.job-expenses.destroy', $r->id).'" data-name="'.e($r->expense_no).'" title="Delete"><i class="fa fa-trash"></i></button>';
+                    }
+
+                    return $html;
+                })
                 ->rawColumns(['status_badge', 'action'])
                 ->make(true);
         }
@@ -44,7 +55,7 @@ class JobExpenseController extends Controller
         return view('chevron.cnf.job-expenses.index');
     }
 
-    public function create()
+    public function create(CreateJobExpenseRequest $request)
     {
         $heads = ChevronExpenseHead::where('is_active', true)
             ->whereHas('expenseCategory', fn ($q) => $q->where('is_job', true))
@@ -65,16 +76,8 @@ class JobExpenseController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreJobExpenseRequest $request)
     {
-        $request->validate([
-            'job_id'                 => ['required'],
-            'employee_id'            => ['required'],
-            'date'                   => ['required', 'date'],
-            'rows'                   => ['required', 'array', 'min:1'],
-            'rows.*.expense_head_id' => ['required'],
-            'rows.*.expense_date'    => ['required', 'date'],
-        ]);
 
         $job = ChevronJob::find($request->job_id);
         if (! $job || $job->status !== 'Active') {
@@ -120,7 +123,7 @@ class JobExpenseController extends Controller
             ->with('success', 'Job expense created successfully.');
     }
 
-    public function edit(ChevronJobExpense $jobExpense)
+    public function edit(EditJobExpenseRequest $request, ChevronJobExpense $jobExpense)
     {
         $jobExpense->load('items');
 
@@ -143,16 +146,8 @@ class JobExpenseController extends Controller
         ]);
     }
 
-    public function update(Request $request, ChevronJobExpense $jobExpense)
+    public function update(UpdateJobExpenseRequest $request, ChevronJobExpense $jobExpense)
     {
-        $request->validate([
-            'job_id'                 => ['required'],
-            'employee_id'            => ['required'],
-            'date'                   => ['required', 'date'],
-            'rows'                   => ['required', 'array', 'min:1'],
-            'rows.*.expense_head_id' => ['required'],
-            'rows.*.expense_date'    => ['required', 'date'],
-        ]);
 
         $employee = Employee::find($request->employee_id);
         if (! $employee || ! $employee->branchAccess()->where('branch_id', session('active_branch_id'))->exists()) {
@@ -191,14 +186,14 @@ class JobExpenseController extends Controller
         return back()->with('success', 'Job expense updated successfully.');
     }
 
-    public function destroy(ChevronJobExpense $jobExpense)
+    public function destroy(DestroyJobExpenseRequest $request, ChevronJobExpense $jobExpense)
     {
         $jobExpense->delete();
 
         return response()->json(['message' => 'Expense '.$jobExpense->expense_no.' deleted.']);
     }
 
-    public function searchJobs(Request $request)
+    public function searchJobs(IndexJobExpenseRequest $request)
     {
         $q = $request->get('q', '');
         $results = ChevronJob::where('status', 'Active')
@@ -219,7 +214,7 @@ class JobExpenseController extends Controller
         return response()->json($results);
     }
 
-    public function searchEmployees(Request $request)
+    public function searchEmployees(IndexJobExpenseRequest $request)
     {
         $q = $request->get('q', '');
 

@@ -19,9 +19,11 @@
 @section('content')
 <div class="page-header">
     <h4><i class="fa fa-file-invoice me-2 text-success"></i> Bills</h4>
+    @if(auth()->user()->hasPermission('cnf.bill.create'))
     <a href="{{ route('chevron.cnf.bills.create') }}" class="btn btn-sm btn-success">
         <i class="fa fa-plus me-1"></i> New Bill
     </a>
+    @endif
 </div>
 
 <div class="card">
