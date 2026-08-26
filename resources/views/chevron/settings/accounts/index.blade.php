@@ -2,6 +2,20 @@
 
 @section('title', 'Accounts')
 
+@push('styles')
+<style>
+#accountsTable th, #accountsTable td { white-space: nowrap; font-size: .73rem; padding: .3rem .5rem; }
+#accountsTable thead th { background: #e9ecef; font-weight: 600; position: sticky; z-index: 2; top: 0; }
+#accountsTable thead tr:last-child th { background: #f8f9fa; }
+#accountsTable thead tr:last-child th input.form-control { min-width: 72px; width: 100%; box-sizing: border-box; }
+.accounts-table-wrapper { max-height: 65vh; overflow: auto; }
+.accounts-table-wrapper::-webkit-scrollbar { width: 6px; height: 6px; }
+.accounts-table-wrapper::-webkit-scrollbar-track { background: #f1f1f1; }
+.accounts-table-wrapper::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+#accountsTable_wrapper > .row:last-child { position: sticky; bottom: 0; background: #fff; z-index: 3; border-top: 1px solid #dee2e6; margin: 0; padding: 6px 12px; }
+</style>
+@endpush
+
 @section('content')
 <div class="page-header">
     <h4><i class="fa fa-university me-2 text-primary"></i> Account Numbers</h4>
@@ -13,16 +27,22 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span><i class="fa fa-list me-2"></i> All Accounts</span>
-        <div class="d-flex gap-2 flex-wrap">
-            <button onclick="$('#accountsTable').DataTable().button('.buttons-csv').trigger()"   class="btn btn-sm btn-outline-secondary"><i class="fa fa-file-csv me-1"></i>CSV</button>
-            <button onclick="$('#accountsTable').DataTable().button('.buttons-excel').trigger()" class="btn btn-sm btn-outline-success"><i class="fa fa-file-excel me-1"></i>Excel</button>
-            <button onclick="$('#accountsTable').DataTable().button('.buttons-pdf').trigger()"   class="btn btn-sm btn-outline-danger"><i class="fa fa-file-pdf me-1"></i>PDF</button>
-            <button onclick="$('#accountsTable').DataTable().button('.buttons-print').trigger()" class="btn btn-sm btn-outline-secondary"><i class="fa fa-print me-1"></i>Print</button>
+        <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fa fa-download me-1"></i> Export
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><button class="dropdown-item" onclick="$('#accountsTable').DataTable().button('.buttons-csv').trigger()"><i class="fa fa-file-csv me-2 text-secondary"></i>CSV</button></li>
+                <li><button class="dropdown-item" onclick="$('#accountsTable').DataTable().button('.buttons-excel').trigger()"><i class="fa fa-file-excel me-2 text-success"></i>Excel</button></li>
+                <li><button class="dropdown-item" onclick="$('#accountsTable').DataTable().button('.buttons-pdf').trigger()"><i class="fa fa-file-pdf me-2 text-danger"></i>PDF</button></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><button class="dropdown-item" onclick="$('#accountsTable').DataTable().button('.buttons-print').trigger()"><i class="fa fa-print me-2"></i>Print</button></li>
+            </ul>
         </div>
     </div>
     <div class="card-body p-0">
-        <div class="table-responsive">
-            <table id="accountsTable" class="table table-hover table-striped mb-0 w-100">
+        <div class="accounts-table-wrapper">
+            <table id="accountsTable" class="table table-hover table-striped table-bordered mb-0">
                 <thead>
                     <tr>
                         <th>#</th>
@@ -114,27 +134,43 @@ var table;
 
 $(function () {
     table = $('#accountsTable').DataTable({
-        processing: true, serverSide: true,
+        processing: true,
+        serverSide: true,
         autoWidth: false,
+        pageLength: 15,
+        order: [],
+        orderCellsTop: true,
+        lengthMenu: [[15, 25, 50, 100, 200, 500], [15, 25, 50, 100, 200, 500]],
         ajax: '{{ route('chevron.settings.accounts.index') }}',
         columns: [
-            { data: 'DT_RowIndex',  name: 'DT_RowIndex',  orderable: false, searchable: false, width: '45px' },
+            { data: 'DT_RowIndex',  name: 'DT_RowIndex',  orderable: false, searchable: false, width: '45px', className: 'text-center' },
             { data: 'account_type', name: 'account_type' },
             { data: 'account_no',   name: 'account_no' },
             { data: 'account_name', name: 'account_name' },
             { data: 'bank_name',    name: 'bank_name' },
             { data: 'branch_name',  name: 'branch_name' },
             { data: 'status_badge', name: 'is_active', searchable: false, orderable: false },
-            { data: 'action',       name: 'action',    orderable: false, searchable: false, width: '90px' },
+            { data: 'action',       name: 'action',    orderable: false, searchable: false, width: '90px', className: 'text-center' },
         ],
-        dom: "<'row mb-0'<'col-sm-6'><'col-sm-6'f>><'row'<'col-12'tr>><'row mt-2'<'col-sm-5'i><'col-sm-7'p>>",
+        dom: "<'row mb-1'<'col-sm-6'l><'col-sm-6'f>>" +
+             "<'row'<'col-12'tr>>" +
+             "<'row mt-2'<'col-sm-5'i><'col-sm-7'p>>",
         buttons: [{ extend: 'csv' }, { extend: 'excel' }, { extend: 'pdf' }, { extend: 'print' }],
         initComplete: function () {
-            this.api().columns().every(function (i) {
-                const $in = $('thead tr:eq(1) th:eq(' + i + ') input', this.table().container());
+            const firstRowH = $('#accountsTable thead tr:first-child').outerHeight();
+            $('#accountsTable thead tr:last-child th').css('top', firstRowH + 'px');
+
+            var self = this.api();
+            self.columns().every(function (i) {
+                var col = this;
+                var $in = $('thead tr:eq(1) th:eq(' + i + ') input', self.table().container());
                 if ($in.length) {
-                    $in.on('click mousedown', e => e.stopPropagation());
-                    $in.on('keyup change', () => this.search($in.val()).draw());
+                    $in.on('click mousedown keydown', function (e) { e.stopPropagation(); });
+                    var timer;
+                    $in.on('input', function () {
+                        clearTimeout(timer);
+                        timer = setTimeout(function () { col.search($in.val()).draw(); }, 400);
+                    });
                 }
             });
         },

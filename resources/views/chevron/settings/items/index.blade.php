@@ -13,6 +13,15 @@
 .item-tabs .item-tab:hover:not(.active) { color: #1565c0; background: rgba(21,101,192,.05); }
 #imagePreview { width: 100%; max-height: 220px; object-fit: contain; border: 2px dashed #dee2e6; border-radius: .5rem; padding: .5rem; background: #f8f9fa; display: none; }
 #imagePlaceholder { border: 2px dashed #dee2e6; border-radius: .5rem; padding: 2rem; text-align: center; color: #adb5bd; background: #f8f9fa; }
+#itemsTable th, #itemsTable td { white-space: nowrap; font-size: .73rem; padding: .3rem .5rem; }
+#itemsTable thead th { background: #e9ecef; font-weight: 600; position: sticky; z-index: 2; top: 0; }
+#itemsTable thead tr:last-child th { background: #f8f9fa; }
+#itemsTable thead tr:last-child th input.form-control { min-width: 72px; width: 100%; box-sizing: border-box; }
+.items-table-wrapper { max-height: 65vh; overflow: auto; }
+.items-table-wrapper::-webkit-scrollbar { width: 6px; height: 6px; }
+.items-table-wrapper::-webkit-scrollbar-track { background: #f1f1f1; }
+.items-table-wrapper::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+#itemsTable_wrapper > .row:last-child { position: sticky; bottom: 0; background: #fff; z-index: 3; border-top: 1px solid #dee2e6; margin: 0; padding: 6px 12px; }
 </style>
 @endpush
 
@@ -27,16 +36,22 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span><i class="fa fa-list me-2"></i> All Items</span>
-        <div class="d-flex gap-2 flex-wrap">
-            <button onclick="$('#itemsTable').DataTable().button('.buttons-csv').trigger()" class="btn btn-sm btn-outline-secondary"><i class="fa fa-file-csv me-1"></i>CSV</button>
-            <button onclick="$('#itemsTable').DataTable().button('.buttons-excel').trigger()" class="btn btn-sm btn-outline-success"><i class="fa fa-file-excel me-1"></i>Excel</button>
-            <button onclick="$('#itemsTable').DataTable().button('.buttons-pdf').trigger()" class="btn btn-sm btn-outline-danger"><i class="fa fa-file-pdf me-1"></i>PDF</button>
-            <button onclick="$('#itemsTable').DataTable().button('.buttons-print').trigger()" class="btn btn-sm btn-outline-secondary"><i class="fa fa-print me-1"></i>Print</button>
+        <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fa fa-download me-1"></i> Export
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><button class="dropdown-item" onclick="$('#itemsTable').DataTable().button('.buttons-csv').trigger()"><i class="fa fa-file-csv me-2 text-secondary"></i>CSV</button></li>
+                <li><button class="dropdown-item" onclick="$('#itemsTable').DataTable().button('.buttons-excel').trigger()"><i class="fa fa-file-excel me-2 text-success"></i>Excel</button></li>
+                <li><button class="dropdown-item" onclick="$('#itemsTable').DataTable().button('.buttons-pdf').trigger()"><i class="fa fa-file-pdf me-2 text-danger"></i>PDF</button></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><button class="dropdown-item" onclick="$('#itemsTable').DataTable().button('.buttons-print').trigger()"><i class="fa fa-print me-2"></i>Print</button></li>
+            </ul>
         </div>
     </div>
     <div class="card-body p-0">
-        <div class="table-responsive">
-            <table id="itemsTable" class="table table-hover table-striped mb-0 w-100">
+        <div class="items-table-wrapper">
+            <table id="itemsTable" class="table table-hover table-striped table-bordered mb-0">
                 <thead>
                     <tr>
                         <th>#</th>
@@ -233,31 +248,42 @@ $(function () {
         processing: true,
         serverSide: true,
         autoWidth: false,
+        pageLength: 15,
+        order: [],
+        orderCellsTop: true,
+        lengthMenu: [[15, 25, 50, 100, 200, 500], [15, 25, 50, 100, 200, 500]],
         ajax: '{{ route('chevron.settings.items.index') }}',
         columns: [
-            { data: 'DT_RowIndex',  name: 'DT_RowIndex', orderable: false, searchable: false, width: '50px' },
+            { data: 'DT_RowIndex',  name: 'DT_RowIndex', orderable: false, searchable: false, width: '50px', className: 'text-center' },
             { data: 'item_code',    name: 'item_code' },
             { data: 'item_name',    name: 'item_name' },
             { data: 'purchase_unit',name: 'purchase_unit' },
             { data: 'item_price',   name: 'item_price' },
             { data: 'po_so',        name: 'po_so', orderable: false, searchable: false },
             { data: 'status_badge', name: 'status', searchable: false },
-            { data: 'action',       name: 'action', orderable: false, searchable: false, width: '90px' },
+            { data: 'action',       name: 'action', orderable: false, searchable: false, width: '90px', className: 'text-center' },
         ],
-        dom: "<'row mb-0'<'col-sm-6'><'col-sm-6'f>>" +
+        dom: "<'row mb-1'<'col-sm-6'l><'col-sm-6'f>>" +
              "<'row'<'col-12'tr>>" +
              "<'row mt-2'<'col-sm-5'i><'col-sm-7'p>>",
         buttons: [
-            { extend: 'csv', text: 'CSV' }, { extend: 'excel', text: 'Excel' },
-            { extend: 'pdf', text: 'PDF' }, { extend: 'print', text: 'Print' },
+            { extend: 'csv' }, { extend: 'excel' }, { extend: 'pdf' }, { extend: 'print' }
         ],
         initComplete: function () {
-            this.api().columns().every(function (i) {
-                const $input = $('thead tr:eq(1) th:eq(' + i + ') input', this.table().container());
-                if ($input.length) {
-                    $input.on('click mousedown', e => e.stopPropagation());
-                    $input.on('click mousedown', e => e.stopPropagation());
-                    $input.on('keyup change', () => this.search($input.val()).draw());
+            const firstRowH = $('#itemsTable thead tr:first-child').outerHeight();
+            $('#itemsTable thead tr:last-child th').css('top', firstRowH + 'px');
+
+            var self = this.api();
+            self.columns().every(function (i) {
+                var col = this;
+                var $in = $('thead tr:eq(1) th:eq(' + i + ') input', self.table().container());
+                if ($in.length) {
+                    $in.on('click mousedown keydown', function (e) { e.stopPropagation(); });
+                    var timer;
+                    $in.on('input', function () {
+                        clearTimeout(timer);
+                        timer = setTimeout(function () { col.search($in.val()).draw(); }, 400);
+                    });
                 }
             });
         },

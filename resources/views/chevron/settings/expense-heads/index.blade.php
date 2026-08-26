@@ -2,6 +2,20 @@
 
 @section('title', 'Expense Heads')
 
+@push('styles')
+<style>
+#expenseHeadsTable th, #expenseHeadsTable td { white-space: nowrap; font-size: .73rem; padding: .3rem .5rem; }
+#expenseHeadsTable thead th { background: #e9ecef; font-weight: 600; position: sticky; z-index: 2; top: 0; }
+#expenseHeadsTable thead tr:last-child th { background: #f8f9fa; }
+#expenseHeadsTable thead tr:last-child th input.form-control { min-width: 72px; width: 100%; box-sizing: border-box; }
+.expense-heads-table-wrapper { max-height: 65vh; overflow: auto; }
+.expense-heads-table-wrapper::-webkit-scrollbar { width: 6px; height: 6px; }
+.expense-heads-table-wrapper::-webkit-scrollbar-track { background: #f1f1f1; }
+.expense-heads-table-wrapper::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+#expenseHeadsTable_wrapper > .row:last-child { position: sticky; bottom: 0; background: #fff; z-index: 3; border-top: 1px solid #dee2e6; margin: 0; padding: 6px 12px; }
+</style>
+@endpush
+
 @section('content')
     <div class="page-header">
         <h4><i class="fa fa-money-bill me-2 text-success"></i> Expense Heads</h4>
@@ -21,20 +35,22 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
             <span><i class="fa fa-list me-2"></i> All Expense Heads</span>
-            <div class="d-flex gap-2 flex-wrap">
-                <button onclick="$('#expenseHeadsTable').DataTable().button('.buttons-csv').trigger()"
-                    class="btn btn-sm btn-outline-secondary"><i class="fa fa-file-csv me-1"></i>CSV</button>
-                <button onclick="$('#expenseHeadsTable').DataTable().button('.buttons-excel').trigger()"
-                    class="btn btn-sm btn-outline-success"><i class="fa fa-file-excel me-1"></i>Excel</button>
-                <button onclick="$('#expenseHeadsTable').DataTable().button('.buttons-pdf').trigger()"
-                    class="btn btn-sm btn-outline-danger"><i class="fa fa-file-pdf me-1"></i>PDF</button>
-                <button onclick="$('#expenseHeadsTable').DataTable().button('.buttons-print').trigger()"
-                    class="btn btn-sm btn-outline-secondary"><i class="fa fa-print me-1"></i>Print</button>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fa fa-download me-1"></i> Export
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><button class="dropdown-item" onclick="$('#expenseHeadsTable').DataTable().button('.buttons-csv').trigger()"><i class="fa fa-file-csv me-2 text-secondary"></i>CSV</button></li>
+                    <li><button class="dropdown-item" onclick="$('#expenseHeadsTable').DataTable().button('.buttons-excel').trigger()"><i class="fa fa-file-excel me-2 text-success"></i>Excel</button></li>
+                    <li><button class="dropdown-item" onclick="$('#expenseHeadsTable').DataTable().button('.buttons-pdf').trigger()"><i class="fa fa-file-pdf me-2 text-danger"></i>PDF</button></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><button class="dropdown-item" onclick="$('#expenseHeadsTable').DataTable().button('.buttons-print').trigger()"><i class="fa fa-print me-2"></i>Print</button></li>
+                </ul>
             </div>
         </div>
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table id="expenseHeadsTable" class="table table-hover table-striped mb-0 w-100">
+            <div class="expense-heads-table-wrapper">
+                <table id="expenseHeadsTable" class="table table-hover table-striped table-bordered mb-0">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -275,82 +291,44 @@
             table = $('#expenseHeadsTable').DataTable({
                 processing: true,
                 serverSide: true,
-        autoWidth: false,
-                ajax: '{{ route('chevron.settings.expense-heads.index') }}',
-                columns: [{
-                        data: 'DT_RowIndex',
-                        name: 'DT_RowIndex',
-                        orderable: false,
-                        searchable: false,
-                        width: '50px'
-                    },
-                    {
-                        data: 'name',
-                        name: 'name'
-                    },
-                    {
-                        data: 'type',
-                        name: 'type'
-                    },
-                    {
-                        data: 'category_name',
-                        name: 'expenseCategory.name'
-                    },
-                    {
-                        data: 'category_type_badge',
-                        name: 'expenseCategory.type',
-                    },
-                    {
-                        data: 'amount',
-                        name: 'amount'
-                    },
-                    {
-                        data: 'employees_list',
-                        name: 'employees_list',
-                        orderable: false,
-                        searchable: false,
-                    },
-                    {
-                        data: 'status_badge',
-                        name: 'is_active',
-                        searchable: false
-                    },
-                    {
-                        data: 'action',
-                        name: 'action',
-                        orderable: false,
-                        searchable: false,
-                        width: '90px'
-                    },
-                ],
+                autoWidth: false,
+                pageLength: 15,
                 order: [],
-                dom: "<'row mb-0'<'col-sm-6'><'col-sm-6'f>>" +
-                    "<'row'<'col-12'tr>>" +
-                    "<'row mt-2'<'col-sm-5'i><'col-sm-7'p>>",
-                buttons: [{
-                        extend: 'csv',
-                        text: 'CSV'
-                    },
-                    {
-                        extend: 'excel',
-                        text: 'Excel'
-                    },
-                    {
-                        extend: 'pdf',
-                        text: 'PDF'
-                    },
-                    {
-                        extend: 'print',
-                        text: 'Print'
-                    },
+                orderCellsTop: true,
+                lengthMenu: [[15, 25, 50, 100, 200, 500], [15, 25, 50, 100, 200, 500]],
+                ajax: '{{ route('chevron.settings.expense-heads.index') }}',
+                columns: [
+                    { data: 'DT_RowIndex',       name: 'DT_RowIndex',          orderable: false, searchable: false, width: '50px', className: 'text-center' },
+                    { data: 'name',              name: 'name' },
+                    { data: 'type',              name: 'type' },
+                    { data: 'category_name',     name: 'expenseCategory.name' },
+                    { data: 'category_type_badge', name: 'expenseCategory.type' },
+                    { data: 'amount',            name: 'amount' },
+                    { data: 'employees_list',    name: 'employees_list',       orderable: false, searchable: false },
+                    { data: 'status_badge',      name: 'is_active',            searchable: false },
+                    { data: 'action',            name: 'action',               orderable: false, searchable: false, width: '90px', className: 'text-center' },
                 ],
-                initComplete: function() {
-                    this.api().columns().every(function(i) {
-                        const $input = $('thead tr:eq(1) th:eq(' + i + ') input', this.table()
-                            .container());
-                        if ($input.length) {
-                            $input.on('click mousedown', e => e.stopPropagation());
-                            $input.on('keyup change', () => this.search($input.val()).draw());
+                dom: "<'row mb-1'<'col-sm-6'l><'col-sm-6'f>>" +
+                     "<'row'<'col-12'tr>>" +
+                     "<'row mt-2'<'col-sm-5'i><'col-sm-7'p>>",
+                buttons: [
+                    { extend: 'csv' }, { extend: 'excel' }, { extend: 'pdf' }, { extend: 'print' }
+                ],
+                initComplete: function () {
+                    const firstRowH = $('#expenseHeadsTable thead tr:first-child').outerHeight();
+                    $('#expenseHeadsTable thead tr:last-child th').css('top', firstRowH + 'px');
+
+                    var self = this.api();
+                    self.columns().every(function (i) {
+                        var col = this;
+                        var $in = $('thead tr:eq(1) th:eq(' + i + ') input', self.table().container());
+                        if ($in.length) {
+                            $in.on('click mousedown keydown', function (e) { e.stopPropagation(); });
+                            var timer;
+                            $in.on('input', function () {
+                                clearTimeout(timer);
+                                timer = setTimeout(function () { col.search($in.val()).draw(); }, 400);
+                            });
                         }
                     });
                 },

@@ -77,15 +77,19 @@ class CnfJobController extends Controller
                 })
                 ->addColumn('action', function ($r) use ($request) {
                     $html = '';
+
                     if ($request->user()->hasPermission('cnf.job.view')) {
                         $html .= '<a href="'.route('chevron.cnf.jobs.show', $r->id).'" class="btn btn-sm btn-outline-secondary py-0 px-1" title="View"><i class="fa fa-eye"></i></a> ';
                     }
+
                     if ($request->user()->hasPermission('cnf.job.print')) {
                         $html .= '<a href="'.route('chevron.cnf.jobs.print', $r->id).'" target="_blank" class="btn btn-sm btn-outline-dark py-0 px-1" title="Print"><i class="fa fa-print"></i></a> ';
                     }
+
                     if ($request->user()->hasPermission('cnf.job.edit')) {
                         $html .= '<a href="'.route('chevron.cnf.jobs.edit', $r->id).'" class="btn btn-sm btn-outline-primary py-0 px-1" title="Edit"><i class="fa fa-edit"></i></a> ';
                     }
+
                     if ($request->user()->hasPermission('cnf.job.delete')) {
                         $html .= '<button class="btn btn-sm btn-outline-danger py-0 px-1 btn-delete" data-url="'.route('chevron.cnf.jobs.destroy', $r->id).'" data-name="'.e($r->job_no).'" title="Delete"><i class="fa fa-trash"></i></button>';
                     }

@@ -135,7 +135,7 @@ $(function () {
         pageLength: 15,
         order: [],
         orderCellsTop: true,
-        lengthMenu: [[15, 25, 50, 100, 200, 500, 1000, -1], [15, 25, 50, 100, 200, 500, 1000, 'All']],
+        lengthMenu: [[15, 25, 50, 100, 200, 500, 1000, 10000], [15, 25, 50, 100, 200, 500, 1000, 10000]],
         ajax: {
             url: '{{ route('chevron.cnf.jobs.index') }}',
             data: function (d) {
