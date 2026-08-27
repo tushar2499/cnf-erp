@@ -28,9 +28,11 @@
 @section('content')
 <div class="page-header">
     <h4><i class="fa fa-boxes me-2 text-success"></i> Items</h4>
+    @if(auth()->user()->hasPermission('cnf.item.create'))
     <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#itemModal" id="btnAdd">
         <i class="fa fa-plus me-1"></i> Add Item
     </button>
+    @endif
 </div>
 
 <div class="card">

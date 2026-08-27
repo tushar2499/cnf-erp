@@ -72,6 +72,19 @@ body.sidebar-collapsed .sidebar-search-results { display: none !important; }
         $canSeeBill        = $user->hasPermission('cnf.bill.list');
         $canSeeReceipt     = $user->hasPermission('cnf.money-receipt.list');
         $canSeeCnfOps      = $canSeeJob || $canSeeJobExpense || $canSeeBill || $canSeeReceipt;
+
+        $canSeeCustomer = $user->hasPermission('cnf.customer.list');
+
+        $canSeeService          = $user->hasPermission('cnf.service.list');
+        $canSeeJobType          = $user->hasPermission('cnf.job-type.list');
+        $canSeePort             = $user->hasPermission('cnf.port.list');
+        $canSeeExpenseCategory  = $user->hasPermission('cnf.expense-category.list');
+        $canSeeExpenseHead      = $user->hasPermission('cnf.expense-head.list');
+        $canSeeBranch           = $user->hasPermission('cnf.branch.list');
+        $canSeeItem             = $user->hasPermission('cnf.item.list');
+        $canSeeAccount          = $user->hasPermission('cnf.account.list');
+        $canSeeSettings = $canSeeService || $canSeeJobType || $canSeePort || $canSeeExpenseCategory
+            || $canSeeExpenseHead || $canSeeBranch || $canSeeItem || $canSeeAccount;
     @endphp
 
     <div class="nav-item-group">
@@ -131,6 +144,7 @@ body.sidebar-collapsed .sidebar-search-results { display: none !important; }
     </div>
 
     {{-- Stakeholders --}}
+    @if($canSeeCustomer)
     <div class="nav-item-group">
         <div class="nav-section">Stakeholders</div>
         <a href="#stakeholdersMenu"
@@ -140,14 +154,16 @@ body.sidebar-collapsed .sidebar-search-results { display: none !important; }
             <i class="fa fa-chevron-down ms-auto"></i>
         </a>
         <div class="collapse {{ $stakeholdersActive ? 'show' : '' }}" id="stakeholdersMenu">
-<a href="{{ route('chevron.stakeholders.customers.index') }}"
+            <a href="{{ route('chevron.stakeholders.customers.index') }}"
                class="nav-link ps-4 {{ request()->routeIs('chevron.stakeholders.customers.*') ? 'active' : '' }}">
                 <i class="fa fa-users"></i> Customers
             </a>
         </div>
     </div>
+    @endif
 
     {{-- Settings --}}
+    @if($canSeeSettings)
     <div class="nav-item-group">
         <div class="nav-section">Settings</div>
         <a href="#settingsMenu"
@@ -157,40 +173,57 @@ body.sidebar-collapsed .sidebar-search-results { display: none !important; }
             <i class="fa fa-chevron-down ms-auto"></i>
         </a>
         <div class="collapse {{ $settingsActive ? 'show' : '' }}" id="settingsMenu">
+            @if($canSeeService)
             <a href="{{ route('chevron.settings.services.index') }}"
                class="nav-link ps-4 {{ request()->routeIs('chevron.settings.services.*') ? 'active' : '' }}">
                 <i class="fa fa-concierge-bell"></i> Services
             </a>
+            @endif
+            @if($canSeeJobType)
             <a href="{{ route('chevron.settings.job-types.index') }}"
                class="nav-link ps-4 {{ request()->routeIs('chevron.settings.job-types.*') ? 'active' : '' }}">
                 <i class="fa fa-tags"></i> Job Types
             </a>
+            @endif
+            @if($canSeePort)
             <a href="{{ route('chevron.settings.ports.index') }}"
                class="nav-link ps-4 {{ request()->routeIs('chevron.settings.ports.*') ? 'active' : '' }}">
                 <i class="fa fa-anchor"></i> Ports
             </a>
+            @endif
+            @if($canSeeExpenseCategory)
             <a href="{{ route('chevron.settings.expense-categories.index') }}"
                class="nav-link ps-4 {{ request()->routeIs('chevron.settings.expense-categories.*') ? 'active' : '' }}">
                 <i class="fa fa-receipt"></i> Expense Categories
             </a>
+            @endif
+            @if($canSeeExpenseHead)
             <a href="{{ route('chevron.settings.expense-heads.index') }}"
                class="nav-link ps-4 {{ request()->routeIs('chevron.settings.expense-heads.*') ? 'active' : '' }}">
                 <i class="fa fa-money-bill"></i> Expense Heads
             </a>
+            @endif
+            @if($canSeeBranch)
             <a href="{{ route('chevron.settings.branches.index') }}"
                class="nav-link ps-4 {{ request()->routeIs('chevron.settings.branches.*') ? 'active' : '' }}">
                 <i class="fa fa-code-branch"></i> Branches
             </a>
+            @endif
+            @if($canSeeItem)
             <a href="{{ route('chevron.settings.items.index') }}"
                class="nav-link ps-4 {{ request()->routeIs('chevron.settings.items.*') ? 'active' : '' }}">
                 <i class="fa fa-boxes"></i> Items
             </a>
+            @endif
+            @if($canSeeAccount)
             <a href="{{ route('chevron.settings.accounts.index') }}"
                class="nav-link ps-4 {{ request()->routeIs('chevron.settings.accounts.*') ? 'active' : '' }}">
                 <i class="fa fa-university"></i> Account No
             </a>
+            @endif
         </div>
     </div>
+    @endif
 </div>
 @endsection
 

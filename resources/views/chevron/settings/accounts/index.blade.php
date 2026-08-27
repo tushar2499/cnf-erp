@@ -19,9 +19,11 @@
 @section('content')
 <div class="page-header">
     <h4><i class="fa fa-university me-2 text-primary"></i> Account Numbers</h4>
+    @if(auth()->user()->hasPermission('cnf.account.create'))
     <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#accountModal" id="btnAdd">
         <i class="fa fa-plus me-1"></i> Add Account
     </button>
+    @endif
 </div>
 
 <div class="card">

@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Chevron;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Chevron\Service\DestroyServiceRequest;
+use App\Http\Requests\Chevron\Service\IndexServiceRequest;
+use App\Http\Requests\Chevron\Service\StoreServiceRequest;
+use App\Http\Requests\Chevron\Service\UpdateServiceRequest;
 use App\Models\Chevron\ChevronService;
-use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
 class ServiceController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexServiceRequest $request)
     {
         if ($request->ajax()) {
             return DataTables::of(ChevronService::query())
@@ -19,19 +22,27 @@ class ServiceController extends Controller
                         ? '<span class="badge bg-success">Active</span>'
                         : '<span class="badge bg-danger">Inactive</span>';
                 })
-                ->addColumn('action', function ($row) {
-                    return '
-                        <button class="btn btn-sm btn-outline-primary btn-edit"
+                ->addColumn('action', function ($row) use ($request) {
+                    $html = '';
+
+                    if ($request->user()->hasPermission('cnf.service.edit')) {
+                        $html .= '<button class="btn btn-sm btn-outline-primary btn-edit"
                             data-id="'.$row->id.'"
                             data-name="'.e($row->name).'"
                             data-is_active="'.(int) $row->is_active.'">
                             <i class="fa fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger btn-delete"
+                        </button> ';
+                    }
+
+                    if ($request->user()->hasPermission('cnf.service.delete')) {
+                        $html .= '<button class="btn btn-sm btn-outline-danger btn-delete"
                             data-url="'.route('chevron.settings.services.destroy', $row->id).'"
                             data-name="'.e($row->name).'">
                             <i class="fa fa-trash"></i>
                         </button>';
+                    }
+
+                    return $html;
                 })
                 ->rawColumns(['status_badge', 'action'])
                 ->make(true);
@@ -40,33 +51,27 @@ class ServiceController extends Controller
         return view('chevron.settings.services.index');
     }
 
-    public function store(Request $request)
+    public function store(StoreServiceRequest $request)
     {
-        $data = $request->validate([
-            'name'      => ['required', 'string', 'max:255'],
-            'is_active' => ['boolean'],
+        ChevronService::create([
+            'name'      => $request->name,
+            'is_active' => $request->boolean('is_active', true),
         ]);
-        $data['is_active'] = $request->boolean('is_active', true);
-
-        ChevronService::create($data);
 
         return response()->json(['message' => 'Service created successfully.']);
     }
 
-    public function update(Request $request, ChevronService $service)
+    public function update(UpdateServiceRequest $request, ChevronService $service)
     {
-        $data = $request->validate([
-            'name'      => ['required', 'string', 'max:255'],
-            'is_active' => ['boolean'],
+        $service->update([
+            'name'      => $request->name,
+            'is_active' => $request->boolean('is_active', true),
         ]);
-        $data['is_active'] = $request->boolean('is_active', true);
-
-        $service->update($data);
 
         return response()->json(['message' => 'Service updated successfully.']);
     }
 
-    public function destroy(ChevronService $service)
+    public function destroy(DestroyServiceRequest $request, ChevronService $service)
     {
         $service->delete();
 

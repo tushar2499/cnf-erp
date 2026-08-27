@@ -19,9 +19,11 @@
 @section('content')
 <div class="page-header">
     <h4><i class="fa fa-code-branch me-2 text-success"></i> Branches</h4>
+    @if(auth()->user()->hasPermission('cnf.branch.create'))
     <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#branchModal" id="btnAdd">
         <i class="fa fa-plus me-1"></i> Add Branch
     </button>
+    @endif
 </div>
 
 <div class="card">

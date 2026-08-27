@@ -19,9 +19,11 @@
 @section('content')
 <div class="page-header">
     <h4><i class="fa fa-anchor me-2 text-success"></i> Ports</h4>
+    @if(auth()->user()->hasPermission('cnf.port.create'))
     <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#portModal" id="btnAdd">
         <i class="fa fa-plus me-1"></i> Add Port
     </button>
+    @endif
 </div>
 
 <div class="card">

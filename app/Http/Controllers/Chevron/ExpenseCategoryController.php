@@ -3,8 +3,13 @@
 namespace App\Http\Controllers\Chevron;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Chevron\ExpenseCategory\DestroyExpenseCategoryRequest;
+use App\Http\Requests\Chevron\ExpenseCategory\ImportExpenseCategoryRequest;
+use App\Http\Requests\Chevron\ExpenseCategory\ImportPreviewExpenseCategoryRequest;
+use App\Http\Requests\Chevron\ExpenseCategory\IndexExpenseCategoryRequest;
+use App\Http\Requests\Chevron\ExpenseCategory\StoreExpenseCategoryRequest;
+use App\Http\Requests\Chevron\ExpenseCategory\UpdateExpenseCategoryRequest;
 use App\Models\Chevron\ChevronExpenseCategory;
-use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
@@ -13,7 +18,7 @@ use Yajra\DataTables\Facades\DataTables;
 
 class ExpenseCategoryController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexExpenseCategoryRequest $request)
     {
         if ($request->ajax()) {
             return DataTables::of(ChevronExpenseCategory::query()->latest())
@@ -22,21 +27,31 @@ class ExpenseCategoryController extends Controller
                 ->addColumn('status_badge', fn ($row) => $row->is_active
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')
-                ->addColumn('action', fn ($row) => '
-                    <button class="btn btn-sm btn-outline-primary btn-edit"
-                        data-id="'.$row->id.'"
-                        data-name="'.e($row->name).'"
-                        data-is_bill="'.(int) $row->is_bill.'"
-                        data-is_job="'.(int) $row->is_job.'"
-                        data-description="'.e($row->description).'"
-                        data-is_active="'.(int) $row->is_active.'">
-                        <i class="fa fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger btn-delete"
-                        data-url="'.route('chevron.settings.expense-categories.destroy', $row->id).'"
-                        data-name="'.e($row->name).'">
-                        <i class="fa fa-trash"></i>
-                    </button>')
+                ->addColumn('action', function ($row) use ($request) {
+                    $html = '';
+
+                    if ($request->user()->hasPermission('cnf.expense-category.edit')) {
+                        $html .= '<button class="btn btn-sm btn-outline-primary btn-edit"
+                            data-id="'.$row->id.'"
+                            data-name="'.e($row->name).'"
+                            data-is_bill="'.(int) $row->is_bill.'"
+                            data-is_job="'.(int) $row->is_job.'"
+                            data-description="'.e($row->description).'"
+                            data-is_active="'.(int) $row->is_active.'">
+                            <i class="fa fa-edit"></i>
+                        </button> ';
+                    }
+
+                    if ($request->user()->hasPermission('cnf.expense-category.delete')) {
+                        $html .= '<button class="btn btn-sm btn-outline-danger btn-delete"
+                            data-url="'.route('chevron.settings.expense-categories.destroy', $row->id).'"
+                            data-name="'.e($row->name).'">
+                            <i class="fa fa-trash"></i>
+                        </button>';
+                    }
+
+                    return $html;
+                })
                 ->rawColumns(['type_badge', 'status_badge', 'action'])
                 ->make(true);
         }
@@ -44,12 +59,8 @@ class ExpenseCategoryController extends Controller
         return view('chevron.settings.expense-categories.index');
     }
 
-    public function store(Request $request)
+    public function store(StoreExpenseCategoryRequest $request)
     {
-        $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:chevron_expense_categories,name'],
-        ]);
-
         if (! $request->boolean('is_bill') && ! $request->boolean('is_job')) {
             return response()->json([
                 'errors' => ['type' => ['Select at least one: Bill or Job (or both).']],
@@ -67,12 +78,8 @@ class ExpenseCategoryController extends Controller
         return response()->json(['message' => 'Expense category created successfully.']);
     }
 
-    public function update(Request $request, ChevronExpenseCategory $expenseCategory)
+    public function update(UpdateExpenseCategoryRequest $request, ChevronExpenseCategory $expenseCategory)
     {
-        $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:chevron_expense_categories,name,'.$expenseCategory->id],
-        ]);
-
         if (! $request->boolean('is_bill') && ! $request->boolean('is_job')) {
             return response()->json([
                 'errors' => ['type' => ['Select at least one: Bill or Job (or both).']],
@@ -90,14 +97,14 @@ class ExpenseCategoryController extends Controller
         return response()->json(['message' => 'Expense category updated successfully.']);
     }
 
-    public function destroy(ChevronExpenseCategory $expenseCategory)
+    public function destroy(DestroyExpenseCategoryRequest $request, ChevronExpenseCategory $expenseCategory)
     {
         $expenseCategory->delete();
 
         return response()->json(['message' => 'Expense category deleted.']);
     }
 
-    public function sampleDownload()
+    public function sampleDownload(StoreExpenseCategoryRequest $request)
     {
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
@@ -130,10 +137,8 @@ class ExpenseCategoryController extends Controller
         ]);
     }
 
-    public function importPreview(Request $request)
+    public function importPreview(ImportPreviewExpenseCategoryRequest $request)
     {
-        $request->validate(['file' => 'required|file|mimes:xlsx,xls,csv|max:2048']);
-
         $spreadsheet = IOFactory::load($request->file('file')->getPathname());
         $rows = $spreadsheet->getActiveSheet()->toArray(null, true, true, false);
 
@@ -168,10 +173,8 @@ class ExpenseCategoryController extends Controller
         return response()->json(['rows' => $preview]);
     }
 
-    public function import(Request $request)
+    public function import(ImportExpenseCategoryRequest $request)
     {
-        $request->validate(['rows' => 'required|array|min:1']);
-
         $inserted = 0;
         foreach ($request->rows as $row) {
             $name = trim($row['name'] ?? '');

@@ -228,9 +228,11 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                 <div class="col-md-4">
                     <label class="form-label d-flex justify-content-between align-items-center">
                         <span>Goods Name <span class="req">*</span></span>
-                        <button type="button" class="btn btn-outline-success btn-sm py-0 px-2 ms-1" id="btnQuickItem" title="Create new item">
-                            <i class="fa fa-plus"></i> New
-                        </button>
+                        @if(auth()->user()->hasPermission('cnf.item.create'))
+                            <button type="button" class="btn btn-outline-success btn-sm py-0 px-2 ms-1" id="btnQuickItem" title="Create new item">
+                                <i class="fa fa-plus"></i> New
+                            </button>
+                        @endif
                     </label>
                     <select id="goodsNameSelect" class="form-select form-select-sm w-100">
                         @if($job?->goods_name)

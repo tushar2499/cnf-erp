@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Chevron;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Chevron\Account\DestroyAccountRequest;
+use App\Http\Requests\Chevron\Account\IndexAccountRequest;
+use App\Http\Requests\Chevron\Account\StoreAccountRequest;
+use App\Http\Requests\Chevron\Account\UpdateAccountRequest;
 use App\Models\Chevron\ChevronAccount;
-use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
 class AccountController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexAccountRequest $request)
     {
         if ($request->ajax()) {
             return DataTables::of(ChevronAccount::query())
@@ -17,22 +20,32 @@ class AccountController extends Controller
                 ->addColumn('status_badge', fn ($r) => $r->is_active
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')
-                ->addColumn('action', fn ($r) => '
-                    <button class="btn btn-sm btn-outline-primary btn-edit"
-                        data-id="'.$r->id.'"
-                        data-account_no="'.e($r->account_no).'"
-                        data-account_name="'.e($r->account_name).'"
-                        data-bank_name="'.e($r->bank_name).'"
-                        data-branch_name="'.e($r->branch_name).'"
-                        data-account_type="'.e($r->account_type).'"
-                        data-is_active="'.(int) $r->is_active.'">
-                        <i class="fa fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger btn-delete"
-                        data-url="'.route('chevron.settings.accounts.destroy', $r->id).'"
-                        data-name="'.e($r->account_no).' — '.e($r->account_name).'">
-                        <i class="fa fa-trash"></i>
-                    </button>')
+                ->addColumn('action', function ($r) use ($request) {
+                    $html = '';
+
+                    if ($request->user()->hasPermission('cnf.account.edit')) {
+                        $html .= '<button class="btn btn-sm btn-outline-primary btn-edit"
+                            data-id="'.$r->id.'"
+                            data-account_no="'.e($r->account_no).'"
+                            data-account_name="'.e($r->account_name).'"
+                            data-bank_name="'.e($r->bank_name).'"
+                            data-branch_name="'.e($r->branch_name).'"
+                            data-account_type="'.e($r->account_type).'"
+                            data-is_active="'.(int) $r->is_active.'">
+                            <i class="fa fa-edit"></i>
+                        </button> ';
+                    }
+
+                    if ($request->user()->hasPermission('cnf.account.delete')) {
+                        $html .= '<button class="btn btn-sm btn-outline-danger btn-delete"
+                            data-url="'.route('chevron.settings.accounts.destroy', $r->id).'"
+                            data-name="'.e($r->account_no).' — '.e($r->account_name).'">
+                            <i class="fa fa-trash"></i>
+                        </button>';
+                    }
+
+                    return $html;
+                })
                 ->rawColumns(['status_badge', 'action'])
                 ->make(true);
         }
@@ -42,16 +55,8 @@ class AccountController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreAccountRequest $request)
     {
-        $request->validate([
-            'account_no'   => ['required', 'string', 'max:100', 'unique:chevron_accounts,account_no'],
-            'account_name' => ['required', 'string', 'max:255'],
-            'bank_name'    => ['nullable', 'string', 'max:255'],
-            'branch_name'  => ['nullable', 'string', 'max:255'],
-            'account_type' => ['required', 'string'],
-        ]);
-
         ChevronAccount::create([
             'account_no'   => $request->account_no,
             'account_name' => $request->account_name,
@@ -64,16 +69,8 @@ class AccountController extends Controller
         return response()->json(['message' => 'Account created successfully.']);
     }
 
-    public function update(Request $request, ChevronAccount $account)
+    public function update(UpdateAccountRequest $request, ChevronAccount $account)
     {
-        $request->validate([
-            'account_no'   => ['required', 'string', 'max:100', 'unique:chevron_accounts,account_no,'.$account->id],
-            'account_name' => ['required', 'string', 'max:255'],
-            'bank_name'    => ['nullable', 'string', 'max:255'],
-            'branch_name'  => ['nullable', 'string', 'max:255'],
-            'account_type' => ['required', 'string'],
-        ]);
-
         $account->update([
             'account_no'   => $request->account_no,
             'account_name' => $request->account_name,
@@ -86,7 +83,7 @@ class AccountController extends Controller
         return response()->json(['message' => 'Account updated successfully.']);
     }
 
-    public function destroy(ChevronAccount $account)
+    public function destroy(DestroyAccountRequest $request, ChevronAccount $account)
     {
         $account->delete();
 

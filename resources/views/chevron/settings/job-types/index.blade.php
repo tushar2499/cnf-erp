@@ -19,9 +19,11 @@
 @section('content')
 <div class="page-header">
     <h4><i class="fa fa-tags me-2 text-success"></i> Job Types</h4>
+    @if(auth()->user()->hasPermission('cnf.job-type.create'))
     <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#jobTypeModal" id="btnAdd">
         <i class="fa fa-plus me-1"></i> Add Job Type
     </button>
+    @endif
 </div>
 
 <div class="card">

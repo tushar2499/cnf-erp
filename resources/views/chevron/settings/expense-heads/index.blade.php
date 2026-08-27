@@ -4,10 +4,18 @@
 
 @push('styles')
 <style>
-#expenseHeadsTable th, #expenseHeadsTable td { white-space: nowrap; font-size: .73rem; padding: .3rem .5rem; }
+#expenseHeadsTable th, #expenseHeadsTable td { font-size: .73rem; padding: .35rem .5rem; vertical-align: middle; }
+#expenseHeadsTable th { white-space: nowrap; }
+#expenseHeadsTable td { white-space: nowrap; }
+#expenseHeadsTable td.col-employees {
+    white-space: normal !important;
+    min-width: 250px;
+    max-width: 450px;
+    word-break: break-word;
+}
 #expenseHeadsTable thead th { background: #e9ecef; font-weight: 600; position: sticky; z-index: 2; top: 0; }
 #expenseHeadsTable thead tr:last-child th { background: #f8f9fa; }
-#expenseHeadsTable thead tr:last-child th input.form-control { min-width: 72px; width: 100%; box-sizing: border-box; }
+#expenseHeadsTable thead tr:last-child th input.form-control { min-width: 60px; width: 100%; box-sizing: border-box; }
 .expense-heads-table-wrapper { max-height: 65vh; overflow: auto; }
 .expense-heads-table-wrapper::-webkit-scrollbar { width: 6px; height: 6px; }
 .expense-heads-table-wrapper::-webkit-scrollbar-track { background: #f1f1f1; }
@@ -20,6 +28,7 @@
     <div class="page-header">
         <h4><i class="fa fa-money-bill me-2 text-success"></i> Expense Heads</h4>
         <div class="d-flex gap-2 flex-wrap">
+            @if(auth()->user()->hasPermission('cnf.expense-head.create'))
             <a href="{{ route('chevron.settings.expense-heads.sample') }}" class="btn btn-sm btn-outline-success">
                 <i class="fa fa-file-excel me-1"></i> Sample File
             </a>
@@ -29,6 +38,7 @@
             <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#expenseHeadModal" id="btnAdd">
                 <i class="fa fa-plus me-1"></i> Add Expense Head
             </button>
+            @endif
         </div>
     </div>
 
@@ -70,7 +80,7 @@
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th></th>
                         </tr>
@@ -298,15 +308,15 @@
                 lengthMenu: [[15, 25, 50, 100, 200, 500], [15, 25, 50, 100, 200, 500]],
                 ajax: '{{ route('chevron.settings.expense-heads.index') }}',
                 columns: [
-                    { data: 'DT_RowIndex',       name: 'DT_RowIndex',          orderable: false, searchable: false, width: '50px', className: 'text-center' },
+                    { data: 'DT_RowIndex',       name: 'DT_RowIndex',          orderable: false, searchable: false, width: '45px', className: 'text-center' },
                     { data: 'name',              name: 'name' },
-                    { data: 'type',              name: 'type' },
+                    { data: 'type',              name: 'type',                 width: '75px', className: 'text-center' },
                     { data: 'category_name',     name: 'expenseCategory.name' },
-                    { data: 'category_type_badge', name: 'expenseCategory.type' },
-                    { data: 'amount',            name: 'amount' },
-                    { data: 'employees_list',    name: 'employees_list',       orderable: false, searchable: false },
-                    { data: 'status_badge',      name: 'is_active',            searchable: false },
-                    { data: 'action',            name: 'action',               orderable: false, searchable: false, width: '90px', className: 'text-center' },
+                    { data: 'category_type_badge', name: 'category_type_badge', orderable: false, width: '100px', className: 'text-center' },
+                    { data: 'amount',            name: 'amount',               width: '80px', className: 'text-end' },
+                    { data: 'employees_list',    name: 'employees_list',       orderable: false, className: 'col-employees' },
+                    { data: 'status_badge',      name: 'status_badge',         width: '75px', className: 'text-center' },
+                    { data: 'action',            name: 'action',               orderable: false, searchable: false, width: '80px', className: 'text-center' },
                 ],
                 dom: "<'row mb-1'<'col-sm-6'l><'col-sm-6'f>>" +
                      "<'row'<'col-12'tr>>" +

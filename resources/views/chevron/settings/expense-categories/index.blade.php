@@ -20,6 +20,7 @@
 <div class="page-header">
     <h4><i class="fa fa-tags me-2 text-success"></i> Expense Categories</h4>
     <div class="d-flex gap-2 flex-wrap">
+        @if(auth()->user()->hasPermission('cnf.expense-category.create'))
         <a href="{{ route('chevron.settings.expense-categories.sample') }}"
            class="btn btn-sm btn-outline-success">
             <i class="fa fa-file-excel me-1"></i> Sample File
@@ -30,6 +31,7 @@
         <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#expenseCategoryModal" id="btnAdd">
             <i class="fa fa-plus me-1"></i> Add Category
         </button>
+        @endif
     </div>
 </div>
 

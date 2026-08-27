@@ -27,9 +27,11 @@
 @section('content')
 <div class="page-header">
     <h4><i class="fa fa-users me-2 text-success"></i> Customers</h4>
+    @if(auth()->user()->hasPermission('cnf.customer.create'))
     <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#customerModal" id="btnAdd">
         <i class="fa fa-plus me-1"></i> Add Customer
     </button>
+    @endif
 </div>
 
 <div class="card">

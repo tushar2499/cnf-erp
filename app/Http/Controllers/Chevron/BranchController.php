@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Chevron;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Chevron\Branch\DestroyBranchRequest;
+use App\Http\Requests\Chevron\Branch\IndexBranchRequest;
+use App\Http\Requests\Chevron\Branch\StoreBranchRequest;
+use App\Http\Requests\Chevron\Branch\UpdateBranchRequest;
 use App\Models\Chevron\ChevronBranch;
-use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
 class BranchController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexBranchRequest $request)
     {
 
         if ($request->ajax()) {
@@ -18,21 +21,31 @@ class BranchController extends Controller
                 ->addColumn('status_badge', fn ($row) => $row->is_active
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')
-                ->addColumn('action', fn ($row) => '
-                    <button class="btn btn-sm btn-outline-primary btn-edit"
-                        data-id="'.$row->id.'"
-                        data-name="'.e($row->name).'"
-                        data-code="'.e($row->code).'"
-                        data-address="'.e($row->address).'"
-                        data-phone="'.e($row->phone).'"
-                        data-is_active="'.(int) $row->is_active.'">
-                        <i class="fa fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger btn-delete"
-                        data-url="'.route('chevron.settings.branches.destroy', $row->id).'"
-                        data-name="'.e($row->name).'">
-                        <i class="fa fa-trash"></i>
-                    </button>')
+                ->addColumn('action', function ($row) use ($request) {
+                    $html = '';
+
+                    if ($request->user()->hasPermission('cnf.branch.edit')) {
+                        $html .= '<button class="btn btn-sm btn-outline-primary btn-edit"
+                            data-id="'.$row->id.'"
+                            data-name="'.e($row->name).'"
+                            data-code="'.e($row->code).'"
+                            data-address="'.e($row->address).'"
+                            data-phone="'.e($row->phone).'"
+                            data-is_active="'.(int) $row->is_active.'">
+                            <i class="fa fa-edit"></i>
+                        </button> ';
+                    }
+
+                    if ($request->user()->hasPermission('cnf.branch.delete')) {
+                        $html .= '<button class="btn btn-sm btn-outline-danger btn-delete"
+                            data-url="'.route('chevron.settings.branches.destroy', $row->id).'"
+                            data-name="'.e($row->name).'">
+                            <i class="fa fa-trash"></i>
+                        </button>';
+                    }
+
+                    return $html;
+                })
                 ->rawColumns(['status_badge', 'action'])
                 ->make(true);
         }
@@ -40,12 +53,8 @@ class BranchController extends Controller
         return view('chevron.settings.branches.index');
     }
 
-    public function store(Request $request)
+    public function store(StoreBranchRequest $request)
     {
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'code' => ['required', 'string', 'max:5'],
-        ]);
         ChevronBranch::create([
             'name'      => $request->name,
             'code'      => strtoupper($request->code),
@@ -57,12 +66,8 @@ class BranchController extends Controller
         return response()->json(['message' => 'Branch created successfully.']);
     }
 
-    public function update(Request $request, ChevronBranch $branch)
+    public function update(UpdateBranchRequest $request, ChevronBranch $branch)
     {
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'code' => ['required', 'string', 'max:5'],
-        ]);
         $branch->update([
             'name'      => $request->name,
             'code'      => strtoupper($request->code),
@@ -74,7 +79,7 @@ class BranchController extends Controller
         return response()->json(['message' => 'Branch updated successfully.']);
     }
 
-    public function destroy(ChevronBranch $branch)
+    public function destroy(DestroyBranchRequest $request, ChevronBranch $branch)
     {
         $branch->delete();
 

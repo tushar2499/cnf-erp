@@ -19,9 +19,11 @@
 @section('content')
 <div class="page-header">
     <h4><i class="fa fa-concierge-bell me-2 text-success"></i> Services</h4>
+    @if(auth()->user()->hasPermission('cnf.service.create'))
     <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#serviceModal" id="btnAdd">
         <i class="fa fa-plus me-1"></i> Add Service
     </button>
+    @endif
 </div>
 
 <div class="card">
