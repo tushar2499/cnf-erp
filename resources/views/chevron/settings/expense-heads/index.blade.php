@@ -221,7 +221,7 @@
                                 <select id="headEmployees" class="form-select select2-head-employees" multiple
                                     style="width:100%" aria-label="Assign employees to this expense head">
                                     @foreach ($employees as $emp)
-                                        <option value="{{ $emp->id }}">{{ $emp->name }} ({{ $emp->employee_id }}) —
+                                        <option value="{{ $emp->id }}">{{ $emp->name }} ({{ $emp->code }}) —
                                             {{ $emp->designation?->name ?? 'N/A' }}</option>
                                     @endforeach
                                 </select>

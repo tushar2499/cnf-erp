@@ -17,7 +17,7 @@ class SyncEmployeesExpenseHeadRequest extends FormRequest
     {
         return [
             'employee_ids'   => ['array'],
-            'employee_ids.*' => ['exists:chevron_employees,id'],
+            'employee_ids.*' => ['exists:employees,id'],
         ];
     }
 

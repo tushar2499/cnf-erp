@@ -12,9 +12,9 @@ use App\Http\Requests\Chevron\ExpenseHead\SearchEmployeesExpenseHeadRequest;
 use App\Http\Requests\Chevron\ExpenseHead\StoreExpenseHeadRequest;
 use App\Http\Requests\Chevron\ExpenseHead\SyncEmployeesExpenseHeadRequest;
 use App\Http\Requests\Chevron\ExpenseHead\UpdateExpenseHeadRequest;
-use App\Models\Chevron\ChevronEmployee;
 use App\Models\Chevron\ChevronExpenseCategory;
 use App\Models\Chevron\ChevronExpenseHead;
+use App\Models\Employee;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
@@ -68,8 +68,8 @@ class ExpenseHeadController extends Controller
                 })
                 ->filterColumn('employees_list', function ($query, $keyword) {
                     $query->whereHas('employees', function ($q) use ($keyword) {
-                        $q->where('chevron_employees.name', 'like', "%{$keyword}%")
-                            ->orWhere('chevron_employees.employee_id', 'like', "%{$keyword}%");
+                        $q->where('employees.name', 'like', "%{$keyword}%")
+                            ->orWhere('employees.code', 'like', "%{$keyword}%");
                     });
                 })
                 ->addColumn('status_badge', fn ($row) => $row->is_active
@@ -113,7 +113,7 @@ class ExpenseHeadController extends Controller
         }
 
         $categories = ChevronExpenseCategory::where('is_active', true)->orderBy('name')->get();
-        $employees = ChevronEmployee::with('designation')->where('is_active', true)->orderBy('name')->get(['id', 'name', 'employee_id', 'designation_id']);
+        $employees = Employee::with('designation')->where('is_active', true)->orderBy('name')->get(['id', 'name', 'code', 'designation_id']);
 
         return view('chevron.settings.expense-heads.index', compact('categories', 'employees'));
     }
@@ -128,7 +128,7 @@ class ExpenseHeadController extends Controller
             'is_active'           => $request->boolean('is_active', true),
         ]);
 
-        $head->employees()->sync($request->input('employee_ids', []));
+        $head->employees()->sync($this->resolveRelevantEmployeeIds($request->input('employee_ids', [])));
 
         return response()->json(['message' => 'Expense head created successfully.']);
     }
@@ -143,7 +143,7 @@ class ExpenseHeadController extends Controller
             'is_active'           => $request->boolean('is_active', true),
         ]);
 
-        $expenseHead->employees()->sync($request->input('employee_ids', []));
+        $expenseHead->employees()->sync($this->resolveRelevantEmployeeIds($request->input('employee_ids', [])));
 
         return response()->json(['message' => 'Expense head updated successfully.']);
     }
@@ -159,7 +159,7 @@ class ExpenseHeadController extends Controller
     {
         $employees = $expenseHead->employees()
             ->orderBy('name')
-            ->get(['chevron_employees.id', 'name', 'employee_id']);
+            ->get(['employees.id', 'name', 'code']);
 
         return response()->json(['employees' => $employees]);
     }
@@ -168,28 +168,36 @@ class ExpenseHeadController extends Controller
     {
         $q = $request->input('q', '');
 
-        $employees = ChevronEmployee::where('is_active', true)
+        $employees = Employee::where('is_active', true)
             ->where(function ($query) use ($q) {
                 $query->where('name', 'like', "%{$q}%")
-                    ->orWhere('employee_id', 'like', "%{$q}%");
+                    ->orWhere('code', 'like', "%{$q}%");
             })
             ->orderBy('name')
             ->limit(30)
-            ->get(['id', 'name', 'employee_id']);
+            ->get(['id', 'name', 'code']);
 
         return response()->json([
             'results' => $employees->map(fn ($e) => [
                 'id'   => $e->id,
-                'text' => "{$e->name} ({$e->employee_id})",
+                'text' => "{$e->name} ({$e->code})",
             ]),
         ]);
     }
 
     public function syncEmployees(SyncEmployeesExpenseHeadRequest $request, ChevronExpenseHead $expenseHead)
     {
-        $expenseHead->employees()->sync($request->input('employee_ids', []));
+        $expenseHead->employees()->sync($this->resolveRelevantEmployeeIds($request->input('employee_ids', [])));
 
         return response()->json(['message' => 'Employees updated successfully.']);
+    }
+
+    protected function resolveRelevantEmployeeIds(array $employeeIds): array
+    {
+        return Employee::whereIn('id', $employeeIds)
+            ->where('is_active', true)
+            ->pluck('id')
+            ->all();
     }
 
     public function sampleDownload(StoreExpenseHeadRequest $request)

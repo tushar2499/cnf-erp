@@ -2,6 +2,7 @@
 
 namespace App\Models\Chevron;
 
+use App\Models\Employee;
 use Illuminate\Database\Eloquent\Model;
 
 class ChevronExpenseHead extends Model
@@ -23,6 +24,6 @@ class ChevronExpenseHead extends Model
 
     public function employees()
     {
-        return $this->belongsToMany(ChevronEmployee::class, 'chevron_expense_head_employees', 'expense_head_id', 'employee_id');
+        return $this->belongsToMany(Employee::class, 'chevron_expense_head_employees', 'expense_head_id', 'employee_id');
     }
 }

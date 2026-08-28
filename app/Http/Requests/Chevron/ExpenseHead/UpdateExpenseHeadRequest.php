@@ -21,7 +21,7 @@ class UpdateExpenseHeadRequest extends FormRequest
             'type'                => ['required', 'in:External,Internal'],
             'amount'              => ['nullable', 'numeric', 'min:0'],
             'employee_ids'        => ['array'],
-            'employee_ids.*'      => ['exists:chevron_employees,id'],
+            'employee_ids.*'      => ['exists:employees,id'],
         ];
     }
 
