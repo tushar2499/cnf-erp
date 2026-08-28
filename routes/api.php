@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\EmployeeImportController;
 use App\Http\Controllers\Api\Chevron\CustomerImportController;
 use App\Http\Controllers\Api\Chevron\JobExpenseImportController;
 use App\Http\Controllers\Api\Chevron\JobImportController;
@@ -17,4 +18,9 @@ Route::prefix('chevron')->group(function () {
 
     Route::post('/job-expenses/import/preview', [JobExpenseImportController::class, 'preview']);
     Route::post('/job-expenses/import', [JobExpenseImportController::class, 'import']);
+});
+
+Route::prefix('admin')->group(function () {
+    Route::post('/employees/import/preview', [EmployeeImportController::class, 'preview']);
+    Route::post('/employees/import', [EmployeeImportController::class, 'import']);
 });

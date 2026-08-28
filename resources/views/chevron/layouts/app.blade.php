@@ -232,20 +232,46 @@ body.sidebar-collapsed .sidebar-search-results { display: none !important; }
 (function () {
     var items = [
         { label: 'Dashboard',          section: 'Main',             url: '{{ route("chevron.dashboard") }}',                             icon: 'fa-tachometer-alt' },
+        @if($canSeeJob)
         { label: 'C&F Jobs',           section: 'C&F Operations',   url: '{{ route("chevron.cnf.jobs.index") }}',                        icon: 'fa-file-alt' },
+        @endif
+        @if($canSeeJobExpense)
         { label: 'Job Expenses',       section: 'C&F Operations',   url: '{{ route("chevron.cnf.job-expenses.index") }}',                icon: 'fa-money-check-alt' },
+        @endif
+        @if($canSeeBill)
         { label: 'Bills',              section: 'C&F Operations',   url: '{{ route("chevron.cnf.bills.index") }}',                       icon: 'fa-file-invoice' },
+        @endif
+        @if($canSeeReceipt)
         { label: 'Money Receipts',     section: 'C&F Operations',   url: '{{ route("chevron.cnf.money-receipts.index") }}',              icon: 'fa-money-bill-wave' },
+        @endif
         { label: 'Expense Summary',    section: 'Reports',          url: '{{ route("chevron.reports.job-expense-summary") }}',           icon: 'fa-chart-line' },
-{ label: 'Customers',          section: 'Stakeholders',     url: '{{ route("chevron.stakeholders.customers.index") }}',          icon: 'fa-users' },
+        @if($canSeeCustomer)
+        { label: 'Customers',          section: 'Stakeholders',     url: '{{ route("chevron.stakeholders.customers.index") }}',          icon: 'fa-users' },
+        @endif
+        @if($canSeeService)
         { label: 'Services',           section: 'Settings',         url: '{{ route("chevron.settings.services.index") }}',              icon: 'fa-concierge-bell' },
+        @endif
+        @if($canSeeJobType)
         { label: 'Job Types',          section: 'Settings',         url: '{{ route("chevron.settings.job-types.index") }}',             icon: 'fa-tags' },
+        @endif
+        @if($canSeePort)
         { label: 'Ports',              section: 'Settings',         url: '{{ route("chevron.settings.ports.index") }}',                 icon: 'fa-anchor' },
+        @endif
+        @if($canSeeExpenseCategory)
         { label: 'Expense Categories', section: 'Settings',         url: '{{ route("chevron.settings.expense-categories.index") }}',   icon: 'fa-receipt' },
+        @endif
+        @if($canSeeExpenseHead)
         { label: 'Expense Heads',      section: 'Settings',         url: '{{ route("chevron.settings.expense-heads.index") }}',        icon: 'fa-money-bill' },
+        @endif
+        @if($canSeeBranch)
         { label: 'Branches',           section: 'Settings',         url: '{{ route("chevron.settings.branches.index") }}',             icon: 'fa-code-branch' },
+        @endif
+        @if($canSeeItem)
         { label: 'Items',              section: 'Settings',         url: '{{ route("chevron.settings.items.index") }}',                icon: 'fa-boxes' },
+        @endif
+        @if($canSeeAccount)
         { label: 'Account No',         section: 'Settings',         url: '{{ route("chevron.settings.accounts.index") }}',             icon: 'fa-university' },
+        @endif
     ];
 
     var input       = document.getElementById('sidebarMenuSearch');

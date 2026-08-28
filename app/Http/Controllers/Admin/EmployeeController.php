@@ -146,7 +146,12 @@ class EmployeeController extends Controller
     {
 
         if ($request->ajax()) {
-            return DataTables::of(Employee::with('users', 'designation', 'teamLeader')->orderBy('name'))
+            $query = Employee::query()
+                ->select('employees.*')
+                ->with('users', 'designation', 'teamLeader')
+                ->orderBy('name');
+
+            return DataTables::of($query)
                 ->addIndexColumn()
                 ->addColumn('designation_name', fn (Employee $r) => $r->designation?->name ?? '—')
                 ->addColumn('type_badge', fn (Employee $r) => match ($r->type) {
@@ -154,11 +159,27 @@ class EmployeeController extends Controller
                     'prepare'     => '<span class="badge bg-warning text-dark"><i class="fa fa-user-check me-1"></i>Prepare</span>',
                     default       => '<span class="badge bg-secondary">—</span>',
                 })
+                ->filterColumn('type_badge', function ($query, $keyword) {
+                    $keyword = strtolower(trim($keyword));
+                    if (str_contains($keyword, 'team') || str_contains($keyword, 'leader')) {
+                        $query->where('type', 'team_leader');
+                    } elseif (str_contains($keyword, 'prepare')) {
+                        $query->where('type', 'prepare');
+                    }
+                })
                 ->addColumn('team_leader_name', fn (Employee $r) => $r->teamLeader?->name ?? '—')
                 ->editColumn('joining_date', fn (Employee $r) => $r->joining_date?->format('d M, Y'))
                 ->addColumn('status_badge', fn (Employee $r) => $r->is_active
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-secondary">Inactive</span>')
+                ->filterColumn('status_badge', function ($query, $keyword) {
+                    $keyword = strtolower(trim($keyword));
+                    if (str_contains($keyword, 'active') && ! str_contains($keyword, 'inactive')) {
+                        $query->where('is_active', true);
+                    } elseif (str_contains($keyword, 'inactive')) {
+                        $query->where('is_active', false);
+                    }
+                })
                 ->rawColumns(['type_badge', 'status_badge', 'action'])
                 ->addColumn('action', function (Employee $r) use ($request) {
                     $html = '';

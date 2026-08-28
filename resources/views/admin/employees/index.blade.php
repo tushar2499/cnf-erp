@@ -15,16 +15,22 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span><i class="fa fa-list me-2"></i> All Employees</span>
-        <div class="d-flex gap-2 flex-wrap">
-            <button onclick="$('#employeesTable').DataTable().button('.buttons-csv').trigger()" class="btn btn-sm btn-outline-secondary"><i class="fa fa-file-csv me-1"></i>CSV</button>
-            <button onclick="$('#employeesTable').DataTable().button('.buttons-excel').trigger()" class="btn btn-sm btn-outline-success"><i class="fa fa-file-excel me-1"></i>Excel</button>
-            <button onclick="$('#employeesTable').DataTable().button('.buttons-pdf').trigger()" class="btn btn-sm btn-outline-danger"><i class="fa fa-file-pdf me-1"></i>PDF</button>
-            <button onclick="$('#employeesTable').DataTable().button('.buttons-print').trigger()" class="btn btn-sm btn-outline-secondary"><i class="fa fa-print me-1"></i>Print</button>
+        <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fa fa-download me-1"></i> Export
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><button class="dropdown-item" onclick="$('#employeesTable').DataTable().button('.buttons-csv').trigger()"><i class="fa fa-file-csv me-2 text-secondary"></i>CSV</button></li>
+                <li><button class="dropdown-item" onclick="$('#employeesTable').DataTable().button('.buttons-excel').trigger()"><i class="fa fa-file-excel me-2 text-success"></i>Excel</button></li>
+                <li><button class="dropdown-item" onclick="$('#employeesTable').DataTable().button('.buttons-pdf').trigger()"><i class="fa fa-file-pdf me-2 text-danger"></i>PDF</button></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><button class="dropdown-item" onclick="$('#employeesTable').DataTable().button('.buttons-print').trigger()"><i class="fa fa-print me-2"></i>Print</button></li>
+            </ul>
         </div>
     </div>
     <div class="card-body p-0">
-        <div class="table-responsive">
-            <table id="employeesTable" class="table table-hover table-striped mb-0 w-100">
+        <div class="employees-table-wrapper">
+            <table id="employeesTable" class="table table-hover table-striped table-bordered mb-0 w-100">
                 <thead>
                     <tr>
                         <th>#</th>
@@ -41,11 +47,11 @@
                         <th></th>
                         <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                         <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                        <th></th>
                         <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                         <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                         <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                        <th></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                         <th></th>
                     </tr>
                 </thead>
@@ -256,6 +262,15 @@
 
 @push('styles')
 <style>
+#employeesTable th, #employeesTable td { font-size: .78rem; padding: .4rem .55rem; vertical-align: middle; }
+#employeesTable thead th { background: #e9ecef; font-weight: 600; position: sticky; z-index: 2; top: 0; }
+#employeesTable thead tr:last-child th { background: #f8f9fa; }
+#employeesTable thead tr:last-child th input.form-control { min-width: 70px; width: 100%; box-sizing: border-box; }
+.employees-table-wrapper { max-height: 65vh; overflow: auto; }
+.employees-table-wrapper::-webkit-scrollbar { width: 6px; height: 6px; }
+.employees-table-wrapper::-webkit-scrollbar-track { background: #f1f1f1; }
+.employees-table-wrapper::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+#employeesTable_wrapper > .row:last-child { position: sticky; bottom: 0; background: #fff; z-index: 3; border-top: 1px solid #dee2e6; margin: 0; padding: 6px 12px; }
 .emp-section {
     background: #fff;
     border: 1px solid #E2E8F0;
@@ -354,26 +369,37 @@ $(function () {
     empTable = $('#employeesTable').DataTable({
         processing: true, serverSide: true, autoWidth: false,
         ajax: '{{ route('admin.employees.index') }}',
+        order: [],
+        orderCellsTop: true,
+        pageLength: 25,
+        lengthMenu: [[15, 25, 50, 100, 200, 500], [15, 25, 50, 100, 200, 500]],
         columns: [
-            { data: 'DT_RowIndex',      name: 'DT_RowIndex',      orderable: false, searchable: false, width: '50px' },
+            { data: 'DT_RowIndex',      name: 'DT_RowIndex',      orderable: false, searchable: false, width: '50px', className: 'text-center' },
             { data: 'code',             name: 'code' },
             { data: 'name',             name: 'name' },
-            { data: 'type_badge',       name: 'type',              orderable: false, searchable: false },
+            { data: 'type_badge',       name: 'type_badge',       orderable: false, className: 'text-center' },
             { data: 'team_leader_name', name: 'teamLeader.name',   defaultContent: '—' },
             { data: 'designation_name', name: 'designation.name',  defaultContent: '—' },
             { data: 'joining_date',     name: 'joining_date',      defaultContent: '—' },
-            { data: 'status_badge',     name: 'current_status',    orderable: false, searchable: false },
-            { data: 'action',           name: 'action',            orderable: false, searchable: false, width: '120px' },
+            { data: 'status_badge',     name: 'status_badge',      orderable: false, className: 'text-center' },
+            { data: 'action',           name: 'action',            orderable: false, searchable: false, width: '120px', className: 'text-center' },
         ],
         dom: "<'row mb-0'<'col-sm-6'l><'col-sm-6'f>><'row'<'col-12'tr>><'row mt-2'<'col-sm-5'i><'col-sm-7'p>>",
-        pageLength: 25,
         buttons: [{ extend: 'csv' }, { extend: 'excel' }, { extend: 'pdf' }, { extend: 'print' }],
         initComplete: function () {
-            this.api().columns().every(function (i) {
-                const $input = $('thead tr:eq(1) th:eq(' + i + ') input', this.table().container());
+            var self = this.api();
+            const firstRowH = $('#employeesTable thead tr:first-child').outerHeight();
+            $('#employeesTable thead tr:last-child th').css('top', firstRowH + 'px');
+            self.columns().every(function (i) {
+                var col = this;
+                const $input = $('thead tr:eq(1) th:eq(' + i + ') input', self.table().container());
                 if ($input.length) {
-                    $input.on('click mousedown', e => e.stopPropagation());
-                    $input.on('keyup change', () => this.search($input.val()).draw());
+                    $input.on('click mousedown keydown', e => e.stopPropagation());
+                    var timer;
+                    $input.on('input', function () {
+                        clearTimeout(timer);
+                        timer = setTimeout(function () { col.search($input.val()).draw(); }, 400);
+                    });
                 }
             });
         },

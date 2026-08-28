@@ -21,7 +21,9 @@ class UserController extends Controller
     public function index(IndexUserRequest $request)
     {
         if ($request->ajax()) {
-            $users = User::with('role.companies', 'employee')->get();
+            $query = User::query()
+                ->select('users.*')
+                ->with('role.companies', 'employee');
 
             $sysPermCountByRole = DB::table('role_has_permissions')
                 ->join('permissions', 'permissions.id', '=', 'role_has_permissions.permission_id')
@@ -30,7 +32,7 @@ class UserController extends Controller
                 ->groupBy('role_has_permissions.role_id')
                 ->pluck('cnt', 'role_id');
 
-            return DataTables::of($users)
+            return DataTables::of($query)
                 ->addIndexColumn()
                 ->addColumn('employee_badge', function (User $user) {
                     if (! $user->employee) {
@@ -41,9 +43,20 @@ class UserController extends Controller
 
                     return '<span class="badge bg-secondary me-1" style="font-size:.7rem">'.e($label).'</span>';
                 })
+                ->filterColumn('employee_badge', function ($query, $keyword) {
+                    $query->whereHas('employee', function ($q) use ($keyword) {
+                        $q->where('employees.name', 'like', "%{$keyword}%")
+                            ->orWhere('employees.code', 'like', "%{$keyword}%");
+                    });
+                })
                 ->addColumn('role_badge', fn (User $user) => $user->role
                     ? '<span class="badge" style="background:#ede9fe;color:#6d28d9;">'.e($user->role->name).'</span>'
                     : '<span class="text-muted small">—</span>')
+                ->filterColumn('role_badge', function ($query, $keyword) {
+                    $query->whereHas('role', function ($q) use ($keyword) {
+                        $q->where('roles.name', 'like', "%{$keyword}%");
+                    });
+                })
                 ->addColumn('companies_badges', function (User $user) use ($sysPermCountByRole) {
                     $hasSysPerms = $user->is_super
                         || ($user->role_id && ($sysPermCountByRole[$user->role_id] ?? 0) > 0);
@@ -67,12 +80,33 @@ class UserController extends Controller
 
                     return $badges ?: '<span class="text-muted small">—</span>';
                 })
+                ->filterColumn('companies_badges', function ($query, $keyword) {
+                    $query->whereHas('role.companies', function ($q) use ($keyword) {
+                        $q->where('companies.name', 'like', "%{$keyword}%");
+                    });
+                })
                 ->addColumn('status_badge', fn (User $user) => $user->is_active
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')
+                ->filterColumn('status_badge', function ($query, $keyword) {
+                    $keyword = strtolower(trim($keyword));
+                    if (str_contains($keyword, 'active') && ! str_contains($keyword, 'inactive')) {
+                        $query->where('is_active', true);
+                    } elseif (str_contains($keyword, 'inactive')) {
+                        $query->where('is_active', false);
+                    }
+                })
                 ->addColumn('super_badge', fn (User $user) => $user->is_super
                     ? '<span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;"><i class="fa fa-crown me-1"></i>Super</span>'
                     : '<span class="text-muted small">—</span>')
+                ->filterColumn('super_badge', function ($query, $keyword) {
+                    $keyword = strtolower(trim($keyword));
+                    if (str_contains($keyword, 'super') || str_contains($keyword, 'crown')) {
+                        $query->where('is_super', true);
+                    } elseif (str_contains($keyword, '—') || str_contains($keyword, 'none')) {
+                        $query->where('is_super', false);
+                    }
+                })
                 ->addColumn('action', function (User $user) use ($request) {
                     $html = '';
                     if ($request->user()->hasPermission('admin.users.view')) {
