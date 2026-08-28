@@ -29,12 +29,12 @@ Route::prefix('cnf')->name('cnf.')->group(function () {
     Route::prefix('jobs')->name('jobs.')->group(function () {
         Route::get('/search-customers', [CnfJobController::class, 'searchCustomers'])->name('search-customers');
         Route::get('/search-items', [CnfJobController::class, 'searchItems'])->name('search-items');
-        Route::get('/', [CnfJobController::class, 'index'])->name('index');
         Route::get('/create', [CnfJobController::class, 'create'])->name('create');
+        Route::get('/', [CnfJobController::class, 'index'])->name('index');
         Route::post('/', [CnfJobController::class, 'store'])->name('store');
-        Route::get('/{job}', [CnfJobController::class, 'show'])->name('show');
         Route::get('/{job}/edit', [CnfJobController::class, 'edit'])->name('edit');
         Route::get('/{job}/print', [CnfJobController::class, 'print'])->name('print');
+        Route::get('/{job}', [CnfJobController::class, 'show'])->name('show');
         Route::put('/{job}', [CnfJobController::class, 'update'])->name('update');
         Route::delete('/{job}', [CnfJobController::class, 'destroy'])->name('destroy');
     });
@@ -42,8 +42,8 @@ Route::prefix('cnf')->name('cnf.')->group(function () {
     Route::prefix('job-expenses')->name('job-expenses.')->group(function () {
         Route::get('/search-jobs', [JobExpenseController::class, 'searchJobs'])->name('search-jobs');
         Route::get('/search-employees', [JobExpenseController::class, 'searchEmployees'])->name('search-employees');
-        Route::get('/', [JobExpenseController::class, 'index'])->name('index');
         Route::get('/create', [JobExpenseController::class, 'create'])->name('create');
+        Route::get('/', [JobExpenseController::class, 'index'])->name('index');
         Route::post('/', [JobExpenseController::class, 'store'])->name('store');
         Route::get('/{jobExpense}/edit', [JobExpenseController::class, 'edit'])->name('edit');
         Route::put('/{jobExpense}', [JobExpenseController::class, 'update'])->name('update');
@@ -53,8 +53,8 @@ Route::prefix('cnf')->name('cnf.')->group(function () {
     Route::prefix('money-receipts')->name('money-receipts.')->group(function () {
         Route::get('/search-parties', [MoneyReceiptController::class, 'searchParties'])->name('search-parties');
         Route::get('/party-payable', [MoneyReceiptController::class, 'getPartyPayable'])->name('party-payable');
-        Route::get('/', [MoneyReceiptController::class, 'index'])->name('index');
         Route::get('/create', [MoneyReceiptController::class, 'create'])->name('create');
+        Route::get('/', [MoneyReceiptController::class, 'index'])->name('index');
         Route::post('/', [MoneyReceiptController::class, 'store'])->name('store');
         Route::get('/{moneyReceipt}/edit', [MoneyReceiptController::class, 'edit'])->name('edit');
         Route::put('/{moneyReceipt}', [MoneyReceiptController::class, 'update'])->name('update');
@@ -63,8 +63,8 @@ Route::prefix('cnf')->name('cnf.')->group(function () {
 
     Route::prefix('bills')->name('bills.')->group(function () {
         Route::get('/search-jobs', [BillController::class, 'searchJobs'])->name('search-jobs');
-        Route::get('/', [BillController::class, 'index'])->name('index');
         Route::get('/create', [BillController::class, 'create'])->name('create');
+        Route::get('/', [BillController::class, 'index'])->name('index');
         Route::post('/', [BillController::class, 'store'])->name('store');
         Route::get('/{bill}/print', [BillController::class, 'print'])->name('print');
         Route::get('/{bill}/edit', [BillController::class, 'edit'])->name('edit');
@@ -115,7 +115,7 @@ Route::prefix('settings')->name('settings.')->group(function () {
         Route::get('/', [ItemController::class, 'index'])->name('index');
         Route::post('/', [ItemController::class, 'store'])->name('store');
         Route::get('/{item}', [ItemController::class, 'show'])->name('show');
-        Route::post('/{item}', [ItemController::class, 'update'])->name('update');
+        Route::put('/{item}', [ItemController::class, 'update'])->name('update');
         Route::delete('/{item}', [ItemController::class, 'destroy'])->name('destroy');
     });
 
@@ -133,10 +133,10 @@ Route::prefix('settings')->name('settings.')->group(function () {
         Route::get('/employees/search', [ExpenseHeadController::class, 'searchEmployees'])->name('employees.search');
         Route::get('/', [ExpenseHeadController::class, 'index'])->name('index');
         Route::post('/', [ExpenseHeadController::class, 'store'])->name('store');
-        Route::put('/{expenseHead}', [ExpenseHeadController::class, 'update'])->name('update');
-        Route::delete('/{expenseHead}', [ExpenseHeadController::class, 'destroy'])->name('destroy');
         Route::get('/{expenseHead}/employees', [ExpenseHeadController::class, 'getEmployees'])->name('employees.get');
         Route::post('/{expenseHead}/employees', [ExpenseHeadController::class, 'syncEmployees'])->name('employees.sync');
+        Route::put('/{expenseHead}', [ExpenseHeadController::class, 'update'])->name('update');
+        Route::delete('/{expenseHead}', [ExpenseHeadController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('accounts')->name('accounts.')->group(function () {

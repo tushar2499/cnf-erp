@@ -10,6 +10,7 @@ use App\Models\EmployeeBranchAccess;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Tests\TestCase;
@@ -157,6 +158,55 @@ class EmployeeImportTest extends TestCase
         Company::create(['id' => 1, 'name' => 'Chevron Lines (C&F) Ltd.', 'slug' => 'chevron-lines', 'type' => 'cnf', 'is_active' => true]);
         ChevronBranch::create(['id' => 5, 'name' => 'Head Office', 'code' => 'DK', 'is_active' => true]);
         ChevronBranch::create(['id' => 6, 'name' => 'Chittagong', 'code' => 'CTG', 'is_active' => true]);
+    }
+
+    public function test_import_parses_excel_serial_date_numbers(): void
+    {
+        $this->seedCompanyAndBranches();
+
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->fromArray([['Company', 'Emp. ID', 'Name', 'Designation', 'J. Date']], null, 'A1');
+
+        $sheet->setCellValue('A2', 'Chevron Lines (C&F) Ltd.');
+        $sheet->setCellValue('B2', 'CL001');
+        $sheet->setCellValue('C2', 'Mr. Serial User');
+        $sheet->setCellValue('D2', 'Accountant');
+        $sheet->setCellValueExplicit('E2', 45992, DataType::TYPE_NUMERIC);
+
+        $path = tempnam(sys_get_temp_dir(), 'emp').'.xlsx';
+        (new Xlsx($spreadsheet))->save($path);
+        $file = new UploadedFile($path, 'employees.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
+
+        $this->postJson('/api/admin/employees/import', ['file' => $file])
+            ->assertOk()
+            ->assertJsonPath('inserted.employees', 1);
+
+        $this->assertDatabaseHas('employees', [
+            'name'         => 'Mr. Serial User',
+            'joining_date' => '2025-12-01',
+        ]);
+    }
+
+    public function test_preview_parses_excel_serial_date_numbers(): void
+    {
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->fromArray([['Company', 'Emp. ID', 'Name', 'Designation', 'J. Date']], null, 'A1');
+
+        $sheet->setCellValue('A2', 'Chevron');
+        $sheet->setCellValue('B2', 'CL001');
+        $sheet->setCellValue('C2', 'Mr. Serial User');
+        $sheet->setCellValue('D2', 'Accountant');
+        $sheet->setCellValueExplicit('E2', 46082, DataType::TYPE_NUMERIC);
+
+        $path = tempnam(sys_get_temp_dir(), 'emp').'.xlsx';
+        (new Xlsx($spreadsheet))->save($path);
+        $file = new UploadedFile($path, 'employees.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
+
+        $this->postJson('/api/admin/employees/import/preview', ['file' => $file])
+            ->assertOk()
+            ->assertJsonPath('preview.0.joining_date', '2026-03-01');
     }
 
     public function test_import_requires_file(): void

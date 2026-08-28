@@ -43,23 +43,24 @@ class EmployeeImportController extends Controller
             }
 
             $parsed[] = [
-                'company'      => trim($row[0] ?? ''),
-                'code'         => trim($row[1] ?? ''),
-                'name'         => $name,
-                'designation'  => trim($row[3] ?? ''),
-                'joining_date' => $this->parseDate($row[4] ?? null),
+                'company'          => trim($row[0] ?? ''),
+                'code'             => trim($row[1] ?? ''),
+                'name'             => $name,
+                'designation'      => trim($row[3] ?? ''),
+                'joining_date'     => $this->parseDate($row[4] ?? null),
+                'old_joining_date' => $row[4] ?? null,
             ];
         }
 
         $companyMap = $this->companyBranchMap();
 
         foreach ($parsed as &$row) {
-            $row['exists'] = $this->employeeExists($row['name'], $row['code']);
+            $row['exists']             = $this->employeeExists($row['name'], $row['code']);
             $row['designation_exists'] = $this->designationExists($row['designation']);
 
-            $company = $this->resolveCompany($row['company'], $companyMap);
-            $row['company_id'] = $company !== null ? $company['id'] : null;
-            $row['branch_ids'] = $company !== null ? array_keys($company['branches']) : [];
+            $company             = $this->resolveCompany($row['company'], $companyMap);
+            $row['company_id']   = $company !== null ? $company['id'] : null;
+            $row['branch_ids']   = $company !== null ? array_keys($company['branches']) : [];
             $row['branch_names'] = $company !== null ? array_values($company['branches']) : [];
         }
 
@@ -67,7 +68,7 @@ class EmployeeImportController extends Controller
 
         return response()->json([
             'current_designations' => Designation::pluck('name')->values(),
-            'companies'            => array_map(fn ($c) => [
+            'companies'            => array_map(fn($c) => [
                 'id'       => $c['id'],
                 'name'     => $c['name'],
                 'type'     => $c['type'],
@@ -129,7 +130,7 @@ class EmployeeImportController extends Controller
                 $designationIds[$row['designation']] = $this->resolveDesignation($row['designation']);
             }
 
-            $inserted = 0;
+            $inserted      = 0;
             $accessCreated = 0;
 
             foreach ($parsed as $row) {
@@ -169,12 +170,12 @@ class EmployeeImportController extends Controller
         });
 
         return response()->json([
-            'message'  => "{$result['employees']} employee(s), {$result['designations']} designation(s) and {$result['branch_access']} branch access record(s) imported successfully.",
+            'message' => "{$result['employees']} employee(s), {$result['designations']} designation(s) and {$result['branch_access']} branch access record(s) imported successfully.",
             'inserted' => $result,
         ]);
     }
 
-    private function loadSpreadsheet(Request $request): JsonResponse|Spreadsheet
+    private function loadSpreadsheet(Request $request): JsonResponse | Spreadsheet
     {
         $request->validate(
             ['file' => 'required|file|mimes:xlsx,xls,csv|max:5120'],
@@ -186,7 +187,7 @@ class EmployeeImportController extends Controller
             ]
         );
 
-        if (! extension_loaded('zip')) {
+        if (!extension_loaded('zip')) {
             return response()->json([
                 'message' => 'The server is missing the PHP "zip" extension required to read .xlsx files. Please enable it in cPanel → MultiPHP INI Editor, or upload a .csv file instead.',
             ], 500);
@@ -196,7 +197,7 @@ class EmployeeImportController extends Controller
             return IOFactory::load($request->file('file')->getPathname());
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Could not read the file: '.$e->getMessage(),
+                'message' => 'Could not read the file: ' . $e->getMessage(),
             ], 422);
         }
 
@@ -213,18 +214,33 @@ class EmployeeImportController extends Controller
             return $value->format('Y-m-d');
         }
 
+        if (is_int($value) || (is_float($value) && $value == (int) $value)) {
+            $serial = (int) $value;
+
+            if ($serial > 0 && $serial < 2958466) {
+                $date = \DateTime::createFromFormat('Y-m-d', '1900-01-01');
+                $date->modify("+{$serial} days");
+                $date->modify('-2 days');
+
+                return $date->format('Y-m-d');
+            }
+
+        }
+
         $trimmed = trim((string) $value);
 
         if ($trimmed === '') {
             return null;
         }
 
-        $formats = ['d/M/Y', 'd/m/Y', 'Y-m-d', 'm/d/Y'];
+        $formats = ['d/M/Y', 'd-m-Y', 'd/m/Y', 'Y-m-d', 'm/d/Y', 'd/M/Y H:i:s', 'Y-m-d H:i:s'];
 
         foreach ($formats as $format) {
-            $date = \DateTime::createFromFormat($format, $trimmed);
+            $date      = \DateTime::createFromFormat($format, $trimmed);
+            $errors    = \DateTime::getLastErrors();
+            $hasErrors = $errors !== false && ($errors['warning_count'] > 0 || $errors['error_count'] > 0);
 
-            if ($date !== false && $date->format($format) === $trimmed) {
+            if ($date !== false && !$hasErrors) {
                 return $date->format('Y-m-d');
             }
 
@@ -295,15 +311,15 @@ class EmployeeImportController extends Controller
     private function companyBranchMap(): array
     {
         $loaders = [
-            'cnf'     => fn () => ChevronBranch::where('is_active', true)->pluck('name', 'id')->all(),
-            'freight' => fn () => NasFreightsBranch::where('is_active', true)->pluck('name', 'id')->all(),
-            'trading' => fn () => NasTradingBranch::where('is_active', true)->pluck('name', 'id')->all(),
+            'cnf'     => fn()     => ChevronBranch::where('is_active', true)->pluck('name', 'id')->all(),
+            'freight' => fn() => NasFreightsBranch::where('is_active', true)->pluck('name', 'id')->all(),
+            'trading' => fn() => NasTradingBranch::where('is_active', true)->pluck('name', 'id')->all(),
         ];
 
         $map = [];
 
         foreach (Company::where('is_active', true)->get(['id', 'name', 'type']) as $company) {
-            $branches = isset($loaders[$company->type]) ? ($loaders[$company->type])() : [];
+            $branches                              = isset($loaders[$company->type]) ? ($loaders[$company->type])() : [];
             $map[strtolower(trim($company->name))] = [
                 'id'       => $company->id,
                 'name'     => $company->name,
@@ -337,4 +353,5 @@ class EmployeeImportController extends Controller
 
         return null;
     }
+
 }
