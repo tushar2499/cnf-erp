@@ -19,15 +19,15 @@
 
 @section('content')
 <div class="d-flex align-items-center justify-content-between mb-2">
+    <div></div>
+    <div class="fw-bold" style="font-size:.9rem; color:#0a4f3c;">
+        RFQ Entry @if($rfq)<span class="ms-2 badge bg-light text-dark border">{{ $rfq->rfq_no }}</span>@endif
+    </div>
     <div>
         <a href="{{ route('nas-freights.rfqs.index') }}" class="btn btn-sm btn-outline-secondary">
             <i class="fa fa-arrow-left me-1"></i> Back To List
         </a>
     </div>
-    <div class="fw-bold" style="font-size:.9rem; color:#0a4f3c;">
-        RFQ Entry @if($rfq)<span class="ms-2 badge bg-light text-dark border">{{ $rfq->rfq_no }}</span>@endif
-    </div>
-    <div></div>
 </div>
 
 @if($errors->any())
@@ -178,22 +178,22 @@
     </div>
     <div class="section-body p-0">
         <div style="overflow-x:auto;">
-            <table class="table table-bordered mb-0" id="itemsTable">
+            <table class="table table-bordered mb-0" id="itemsTable" style="min-width:1250px;">
                 <thead>
                     <tr>
-                        <th style="width:35px">#</th>
-                        <th style="width:30px"></th>
-                        <th style="width:110px">Item Type</th>
-                        <th style="width:70px">Qty</th>
-                        <th style="width:120px">Container Size / Package</th>
-                        <th style="width:110px">HS Code</th>
-                        <th>Commodity</th>
-                        <th style="width:100px">Weight</th>
-                        <th style="width:70px">Unit</th>
-                        <th style="width:80px">CBM</th>
-                        <th style="width:130px">Country of Origin</th>
+                        <th style="width:35px" class="text-center">#</th>
+                        <th style="width:35px" class="text-center"></th>
+                        <th style="width:115px">Item Type</th>
+                        <th style="width:75px">Qty</th>
+                        <th style="width:160px">Container Size / Pkg</th>
+                        <th style="width:120px">HS Code</th>
+                        <th style="width:160px">Commodity</th>
+                        <th style="width:110px">Weight</th>
+                        <th style="width:80px">Unit</th>
+                        <th style="width:90px">CBM</th>
+                        <th style="width:140px">Country of Origin</th>
                         <th style="width:90px">DG</th>
-                        <th>Special Handling</th>
+                        <th style="min-width:140px">Special Handling</th>
                     </tr>
                 </thead>
                 <tbody id="itemsBody"></tbody>
@@ -234,17 +234,17 @@
                     @endforeach
                 </select>
             </div>
-            @if($rfq->status === 'Win')
+            @if($rfq->status === 'Win' && $rfq->type === 'import')
             <div class="col-auto">
                 @if($rfq->converted_freight_booking_id)
                 <span class="d-inline-flex align-items-center gap-2" style="font-size:.8rem; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:.4rem; padding:.4rem .75rem; color:#166534;">
-                    <i class="fa fa-check-circle"></i> Converted to Freight Booking:
-                    <a href="{{ route('nas-freights.freight-bookings.show', $rfq->converted_freight_booking_id) }}" class="fw-bold text-success">{{ $rfq->convertedFreightBooking?->freight_booking_no }}</a>
+                    <i class="fa fa-check-circle"></i> Converted to Freight Import Booking:
+                    <a href="{{ route('nas-freights.freight-import-bookings.show', $rfq->converted_freight_booking_id) }}" class="fw-bold text-success">{{ $rfq->convertedFreightBooking?->freight_booking_no }}</a>
                 </span>
                 @else
                 <label class="rfq-label d-block mb-1">&nbsp;</label>
                 <button type="button" class="btn btn-sm btn-success" id="btnConvertBooking">
-                    <i class="fa fa-ship me-1"></i> Convert to Freight Booking
+                    <i class="fa fa-ship me-1"></i> Convert to Freight Import Booking
                 </button>
                 @endif
             </div>
@@ -267,7 +267,7 @@
 </form>
 
 {{-- Convert-to-booking form lives OUTSIDE the main form to avoid nested-form HTML violation --}}
-@if($rfq && $rfq->status === 'Win' && !$rfq->converted_freight_booking_id)
+@if($rfq && $rfq->status === 'Win' && $rfq->type === 'import' && !$rfq->converted_freight_booking_id)
 <form id="convertBookingForm" method="POST" action="{{ route('nas-freights.rfqs.convert-freight-booking', $rfq->id) }}">
     @csrf
 </form>
@@ -343,11 +343,11 @@
 @push('scripts')
 <script>
 // Auto-collapse sidebar for the wide RFQ form
-$(function () {
-    if (!$('body').hasClass('sidebar-collapsed')) {
-        $('body').addClass('sidebar-collapsed');
-    }
-});
+// $(function () {
+//     if (!$('body').hasClass('sidebar-collapsed')) {
+//         $('body').addClass('sidebar-collapsed');
+//     }
+// });
 
 var existingItems = @json($existingItems);
 

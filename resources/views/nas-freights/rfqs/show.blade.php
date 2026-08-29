@@ -22,19 +22,19 @@
 @section('content')
 
 <div class="d-flex align-items-center justify-content-between mb-3">
-    <div class="d-flex align-items-center gap-2">
-        <a href="{{ route('nas-freights.rfqs.index') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="fa fa-arrow-left me-1"></i> Back
-        </a>
-        <a href="{{ route('nas-freights.rfqs.edit', $rfq->id) }}" class="btn btn-sm btn-outline-primary">
-            <i class="fa fa-edit me-1"></i> Edit
-        </a>
-    </div>
+    <div></div>
     <div class="fw-bold" style="font-size:.95rem; color:#0a4f3c;">
         RFQ Detail &nbsp;<span class="badge bg-light text-dark border fs-6">{{ $rfq->rfq_no }}</span>
         &nbsp;<span class="status-pill status-{{ $rfq->status }}">{{ $rfq->status }}</span>
     </div>
-    <div></div>
+    <div class="d-flex align-items-center gap-2">
+        <a href="{{ route('nas-freights.rfqs.edit', $rfq->id) }}" class="btn btn-sm btn-outline-primary">
+            <i class="fa fa-edit me-1"></i> Edit
+        </a>
+        <a href="{{ route('nas-freights.rfqs.index') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fa fa-arrow-left me-1"></i> Back
+        </a>
+    </div>
 </div>
 
 @if(session('success'))
@@ -232,7 +232,7 @@
                 @if($rfq->status === 'Win' && $rfq->converted_freight_booking_id)
                 <div class="mt-2" style="font-size:.75rem;">
                     <i class="fa fa-check-circle text-success me-1"></i>
-                    Freight Booking: <a href="{{ route('nas-freights.freight-bookings.show', $rfq->converted_freight_booking_id) }}" class="fw-semibold">{{ $rfq->convertedFreightBooking?->freight_booking_no }}</a>
+                    Freight Import Booking: <a href="{{ route('nas-freights.freight-import-bookings.show', $rfq->converted_freight_booking_id) }}" class="fw-semibold">{{ $rfq->convertedFreightBooking?->freight_booking_no }}</a>
                 </div>
                 @endif
             </div>
@@ -278,24 +278,24 @@
             </div>
         </div>
 
-        @if($rfq->status === 'Win')
+        @if($rfq->status === 'Win' && $rfq->type === 'import')
         <div class="section-card">
-            <div class="form-header"><i class="fa fa-ship me-1"></i> Convert to Freight Booking</div>
+            <div class="form-header"><i class="fa fa-ship me-1"></i> Convert to Freight Import Booking</div>
             <div class="section-body">
                 @if($rfq->converted_freight_booking_id)
                 <div class="text-success text-center" style="font-size:.8rem;">
                     <i class="fa fa-check-circle me-1"></i> Already converted to
-                    <a href="{{ route('nas-freights.freight-bookings.show', $rfq->converted_freight_booking_id) }}" class="fw-bold">{{ $rfq->convertedFreightBooking?->freight_booking_no }}</a>
+                    <a href="{{ route('nas-freights.freight-import-bookings.show', $rfq->converted_freight_booking_id) }}" class="fw-bold">{{ $rfq->convertedFreightBooking?->freight_booking_no }}</a>
                 </div>
                 @else
                 <p style="font-size:.75rem; color:#6b7280; margin-bottom:.6rem;">
-                    Create a Freight Booking from this RFQ. All freight details and cargo items will be pre-filled.
+                    Create a Freight Import Booking from this RFQ. All freight details and cargo items will be pre-filled.
                 </p>
                 <form method="POST" action="{{ route('nas-freights.rfqs.convert-freight-booking', $rfq->id) }}">
                     @csrf
                     <button type="submit" class="btn btn-sm btn-success w-100"
-                        onclick="return confirm('Convert RFQ {{ $rfq->rfq_no }} to a Freight Booking?')">
-                        <i class="fa fa-ship me-1"></i> Convert to Freight Booking
+                        onclick="return confirm('Convert RFQ {{ $rfq->rfq_no }} to a Freight Import Booking?')">
+                        <i class="fa fa-ship me-1"></i> Convert to Freight Import Booking
                     </button>
                 </form>
                 @endif

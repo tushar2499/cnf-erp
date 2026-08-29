@@ -1,6 +1,6 @@
 @extends('nas-freights.layouts.app')
 
-@section('title', $freightBooking ? 'Edit Freight Booking' : 'New Freight Booking')
+@section('title', $exportBooking ? 'Edit Freight Export Booking' : 'New Freight Export Booking')
 
 @push('styles')
 <style>
@@ -16,16 +16,16 @@
 
 @section('content')
 <div class="d-flex align-items-center justify-content-between mb-2">
+    <div></div>
+    <div class="fw-bold" style="font-size:.9rem; color:#0a4f3c;">
+        Freight Export Booking Entry
+        @if($exportBooking)<span class="ms-2 badge bg-light text-dark border">{{ $exportBooking->export_booking_no }}</span>@endif
+    </div>
     <div>
-        <a href="{{ route('nas-freights.freight-bookings.index') }}" class="btn btn-sm btn-outline-secondary">
+        <a href="{{ route('nas-freights.freight-export-bookings.index') }}" class="btn btn-sm btn-outline-secondary">
             <i class="fa fa-arrow-left me-1"></i> Back To List
         </a>
     </div>
-    <div class="fw-bold" style="font-size:.9rem; color:#0a4f3c;">
-        Freight Booking Entry
-        @if($freightBooking)<span class="ms-2 badge bg-light text-dark border">{{ $freightBooking->freight_booking_no }}</span>@endif
-    </div>
-    <div></div>
 </div>
 
 @if($errors->any())
@@ -36,9 +36,9 @@
 @endif
 
 <form method="POST"
-      action="{{ $freightBooking ? route('nas-freights.freight-bookings.update', $freightBooking->id) : route('nas-freights.freight-bookings.store') }}">
+      action="{{ $exportBooking ? route('nas-freights.freight-export-bookings.update', $exportBooking->id) : route('nas-freights.freight-export-bookings.store') }}">
 @csrf
-@if($freightBooking) @method('PUT') @endif
+@if($exportBooking) @method('PUT') @endif
 
 {{-- ═══ BOOKING INFORMATION ═══ --}}
 <div class="section-card">
@@ -47,31 +47,25 @@
         <div class="row g-2 mb-2">
             <div class="col-md-2">
                 <div class="fb-label">Booking No</div>
-                <input type="text" class="form-control fb-input bg-light" value="{{ $freightBooking?->freight_booking_no ?? 'Auto Generated' }}" readonly>
+                <input type="text" class="form-control fb-input bg-light" value="{{ $exportBooking?->export_booking_no ?? 'Auto Generated' }}" readonly>
             </div>
-            @if($freightBooking?->rfq_no)
-            <div class="col-md-2">
-                <div class="fb-label">From RFQ</div>
-                <input type="text" class="form-control fb-input bg-light" value="{{ $freightBooking->rfq_no }}" readonly>
-            </div>
-            @endif
             <div class="col-md-2">
                 <div class="fb-label">Booking Date <span class="text-danger">*</span></div>
-                <input type="date" name="booking_date" class="form-control fb-input" value="{{ old('booking_date', $freightBooking?->booking_date?->format('Y-m-d') ?? $today) }}" required>
+                <input type="date" name="booking_date" class="form-control fb-input" value="{{ old('booking_date', $exportBooking?->booking_date?->format('Y-m-d') ?? $today) }}" required>
             </div>
             <div class="col-md-3">
-                <div class="fb-label">Customer</div>
+                <div class="fb-label">Customer (Exporter)</div>
                 <select name="customer_id" id="customerSelect" class="form-select fb-input" style="width:100%">
-                    @if($freightBooking?->customer_id)
-                    <option value="{{ $freightBooking->customer_id }}" selected>{{ $freightBooking->customer?->customer_id }} — {{ $freightBooking->customer?->name }}</option>
+                    @if($exportBooking?->customer_id)
+                    <option value="{{ $exportBooking->customer_id }}" selected>{{ $exportBooking->customer?->customer_id }} — {{ $exportBooking->customer?->name }}</option>
                     @endif
                 </select>
             </div>
             <div class="col-md-3">
                 <div class="fb-label">Salesperson</div>
                 <select name="salesperson_id" id="salespersonSelect" class="form-select fb-input" style="width:100%">
-                    @if($freightBooking?->salesperson_id)
-                    <option value="{{ $freightBooking->salesperson_id }}" selected>{{ $freightBooking->salesperson?->name }}</option>
+                    @if($exportBooking?->salesperson_id)
+                    <option value="{{ $exportBooking->salesperson_id }}" selected>{{ $exportBooking->salesperson?->name }}</option>
                     @endif
                 </select>
             </div>
@@ -81,9 +75,9 @@
             <div class="col-md-6">
                 <div class="fb-label">Overseas Agent</div>
                 <select name="overseas_agent_id" id="overseasAgentSelect" class="form-select fb-input" style="width:100%">
-                    @if($freightBooking?->overseas_agent_id)
-                    <option value="{{ $freightBooking->overseas_agent_id }}" selected>
-                        {{ $freightBooking->overseasAgent?->agent_code }} — {{ $freightBooking->overseasAgent?->name }} ({{ $freightBooking->overseasAgent?->country }})
+                    @if($exportBooking?->overseas_agent_id)
+                    <option value="{{ $exportBooking->overseas_agent_id }}" selected>
+                        {{ $exportBooking->overseasAgent?->agent_code }} — {{ $exportBooking->overseasAgent?->name }} ({{ $exportBooking->overseasAgent?->country }})
                     </option>
                     @endif
                 </select>
@@ -91,9 +85,9 @@
             <div class="col-md-6">
                 <div class="fb-label">Shipping Carrier</div>
                 <select name="shipping_carrier_id" id="shippingCarrierSelect" class="form-select fb-input" style="width:100%">
-                    @if($freightBooking?->shipping_carrier_id)
-                    <option value="{{ $freightBooking->shipping_carrier_id }}" selected>
-                        {{ $freightBooking->shippingCarrier?->carrier_code }} — {{ $freightBooking->shippingCarrier?->name }}
+                    @if($exportBooking?->shipping_carrier_id)
+                    <option value="{{ $exportBooking->shipping_carrier_id }}" selected>
+                        {{ $exportBooking->shippingCarrier?->carrier_code }} — {{ $exportBooking->shippingCarrier?->name }}
                     </option>
                     @endif
                 </select>
@@ -102,18 +96,10 @@
 
         <div class="row g-2 mb-2">
             <div class="col-md-3">
-                <div class="fb-label">Type <span class="text-danger">*</span></div>
-                <select name="type" class="form-select fb-input" required>
-                    @foreach($types as $val => $label)
-                    <option value="{{ $val }}" {{ old('type', $freightBooking?->type ?? 'import') === $val ? 'selected' : '' }}>{{ $label }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-md-3">
                 <div class="fb-label">Service Type <span class="text-danger">*</span></div>
                 <select name="service_type" class="form-select fb-input" required>
                     @foreach($serviceTypes as $st)
-                    <option value="{{ $st }}" {{ old('service_type', $freightBooking?->service_type ?? 'FCL') === $st ? 'selected' : '' }}>{{ $st }}</option>
+                    <option value="{{ $st }}" {{ old('service_type', $exportBooking?->service_type ?? 'FCL') === $st ? 'selected' : '' }}>{{ $st }}</option>
                     @endforeach
                 </select>
             </div>
@@ -122,7 +108,7 @@
                 <select name="incoterms" class="form-select fb-input">
                     <option value="">-- Select --</option>
                     @foreach($incoterms as $inc)
-                    <option value="{{ $inc }}" {{ old('incoterms', $freightBooking?->incoterms) === $inc ? 'selected' : '' }}>{{ $inc }}</option>
+                    <option value="{{ $inc }}" {{ old('incoterms', $exportBooking?->incoterms) === $inc ? 'selected' : '' }}>{{ $inc }}</option>
                     @endforeach
                 </select>
             </div>
@@ -130,7 +116,7 @@
                 <div class="fb-label">Currency</div>
                 <select name="currency" class="form-select fb-input">
                     @foreach($currencies as $cur)
-                    <option value="{{ $cur }}" {{ old('currency', $freightBooking?->currency ?? 'BDT') === $cur ? 'selected' : '' }}>{{ $cur }}</option>
+                    <option value="{{ $cur }}" {{ old('currency', $exportBooking?->currency ?? 'BDT') === $cur ? 'selected' : '' }}>{{ $cur }}</option>
                     @endforeach
                 </select>
             </div>
@@ -139,59 +125,63 @@
         <div class="row g-2 mb-2">
             <div class="col-md-3">
                 <div class="fb-label">Port of Loading (POL)</div>
-                <input type="text" name="pol" class="form-control fb-input" value="{{ old('pol', $freightBooking?->pol) }}" placeholder="e.g. Chittagong">
+                <input type="text" name="pol" class="form-control fb-input" value="{{ old('pol', $exportBooking?->pol) }}" placeholder="e.g. Chittagong">
             </div>
             <div class="col-md-3">
                 <div class="fb-label">Port of Discharge (POD)</div>
-                <input type="text" name="pod" class="form-control fb-input" value="{{ old('pod', $freightBooking?->pod) }}" placeholder="e.g. Singapore">
+                <input type="text" name="pod" class="form-control fb-input" value="{{ old('pod', $exportBooking?->pod) }}" placeholder="e.g. Singapore">
             </div>
             <div class="col-md-3">
                 <div class="fb-label">Place of Receipt</div>
-                <input type="text" name="place_of_receipt" class="form-control fb-input" value="{{ old('place_of_receipt', $freightBooking?->place_of_receipt) }}">
+                <input type="text" name="place_of_receipt" class="form-control fb-input" value="{{ old('place_of_receipt', $exportBooking?->place_of_receipt) }}">
             </div>
             <div class="col-md-3">
                 <div class="fb-label">Place of Delivery</div>
-                <input type="text" name="place_of_delivery" class="form-control fb-input" value="{{ old('place_of_delivery', $freightBooking?->place_of_delivery) }}">
+                <input type="text" name="place_of_delivery" class="form-control fb-input" value="{{ old('place_of_delivery', $exportBooking?->place_of_delivery) }}">
             </div>
         </div>
 
         <div class="row g-2 mb-2">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="fb-label">Vessel Name</div>
-                <input type="text" name="vessel_name" class="form-control fb-input" value="{{ old('vessel_name', $freightBooking?->vessel_name) }}" placeholder="e.g. MSC ANNA">
+                <input type="text" name="vessel_name" class="form-control fb-input" value="{{ old('vessel_name', $exportBooking?->vessel_name) }}" placeholder="e.g. MSC ANNA">
             </div>
             <div class="col-md-2">
                 <div class="fb-label">Voyage No</div>
-                <input type="text" name="voyage_no" class="form-control fb-input" value="{{ old('voyage_no', $freightBooking?->voyage_no) }}" placeholder="e.g. 024W">
+                <input type="text" name="voyage_no" class="form-control fb-input" value="{{ old('voyage_no', $exportBooking?->voyage_no) }}" placeholder="e.g. 024W">
             </div>
-            <div class="col-md-2">
-                <div class="fb-label">B/L No</div>
-                <input type="text" name="bl_no" class="form-control fb-input" value="{{ old('bl_no', $freightBooking?->bl_no) }}">
+            <div class="col-md-4">
+                <div class="fb-label">Export B/L No</div>
+                <input type="text" name="export_bl_no" class="form-control fb-input" value="{{ old('export_bl_no', $exportBooking?->export_bl_no) }}" placeholder="e.g. EXP024W-0001">
             </div>
-            <div class="col-md-2">
-                <div class="fb-label">ETD</div>
-                <input type="date" name="etd" class="form-control fb-input" value="{{ old('etd', $freightBooking?->etd?->format('Y-m-d')) }}">
-            </div>
-            <div class="col-md-2">
-                <div class="fb-label">ETA</div>
-                <input type="date" name="eta" class="form-control fb-input" value="{{ old('eta', $freightBooking?->eta?->format('Y-m-d')) }}">
+            <div class="col-md-3">
+                <div class="fb-label">Booking Note No</div>
+                <input type="text" name="booking_note_no" class="form-control fb-input" value="{{ old('booking_note_no', $exportBooking?->booking_note_no) }}" placeholder="e.g. MSL024W-8899">
             </div>
         </div>
 
         <div class="row g-2">
-            <div class="col-md-6">
-                <div class="fb-label">Commodity Description</div>
-                <input type="text" name="commodity_description" class="form-control fb-input" value="{{ old('commodity_description', $freightBooking?->commodity_description) }}">
+            <div class="col-md-2">
+                <div class="fb-label">ETD</div>
+                <input type="date" name="etd" class="form-control fb-input" value="{{ old('etd', $exportBooking?->etd?->format('Y-m-d')) }}">
+            </div>
+            <div class="col-md-2">
+                <div class="fb-label">ETA</div>
+                <input type="date" name="eta" class="form-control fb-input" value="{{ old('eta', $exportBooking?->eta?->format('Y-m-d')) }}">
             </div>
             <div class="col-md-4">
+                <div class="fb-label">Commodity Description</div>
+                <input type="text" name="commodity_description" class="form-control fb-input" value="{{ old('commodity_description', $exportBooking?->commodity_description) }}">
+            </div>
+            <div class="col-md-2">
                 <div class="fb-label">Remarks</div>
-                <input type="text" name="remarks" class="form-control fb-input" value="{{ old('remarks', $freightBooking?->remarks) }}">
+                <input type="text" name="remarks" class="form-control fb-input" value="{{ old('remarks', $exportBooking?->remarks) }}">
             </div>
             <div class="col-md-2">
                 <div class="fb-label">Status</div>
                 <select name="status" class="form-select fb-input">
                     @foreach($statuses as $st)
-                    <option value="{{ $st }}" {{ old('status', $freightBooking?->status ?? 'Draft') === $st ? 'selected' : '' }}>{{ $st }}</option>
+                    <option value="{{ $st }}" {{ old('status', $exportBooking?->status ?? 'Draft') === $st ? 'selected' : '' }}>{{ $st }}</option>
                     @endforeach
                 </select>
             </div>
@@ -209,22 +199,24 @@
     </div>
     <div class="section-body p-0">
         <div style="overflow-x:auto;">
-            <table class="table table-bordered mb-0" id="itemsTable">
+            <table class="table table-bordered mb-0" id="itemsTable" style="min-width:1450px;">
                 <thead>
                     <tr>
-                        <th style="width:35px">#</th>
-                        <th style="width:30px"></th>
-                        <th style="width:110px">Item Type</th>
-                        <th style="width:70px">Qty</th>
-                        <th style="width:120px">Container Size / Package</th>
-                        <th style="width:110px">HS Code</th>
-                        <th>Commodity</th>
-                        <th style="width:100px">Weight</th>
-                        <th style="width:70px">Unit</th>
-                        <th style="width:80px">CBM</th>
-                        <th style="width:130px">Country of Origin</th>
+                        <th style="width:35px" class="text-center">#</th>
+                        <th style="width:35px" class="text-center"></th>
+                        <th style="width:115px">Item Type</th>
+                        <th style="width:75px">Qty</th>
+                        <th style="width:160px">Container Size / Pkg</th>
+                        <th style="width:145px">Container No</th>
+                        <th style="width:130px">Seal No</th>
+                        <th style="width:120px">HS Code</th>
+                        <th style="width:160px">Commodity</th>
+                        <th style="width:110px">Weight</th>
+                        <th style="width:80px">Unit</th>
+                        <th style="width:90px">CBM</th>
+                        <th style="width:140px">Country of Origin</th>
                         <th style="width:90px">DG</th>
-                        <th>Special Handling</th>
+                        <th style="min-width:140px">Special Handling</th>
                     </tr>
                 </thead>
                 <tbody id="itemsBody"></tbody>
@@ -234,11 +226,11 @@
 </div>
 
 <div class="d-flex justify-content-end gap-2 mt-3 mb-4">
-    <a href="{{ route('nas-freights.freight-bookings.index') }}" class="btn btn-sm btn-outline-secondary">
+    <a href="{{ route('nas-freights.freight-export-bookings.index') }}" class="btn btn-sm btn-outline-secondary">
         <i class="fa fa-times me-1"></i> Cancel
     </a>
     <button type="submit" class="btn btn-sm btn-success px-4">
-        <i class="fa fa-save me-1"></i> {{ $freightBooking ? 'Update Freight Booking' : 'Save Freight Booking' }}
+        <i class="fa fa-save me-1"></i> {{ $exportBooking ? 'Update Export Booking' : 'Save Export Booking' }}
     </button>
 </div>
 
@@ -273,6 +265,12 @@
             @endforeach
         </select>
     </td>
+    <td>
+        <input type="text" name="items[0][container_no]" class="form-control form-control-sm container-no-input" style="font-size:.72rem;" placeholder="e.g. MSCU1234567">
+    </td>
+    <td>
+        <input type="text" name="items[0][seal_no]" class="form-control form-control-sm seal-no-input" style="font-size:.72rem;" placeholder="e.g. SL1234567">
+    </td>
     <td><input type="text" name="items[0][hs_code]" class="form-control form-control-sm" style="font-size:.72rem;" placeholder="HS Code"></td>
     <td><input type="text" name="items[0][commodity]" class="form-control form-control-sm" style="font-size:.72rem;" placeholder="Commodity"></td>
     <td><input type="number" name="items[0][gross_weight]" class="form-control form-control-sm text-end" style="font-size:.72rem;" step="0.01" placeholder="0.00"></td>
@@ -298,33 +296,29 @@
 
 @push('scripts')
 <script>
-$(function () {
-    if (!$('body').hasClass('sidebar-collapsed')) {
-        $('body').addClass('sidebar-collapsed');
-    }
-});
+
 
 var existingItems = @json($existingItems);
 
 $(function () {
     $('#customerSelect').select2({
         theme: 'bootstrap-5', placeholder: 'Search customer...', allowClear: true, minimumInputLength: 1,
-        ajax: { url: '{{ route('nas-freights.freight-bookings.search-customers') }}', dataType: 'json', delay: 300, data: d => ({ q: d.term }), processResults: d => ({ results: d }) },
+        ajax: { url: '{{ route('nas-freights.freight-export-bookings.search-customers') }}', dataType: 'json', delay: 300, data: d => ({ q: d.term }), processResults: d => ({ results: d }) },
     });
 
     $('#salespersonSelect').select2({
         theme: 'bootstrap-5', placeholder: 'Search salesperson...', allowClear: true, minimumInputLength: 1,
-        ajax: { url: '{{ route('nas-freights.freight-bookings.search-employees') }}', dataType: 'json', delay: 300, data: d => ({ q: d.term }), processResults: d => ({ results: d }) },
+        ajax: { url: '{{ route('nas-freights.freight-export-bookings.search-employees') }}', dataType: 'json', delay: 300, data: d => ({ q: d.term }), processResults: d => ({ results: d }) },
     });
 
     $('#overseasAgentSelect').select2({
         theme: 'bootstrap-5', placeholder: 'Search overseas agent...', allowClear: true, minimumInputLength: 1,
-        ajax: { url: '{{ route('nas-freights.freight-bookings.search-overseas-agents') }}', dataType: 'json', delay: 300, data: d => ({ q: d.term }), processResults: d => ({ results: d }) },
+        ajax: { url: '{{ route('nas-freights.freight-export-bookings.search-overseas-agents') }}', dataType: 'json', delay: 300, data: d => ({ q: d.term }), processResults: d => ({ results: d }) },
     });
 
     $('#shippingCarrierSelect').select2({
         theme: 'bootstrap-5', placeholder: 'Search shipping carrier...', allowClear: true, minimumInputLength: 1,
-        ajax: { url: '{{ route('nas-freights.freight-bookings.search-shipping-carriers') }}', dataType: 'json', delay: 300, data: d => ({ q: d.term }), processResults: d => ({ results: d }) },
+        ajax: { url: '{{ route('nas-freights.freight-export-bookings.search-shipping-carriers') }}', dataType: 'json', delay: 300, data: d => ({ q: d.term }), processResults: d => ({ results: d }) },
     });
 
     if (existingItems.length > 0) {
@@ -357,6 +351,8 @@ function addItemRow(data) {
         toggleItemTypeFields($row);
         $row.find('.container-size-sel').val(data.container_size || '');
         $row.find('.package-type-sel').val(data.package_type || '');
+        $row.find('[name$="[container_no]"]').val(data.container_no || '');
+        $row.find('[name$="[seal_no]"]').val(data.seal_no || '');
         $row.find('[name$="[hs_code]"]').val(data.hs_code || '');
         $row.find('[name$="[commodity]"]').val(data.commodity || '');
         $row.find('[name$="[quantity]"]').val(data.quantity || 1);
@@ -382,13 +378,11 @@ function reindexItems() {
 
 function toggleItemTypeFields($row) {
     var type = $row.find('.item-type-sel').val();
-    if (type === 'container') {
-        $row.find('.container-size-sel').removeClass('d-none');
-        $row.find('.package-type-sel').addClass('d-none');
-    } else {
-        $row.find('.container-size-sel').addClass('d-none');
-        $row.find('.package-type-sel').removeClass('d-none');
-    }
+    var isContainer = type === 'container';
+    $row.find('.container-size-sel').toggleClass('d-none', !isContainer);
+    $row.find('.package-type-sel').toggleClass('d-none', isContainer);
+    $row.find('.container-no-input').prop('disabled', !isContainer);
+    $row.find('.seal-no-input').prop('disabled', !isContainer);
 }
 </script>
 @endpush

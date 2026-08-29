@@ -9,6 +9,7 @@ use App\Http\Controllers\NasFreights\CustomerController;
 use App\Http\Controllers\NasFreights\DashboardController;
 use App\Http\Controllers\NasFreights\DueListController;
 use App\Http\Controllers\NasFreights\FreightBookingController;
+use App\Http\Controllers\NasFreights\FreightExportBookingController;
 use App\Http\Controllers\NasFreights\ImportController;
 use App\Http\Controllers\NasFreights\MoneyReceiptController;
 use App\Http\Controllers\NasFreights\OverseasAgentController;
@@ -45,8 +46,8 @@ Route::prefix('rfqs')->name('rfqs.')->group(function () {
     Route::delete('/{rfq}', [RfqController::class, 'destroy'])->name('destroy');
 });
 
-// Freight Bookings
-Route::prefix('freight-bookings')->name('freight-bookings.')->group(function () {
+// Freight Import Bookings (import only; export bookings get their own module)
+Route::prefix('freight-import-bookings')->name('freight-import-bookings.')->group(function () {
     Route::get('/search-customers', [FreightBookingController::class, 'searchCustomers'])->name('search-customers');
     Route::get('/search-employees', [FreightBookingController::class, 'searchEmployees'])->name('search-employees');
     Route::get('/search-overseas-agents', [FreightBookingController::class, 'searchOverseasAgents'])->name('search-overseas-agents');
@@ -58,6 +59,21 @@ Route::prefix('freight-bookings')->name('freight-bookings.')->group(function () 
     Route::get('/{freightBooking}/edit', [FreightBookingController::class, 'edit'])->name('edit');
     Route::put('/{freightBooking}', [FreightBookingController::class, 'update'])->name('update');
     Route::delete('/{freightBooking}', [FreightBookingController::class, 'destroy'])->name('destroy');
+});
+
+// Freight Export Bookings (separate tables; new export field additions never touch import)
+Route::prefix('freight-export-bookings')->name('freight-export-bookings.')->group(function () {
+    Route::get('/search-customers', [FreightExportBookingController::class, 'searchCustomers'])->name('search-customers');
+    Route::get('/search-employees', [FreightExportBookingController::class, 'searchEmployees'])->name('search-employees');
+    Route::get('/search-overseas-agents', [FreightExportBookingController::class, 'searchOverseasAgents'])->name('search-overseas-agents');
+    Route::get('/search-shipping-carriers', [FreightExportBookingController::class, 'searchShippingCarriers'])->name('search-shipping-carriers');
+    Route::get('/', [FreightExportBookingController::class, 'index'])->name('index');
+    Route::get('/create', [FreightExportBookingController::class, 'create'])->name('create');
+    Route::post('/', [FreightExportBookingController::class, 'store'])->name('store');
+    Route::get('/{exportBooking}', [FreightExportBookingController::class, 'show'])->name('show');
+    Route::get('/{exportBooking}/edit', [FreightExportBookingController::class, 'edit'])->name('edit');
+    Route::put('/{exportBooking}', [FreightExportBookingController::class, 'update'])->name('update');
+    Route::delete('/{exportBooking}', [FreightExportBookingController::class, 'destroy'])->name('destroy');
 });
 
 // Transport Bookings

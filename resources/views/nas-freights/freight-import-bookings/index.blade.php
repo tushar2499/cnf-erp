@@ -1,6 +1,6 @@
 @extends('nas-freights.layouts.app')
 
-@section('title', 'Freight Bookings')
+@section('title', 'Freight Import Bookings')
 
 @push('styles')
 <style>
@@ -14,16 +14,16 @@
 
 @section('content')
 <div class="page-header">
-    <h4><i class="fa fa-ship me-2 text-primary"></i> Freight Bookings</h4>
-    <a href="{{ route('nas-freights.freight-bookings.create') }}" class="btn btn-sm btn-primary">
-        <i class="fa fa-plus me-1"></i> New Freight Booking
+    <h4><i class="fa fa-ship me-2 text-primary"></i> Freight Import Bookings</h4>
+    <a href="{{ route('nas-freights.freight-import-bookings.create') }}" class="btn btn-sm btn-primary">
+        <i class="fa fa-plus me-1"></i> New Import Booking
     </a>
 </div>
 
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div class="d-flex gap-1 flex-wrap align-items-center">
-            <span class="me-2"><i class="fa fa-list me-1"></i> All Freight Bookings</span>
+            <span class="me-2"><i class="fa fa-list me-1"></i> All Import Bookings</span>
             <button class="btn btn-sm btn-outline-secondary status-tab" data-status="">All</button>
             <button class="btn btn-sm btn-outline-secondary status-tab" data-status="Draft">Draft</button>
             <button class="btn btn-sm btn-outline-success status-tab" data-status="Confirmed">Confirmed</button>
@@ -40,7 +40,7 @@
                     <th>Booking No</th>
                     <th>Date</th>
                     <th>Customer</th>
-                    <th>Type</th>
+                    <th>IGM No</th>
                     <th>Service</th>
                     <th>POL → POD</th>
                     <th>Carrier</th>
@@ -52,7 +52,7 @@
                     <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                     <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                     <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                    <th></th>
+                    <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                     <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                     <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                     <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
@@ -76,7 +76,7 @@ $(function () {
         serverSide: true,
         autoWidth: false,
         ajax: {
-            url: '{{ route('nas-freights.freight-bookings.index') }}',
+            url: '{{ route('nas-freights.freight-import-bookings.index') }}',
             data: function (d) { d.status_filter = currentStatus; }
         },
         columns: [
@@ -84,7 +84,7 @@ $(function () {
             { data: 'freight_booking_no',name: 'freight_booking_no' },
             { data: 'booking_date',      name: 'booking_date' },
             { data: 'customer_name',     name: 'customer_name' },
-            { data: 'type_badge',        name: 'type',             orderable: false, searchable: false },
+            { data: 'igm_no',            name: 'igm_no' },
             { data: 'service_type',      name: 'service_type' },
             { data: 'route',             name: 'route',            orderable: false, searchable: false },
             { data: 'carrier',           name: 'shippingCarrier.name', defaultContent: '—' },
@@ -95,7 +95,7 @@ $(function () {
              "<'row'<'col-12'tr>>" +
              "<'row mt-2'<'col-sm-5'i><'col-sm-7'p>>",
         language: {
-            emptyTable: '<div class="text-center py-3 text-muted"><i class="fa fa-inbox fa-2x mb-2 d-block"></i>No freight bookings yet.</div>'
+            emptyTable: '<div class="text-center py-3 text-muted"><i class="fa fa-inbox fa-2x mb-2 d-block"></i>No import bookings yet.</div>'
         },
         initComplete: function () {
             this.api().columns().every(function (i) {

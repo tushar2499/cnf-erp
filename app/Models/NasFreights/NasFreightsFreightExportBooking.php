@@ -7,16 +7,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 
-class NasFreightsFreightBooking extends Model
+class NasFreightsFreightExportBooking extends Model
 {
-    protected $table = 'nas_freights_freight_bookings';
+    protected $table = 'nas_freights_freight_export_bookings';
 
     protected $fillable = [
-        'freight_booking_no', 'branch_id', 'rfq_id', 'rfq_no',
+        'export_booking_no', 'branch_id',
         'customer_id', 'salesperson_id', 'overseas_agent_id', 'shipping_carrier_id',
         'booking_date', 'service_type', 'incoterms', 'currency',
         'pol', 'pod', 'place_of_receipt', 'place_of_delivery',
-        'commodity_description', 'vessel_name', 'voyage_no', 'bl_no', 'igm_no', 'delivery_order_no',
+        'commodity_description', 'vessel_name', 'voyage_no', 'export_bl_no', 'booking_note_no',
         'etd', 'eta', 'status', 'remarks',
     ];
 
@@ -49,22 +49,17 @@ class NasFreightsFreightBooking extends Model
         return $this->belongsTo(NasFreightsShippingCarrier::class, 'shipping_carrier_id');
     }
 
-    public function rfq(): BelongsTo
-    {
-        return $this->belongsTo(NasFreightsRfq::class, 'rfq_id');
-    }
-
     public function items(): HasMany
     {
-        return $this->hasMany(NasFreightsFreightBookingItem::class, 'freight_booking_id');
+        return $this->hasMany(NasFreightsFreightExportBookingItem::class, 'export_booking_id');
     }
 
-    public static function generateFreightBookingNo(): string
+    public static function generateExportBookingNo(): string
     {
-        $prefix = 'FIB-'.now()->format('Ymd').'-';
+        $prefix = 'FEB-'.now()->format('Ymd').'-';
         $last = static::lockForUpdate()
-            ->where('freight_booking_no', 'like', $prefix.'%')
-            ->max(DB::raw('CAST(SUBSTRING(freight_booking_no, '.(strlen($prefix) + 1).') AS UNSIGNED)'));
+            ->where('export_booking_no', 'like', $prefix.'%')
+            ->max(DB::raw('CAST(SUBSTRING(export_booking_no, '.(strlen($prefix) + 1).') AS UNSIGNED)'));
 
         return $prefix.str_pad(($last ?? 0) + 1, 4, '0', STR_PAD_LEFT);
     }

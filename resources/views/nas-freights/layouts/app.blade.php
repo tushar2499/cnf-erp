@@ -13,8 +13,8 @@
                 'nas-freights.customer-bills.*',
                 'nas-freights.supplier-bills.*',
             );
-            $freightImportActive = request()->routeIs('nas-freights.rfqs.*', 'nas-freights.freight-bookings.*');
-            $freightExportActive = false;
+            $freightImportActive = request()->routeIs('nas-freights.rfqs.*', 'nas-freights.freight-import-bookings.*');
+            $freightExportActive = request()->routeIs('nas-freights.rfqs.*', 'nas-freights.freight-export-bookings.*');
 
             $dueListsActive = request()->routeIs('nas-freights.due-lists.*');
             $collectionsActive = request()->routeIs(
@@ -74,9 +74,9 @@
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.rfqs.*') ? 'active' : '' }}">
                     <i class="fa fa-file-signature"></i> RFQs
                 </a>
-                <a href="{{ route('nas-freights.freight-bookings.index') }}"
-                    class="nav-link ps-4 {{ request()->routeIs('nas-freights.freight-bookings.*') ? 'active' : '' }}">
-                    <i class="fa fa-ship"></i> Freight Bookings
+                <a href="{{ route('nas-freights.freight-import-bookings.index') }}"
+                    class="nav-link ps-4 {{ request()->routeIs('nas-freights.freight-import-bookings.*') ? 'active' : '' }}">
+                    <i class="fa fa-ship"></i> Freight Import Bookings
                 </a>
             </div>
         </div>
@@ -91,7 +91,10 @@
                 <i class="fa fa-chevron-down ms-auto"></i>
             </a>
             <div class="collapse {{ $freightExportActive ? 'show' : '' }}" id="freightFreightExportMenu">
-
+                <a href="{{ route('nas-freights.freight-export-bookings.index') }}"
+                    class="nav-link ps-4 {{ request()->routeIs('nas-freights.freight-export-bookings.*') ? 'active' : '' }}">
+                    <i class="fa fa-ship"></i> Freight Export Bookings
+                </a>
             </div>
         </div>
 

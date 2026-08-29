@@ -5,12 +5,12 @@ namespace App\Models\NasFreights;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class NasFreightsFreightBookingItem extends Model
+class NasFreightsFreightExportBookingItem extends Model
 {
-    protected $table = 'nas_freights_freight_booking_items';
+    protected $table = 'nas_freights_freight_export_booking_items';
 
     protected $fillable = [
-        'freight_booking_id', 'item_type', 'container_size', 'container_no', 'seal_no', 'package_type',
+        'export_booking_id', 'item_type', 'container_size', 'container_no', 'seal_no', 'package_type',
         'hs_code', 'commodity', 'quantity', 'gross_weight', 'weight_unit',
         'volume_cbm', 'country_of_origin', 'is_dangerous_goods', 'special_handling',
     ];
@@ -22,8 +22,8 @@ class NasFreightsFreightBookingItem extends Model
         ];
     }
 
-    public function freightBooking(): BelongsTo
+    public function exportBooking(): BelongsTo
     {
-        return $this->belongsTo(NasFreightsFreightBooking::class, 'freight_booking_id');
+        return $this->belongsTo(NasFreightsFreightExportBooking::class, 'export_booking_id');
     }
 }

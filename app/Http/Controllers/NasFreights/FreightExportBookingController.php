@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\NasFreights\NasFreightsContainerType;
 use App\Models\NasFreights\NasFreightsCustomer;
 use App\Models\NasFreights\NasFreightsEmployee;
-use App\Models\NasFreights\NasFreightsFreightBooking;
+use App\Models\NasFreights\NasFreightsFreightExportBooking;
 use App\Models\NasFreights\NasFreightsOverseasAgent;
 use App\Models\NasFreights\NasFreightsPackageType;
 use App\Models\NasFreights\NasFreightsShippingCarrier;
@@ -14,13 +14,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
-class FreightBookingController extends Controller
+class FreightExportBookingController extends Controller
 {
     private function formData(): array
     {
         return [
-            'serviceTypes'   => NasFreightsFreightBooking::serviceTypes(),
-            'statuses'       => NasFreightsFreightBooking::statuses(),
+            'serviceTypes'   => NasFreightsFreightExportBooking::serviceTypes(),
+            'statuses'       => NasFreightsFreightExportBooking::statuses(),
             'incoterms'      => ['EXW', 'FCA', 'FAS', 'FOB', 'CFR', 'CIF', 'CPT', 'CIP', 'DAP', 'DPU', 'DDP'],
             'currencies'     => ['BDT', 'USD', 'EUR', 'GBP', 'JPY', 'CNY', 'INR', 'SGD', 'AUD', 'AED'],
             'weightUnits'    => ['KG', 'MT', 'LB'],
@@ -33,7 +33,7 @@ class FreightBookingController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = NasFreightsFreightBooking::with(['customer', 'shippingCarrier'])
+            $query = NasFreightsFreightExportBooking::with(['customer', 'shippingCarrier'])
                 ->where('branch_id', session('nas_freights_branch_id'))
                 ->when($request->status_filter, fn ($q, $s) => $q->where('status', $s));
 
@@ -41,7 +41,7 @@ class FreightBookingController extends Controller
                 ->addIndexColumn()
                 ->editColumn('booking_date', fn ($r) => $r->booking_date?->format('d M Y') ?? '—')
                 ->addColumn('customer_name', fn ($r) => $r->customer?->name ?? '—')
-                ->addColumn('igm_no', fn ($r) => $r->igm_no ?? '—')
+                ->addColumn('export_bl_no', fn ($r) => $r->export_bl_no ?? '—')
                 ->addColumn('route', fn ($r) => ($r->pol ?? '—').' → '.($r->pod ?? '—'))
                 ->addColumn('carrier', fn ($r) => $r->shippingCarrier?->name ?? '—')
                 ->addColumn('status_badge', fn ($r) => match ($r->status) {
@@ -52,24 +52,24 @@ class FreightBookingController extends Controller
                     default       => '<span class="badge bg-secondary">Draft</span>',
                 })
                 ->addColumn('action', fn ($r) => '
-                    <a href="'.route('nas-freights.freight-import-bookings.show', $r->id).'" class="btn btn-sm btn-outline-info py-0 px-1" title="View"><i class="fa fa-eye"></i></a>
-                    <a href="'.route('nas-freights.freight-import-bookings.edit', $r->id).'" class="btn btn-sm btn-outline-primary py-0 px-1" title="Edit"><i class="fa fa-edit"></i></a>
+                    <a href="'.route('nas-freights.freight-export-bookings.show', $r->id).'" class="btn btn-sm btn-outline-info py-0 px-1" title="View"><i class="fa fa-eye"></i></a>
+                    <a href="'.route('nas-freights.freight-export-bookings.edit', $r->id).'" class="btn btn-sm btn-outline-primary py-0 px-1" title="Edit"><i class="fa fa-edit"></i></a>
                     <button class="btn btn-sm btn-outline-danger py-0 px-1 btn-delete"
-                        data-url="'.route('nas-freights.freight-import-bookings.destroy', $r->id).'"
-                        data-name="'.e($r->freight_booking_no).'"><i class="fa fa-trash"></i></button>')
+                        data-url="'.route('nas-freights.freight-export-bookings.destroy', $r->id).'"
+                        data-name="'.e($r->export_booking_no).'"><i class="fa fa-trash"></i></button>')
                 ->filterColumn('customer_name', fn ($q, $k) => $q->whereHas('customer', fn ($s) => $s->where('name', 'like', "%{$k}%")))
-                ->filterColumn('igm_no', fn ($q, $k) => $q->where('igm_no', 'like', "%{$k}%"))
+                ->filterColumn('export_bl_no', fn ($q, $k) => $q->where('export_bl_no', 'like', "%{$k}%"))
                 ->rawColumns(['status_badge', 'action'])
                 ->make(true);
         }
 
-        return view('nas-freights.freight-import-bookings.index');
+        return view('nas-freights.freight-export-bookings.index');
     }
 
     public function create()
     {
-        return view('nas-freights.freight-import-bookings.create', array_merge($this->formData(), [
-            'freightBooking' => null,
+        return view('nas-freights.freight-export-bookings.create', array_merge($this->formData(), [
+            'exportBooking'  => null,
             'existingItems'  => [],
         ]));
     }
@@ -82,27 +82,27 @@ class FreightBookingController extends Controller
         ]);
 
         DB::transaction(function () use ($request) {
-            $freightBooking = NasFreightsFreightBooking::create(array_merge($this->prepareData($request), [
-                'freight_booking_no' => NasFreightsFreightBooking::generateFreightBookingNo(),
+            $exportBooking = NasFreightsFreightExportBooking::create(array_merge($this->prepareData($request), [
+                'export_booking_no' => NasFreightsFreightExportBooking::generateExportBookingNo(),
             ]));
-            $this->saveItems($freightBooking, $request->input('items', []));
+            $this->saveItems($exportBooking, $request->input('items', []));
         });
 
-        return redirect()->route('nas-freights.freight-import-bookings.index')
-            ->with('success', 'Freight Import Booking created successfully.');
+        return redirect()->route('nas-freights.freight-export-bookings.index')
+            ->with('success', 'Freight Export Booking created successfully.');
     }
 
-    public function show(NasFreightsFreightBooking $freightBooking)
+    public function show(NasFreightsFreightExportBooking $exportBooking)
     {
-        $freightBooking->load(['customer', 'salesperson', 'overseasAgent', 'shippingCarrier', 'rfq', 'items']);
+        $exportBooking->load(['customer', 'salesperson', 'overseasAgent', 'shippingCarrier', 'items']);
 
-        return view('nas-freights.freight-import-bookings.show', compact('freightBooking'));
+        return view('nas-freights.freight-export-bookings.show', compact('exportBooking'));
     }
 
-    public function edit(NasFreightsFreightBooking $freightBooking)
+    public function edit(NasFreightsFreightExportBooking $exportBooking)
     {
-        $freightBooking->load(['items', 'overseasAgent', 'shippingCarrier']);
-        $existingItems = $freightBooking->items->map(fn ($i) => [
+        $exportBooking->load(['items', 'overseasAgent', 'shippingCarrier']);
+        $existingItems = $exportBooking->items->map(fn ($i) => [
             'item_type'          => $i->item_type,
             'container_size'     => $i->container_size,
             'container_no'       => $i->container_no,
@@ -119,33 +119,33 @@ class FreightBookingController extends Controller
             'special_handling'   => $i->special_handling,
         ])->values();
 
-        return view('nas-freights.freight-import-bookings.create', array_merge($this->formData(), [
-            'freightBooking' => $freightBooking,
+        return view('nas-freights.freight-export-bookings.create', array_merge($this->formData(), [
+            'exportBooking'  => $exportBooking,
             'existingItems'  => $existingItems,
         ]));
     }
 
-    public function update(Request $request, NasFreightsFreightBooking $freightBooking)
+    public function update(Request $request, NasFreightsFreightExportBooking $exportBooking)
     {
         $request->validate([
             'booking_date' => ['required', 'date'],
             'service_type' => ['required'],
         ]);
 
-        DB::transaction(function () use ($request, $freightBooking) {
-            $freightBooking->update($this->prepareData($request));
-            $freightBooking->items()->delete();
-            $this->saveItems($freightBooking, $request->input('items', []));
+        DB::transaction(function () use ($request, $exportBooking) {
+            $exportBooking->update($this->prepareData($request));
+            $exportBooking->items()->delete();
+            $this->saveItems($exportBooking, $request->input('items', []));
         });
 
-        return back()->with('success', 'Freight Import Booking '.$freightBooking->freight_booking_no.' updated.');
+        return back()->with('success', 'Freight Export Booking '.$exportBooking->export_booking_no.' updated.');
     }
 
-    public function destroy(NasFreightsFreightBooking $freightBooking)
+    public function destroy(NasFreightsFreightExportBooking $exportBooking)
     {
-        $freightBooking->delete();
+        $exportBooking->delete();
 
-        return response()->json(['message' => 'Freight Import Booking '.$freightBooking->freight_booking_no.' deleted.']);
+        return response()->json(['message' => 'Freight Export Booking '.$exportBooking->export_booking_no.' deleted.']);
     }
 
     public function searchCustomers(Request $request)
@@ -225,9 +225,8 @@ class FreightBookingController extends Controller
             'commodity_description' => $request->commodity_description ?: null,
             'vessel_name'           => $request->vessel_name ?: null,
             'voyage_no'             => $request->voyage_no ?: null,
-            'bl_no'                 => $request->bl_no ?: null,
-            'igm_no'                => $request->igm_no ?: null,
-            'delivery_order_no'     => $request->delivery_order_no ?: null,
+            'export_bl_no'          => $request->export_bl_no ?: null,
+            'booking_note_no'       => $request->booking_note_no ?: null,
             'etd'                   => $request->etd ?: null,
             'eta'                   => $request->eta ?: null,
             'status'                => $request->status ?: 'Draft',
@@ -235,14 +234,14 @@ class FreightBookingController extends Controller
         ];
     }
 
-    private function saveItems(NasFreightsFreightBooking $freightBooking, array $items): void
+    private function saveItems(NasFreightsFreightExportBooking $exportBooking, array $items): void
     {
         foreach ($items as $item) {
             if (empty($item['item_type'])) {
                 continue;
             }
 
-            $freightBooking->items()->create([
+            $exportBooking->items()->create([
                 'item_type'          => $item['item_type'],
                 'container_size'     => $item['item_type'] === 'container' ? ($item['container_size'] ?? null) : null,
                 'container_no'       => $item['item_type'] === 'container' ? ($item['container_no'] ?? null) : null,
