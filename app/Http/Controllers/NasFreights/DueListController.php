@@ -25,9 +25,12 @@ class DueListController extends Controller
 
             return DataTables::of($query)
                 ->addIndexColumn()
-                ->editColumn('bill_date', fn ($r) => $r->bill_date?->format('d-M-Y'))
-                ->editColumn('from_date', fn ($r) => $r->from_date?->format('d-M-Y'))
-                ->editColumn('to_date', fn ($r) => $r->to_date?->format('d-M-Y'))
+                ->editColumn('bill_date', fn ($r) => $r->bill_date?->format('d M Y') ?? '—')
+                ->editColumn('from_date', fn ($r) => $r->from_date?->format('d M Y') ?? '—')
+                ->editColumn('to_date', fn ($r) => $r->to_date?->format('d M Y') ?? '—')
+                ->editColumn('sub_total', fn ($r) => number_format($r->sub_total, 2))
+                ->editColumn('tds_amount', fn ($r) => number_format($r->tds_amount, 2))
+                ->editColumn('total_amount', fn ($r) => number_format($r->total_amount, 2))
                 ->addColumn('overdue_days', fn ($r) => (int) now()->startOfDay()->diffInDays($r->bill_date->startOfDay(), false) * -1)
                 ->addColumn('action', fn ($r) => '<a href="'.route('nas-freights.customer-bills.show', $r->id).'" class="btn btn-sm btn-outline-info" style="padding:2px 6px;font-size:.7rem" title="View"><i class="fa fa-eye"></i></a> '.
                     '<a href="'.route('nas-freights.money-receipts.create').'?bill_id='.$r->id.'" class="btn btn-sm btn-outline-success" style="padding:2px 6px;font-size:.7rem" title="Receive Payment"><i class="fa fa-money-bill-wave"></i></a>'
@@ -52,9 +55,10 @@ class DueListController extends Controller
 
             return DataTables::of($query)
                 ->addIndexColumn()
-                ->editColumn('bill_date', fn ($r) => $r->bill_date?->format('d-M-Y'))
-                ->editColumn('from_date', fn ($r) => $r->from_date?->format('d-M-Y'))
-                ->editColumn('to_date', fn ($r) => $r->to_date?->format('d-M-Y'))
+                ->editColumn('bill_date', fn ($r) => $r->bill_date?->format('d M Y') ?? '—')
+                ->editColumn('from_date', fn ($r) => $r->from_date?->format('d M Y') ?? '—')
+                ->editColumn('to_date', fn ($r) => $r->to_date?->format('d M Y') ?? '—')
+                ->editColumn('total_amount', fn ($r) => number_format($r->total_amount, 2))
                 ->addColumn('overdue_days', fn ($r) => (int) now()->startOfDay()->diffInDays($r->bill_date->startOfDay(), false) * -1)
                 ->addColumn('action', fn ($r) => '<a href="'.route('nas-freights.supplier-bills.show', $r->id).'" class="btn btn-sm btn-outline-info" style="padding:2px 6px;font-size:.7rem" title="View"><i class="fa fa-eye"></i></a> '.
                     '<a href="'.route('nas-freights.supplier-payments.create').'?bill_id='.$r->id.'" class="btn btn-sm btn-outline-success" style="padding:2px 6px;font-size:.7rem" title="Make Payment"><i class="fa fa-money-bill-wave"></i></a>'

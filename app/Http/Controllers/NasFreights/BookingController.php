@@ -21,10 +21,15 @@ class BookingController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
+            $fromDate = $request->input('from_date');
+            $toDate = $request->input('to_date');
+
             $branchMap = NasFreightsBranch::pluck('name', 'id')->all();
 
             $query = NasFreightsBooking::with(['items', 'products'])
                 ->where('branch_id', session('nas_freights_branch_id'))
+                ->when($fromDate, fn ($q) => $q->whereDate('job_date', '>=', $fromDate))
+                ->when($toDate, fn ($q) => $q->whereDate('job_date', '<=', $toDate))
                 ->orderBy('job_no', 'desc');
 
             return DataTables::of($query)
@@ -44,6 +49,8 @@ class BookingController extends Controller
                 })
                 ->addColumn('t_qty', fn ($r) => number_format($r->items->sum('qty'), 2))
                 ->addColumn('item_amount', fn ($r) => number_format($r->items->sum('amount'), 2))
+                ->editColumn('job_date', fn ($r) => $r->job_date ? date('d M Y', strtotime($r->job_date)) : '—')
+                ->editColumn('delivery_date', fn ($r) => $r->delivery_date ? date('d M Y', strtotime($r->delivery_date)) : '—')
                 ->addColumn('status_badge', fn ($r) => match ($r->status) {
                     'Approved'  => '<span class="badge bg-success">APPROVED</span>',
                     'Submitted' => '<span class="badge bg-warning text-dark">SUBMITTED</span>',

@@ -33,9 +33,15 @@ class FreightBookingController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
+            $fromDate = $request->input('from_date');
+            $toDate = $request->input('to_date');
+
             $query = NasFreightsFreightBooking::with(['customer', 'shippingCarrier'])
                 ->where('branch_id', session('nas_freights_branch_id'))
-                ->when($request->status_filter, fn ($q, $s) => $q->where('status', $s));
+                ->when($request->status_filter, fn ($q, $s) => $q->where('status', $s))
+                ->when($fromDate, fn ($q) => $q->whereDate('booking_date', '>=', $fromDate))
+                ->when($toDate, fn ($q) => $q->whereDate('booking_date', '<=', $toDate))
+                ->latest();
 
             return DataTables::of($query)
                 ->addIndexColumn()

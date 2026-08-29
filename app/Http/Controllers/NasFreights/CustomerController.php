@@ -19,14 +19,16 @@ class CustomerController extends Controller
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')
                 ->addColumn('action', fn ($r) => '
-                    <button class="btn btn-sm btn-outline-primary btn-edit" data-id="'.$r->id.'">
-                        <i class="fa fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger btn-delete"
-                        data-url="'.route('nas-freights.stakeholders.customers.destroy', $r->id).'"
-                        data-name="'.e($r->name).'">
-                        <i class="fa fa-trash"></i>
-                    </button>')
+                    <div class="d-flex gap-1 text-nowrap">
+                        <button class="btn btn-sm btn-outline-primary btn-edit py-0 px-1" data-id="'.$r->id.'" title="Edit" aria-label="Edit">
+                            <i class="fa fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger btn-delete py-0 px-1"
+                            data-url="'.route('nas-freights.stakeholders.customers.destroy', $r->id).'"
+                            data-name="'.e($r->name).'" title="Delete" aria-label="Delete">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>')
                 ->rawColumns(['status_badge', 'action'])
                 ->make(true);
         }

@@ -17,11 +17,19 @@ class MoneyReceiptController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = NasFreightsMoneyReceipt::where('branch_id', session('nas_freights_branch_id'))->latest();
+            $fromDate = $request->input('from_date');
+            $toDate = $request->input('to_date');
+
+            $query = NasFreightsMoneyReceipt::where('branch_id', session('nas_freights_branch_id'))
+                ->when($fromDate, fn ($q) => $q->whereDate('receipt_date', '>=', $fromDate))
+                ->when($toDate, fn ($q) => $q->whereDate('receipt_date', '<=', $toDate))
+                ->latest();
 
             return DataTables::of($query)
                 ->addIndexColumn()
-                ->editColumn('receipt_date', fn ($r) => $r->receipt_date?->format('d-M-Y'))
+                ->editColumn('receipt_date', fn ($r) => $r->receipt_date?->format('d M Y') ?? '—')
+                ->editColumn('bill_amount', fn ($r) => number_format($r->bill_amount, 2))
+                ->editColumn('amount_received', fn ($r) => number_format($r->amount_received, 2))
                 ->addColumn('action', fn ($r) => '<a href="'.route('nas-freights.money-receipts.show', $r->id).'" class="btn btn-sm btn-outline-info" title="View"><i class="fa fa-eye"></i></a> '.
                     '<a href="'.route('nas-freights.money-receipts.print', $r->id).'" target="_blank" class="btn btn-sm btn-outline-dark" title="Print"><i class="fa fa-print"></i></a>')
                 ->rawColumns(['action'])

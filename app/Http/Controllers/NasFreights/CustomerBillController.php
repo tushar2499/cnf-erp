@@ -24,13 +24,22 @@ class CustomerBillController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = NasFreightsCustomerBill::where('branch_id', session('nas_freights_branch_id'))->latest();
+            $fromDate = $request->input('from_date');
+            $toDate = $request->input('to_date');
+
+            $query = NasFreightsCustomerBill::where('branch_id', session('nas_freights_branch_id'))
+                ->when($fromDate, fn ($q) => $q->whereDate('bill_date', '>=', $fromDate))
+                ->when($toDate, fn ($q) => $q->whereDate('bill_date', '<=', $toDate))
+                ->latest();
 
             return DataTables::of($query)
                 ->addIndexColumn()
-                ->editColumn('bill_date', fn ($r) => $r->bill_date?->format('d-M-Y'))
-                ->editColumn('from_date', fn ($r) => $r->from_date?->format('d-M-Y'))
-                ->editColumn('to_date', fn ($r) => $r->to_date?->format('d-M-Y'))
+                ->editColumn('bill_date', fn ($r) => $r->bill_date?->format('d M Y') ?? '—')
+                ->editColumn('from_date', fn ($r) => $r->from_date?->format('d M Y') ?? '—')
+                ->editColumn('to_date', fn ($r) => $r->to_date?->format('d M Y') ?? '—')
+                ->editColumn('sub_total', fn ($r) => number_format($r->sub_total, 2))
+                ->editColumn('tds_amount', fn ($r) => number_format($r->tds_amount, 2))
+                ->editColumn('total_amount', fn ($r) => number_format($r->total_amount, 2))
                 ->addColumn('status_badge', fn ($r) => match ($r->status) {
                     'Approved'  => '<span class="badge bg-success">CONFIRMED</span>',
                     'Paid'      => '<span class="badge bg-primary">PAID</span>',
