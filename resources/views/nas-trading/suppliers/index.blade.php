@@ -5,8 +5,21 @@
 .panel { background:#fff; border:1px solid #dee2e6; border-radius:.5rem; overflow:hidden; }
 .panel-header { background:#0c2340; color:#fff; padding:.6rem 1rem; font-weight:600; font-size:.85rem; }
 .dt-table thead { --bs-table-bg:#1a6b60; --bs-table-color:#fff; }
-.dt-table th { font-size:.78rem; padding:.45rem .6rem; }
-.dt-table td { font-size:.8rem; padding:.4rem .6rem; vertical-align:middle; }
+.dt-table th { font-size:.78rem; padding:.45rem .6rem; white-space: nowrap; }
+.dt-table td { font-size:.8rem; padding:.4rem .6rem; vertical-align:middle; white-space: nowrap; }
+.dt-table thead tr:first-child th { position: sticky; top: 0; z-index: 2; }
+.dt-table thead tr:last-child th { position: sticky; z-index: 2; background: #fff; }
+.dt-table thead tr:last-child th input.form-control {
+    min-width: 120px; width: 100%; box-sizing: border-box; font-size: .78rem; padding: .3rem .5rem;
+}
+.dt-scroll { max-height: 65vh; overflow: auto; }
+.dt-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.dt-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
+.dt-scroll::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+#supplierTable_wrapper>.row:last-child {
+    position: sticky; bottom: 0; background: #fff; z-index: 3;
+    border-top: 1px solid #dee2e6; margin: 0; padding: 6px 12px;
+}
 .form-label { font-size:.82rem; font-weight:600; color:#374151; margin-bottom:.25rem; }
 </style>
 @endpush
@@ -14,31 +27,77 @@
 @section('content')
 <div class="page-header">
     <h4><i class="fa fa-industry me-2 text-info"></i> Suppliers</h4>
-    <button class="btn btn-sm btn-info text-white" id="btnAddNew"><i class="fa fa-plus me-1"></i> Add New</button>
+    <button class="btn btn-sm btn-info text-white" data-bs-toggle="modal" data-bs-target="#supplierModal" id="btnAddNew">
+        <i class="fa fa-plus me-1"></i> Add New
+    </button>
 </div>
-<div class="row g-3">
-    <div class="col-md-4">
-        <div class="panel">
-            <div class="panel-header" id="formTitle"><i class="fa fa-plus me-2"></i> Add New Supplier</div>
-            <div class="p-3">
-                <form id="mainForm">
-                    @csrf
-                    <input type="hidden" id="recId">
-                    <div class="mb-2">
-                        <label class="form-label">Supplier Code</label>
-                        <input type="text" id="fCode" class="form-control form-control-sm bg-light fw-bold" readonly placeholder="Auto-generated">
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">Company Name <span class="text-danger">*</span></label>
-                        <input type="text" id="fCompanyName" class="form-control form-control-sm">
-                        <div class="invalid-feedback" id="fNameErr"></div>
-                    </div>
-                    <div class="row g-2 mb-2">
-                        <div class="col-6">
+
+<div class="panel">
+    <div class="panel-header d-flex justify-content-between align-items-center">
+        <span><i class="fa fa-list me-2"></i> Supplier List</span>
+        <div class="dropdown">
+            <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="padding:2px 8px;font-size:.72rem">
+                <i class="fa fa-download me-1"></i> Export
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><button class="dropdown-item" onclick="$('#supplierTable').DataTable().button('.buttons-csv').trigger()"><i class="fa fa-file-csv me-2 text-secondary"></i>CSV</button></li>
+                <li><button class="dropdown-item" onclick="$('#supplierTable').DataTable().button('.buttons-excel').trigger()"><i class="fa fa-file-excel me-2 text-success"></i>Excel</button></li>
+                <li><button class="dropdown-item" onclick="$('#supplierTable').DataTable().button('.buttons-pdf').trigger()"><i class="fa fa-file-pdf me-2 text-danger"></i>PDF</button></li>
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+                <li><button class="dropdown-item" onclick="$('#supplierTable').DataTable().button('.buttons-print').trigger()"><i class="fa fa-print me-2"></i>Print</button></li>
+            </ul>
+        </div>
+    </div>
+    <div class="dt-scroll">
+        <table id="supplierTable" class="table table-hover table-striped table-bordered dt-table mb-0 w-100">
+            <thead>
+            <tr>
+                <th>#</th><th>Code</th><th>Company</th><th>Country</th><th>Currency</th><th>Phone</th><th>Status</th><th>Action</th>
+            </tr>
+            <tr>
+                <th></th>
+                <th><input type="text" class="form-control form-control-sm" placeholder="Search Code"></th>
+                <th><input type="text" class="form-control form-control-sm" placeholder="Search Company"></th>
+                <th><input type="text" class="form-control form-control-sm" placeholder="Search Country"></th>
+                <th><input type="text" class="form-control form-control-sm" placeholder="Search Currency"></th>
+                <th><input type="text" class="form-control form-control-sm" placeholder="Search Phone"></th>
+                <th></th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="supplierModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title fw-600" id="supplierModalTitle"><i class="fa fa-plus me-2"></i> Add New Supplier</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="supplierForm">
+                @csrf
+                <input type="hidden" id="recId">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Supplier Code</label>
+                            <input type="text" id="fCode" class="form-control form-control-sm bg-light fw-bold" readonly placeholder="Auto-generated">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Company Name <span class="text-danger">*</span></label>
+                            <input type="text" id="fCompanyName" class="form-control form-control-sm">
+                            <div class="invalid-feedback" id="fNameErr"></div>
+                        </div>
+                        <div class="col-md-6">
                             <label class="form-label">Country</label>
                             <input type="text" id="fCountry" class="form-control form-control-sm">
                         </div>
-                        <div class="col-6">
+                        <div class="col-md-6">
                             <label class="form-label">Currency</label>
                             <select id="fCurrency" class="form-select form-select-sm">
                                 <option value="USD">USD</option>
@@ -48,47 +107,32 @@
                                 <option value="BDT">BDT</option>
                             </select>
                         </div>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">Contact Person</label>
-                        <input type="text" id="fContactPerson" class="form-control form-control-sm">
-                    </div>
-                    <div class="row g-2 mb-2">
-                        <div class="col-6">
+                        <div class="col-md-6">
+                            <label class="form-label">Contact Person</label>
+                            <input type="text" id="fContactPerson" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-md-6">
                             <label class="form-label">Phone</label>
                             <input type="text" id="fPhone" class="form-control form-control-sm">
                         </div>
-                        <div class="col-6">
+                        <div class="col-md-6">
                             <label class="form-label">Email</label>
                             <input type="email" id="fEmail" class="form-control form-control-sm">
                         </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Status</label>
+                            <select id="fStatus" class="form-select form-select-sm">
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Status</label>
-                        <select id="fStatus" class="form-select form-select-sm">
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
-                        </select>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-success btn-sm px-4" id="btnSave"><i class="fa fa-save me-1"></i> Save</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btnCancel"><i class="fa fa-times me-1"></i> Cancel</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-8">
-        <div class="panel">
-            <div class="panel-header"><i class="fa fa-list me-2"></i> Supplier List</div>
-            <div style="overflow-x:auto">
-                <table id="mainTable" class="table table-hover table-striped dt-table mb-0 w-100">
-                    <thead><tr>
-                        <th>#</th><th>Code</th><th>Company</th><th>Country</th><th>Currency</th><th>Phone</th><th>Status</th><th>Action</th>
-                    </tr></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info btn-sm text-white px-4" id="btnSave"><i class="fa fa-save me-1"></i> Save</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -98,22 +142,52 @@
 <script>
 var table;
 $(function () {
-    table = $('#mainTable').DataTable({
+    table = $('#supplierTable').DataTable({
         processing: true, serverSide: true,
         autoWidth: false,
+        orderCellsTop: true,
+        pageLength: 15,
+        order: [],
+        lengthMenu: [
+            [10, 15, 25, 50, 100, 200],
+            [10, 15, 25, 50, 100, 200]
+        ],
         ajax: '{{ route('nas-trading.suppliers.index') }}',
         columns: [
-            { data: 'DT_RowIndex', orderable: false, searchable: false, width: '40px' },
-            { data: 'code',         name: 'code' },
+            { data: 'DT_RowIndex',  name: 'DT_RowIndex',  orderable: false, searchable: false, width: '40px', className: 'text-center' },
+            { data: 'code',         name: 'code',         width: '110px' },
             { data: 'company_name', name: 'company_name' },
             { data: 'country',      name: 'country' },
-            { data: 'currency',     name: 'currency' },
+            { data: 'currency',     name: 'currency',     width: '80px', className: 'text-center' },
             { data: 'phone',        name: 'phone' },
-            { data: 'status_badge', orderable: false, searchable: false },
-            { data: 'action',       orderable: false, searchable: false, width: '80px' },
+            { data: 'status_badge', name: 'status_badge', orderable: false, searchable: false, width: '90px', className: 'text-center' },
+            { data: 'action',       name: 'action',       orderable: false, searchable: false, width: '90px', className: 'text-center' },
         ],
-        dom: "<'row px-2 pt-2'<'col-sm-6'><'col-sm-6'f>><'row'<'col-12'tr>><'row px-2 pt-1 pb-2'<'col-sm-5'i><'col-sm-7'p>>",
-        pageLength: 15,
+        dom: "<'row px-2 pt-2'<'col-sm-6'l><'col-sm-6'>>" +
+            "<'row'<'col-12'tr>>" +
+            "<'row px-2 pt-1 pb-2'<'col-sm-5'i><'col-sm-7'p>>",
+        buttons: [
+            { extend: 'csv' }, { extend: 'excel' }, { extend: 'pdf' }, { extend: 'print' }
+        ],
+        language: { emptyTable: '<div class="text-center py-3 text-muted"><i class="fa fa-inbox fa-2x mb-2 d-block"></i>No suppliers yet.</div>' },
+        initComplete: function () {
+            const firstRowH = $('#supplierTable thead tr:first-child').outerHeight();
+            $('#supplierTable thead tr:last-child th').css('top', firstRowH + 'px');
+
+            var self = this.api();
+            self.columns().every(function (i) {
+                var col = this;
+                var $in = $('thead tr:eq(1) th:eq(' + i + ') input', self.table().container());
+                if ($in.length) {
+                    $in.on('click mousedown keydown', function (e) { e.stopPropagation(); });
+                    var timer;
+                    $in.on('input', function () {
+                        clearTimeout(timer);
+                        timer = setTimeout(function () { col.search($in.val()).draw(); }, 400);
+                    });
+                }
+            });
+        },
     });
 
     function resetForm() {
@@ -121,23 +195,24 @@ $(function () {
         $('#fCompanyName,#fCountry,#fContactPerson,#fPhone,#fEmail').val('');
         $('#fCompanyName').removeClass('is-invalid'); $('#fNameErr').text('');
         $('#fCurrency').val('USD'); $('#fStatus').val('Active');
-        $('#formTitle').html('<i class="fa fa-plus me-2"></i> Add New Supplier');
+        $('#supplierModalTitle').html('<i class="fa fa-plus me-2"></i> Add New Supplier');
         $('#btnSave').html('<i class="fa fa-save me-1"></i> Save');
     }
-    $('#btnAddNew,#btnCancel').on('click', resetForm);
+
+    $('#btnAddNew').on('click', resetForm);
 
     $(document).on('click', '.btn-edit', function () {
         const id = $(this).data('id');
         $.getJSON('{{ url('nas-trading/suppliers') }}/' + id, function (r) {
             resetForm();
             $('#recId').val(r.id); $('#fCode').val(r.code);
-            $('#fCompanyName').val(r.company_name); $('#fCountry').val(r.country||'');
-            $('#fContactPerson').val(r.contact_person||''); $('#fPhone').val(r.phone||'');
-            $('#fEmail').val(r.email||''); $('#fCurrency').val(r.currency||'USD');
+            $('#fCompanyName').val(r.company_name); $('#fCountry').val(r.country || '');
+            $('#fContactPerson').val(r.contact_person || ''); $('#fPhone').val(r.phone || '');
+            $('#fEmail').val(r.email || ''); $('#fCurrency').val(r.currency || 'USD');
             $('#fStatus').val(r.status);
-            $('#formTitle').html('<i class="fa fa-edit me-2"></i> Edit Supplier');
+            $('#supplierModalTitle').html('<i class="fa fa-edit me-2"></i> Edit Supplier');
             $('#btnSave').html('<i class="fa fa-save me-1"></i> Update');
-            $('html,body').animate({ scrollTop: 0 }, 200);
+            $('#supplierModal').modal('show');
         });
     });
 
@@ -153,7 +228,7 @@ $(function () {
             });
     });
 
-    $('#mainForm').on('submit', function (e) {
+    $('#supplierForm').on('submit', function (e) {
         e.preventDefault();
         $('#fCompanyName').removeClass('is-invalid'); $('#fNameErr').text('');
         if (!$('#fCompanyName').val().trim()) { $('#fCompanyName').addClass('is-invalid'); $('#fNameErr').text('Company name is required.'); return; }
@@ -166,15 +241,16 @@ $(function () {
             contact_person: $('#fContactPerson').val(), phone: $('#fPhone').val(),
             email: $('#fEmail').val(), currency: $('#fCurrency').val(), status: $('#fStatus').val(),
         }})
-        .done(function (r) {
-            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: r.message, showConfirmButton: false, timer: 2500, timerProgressBar: true });
-            resetForm(); table.ajax.reload();
-        })
-        .fail(function (xhr) {
-            if (xhr.status === 422) { const e = xhr.responseJSON.errors; if (e.company_name) { $('#fCompanyName').addClass('is-invalid'); $('#fNameErr').text(e.company_name[0]); } }
-            else Swal.fire({ icon: 'error', title: xhr.responseJSON?.message || 'Something went wrong.' });
-        })
-        .always(() => { const isEdit = $('#recId').val(); $('#btnSave').prop('disabled', false).html('<i class="fa fa-save me-1"></i> ' + (isEdit ? 'Update' : 'Save')); });
+            .done(function (r) {
+                $('#supplierModal').modal('hide');
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: r.message, showConfirmButton: false, timer: 2500, timerProgressBar: true });
+                resetForm(); table.ajax.reload();
+            })
+            .fail(function (xhr) {
+                if (xhr.status === 422) { const e = xhr.responseJSON.errors; if (e.company_name) { $('#fCompanyName').addClass('is-invalid'); $('#fNameErr').text(e.company_name[0]); } }
+                else Swal.fire({ icon: 'error', title: xhr.responseJSON?.message || 'Something went wrong.' });
+            })
+            .always(() => { $('#btnSave').prop('disabled', false).html('<i class="fa fa-save me-1"></i> ' + ($('#recId').val() ? 'Update' : 'Save')); });
     });
 });
 </script>

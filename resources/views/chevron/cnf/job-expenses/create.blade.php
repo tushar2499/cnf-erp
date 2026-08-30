@@ -86,10 +86,14 @@
                     <div class="row g-2">
                         <div class="col-12">
                             <label class="form-label">Employee Name <span class="req">*</span></label>
-                            <select id="employeeSelect" class="form-select form-select-sm w-100">
-                                @if($expense?->employee)
-                                    <option value="{{ $expense->employee_id }}" selected>{{ $expense->employee->employee_id }} — {{ $expense->employee->name }}</option>
-                                @endif
+                            <select id="employeeSelect" name="_employee_display" class="form-select form-select-sm w-100">
+                                <option value="">-- Select Employee --</option>
+                                @foreach($employees as $emp)
+                                    <option value="{{ $emp->id }}"
+                                        {{ old('employee_id', $expense?->employee_id) == $emp->id ? 'selected' : '' }}>
+                                        {{ $emp->code }} — {{ $emp->name }}
+                                    </option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-12">
@@ -218,9 +222,8 @@
 
 @push('scripts')
 <script>
-var SEARCH_JOBS      = '{{ route('chevron.cnf.job-expenses.search-jobs') }}';
-var SEARCH_EMPLOYEES = '{{ route('chevron.cnf.job-expenses.search-employees') }}';
-var TODAY            = '{{ $today }}';
+var SEARCH_JOBS = '{{ route('chevron.cnf.job-expenses.search-jobs') }}';
+var TODAY       = '{{ $today }}';
 
 function initExpenseHeadSelect($sel) {
     $sel.select2({ theme: 'bootstrap-5', width: '100%', placeholder: '-- Select --' });
@@ -254,21 +257,21 @@ $(function () {
         $('#beNo, #invoiceNo, #invoiceValueUsd, #blNo').val('');
     });
 
-    // ── Employee Select2 ──
+    // ── Employee Select2 (static list, branch-filtered) ──
     $('#employeeSelect').select2({
         theme: 'bootstrap-5', width: '100%',
-        placeholder: 'Enter employee name or code',
-        allowClear: true, minimumInputLength: 1,
-        ajax: {
-            url: SEARCH_EMPLOYEES, dataType: 'json', delay: 250,
-            data: p => ({ q: p.term }),
-            processResults: d => ({ results: d }),
-        },
+        placeholder: '-- Select Employee --',
+        allowClear: true,
     }).on('select2:select', function (e) {
         $('#employeeId').val(e.params.data.id);
     }).on('select2:clear', function () {
         $('#employeeId').val('');
     });
+
+    // Sync hidden field on load (edit mode)
+    if ($('#employeeSelect').val()) {
+        $('#employeeId').val($('#employeeSelect').val());
+    }
 
     // ── Add Row ──
     $('#btnAddRow').on('click', function () {

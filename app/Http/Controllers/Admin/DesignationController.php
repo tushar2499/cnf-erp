@@ -15,11 +15,21 @@ class DesignationController extends Controller
     public function index(IndexDesignationRequest $request)
     {
         if ($request->ajax()) {
-            return DataTables::of(Designation::query())
+            $query = Designation::query()->select('designations.*');
+
+            return DataTables::of($query)
                 ->addIndexColumn()
                 ->addColumn('status_badge', fn ($row) => $row->is_active
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')
+                ->filterColumn('status_badge', function ($query, $keyword) {
+                    $keyword = strtolower(trim($keyword));
+                    if (str_contains($keyword, 'active') && ! str_contains($keyword, 'inactive')) {
+                        $query->where('is_active', true);
+                    } elseif (str_contains($keyword, 'inactive')) {
+                        $query->where('is_active', false);
+                    }
+                })
                 ->addColumn('action', fn ($row) => '
                     <button class="btn btn-sm btn-outline-secondary btn-edit me-1"
                         data-id="'.$row->id.'"

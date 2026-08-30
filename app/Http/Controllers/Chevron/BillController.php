@@ -4,6 +4,13 @@ namespace App\Http\Controllers\Chevron;
 
 use App\Helpers\NumberHelper;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Chevron\Bill\CreateBillRequest;
+use App\Http\Requests\Chevron\Bill\DestroyBillRequest;
+use App\Http\Requests\Chevron\Bill\EditBillRequest;
+use App\Http\Requests\Chevron\Bill\IndexBillRequest;
+use App\Http\Requests\Chevron\Bill\PrintBillRequest;
+use App\Http\Requests\Chevron\Bill\StoreBillRequest;
+use App\Http\Requests\Chevron\Bill\UpdateBillRequest;
 use App\Models\Chevron\ChevronBill;
 use App\Models\Chevron\ChevronExpenseCategory;
 use App\Models\Chevron\ChevronExpenseHead;
@@ -31,7 +38,7 @@ class BillController extends Controller
         ];
     }
 
-    public function index(Request $request)
+    public function index(IndexBillRequest $request)
     {
         if ($request->ajax()) {
             $query = ChevronBill::where('branch_id', session('active_branch_id'));
@@ -48,12 +55,20 @@ class BillController extends Controller
                     'Approved'  => '<span class="badge bg-success">Approved</span>',
                     default     => '<span class="badge bg-primary">Active</span>',
                 })
-                ->addColumn('action', fn ($r) => '
-                    <a href="'.route('chevron.cnf.bills.print', $r->id).'" target="_blank" class="btn btn-sm btn-outline-secondary py-0 px-1" title="Print"><i class="fa fa-print"></i></a>
-                    <a href="'.route('chevron.cnf.bills.edit', $r->id).'" class="btn btn-sm btn-outline-primary py-0 px-1"><i class="fa fa-edit"></i></a>
-                    <button class="btn btn-sm btn-outline-danger py-0 px-1 btn-delete"
-                        data-url="'.route('chevron.cnf.bills.destroy', $r->id).'"
-                        data-name="'.e($r->bill_no).'"><i class="fa fa-trash"></i></button>')
+                ->addColumn('action', function ($r) use ($request) {
+                    $html = '';
+                    if ($request->user()->hasPermission('cnf.bill.print')) {
+                        $html .= '<a href="'.route('chevron.cnf.bills.print', $r->id).'" target="_blank" class="btn btn-sm btn-outline-secondary py-0 px-1" title="Print"><i class="fa fa-print"></i></a> ';
+                    }
+                    if ($request->user()->hasPermission('cnf.bill.edit')) {
+                        $html .= '<a href="'.route('chevron.cnf.bills.edit', $r->id).'" class="btn btn-sm btn-outline-primary py-0 px-1" title="Edit"><i class="fa fa-edit"></i></a> ';
+                    }
+                    if ($request->user()->hasPermission('cnf.bill.delete')) {
+                        $html .= '<button class="btn btn-sm btn-outline-danger py-0 px-1 btn-delete" data-url="'.route('chevron.cnf.bills.destroy', $r->id).'" data-name="'.e($r->bill_no).'" title="Delete"><i class="fa fa-trash"></i></button>';
+                    }
+
+                    return $html;
+                })
                 ->rawColumns(['status_badge', 'action'])
                 ->make(true);
         }
@@ -61,7 +76,7 @@ class BillController extends Controller
         return view('chevron.cnf.bills.index');
     }
 
-    public function create()
+    public function create(CreateBillRequest $request)
     {
         return view('chevron.cnf.bills.create', array_merge($this->formData(), [
             'bill'         => null,
@@ -69,13 +84,8 @@ class BillController extends Controller
         ]));
     }
 
-    public function store(Request $request)
+    public function store(StoreBillRequest $request)
     {
-        $request->validate([
-            'bill_date'                  => ['required', 'date'],
-            'rows'                       => ['required', 'array', 'min:1'],
-            'rows.*.expense_category_id' => ['required'],
-        ]);
 
         DB::transaction(function () use ($request) {
             $bill = ChevronBill::create(array_merge($this->prepareData($request), [
@@ -88,7 +98,7 @@ class BillController extends Controller
             ->with('success', 'Bill created successfully.');
     }
 
-    public function edit(ChevronBill $bill)
+    public function edit(EditBillRequest $request, ChevronBill $bill)
     {
         $bill->load('items');
         $existingRows = $bill->items->map(fn ($i) => [
@@ -106,13 +116,8 @@ class BillController extends Controller
         ]));
     }
 
-    public function update(Request $request, ChevronBill $bill)
+    public function update(UpdateBillRequest $request, ChevronBill $bill)
     {
-        $request->validate([
-            'bill_date'                  => ['required', 'date'],
-            'rows'                       => ['required', 'array', 'min:1'],
-            'rows.*.expense_category_id' => ['required'],
-        ]);
 
         DB::transaction(function () use ($request, $bill) {
             $bill->update($this->prepareData($request));
@@ -123,14 +128,14 @@ class BillController extends Controller
         return back()->with('success', 'Bill '.$bill->bill_no.' updated successfully.');
     }
 
-    public function destroy(ChevronBill $bill)
+    public function destroy(DestroyBillRequest $request, ChevronBill $bill)
     {
         $bill->delete();
 
         return response()->json(['message' => 'Bill deleted.']);
     }
 
-    public function print(ChevronBill $bill)
+    public function print(PrintBillRequest $request, ChevronBill $bill)
     {
         $bill->load(['items.expenseCategory', 'items.expenseHead', 'job']);
         $grouped = $bill->items->groupBy(fn ($i) => $i->expenseCategory?->name ?? 'OTHER');
@@ -139,7 +144,7 @@ class BillController extends Controller
         return view('chevron.cnf.bills.print', compact('bill', 'grouped', 'inWords'));
     }
 
-    public function searchJobs(Request $request)
+    public function searchJobs(IndexBillRequest $request)
     {
         $q = $request->input('q', '');
         $jobs = ChevronJob::where('job_no', 'like', "%{$q}%")

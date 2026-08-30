@@ -39,9 +39,15 @@ class RfqController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
+            $fromDate = $request->input('from_date');
+            $toDate = $request->input('to_date');
+
             $query = NasFreightsRfq::with(['customer'])
                 ->where('branch_id', session('nas_freights_branch_id'))
-                ->when($request->status_filter, fn ($q, $s) => $q->where('status', $s));
+                ->when($request->status_filter, fn ($q, $s) => $q->where('status', $s))
+                ->when($fromDate, fn ($q) => $q->whereDate('rfq_date', '>=', $fromDate))
+                ->when($toDate, fn ($q) => $q->whereDate('rfq_date', '<=', $toDate))
+                ->latest();
 
             return DataTables::of($query)
                 ->addIndexColumn()
@@ -167,11 +173,15 @@ class RfqController extends Controller
     public function convertToFreightBooking(NasFreightsRfq $rfq)
     {
         if ($rfq->status !== 'Win') {
-            return back()->with('error', 'Only Win RFQs can be converted to a freight booking.');
+            return back()->with('error', 'Only Win RFQs can be converted to a freight import booking.');
+        }
+
+        if ($rfq->type !== 'import') {
+            return back()->with('error', 'Only import RFQs can be converted to a freight import booking. Use export conversion for export RFQs.');
         }
 
         if ($rfq->converted_freight_booking_id) {
-            return redirect()->route('nas-freights.freight-bookings.show', $rfq->converted_freight_booking_id)
+            return redirect()->route('nas-freights.freight-import-bookings.show', $rfq->converted_freight_booking_id)
                 ->with('info', 'This RFQ was already converted to '.$rfq->convertedFreightBooking?->freight_booking_no.'.');
         }
 
@@ -188,7 +198,6 @@ class RfqController extends Controller
                 'overseas_agent_id'     => $rfq->overseas_agent_id,
                 'shipping_carrier_id'   => $rfq->shipping_carrier_id,
                 'booking_date'          => now()->toDateString(),
-                'type'                  => $rfq->type,
                 'service_type'          => $rfq->service_type,
                 'incoterms'             => $rfq->incoterms,
                 'currency'              => $rfq->currency,
@@ -224,8 +233,8 @@ class RfqController extends Controller
             return $freightBooking;
         });
 
-        return redirect()->route('nas-freights.freight-bookings.show', $freightBooking->id)
-            ->with('success', 'Freight Booking '.$freightBooking->freight_booking_no.' created from RFQ '.$rfq->rfq_no.'.');
+        return redirect()->route('nas-freights.freight-import-bookings.show', $freightBooking->id)
+            ->with('success', 'Freight Import Booking '.$freightBooking->freight_booking_no.' created from RFQ '.$rfq->rfq_no.'.');
     }
 
     public function destroy(NasFreightsRfq $rfq)

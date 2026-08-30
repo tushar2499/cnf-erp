@@ -1,6 +1,69 @@
 @extends('nas-freights.layouts.app')
 @section('title', 'Package Types')
 
+@push('styles')
+    <style>
+        #packageTypesTable th,
+        #packageTypesTable td {
+            white-space: nowrap;
+            font-size: .73rem;
+            padding: .3rem .5rem;
+        }
+
+        #packageTypesTable thead tr:first-child th {
+            background: #e9ecef;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        #packageTypesTable thead tr:last-child th {
+            background: #f8f9fa;
+            font-weight: normal;
+            position: sticky;
+            z-index: 2;
+        }
+
+        #packageTypesTable thead tr:last-child th input.form-control {
+            min-width: 120px;
+            width: 100%;
+            box-sizing: border-box;
+            font-size: .78rem;
+            padding: .3rem .5rem;
+        }
+
+        .package-types-table-wrapper {
+            max-height: 65vh;
+            overflow: auto;
+        }
+
+        .package-types-table-wrapper::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .package-types-table-wrapper::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .package-types-table-wrapper::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        #packageTypesTable_wrapper>.row:last-child {
+            position: sticky;
+            bottom: 0;
+            background: #fff;
+            z-index: 3;
+            border-top: 1px solid #dee2e6;
+            margin: 0;
+            padding: 6px 12px;
+        }
+    </style>
+@endpush
+
 @section('content')
 <div class="page-header">
     <h4><i class="fa fa-cube me-2 text-warning"></i> Package Types</h4>
@@ -10,10 +73,34 @@
 </div>
 
 <div class="card">
-    <div class="card-header"><span><i class="fa fa-list me-2"></i> All Package Types</span></div>
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span><i class="fa fa-list me-2"></i> All Package Types</span>
+        <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fa fa-download me-1"></i> Export
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><button class="dropdown-item"
+                        onclick="$('#packageTypesTable').DataTable().button('.buttons-csv').trigger()"><i
+                            class="fa fa-file-csv me-2 text-secondary"></i>CSV</button></li>
+                <li><button class="dropdown-item"
+                        onclick="$('#packageTypesTable').DataTable().button('.buttons-excel').trigger()"><i
+                            class="fa fa-file-excel me-2 text-success"></i>Excel</button></li>
+                <li><button class="dropdown-item"
+                        onclick="$('#packageTypesTable').DataTable().button('.buttons-pdf').trigger()"><i
+                            class="fa fa-file-pdf me-2 text-danger"></i>PDF</button></li>
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+                <li><button class="dropdown-item"
+                        onclick="$('#packageTypesTable').DataTable().button('.buttons-print').trigger()"><i
+                            class="fa fa-print me-2"></i>Print</button></li>
+            </ul>
+        </div>
+    </div>
     <div class="card-body p-0">
-        <div class="table-responsive">
-            <table id="packageTypesTable" class="table table-hover table-striped mb-0 w-100">
+        <div class="package-types-table-wrapper">
+            <table id="packageTypesTable" class="table table-hover table-striped table-bordered mb-0">
                 <thead>
                     <tr>
                         <th>#</th>
@@ -22,6 +109,14 @@
                         <th>Sort Order</th>
                         <th>Status</th>
                         <th>Action</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search Name"></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search Description"></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search Sort"></th>
+                        <th></th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -83,17 +178,54 @@ $(function () {
         processing: true,
         serverSide: true,
         autoWidth: false,
+        orderCellsTop: true,
+        pageLength: 15,
+        order: [],
+        lengthMenu: [
+            [10, 15, 25, 50, 100, 200],
+            [10, 15, 25, 50, 100, 200]
+        ],
         ajax: '{{ route('nas-freights.settings.package-types.index') }}',
         columns: [
-            { data: 'DT_RowIndex', orderable: false, searchable: false, width: '50px' },
-            { data: 'name' },
-            { data: 'description' },
-            { data: 'sort_order', width: '90px' },
-            { data: 'status_badge', searchable: false, width: '80px' },
-            { data: 'action', orderable: false, searchable: false, width: '90px' },
+            { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false, width: '40px', className: 'text-center' },
+            { data: 'name', name: 'name' },
+            { data: 'description', name: 'description' },
+            { data: 'sort_order', name: 'sort_order', width: '90px' },
+            { data: 'status_badge', name: 'status_badge', orderable: false, searchable: false, width: '80px', className: 'text-center' },
+            { data: 'action', name: 'action', orderable: false, searchable: false, width: '90px', className: 'text-center' },
         ],
-        dom: "<'row mb-0'<'col-sm-6'><'col-sm-6'f>><'row'<'col-12'tr>><'row mt-2'<'col-sm-5'i><'col-sm-7'p>>",
+        dom: "<'row mb-1'<'col-sm-6'l><'col-sm-6'>>" +
+            "<'row'<'col-12'tr>>" +
+            "<'row mt-2'<'col-sm-5'i><'col-sm-7'p>>",
+        buttons: [
+            { extend: 'csv' },
+            { extend: 'excel' },
+            { extend: 'pdf' },
+            { extend: 'print' }
+        ],
         language: { emptyTable: '<div class="text-center py-3 text-muted"><i class="fa fa-inbox fa-2x mb-2 d-block"></i>No package types yet.</div>' },
+        initComplete: function () {
+            const firstRowH = $('#packageTypesTable thead tr:first-child').outerHeight();
+            $('#packageTypesTable thead tr:last-child th').css('top', firstRowH + 'px');
+
+            var self = this.api();
+            self.columns().every(function (i) {
+                var col = this;
+                var $in = $('thead tr:eq(1) th:eq(' + i + ') input', self.table().container());
+                if ($in.length) {
+                    $in.on('click mousedown keydown', function (e) {
+                        e.stopPropagation();
+                    });
+                    var timer;
+                    $in.on('input', function () {
+                        clearTimeout(timer);
+                        timer = setTimeout(function () {
+                            col.search($in.val()).draw();
+                        }, 400);
+                    });
+                }
+            });
+        },
     });
 
     $('#btnAdd').on('click', function () {

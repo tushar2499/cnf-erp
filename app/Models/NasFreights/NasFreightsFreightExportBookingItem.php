@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Models\NasFreights;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class NasFreightsFreightExportBookingItem extends Model
+{
+    protected $table = 'nas_freights_freight_export_booking_items';
+
+    protected $fillable = [
+        'export_booking_id', 'item_type', 'container_size', 'container_no', 'seal_no', 'package_type',
+        'hs_code', 'commodity', 'quantity', 'gross_weight', 'weight_unit',
+        'volume_cbm', 'country_of_origin', 'is_dangerous_goods', 'special_handling',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_dangerous_goods' => 'boolean',
+        ];
+    }
+
+    public function exportBooking(): BelongsTo
+    {
+        return $this->belongsTo(NasFreightsFreightExportBooking::class, 'export_booking_id');
+    }
+}

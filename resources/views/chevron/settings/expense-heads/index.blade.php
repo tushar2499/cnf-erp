@@ -2,39 +2,128 @@
 
 @section('title', 'Expense Heads')
 
+@push('styles')
+    <style>
+        #expenseHeadsTable th,
+        #expenseHeadsTable td {
+            font-size: .73rem;
+            padding: .35rem .5rem;
+            vertical-align: middle;
+        }
+
+        #expenseHeadsTable th {
+            white-space: nowrap;
+        }
+
+        #expenseHeadsTable td {
+            white-space: nowrap;
+        }
+
+        #expenseHeadsTable td.col-employees {
+            white-space: normal !important;
+            min-width: 250px;
+            max-width: 450px;
+            word-break: break-word;
+        }
+
+        #expenseHeadsTable thead th {
+            background: #e9ecef;
+            font-weight: 600;
+            position: sticky;
+            z-index: 2;
+            top: 0;
+        }
+
+        #expenseHeadsTable thead tr:last-child th {
+            background: #f8f9fa;
+        }
+
+        #expenseHeadsTable thead tr:last-child th input.form-control {
+            min-width: 60px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .expense-heads-table-wrapper {
+            max-height: 65vh;
+            overflow: auto;
+        }
+
+        .expense-heads-table-wrapper::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .expense-heads-table-wrapper::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .expense-heads-table-wrapper::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        #expenseHeadsTable_wrapper>.row:last-child {
+            position: sticky;
+            bottom: 0;
+            background: #fff;
+            z-index: 3;
+            border-top: 1px solid #dee2e6;
+            margin: 0;
+            padding: 6px 12px;
+        }
+    </style>
+@endpush
+
 @section('content')
     <div class="page-header">
         <h4><i class="fa fa-money-bill me-2 text-success"></i> Expense Heads</h4>
         <div class="d-flex gap-2 flex-wrap">
-            <a href="{{ route('chevron.settings.expense-heads.sample') }}" class="btn btn-sm btn-outline-success">
-                <i class="fa fa-file-excel me-1"></i> Sample File
-            </a>
-            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importModal">
-                <i class="fa fa-file-upload me-1"></i> Import Excel
-            </button>
-            <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#expenseHeadModal" id="btnAdd">
-                <i class="fa fa-plus me-1"></i> Add Expense Head
-            </button>
+            @if (auth()->user()->hasPermission('cnf.expense-head.create'))
+                <a href="{{ route('chevron.settings.expense-heads.sample') }}" class="btn btn-sm btn-outline-success">
+                    <i class="fa fa-file-excel me-1"></i> Sample File
+                </a>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importModal">
+                    <i class="fa fa-file-upload me-1"></i> Import Excel
+                </button>
+                <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#expenseHeadModal"
+                    id="btnAdd">
+                    <i class="fa fa-plus me-1"></i> Add Expense Head
+                </button>
+            @endif
         </div>
     </div>
 
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
             <span><i class="fa fa-list me-2"></i> All Expense Heads</span>
-            <div class="d-flex gap-2 flex-wrap">
-                <button onclick="$('#expenseHeadsTable').DataTable().button('.buttons-csv').trigger()"
-                    class="btn btn-sm btn-outline-secondary"><i class="fa fa-file-csv me-1"></i>CSV</button>
-                <button onclick="$('#expenseHeadsTable').DataTable().button('.buttons-excel').trigger()"
-                    class="btn btn-sm btn-outline-success"><i class="fa fa-file-excel me-1"></i>Excel</button>
-                <button onclick="$('#expenseHeadsTable').DataTable().button('.buttons-pdf').trigger()"
-                    class="btn btn-sm btn-outline-danger"><i class="fa fa-file-pdf me-1"></i>PDF</button>
-                <button onclick="$('#expenseHeadsTable').DataTable().button('.buttons-print').trigger()"
-                    class="btn btn-sm btn-outline-secondary"><i class="fa fa-print me-1"></i>Print</button>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                    <i class="fa fa-download me-1"></i> Export
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><button class="dropdown-item"
+                            onclick="$('#expenseHeadsTable').DataTable().button('.buttons-csv').trigger()"><i
+                                class="fa fa-file-csv me-2 text-secondary"></i>CSV</button></li>
+                    <li><button class="dropdown-item"
+                            onclick="$('#expenseHeadsTable').DataTable().button('.buttons-excel').trigger()"><i
+                                class="fa fa-file-excel me-2 text-success"></i>Excel</button></li>
+                    <li><button class="dropdown-item"
+                            onclick="$('#expenseHeadsTable').DataTable().button('.buttons-pdf').trigger()"><i
+                                class="fa fa-file-pdf me-2 text-danger"></i>PDF</button></li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+                    <li><button class="dropdown-item"
+                            onclick="$('#expenseHeadsTable').DataTable().button('.buttons-print').trigger()"><i
+                                class="fa fa-print me-2"></i>Print</button></li>
+                </ul>
             </div>
         </div>
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table id="expenseHeadsTable" class="table table-hover table-striped mb-0 w-100">
+            <div class="expense-heads-table-wrapper">
+                <table id="expenseHeadsTable" class="table table-hover table-striped table-bordered mb-0">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -54,7 +143,7 @@
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th></th>
                         </tr>
@@ -96,21 +185,23 @@
                                 <select id="headCategory" class="form-select select2">
                                     <option value="">-- Select Category --</option>
                                     @foreach ($categories as $cat)
-                                        <option value="{{ $cat->id }}">{{ $cat->name }} ({{ $cat->is_bill && $cat->is_job ? 'Bill & Job' : ($cat->is_bill ? 'Bill' : 'Job') }})
+                                        <option value="{{ $cat->id }}">{{ $cat->name }}
+                                            ({{ $cat->is_bill && $cat->is_job ? 'Bill & Job' : ($cat->is_bill ? 'Bill' : 'Job') }})
                                         </option>
                                     @endforeach
                                 </select>
                             </div>
                             <div class="col-12">
                                 <label class="form-label">Amount</label>
-                                <input type="number" id="headAmount" class="form-control" placeholder="0.00" min="0"
-                                    step="0.01">
+                                <input type="number" id="headAmount" class="form-control" placeholder="0.00"
+                                    min="0" step="0.01">
                             </div>
                             <div class="col-12">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                     <label class="form-label mb-0">
                                         Employees
-                                        <span class="ms-1 text-muted" style="font-size:.7rem;font-weight:400;">(optional)</span>
+                                        <span class="ms-1 text-muted"
+                                            style="font-size:.7rem;font-weight:400;">(optional)</span>
                                     </label>
                                     <div class="d-flex gap-1">
                                         <button type="button" id="btnSelectAllEmployees"
@@ -127,10 +218,11 @@
                                     <span class="spinner-border spinner-border-sm text-secondary me-1"></span>
                                     <span class="text-muted" style="font-size:12px">Loading assigned employees...</span>
                                 </div>
-                                <select id="headEmployees" class="form-select select2-head-employees" multiple style="width:100%"
-                                    aria-label="Assign employees to this expense head">
+                                <select id="headEmployees" class="form-select select2-head-employees" multiple
+                                    style="width:100%" aria-label="Assign employees to this expense head">
                                     @foreach ($employees as $emp)
-                                        <option value="{{ $emp->id }}">{{ $emp->name }} ({{ $emp->employee_id }}) — {{ $emp->designation?->name ?? 'N/A' }}</option>
+                                        <option value="{{ $emp->id }}">{{ $emp->name }} ({{ $emp->code }}) —
+                                            {{ $emp->designation?->name ?? 'N/A' }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -263,11 +355,11 @@
                 dropdownParent: $('#expenseHeadModal'),
             });
 
-            $('#btnSelectAllEmployees').on('click', function () {
+            $('#btnSelectAllEmployees').on('click', function() {
                 $('#headEmployees option').prop('selected', true);
                 $('#headEmployees').trigger('change');
             });
-            $('#btnClearEmployees').on('click', function () {
+            $('#btnClearEmployees').on('click', function() {
                 $('#headEmployees').val([]).trigger('change');
             });
 
@@ -275,14 +367,22 @@
             table = $('#expenseHeadsTable').DataTable({
                 processing: true,
                 serverSide: true,
-        autoWidth: false,
+                autoWidth: false,
+                pageLength: 15,
+                order: [],
+                orderCellsTop: true,
+                lengthMenu: [
+                    [15, 25, 50, 100, 200, 500, 1000],
+                    [15, 25, 50, 100, 200, 500, 1000]
+                ],
                 ajax: '{{ route('chevron.settings.expense-heads.index') }}',
                 columns: [{
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',
                         orderable: false,
                         searchable: false,
-                        width: '50px'
+                        width: '45px',
+                        className: 'text-center'
                     },
                     {
                         data: 'name',
@@ -290,7 +390,9 @@
                     },
                     {
                         data: 'type',
-                        name: 'type'
+                        name: 'type',
+                        width: '75px',
+                        className: 'text-center'
                     },
                     {
                         data: 'category_name',
@@ -298,59 +400,70 @@
                     },
                     {
                         data: 'category_type_badge',
-                        name: 'expenseCategory.type',
+                        name: 'category_type_badge',
+                        orderable: false,
+                        width: '100px',
+                        className: 'text-center'
                     },
                     {
                         data: 'amount',
-                        name: 'amount'
+                        name: 'amount',
+                        width: '80px',
+                        className: 'text-end'
                     },
                     {
                         data: 'employees_list',
                         name: 'employees_list',
                         orderable: false,
-                        searchable: false,
+                        className: 'col-employees'
                     },
                     {
                         data: 'status_badge',
-                        name: 'is_active',
-                        searchable: false
+                        name: 'status_badge',
+                        width: '75px',
+                        className: 'text-center'
                     },
                     {
                         data: 'action',
                         name: 'action',
                         orderable: false,
                         searchable: false,
-                        width: '90px'
+                        width: '80px',
+                        className: 'text-center'
                     },
                 ],
-                order: [],
-                dom: "<'row mb-0'<'col-sm-6'><'col-sm-6'f>>" +
+                dom: "<'row mb-1'<'col-sm-6'l><'col-sm-6'f>>" +
                     "<'row'<'col-12'tr>>" +
                     "<'row mt-2'<'col-sm-5'i><'col-sm-7'p>>",
                 buttons: [{
-                        extend: 'csv',
-                        text: 'CSV'
-                    },
-                    {
-                        extend: 'excel',
-                        text: 'Excel'
-                    },
-                    {
-                        extend: 'pdf',
-                        text: 'PDF'
-                    },
-                    {
-                        extend: 'print',
-                        text: 'Print'
-                    },
-                ],
+                    extend: 'csv'
+                }, {
+                    extend: 'excel'
+                }, {
+                    extend: 'pdf'
+                }, {
+                    extend: 'print'
+                }],
                 initComplete: function() {
-                    this.api().columns().every(function(i) {
-                        const $input = $('thead tr:eq(1) th:eq(' + i + ') input', this.table()
+                    const firstRowH = $('#expenseHeadsTable thead tr:first-child').outerHeight();
+                    $('#expenseHeadsTable thead tr:last-child th').css('top', firstRowH + 'px');
+
+                    var self = this.api();
+                    self.columns().every(function(i) {
+                        var col = this;
+                        var $in = $('thead tr:eq(1) th:eq(' + i + ') input', self.table()
                             .container());
-                        if ($input.length) {
-                            $input.on('click mousedown', e => e.stopPropagation());
-                            $input.on('keyup change', () => this.search($input.val()).draw());
+                        if ($in.length) {
+                            $in.on('click mousedown keydown', function(e) {
+                                e.stopPropagation();
+                            });
+                            var timer;
+                            $in.on('input', function() {
+                                clearTimeout(timer);
+                                timer = setTimeout(function() {
+                                    col.search($in.val()).draw();
+                                }, 400);
+                            });
                         }
                     });
                 },

@@ -16,11 +16,19 @@ class SupplierPaymentController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = NasFreightsSupplierPayment::where('branch_id', session('nas_freights_branch_id'))->latest();
+            $fromDate = $request->input('from_date');
+            $toDate = $request->input('to_date');
+
+            $query = NasFreightsSupplierPayment::where('branch_id', session('nas_freights_branch_id'))
+                ->when($fromDate, fn ($q) => $q->whereDate('payment_date', '>=', $fromDate))
+                ->when($toDate, fn ($q) => $q->whereDate('payment_date', '<=', $toDate))
+                ->latest();
 
             return DataTables::of($query)
                 ->addIndexColumn()
-                ->editColumn('payment_date', fn ($r) => $r->payment_date?->format('d-M-Y'))
+                ->editColumn('payment_date', fn ($r) => $r->payment_date?->format('d M Y') ?? '—')
+                ->editColumn('bill_amount', fn ($r) => number_format($r->bill_amount, 2))
+                ->editColumn('amount_paid', fn ($r) => number_format($r->amount_paid, 2))
                 ->addColumn('action', fn ($r) => '
                     <a href="'.route('nas-freights.supplier-payments.show', $r->id).'" class="btn btn-sm btn-outline-info" title="View"><i class="fa fa-eye"></i></a>')
                 ->rawColumns(['action'])

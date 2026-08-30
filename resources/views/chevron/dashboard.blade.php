@@ -53,16 +53,29 @@
         <h4 class="mb-0 fw-bold"><i class="fa fa-tachometer-alt me-2 text-primary"></i> Dashboard</h4>
         <span class="text-muted small">{{ now()->format('l, d F Y') }}</span>
     </div>
+    @php
+        $user = auth()->user();
+    @endphp
+    @if($user->hasPermission('cnf.job.create') || $user->hasPermission('cnf.bill.create') || $user->hasPermission('cnf.money-receipt.create'))
     <div class="d-flex gap-2 flex-wrap">
-        <a href="{{ route('chevron.cnf.jobs.create') }}"    class="btn btn-sm btn-primary"><i class="fa fa-plus me-1"></i> New Job</a>
-        <a href="{{ route('chevron.cnf.bills.create') }}"   class="btn btn-sm btn-outline-primary"><i class="fa fa-file-invoice me-1"></i> New Bill</a>
+        @if($user->hasPermission('cnf.job.create'))
+        <a href="{{ route('chevron.cnf.jobs.create') }}" class="btn btn-sm btn-primary"><i class="fa fa-plus me-1"></i> New Job</a>
+        @endif
+        @if($user->hasPermission('cnf.bill.create'))
+        <a href="{{ route('chevron.cnf.bills.create') }}" class="btn btn-sm btn-outline-primary"><i class="fa fa-file-invoice me-1"></i> New Bill</a>
+        @endif
+        @if($user->hasPermission('cnf.money-receipt.create'))
         <a href="{{ route('chevron.cnf.money-receipts.create') }}" class="btn btn-sm btn-outline-success"><i class="fa fa-money-bill-wave me-1"></i> New Receipt</a>
+        @endif
     </div>
+    @endif
 </div>
 
 {{-- KPI Cards Row 1 --}}
+@if($canJob || $canBill || $canReceipt)
 <div class="row g-3 mb-3">
 
+    @if($canJob)
     {{-- Total Jobs --}}
     <div class="col-6 col-lg-3">
         <div class="card kpi-card h-100">
@@ -95,7 +108,9 @@
             </div>
         </div>
     </div>
+    @endif
 
+    @if($canBill)
     {{-- Receivable --}}
     <div class="col-6 col-lg-3">
         <div class="card kpi-card h-100">
@@ -110,7 +125,9 @@
             </div>
         </div>
     </div>
+    @endif
 
+    @if($canReceipt)
     {{-- Receipts --}}
     <div class="col-6 col-lg-3">
         <div class="card kpi-card h-100">
@@ -125,10 +142,14 @@
             </div>
         </div>
     </div>
+    @endif
 </div>
+@endif
 
 {{-- KPI Cards Row 2 (smaller) --}}
+@if($canCustomer || $canBill || $canJobExpense)
 <div class="row g-3 mb-4">
+    @if($canCustomer)
     <div class="col-6 col-lg-3">
         <div class="card h-100" style="border:none;border-radius:12px;box-shadow:0 1px 8px rgba(0,0,0,.07)">
             <div class="card-body py-3 d-flex align-items-center gap-3">
@@ -140,6 +161,7 @@
             </div>
         </div>
     </div>
+    @endif
     <div class="col-6 col-lg-3">
         <div class="card h-100" style="border:none;border-radius:12px;box-shadow:0 1px 8px rgba(0,0,0,.07)">
             <div class="card-body py-3 d-flex align-items-center gap-3">
@@ -151,6 +173,7 @@
             </div>
         </div>
     </div>
+    @if($canBill)
     <div class="col-6 col-lg-3">
         <div class="card h-100" style="border:none;border-radius:12px;box-shadow:0 1px 8px rgba(0,0,0,.07)">
             <div class="card-body py-3 d-flex align-items-center gap-3">
@@ -162,6 +185,8 @@
             </div>
         </div>
     </div>
+    @endif
+    @if($canJobExpense)
     <div class="col-6 col-lg-3">
         <div class="card h-100" style="border:none;border-radius:12px;box-shadow:0 1px 8px rgba(0,0,0,.07)">
             <div class="card-body py-3 d-flex align-items-center gap-3">
@@ -173,19 +198,26 @@
             </div>
         </div>
     </div>
+    @endif
 </div>
+@endif
 
 {{-- Charts Row --}}
+@if($canJob || $canBill)
 <div class="row g-3 mb-4">
 
     {{-- Monthly Jobs + Bills Chart --}}
-    <div class="col-lg-8">
+    <div class="{{ $canBill ? 'col-lg-8' : 'col-12' }}">
         <div class="card chart-card h-100">
             <div class="card-header d-flex align-items-center justify-content-between">
                 <span><i class="fa fa-chart-bar me-2 text-primary"></i> Monthly Overview (Last 6 Months)</span>
                 <div class="d-flex gap-2">
+                    @if($canJob)
                     <span class="d-flex align-items-center gap-1" style="font-size:.72rem;color:#6b7a99"><span style="display:inline-block;width:12px;height:3px;background:#6366f1;border-radius:2px"></span> Jobs</span>
+                    @endif
+                    @if($canBill)
                     <span class="d-flex align-items-center gap-1" style="font-size:.72rem;color:#6b7a99"><span style="display:inline-block;width:12px;height:3px;background:#22c55e;border-radius:2px"></span> Bill Net (BDT)</span>
+                    @endif
                 </div>
             </div>
             <div class="card-body" style="position:relative;height:260px">
@@ -194,6 +226,7 @@
         </div>
     </div>
 
+    @if($canBill)
     {{-- Bill Status Donut --}}
     <div class="col-lg-4">
         <div class="card chart-card h-100">
@@ -223,9 +256,12 @@
             </div>
         </div>
     </div>
+    @endif
 </div>
+@endif
 
 {{-- Bottom Row: Recent Jobs + Top Customers --}}
+@if($canJob)
 <div class="row g-3 mb-4">
 
     {{-- Recent Jobs --}}
@@ -250,9 +286,13 @@
                         @forelse($recentJobs as $job)
                         <tr>
                             <td>
+                                @if($user->hasPermission('cnf.job.edit'))
                                 <a href="{{ route('chevron.cnf.jobs.edit', $job->id) }}" class="fw-semibold text-decoration-none">
                                     {{ $job->job_no }}
                                 </a>
+                                @else
+                                <span class="fw-semibold">{{ $job->job_no }}</span>
+                                @endif
                             </td>
                             <td class="text-truncate" style="max-width:160px" title="{{ $job->party_name }}">{{ $job->party_name ?? '—' }}</td>
                             <td>{{ $job->port?->name ?? '—' }}</td>
@@ -276,10 +316,8 @@
         </div>
     </div>
 
-    {{-- Top Customers + Recent Bills --}}
+    {{-- Top Customers --}}
     <div class="col-lg-4 d-flex flex-column gap-3">
-
-        {{-- Top Customers --}}
         <div class="card recent-card flex-fill">
             <div class="card-header"><i class="fa fa-trophy me-2 text-warning"></i> Top Customers by Jobs</div>
             <div class="card-body py-2">
@@ -301,8 +339,10 @@
         </div>
     </div>
 </div>
+@endif
 
 {{-- Recent Bills --}}
+@if($canBill)
 <div class="row g-3">
     <div class="col-12">
         <div class="card recent-card">
@@ -325,7 +365,13 @@
                     <tbody>
                         @forelse($recentBills as $bill)
                         <tr>
-                            <td><a href="{{ route('chevron.cnf.bills.edit', $bill->id) }}" class="fw-semibold text-decoration-none">{{ $bill->bill_no }}</a></td>
+                            <td>
+                                @if($user->hasPermission('cnf.bill.edit'))
+                                <a href="{{ route('chevron.cnf.bills.edit', $bill->id) }}" class="fw-semibold text-decoration-none">{{ $bill->bill_no }}</a>
+                                @else
+                                <span class="fw-semibold">{{ $bill->bill_no }}</span>
+                                @endif
+                            </td>
                             <td class="text-truncate" style="max-width:180px" title="{{ $bill->party_name }}">{{ $bill->party_name }}</td>
                             <td>{{ $bill->bill_date?->format('d M y') ?? '—' }}</td>
                             <td class="text-end">৳{{ number_format($bill->net_payable, 2) }}</td>
@@ -351,11 +397,13 @@
         </div>
     </div>
 </div>
+@endif
 
 @endsection
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+@if($canJob || $canBill)
 <script>
 Chart.defaults.font.family = "'Poppins', sans-serif";
 Chart.defaults.font.size   = 11;
@@ -364,66 +412,59 @@ Chart.defaults.color       = '#6b7a99';
 // ── Monthly Overview Chart ────────────────────────────
 (function () {
     var labels   = @json($monthlyLabels);
-    var jobData  = @json($monthlyJobData);
-    var billData = @json($monthlyBillData);
+    var datasets = [];
+
+    @if($canJob)
+    datasets.push({
+        type: 'bar',
+        label: 'Jobs',
+        data: @json($monthlyJobData),
+        backgroundColor: 'rgba(99,102,241,.18)',
+        borderColor: '#6366f1',
+        borderWidth: 2,
+        borderRadius: 6,
+        yAxisID: 'yLeft',
+    });
+    @endif
+
+    @if($canBill)
+    datasets.push({
+        type: 'line',
+        label: 'Bill Net (BDT)',
+        data: @json($monthlyBillData),
+        borderColor: '#22c55e',
+        backgroundColor: 'rgba(34,197,94,.08)',
+        borderWidth: 2.5,
+        pointRadius: 4,
+        pointBackgroundColor: '#22c55e',
+        tension: 0.35,
+        fill: true,
+        yAxisID: 'yRight',
+    });
+    @endif
+
+    var scales = { x: { grid: { display: false } } };
+    @if($canJob)
+    scales.yLeft = { type: 'linear', position: 'left', beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: 'rgba(0,0,0,.05)' } };
+    @endif
+    @if($canBill)
+    scales.yRight = { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { callback: v => '৳' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v) } };
+    @endif
 
     new Chart(document.getElementById('monthlyChart'), {
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    type: 'bar',
-                    label: 'Jobs',
-                    data: jobData,
-                    backgroundColor: 'rgba(99,102,241,.18)',
-                    borderColor: '#6366f1',
-                    borderWidth: 2,
-                    borderRadius: 6,
-                    yAxisID: 'yLeft',
-                },
-                {
-                    type: 'line',
-                    label: 'Bill Net (BDT)',
-                    data: billData,
-                    borderColor: '#22c55e',
-                    backgroundColor: 'rgba(34,197,94,.08)',
-                    borderWidth: 2.5,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#22c55e',
-                    tension: 0.35,
-                    fill: true,
-                    yAxisID: 'yRight',
-                },
-            ],
-        },
+        data: { labels: labels, datasets: datasets },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: { legend: { display: false }, tooltip: { cornerRadius: 8 } },
-            scales: {
-                yLeft: {
-                    type: 'linear', position: 'left',
-                    beginAtZero: true,
-                    ticks: { stepSize: 1, precision: 0 },
-                    grid: { color: 'rgba(0,0,0,.05)' },
-                },
-                yRight: {
-                    type: 'linear', position: 'right',
-                    beginAtZero: true,
-                    grid: { drawOnChartArea: false },
-                    ticks: {
-                        callback: v => '৳' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v)
-                    },
-                },
-                x: { grid: { display: false } },
-            },
+            scales: scales,
         },
     });
 })();
 
 // ── Bill Status Donut ─────────────────────────────────
-@if($totalBills > 0)
+@if($canBill && $totalBills > 0)
 (function () {
     var data   = @json($billStatusCounts->values());
     var labels = @json($billStatusCounts->keys());
@@ -449,4 +490,5 @@ Chart.defaults.color       = '#6b7a99';
 })();
 @endif
 </script>
+@endif
 @endpush

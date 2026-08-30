@@ -41,6 +41,11 @@ class Employee extends Model
         return $this->belongsTo(self::class, 'team_leader_id');
     }
 
+    public function teamMembers()
+    {
+        return $this->hasMany(self::class, 'team_leader_id');
+    }
+
     public function branchAccess()
     {
         return $this->hasMany(EmployeeBranchAccess::class, 'employee_id');

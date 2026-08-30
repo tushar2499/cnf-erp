@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Chevron;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Chevron\Port\DestroyPortRequest;
+use App\Http\Requests\Chevron\Port\IndexPortRequest;
+use App\Http\Requests\Chevron\Port\StorePortRequest;
+use App\Http\Requests\Chevron\Port\UpdatePortRequest;
 use App\Models\Chevron\ChevronPort;
-use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
 class PortController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexPortRequest $request)
     {
 
         $branchId = session('active_branch_id');
@@ -20,20 +23,30 @@ class PortController extends Controller
                 ->addColumn('status_badge', fn ($row) => $row->is_active
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')
-                ->addColumn('action', fn ($row) => '
-                    <button class="btn btn-sm btn-outline-primary btn-edit"
-                        data-id="'.$row->id.'"
-                        data-name="'.e($row->name).'"
-                        data-code="'.e($row->code).'"
-                        data-prefix="'.e($row->prefix).'"
-                        data-is_active="'.(int) $row->is_active.'">
-                        <i class="fa fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger btn-delete"
-                        data-url="'.route('chevron.settings.ports.destroy', $row->id).'"
-                        data-name="'.e($row->name).'">
-                        <i class="fa fa-trash"></i>
-                    </button>')
+                ->addColumn('action', function ($row) use ($request) {
+                    $html = '';
+
+                    if ($request->user()->hasPermission('cnf.port.edit')) {
+                        $html .= '<button class="btn btn-sm btn-outline-primary btn-edit"
+                            data-id="'.$row->id.'"
+                            data-name="'.e($row->name).'"
+                            data-code="'.e($row->code).'"
+                            data-prefix="'.e($row->prefix).'"
+                            data-is_active="'.(int) $row->is_active.'">
+                            <i class="fa fa-edit"></i>
+                        </button> ';
+                    }
+
+                    if ($request->user()->hasPermission('cnf.port.delete')) {
+                        $html .= '<button class="btn btn-sm btn-outline-danger btn-delete"
+                            data-url="'.route('chevron.settings.ports.destroy', $row->id).'"
+                            data-name="'.e($row->name).'">
+                            <i class="fa fa-trash"></i>
+                        </button>';
+                    }
+
+                    return $html;
+                })
                 ->rawColumns(['status_badge', 'action'])
                 ->make(true);
         }
@@ -41,12 +54,8 @@ class PortController extends Controller
         return view('chevron.settings.ports.index');
     }
 
-    public function store(Request $request)
+    public function store(StorePortRequest $request)
     {
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'code' => ['required', 'string', 'max:5'],
-        ]);
         ChevronPort::create([
             'branch_id' => session('active_branch_id'),
             'name'      => $request->name,
@@ -58,12 +67,8 @@ class PortController extends Controller
         return response()->json(['message' => 'Port created successfully.']);
     }
 
-    public function update(Request $request, ChevronPort $port)
+    public function update(UpdatePortRequest $request, ChevronPort $port)
     {
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'code' => ['required', 'string', 'max:5'],
-        ]);
         $port->update([
             'name'      => $request->name,
             'code'      => strtoupper($request->code),
@@ -74,7 +79,7 @@ class PortController extends Controller
         return response()->json(['message' => 'Port updated successfully.']);
     }
 
-    public function destroy(ChevronPort $port)
+    public function destroy(DestroyPortRequest $request, ChevronPort $port)
     {
         $port->delete();
 

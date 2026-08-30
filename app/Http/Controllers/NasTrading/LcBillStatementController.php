@@ -28,6 +28,7 @@ class LcBillStatementController extends Controller
                     'Paid'      => '<span class="badge bg-primary">Paid</span>',
                     default     => $r->status,
                 })
+                ->filterColumn('customer_name', fn ($q, $k) => $q->whereHas('customer', fn ($s) => $s->where('company_name', 'like', "%{$k}%")))
                 ->addColumn('action', fn ($r) => '<a href="'.route('nas-trading.lc-bill-statements.show', $r->id).'" class="btn btn-sm btn-outline-info" style="padding:2px 6px;font-size:.7rem"><i class="fa fa-eye"></i></a> '.
                     ($r->status === 'Draft' ? '<a href="'.route('nas-trading.lc-bill-statements.edit', $r->id).'" class="btn btn-sm btn-outline-primary" style="padding:2px 6px;font-size:.7rem"><i class="fa fa-edit"></i></a> ' : '').
                     ($r->status === 'Draft' ? '<button class="btn btn-sm btn-outline-success btn-confirm" data-url="'.route('nas-trading.lc-bill-statements.confirm', $r->id).'" style="padding:2px 6px;font-size:.7rem" title="Confirm"><i class="fa fa-check"></i></button> ' : '').

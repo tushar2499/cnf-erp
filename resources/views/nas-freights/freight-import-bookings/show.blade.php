@@ -1,6 +1,6 @@
 @extends('nas-freights.layouts.app')
 
-@section('title', 'Freight Booking — ' . $freightBooking->freight_booking_no)
+@section('title', 'Freight Import Booking — ' . $freightBooking->freight_booking_no)
 
 @push('styles')
 <style>
@@ -23,19 +23,19 @@
 @section('content')
 
 <div class="d-flex align-items-center justify-content-between mb-3">
-    <div class="d-flex align-items-center gap-2">
-        <a href="{{ route('nas-freights.freight-bookings.index') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="fa fa-arrow-left me-1"></i> Back
-        </a>
-        <a href="{{ route('nas-freights.freight-bookings.edit', $freightBooking->id) }}" class="btn btn-sm btn-outline-primary">
-            <i class="fa fa-edit me-1"></i> Edit
-        </a>
-    </div>
+    <div></div>
     <div class="fw-bold" style="font-size:.95rem; color:#0a4f3c;">
-        Freight Booking &nbsp;<span class="badge bg-light text-dark border fs-6">{{ $freightBooking->freight_booking_no }}</span>
+        Freight Import Booking &nbsp;<span class="badge bg-light text-dark border fs-6">{{ $freightBooking->freight_booking_no }}</span>
         &nbsp;<span class="status-pill status-{{ str_replace(' ', '-', $freightBooking->status) }}">{{ $freightBooking->status }}</span>
     </div>
-    <div></div>
+    <div class="d-flex align-items-center gap-2">
+        <a href="{{ route('nas-freights.freight-import-bookings.edit', $freightBooking->id) }}" class="btn btn-sm btn-outline-primary">
+            <i class="fa fa-edit me-1"></i> Edit
+        </a>
+        <a href="{{ route('nas-freights.freight-import-bookings.index') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fa fa-arrow-left me-1"></i> Back
+        </a>
+    </div>
 </div>
 
 @if(session('success'))
@@ -72,7 +72,7 @@
                         <div class="info-value">{{ $freightBooking->salesperson?->name ?? '—' }}</div>
                     </div>
                     <div class="col-6 col-md-4">
-                        <div class="info-label">Customer</div>
+                        <div class="info-label">Customer (Importer)</div>
                         <div class="info-value fw-semibold">{{ $freightBooking->customer?->name ?? '—' }}</div>
                         @if($freightBooking->customer?->customer_id)
                         <div style="font-size:.7rem; color:#6b7280;">{{ $freightBooking->customer->customer_id }}</div>
@@ -95,16 +95,6 @@
                                 <span class="fw-semibold">{{ $freightBooking->shippingCarrier->name }}</span>
                                 <div style="font-size:.7rem; color:#6b7280;">{{ $freightBooking->shippingCarrier->carrier_code }}@if($freightBooking->shippingCarrier->scac_code) &nbsp;·&nbsp;SCAC: {{ $freightBooking->shippingCarrier->scac_code }}@endif</div>
                             @else —
-                            @endif
-                        </div>
-                    </div>
-                    <div class="col-4 col-md-2">
-                        <div class="info-label">Type</div>
-                        <div class="info-value">
-                            @if($freightBooking->type === 'import')
-                                <span class="badge bg-info text-dark">Import</span>
-                            @else
-                                <span class="badge bg-warning text-dark">Export</span>
                             @endif
                         </div>
                     </div>
@@ -142,7 +132,7 @@
             </div>
         </div>
 
-        @if($freightBooking->vessel_name || $freightBooking->bl_no || $freightBooking->etd || $freightBooking->eta)
+        @if($freightBooking->vessel_name || $freightBooking->bl_no || $freightBooking->igm_no || $freightBooking->delivery_order_no || $freightBooking->etd || $freightBooking->eta)
         <div class="section-card">
             <div class="form-header"><i class="fa fa-anchor me-1"></i> Shipment Details</div>
             <div class="section-body">
@@ -158,6 +148,14 @@
                     <div class="col-6 col-md-3">
                         <div class="info-label">B/L No</div>
                         <div class="info-value fw-semibold">{{ $freightBooking->bl_no ?? '—' }}</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="info-label">IGM No</div>
+                        <div class="info-value fw-semibold">{{ $freightBooking->igm_no ?? '—' }}</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="info-label">Delivery Order No</div>
+                        <div class="info-value">{{ $freightBooking->delivery_order_no ?? '—' }}</div>
                     </div>
                     <div class="col-3 col-md-1_5">
                         <div class="info-label">ETD</div>
@@ -182,7 +180,7 @@
                     <table class="table table-bordered table-hover mb-0 cargo-table">
                         <thead>
                             <tr>
-                                <th>#</th><th>Type</th><th>Size / Package</th><th>HS Code</th><th>Commodity</th>
+                                <th>#</th><th>Type</th><th>Size / Package</th><th>Container No</th><th>Seal No</th><th>HS Code</th><th>Commodity</th>
                                 <th>Qty</th><th>Weight</th><th>CBM</th><th>Origin</th><th>DG</th><th>Special</th>
                             </tr>
                         </thead>
@@ -198,6 +196,8 @@
                                     @endif
                                 </td>
                                 <td>{{ $item->container_size ?? $item->package_type ?? '—' }}</td>
+                                <td>{{ $item->container_no ?? '—' }}</td>
+                                <td>{{ $item->seal_no ?? '—' }}</td>
                                 <td>{{ $item->hs_code ?? '—' }}</td>
                                 <td>{{ $item->commodity ?? '—' }}</td>
                                 <td class="text-center">{{ $item->quantity }}</td>

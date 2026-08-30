@@ -3,10 +3,18 @@
 namespace App\Http\Controllers\Chevron;
 
 use App\Http\Controllers\Controller;
-use App\Models\Chevron\ChevronEmployee;
+use App\Http\Requests\Chevron\ExpenseHead\DestroyExpenseHeadRequest;
+use App\Http\Requests\Chevron\ExpenseHead\GetEmployeesExpenseHeadRequest;
+use App\Http\Requests\Chevron\ExpenseHead\ImportExpenseHeadRequest;
+use App\Http\Requests\Chevron\ExpenseHead\ImportPreviewExpenseHeadRequest;
+use App\Http\Requests\Chevron\ExpenseHead\IndexExpenseHeadRequest;
+use App\Http\Requests\Chevron\ExpenseHead\SearchEmployeesExpenseHeadRequest;
+use App\Http\Requests\Chevron\ExpenseHead\StoreExpenseHeadRequest;
+use App\Http\Requests\Chevron\ExpenseHead\SyncEmployeesExpenseHeadRequest;
+use App\Http\Requests\Chevron\ExpenseHead\UpdateExpenseHeadRequest;
 use App\Models\Chevron\ChevronExpenseCategory;
 use App\Models\Chevron\ChevronExpenseHead;
-use Illuminate\Http\Request;
+use App\Models\Employee;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
@@ -15,68 +23,103 @@ use Yajra\DataTables\Facades\DataTables;
 
 class ExpenseHeadController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexExpenseHeadRequest $request)
     {
         if ($request->ajax()) {
-            return DataTables::of(ChevronExpenseHead::with(['expenseCategory', 'employees.designation'])->latest())
+            $query = ChevronExpenseHead::query()
+                ->select('chevron_expense_heads.*')
+                ->with(['expenseCategory', 'employees.designation'])
+                ->orderBy('chevron_expense_heads.created_at', 'desc');
+
+            return DataTables::of($query)
                 ->addIndexColumn()
                 ->addColumn('category_name', fn ($row) => $row->expenseCategory?->name ?? '-')
                 ->addColumn('category_type_badge', fn ($row) => $row->expenseCategory
                     ? $row->expenseCategory->typeBadge()
                     : '-')
+                ->filterColumn('category_type_badge', function ($query, $keyword) {
+                    $keyword = strtolower(trim($keyword));
+                    $query->whereHas('expenseCategory', function ($q) use ($keyword) {
+                        if (str_contains($keyword, 'bill') && str_contains($keyword, 'job')) {
+                            $q->where('is_bill', true)->where('is_job', true);
+                        } elseif (str_contains($keyword, 'bill')) {
+                            $q->where('is_bill', true);
+                        } elseif (str_contains($keyword, 'job')) {
+                            $q->where('is_job', true);
+                        }
+                    });
+                })
+                ->editColumn('amount', fn ($row) => $row->amount !== null && $row->amount !== '' ? number_format((float) $row->amount, 2) : '—')
                 ->addColumn('employees_list', function ($row) {
                     if ($row->employees->isEmpty()) {
                         return '<span class="text-muted" style="font-size:12px">—</span>';
                     }
 
-                    return $row->employees->map(function ($emp) {
-                        $desig = e($emp->designation?->name ?? 'N/A');
+                    return '<div class="d-flex flex-wrap gap-1 align-items-center py-1" style="white-space:normal;">'
+                        .$row->employees->map(function ($emp) {
+                            $desig = e($emp->designation?->name ?? 'N/A');
 
-                        return '<span class="badge bg-light text-dark border mb-1 me-1" style="font-size:11px;font-weight:500;white-space:normal;">'
-                            .e($emp->name)
-                            .' <span class="text-muted fw-normal">('.$desig.')</span>'
-                            .'</span>';
-                    })->implode('');
+                            return '<span class="badge bg-light text-dark border" style="font-size:11px;font-weight:500;white-space:normal;display:inline-block;">'
+                                .e($emp->name)
+                                .' <span class="text-muted fw-normal">('.$desig.')</span>'
+                                .'</span>';
+                        })->implode('')
+                        .'</div>';
+                })
+                ->filterColumn('employees_list', function ($query, $keyword) {
+                    $query->whereHas('employees', function ($q) use ($keyword) {
+                        $q->where('employees.name', 'like', "%{$keyword}%")
+                            ->orWhere('employees.code', 'like', "%{$keyword}%");
+                    });
                 })
                 ->addColumn('status_badge', fn ($row) => $row->is_active
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')
-                ->addColumn('action', fn ($row) => '
-                    <button class="btn btn-sm btn-outline-primary btn-edit"
-                        data-id="'.$row->id.'"
-                        data-name="'.e($row->name).'"
-                        data-expense_category_id="'.$row->expense_category_id.'"
-                        data-type="'.$row->type.'"
-                        data-amount="'.$row->amount.'"
-                        data-is_active="'.(int) $row->is_active.'">
-                        <i class="fa fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger btn-delete"
-                        data-url="'.route('chevron.settings.expense-heads.destroy', $row->id).'"
-                        data-name="'.e($row->name).'">
-                        <i class="fa fa-trash"></i>
-                    </button>')
+                ->filterColumn('status_badge', function ($query, $keyword) {
+                    $keyword = strtolower(trim($keyword));
+                    if (str_contains('active', $keyword) && ! str_contains('inactive', $keyword)) {
+                        $query->where('is_active', true);
+                    } elseif (str_contains('inactive', $keyword)) {
+                        $query->where('is_active', false);
+                    }
+                })
+                ->addColumn('action', function ($row) use ($request) {
+                    $html = '<div class="d-inline-flex gap-1">';
+
+                    if ($request->user()->hasPermission('cnf.expense-head.edit')) {
+                        $html .= '<button class="btn btn-sm btn-outline-primary btn-edit"
+                            data-id="'.$row->id.'"
+                            data-name="'.e($row->name).'"
+                            data-expense_category_id="'.$row->expense_category_id.'"
+                            data-type="'.$row->type.'"
+                            data-amount="'.$row->amount.'"
+                            data-is_active="'.(int) $row->is_active.'">
+                            <i class="fa fa-edit"></i>
+                        </button>';
+                    }
+
+                    if ($request->user()->hasPermission('cnf.expense-head.delete')) {
+                        $html .= '<button class="btn btn-sm btn-outline-danger btn-delete"
+                            data-url="'.route('chevron.settings.expense-heads.destroy', $row->id).'"
+                            data-name="'.e($row->name).'">
+                            <i class="fa fa-trash"></i>
+                        </button>';
+                    }
+
+                    return $html.'</div>';
+                })
                 ->rawColumns(['category_type_badge', 'employees_list', 'status_badge', 'action'])
                 ->make(true);
         }
 
         $categories = ChevronExpenseCategory::where('is_active', true)->orderBy('name')->get();
-        $employees = ChevronEmployee::with('designation')->where('is_active', true)->orderBy('name')->get(['id', 'name', 'employee_id', 'designation_id']);
+        $employees = Employee::with('designation')->where('is_active', true)->orderBy('name')->get(['id', 'name', 'code', 'designation_id']);
 
         return view('chevron.settings.expense-heads.index', compact('categories', 'employees'));
     }
 
-    public function store(Request $request)
+    public function store(StoreExpenseHeadRequest $request)
     {
-        $request->validate([
-            'name'                => ['required', 'string', 'max:255'],
-            'expense_category_id' => ['required', 'exists:chevron_expense_categories,id'],
-            'type'                => ['required', 'in:External,Internal'],
-            'amount'              => ['nullable', 'numeric', 'min:0'],
-            'employee_ids'        => ['array'],
-            'employee_ids.*'      => ['exists:chevron_employees,id'],
-        ]);
-
         $head = ChevronExpenseHead::create([
             'name'                => $request->name,
             'expense_category_id' => $request->expense_category_id,
@@ -85,22 +128,13 @@ class ExpenseHeadController extends Controller
             'is_active'           => $request->boolean('is_active', true),
         ]);
 
-        $head->employees()->sync($request->input('employee_ids', []));
+        $head->employees()->sync($this->resolveRelevantEmployeeIds($request->input('employee_ids', [])));
 
         return response()->json(['message' => 'Expense head created successfully.']);
     }
 
-    public function update(Request $request, ChevronExpenseHead $expenseHead)
+    public function update(UpdateExpenseHeadRequest $request, ChevronExpenseHead $expenseHead)
     {
-        $request->validate([
-            'name'                => ['required', 'string', 'max:255'],
-            'expense_category_id' => ['required', 'exists:chevron_expense_categories,id'],
-            'type'                => ['required', 'in:External,Internal'],
-            'amount'              => ['nullable', 'numeric', 'min:0'],
-            'employee_ids'        => ['array'],
-            'employee_ids.*'      => ['exists:chevron_employees,id'],
-        ]);
-
         $expenseHead->update([
             'name'                => $request->name,
             'expense_category_id' => $request->expense_category_id,
@@ -109,61 +143,64 @@ class ExpenseHeadController extends Controller
             'is_active'           => $request->boolean('is_active', true),
         ]);
 
-        $expenseHead->employees()->sync($request->input('employee_ids', []));
+        $expenseHead->employees()->sync($this->resolveRelevantEmployeeIds($request->input('employee_ids', [])));
 
         return response()->json(['message' => 'Expense head updated successfully.']);
     }
 
-    public function destroy(ChevronExpenseHead $expenseHead)
+    public function destroy(DestroyExpenseHeadRequest $request, ChevronExpenseHead $expenseHead)
     {
         $expenseHead->delete();
 
         return response()->json(['message' => 'Expense head deleted.']);
     }
 
-    public function getEmployees(ChevronExpenseHead $expenseHead)
+    public function getEmployees(GetEmployeesExpenseHeadRequest $request, ChevronExpenseHead $expenseHead)
     {
         $employees = $expenseHead->employees()
             ->orderBy('name')
-            ->get(['chevron_employees.id', 'name', 'employee_id']);
+            ->get(['employees.id', 'name', 'code']);
 
         return response()->json(['employees' => $employees]);
     }
 
-    public function searchEmployees(Request $request)
+    public function searchEmployees(SearchEmployeesExpenseHeadRequest $request)
     {
         $q = $request->input('q', '');
 
-        $employees = ChevronEmployee::where('is_active', true)
+        $employees = Employee::where('is_active', true)
             ->where(function ($query) use ($q) {
                 $query->where('name', 'like', "%{$q}%")
-                    ->orWhere('employee_id', 'like', "%{$q}%");
+                    ->orWhere('code', 'like', "%{$q}%");
             })
             ->orderBy('name')
             ->limit(30)
-            ->get(['id', 'name', 'employee_id']);
+            ->get(['id', 'name', 'code']);
 
         return response()->json([
             'results' => $employees->map(fn ($e) => [
                 'id'   => $e->id,
-                'text' => "{$e->name} ({$e->employee_id})",
+                'text' => "{$e->name} ({$e->code})",
             ]),
         ]);
     }
 
-    public function syncEmployees(Request $request, ChevronExpenseHead $expenseHead)
+    public function syncEmployees(SyncEmployeesExpenseHeadRequest $request, ChevronExpenseHead $expenseHead)
     {
-        $request->validate([
-            'employee_ids'   => ['array'],
-            'employee_ids.*' => ['exists:chevron_employees,id'],
-        ]);
-
-        $expenseHead->employees()->sync($request->input('employee_ids', []));
+        $expenseHead->employees()->sync($this->resolveRelevantEmployeeIds($request->input('employee_ids', [])));
 
         return response()->json(['message' => 'Employees updated successfully.']);
     }
 
-    public function sampleDownload()
+    protected function resolveRelevantEmployeeIds(array $employeeIds): array
+    {
+        return Employee::whereIn('id', $employeeIds)
+            ->where('is_active', true)
+            ->pluck('id')
+            ->all();
+    }
+
+    public function sampleDownload(StoreExpenseHeadRequest $request)
     {
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
@@ -197,10 +234,8 @@ class ExpenseHeadController extends Controller
         ]);
     }
 
-    public function importPreview(Request $request)
+    public function importPreview(ImportPreviewExpenseHeadRequest $request)
     {
-        $request->validate(['file' => 'required|file|mimes:xlsx,xls,csv|max:5120']);
-
         $spreadsheet = IOFactory::load($request->file('file')->getPathname());
         $rows = $spreadsheet->getActiveSheet()->toArray(null, true, true, false);
 
@@ -257,10 +292,8 @@ class ExpenseHeadController extends Controller
         return response()->json(['rows' => $preview]);
     }
 
-    public function import(Request $request)
+    public function import(ImportExpenseHeadRequest $request)
     {
-        $request->validate(['rows' => 'required|array|min:1']);
-
         $inserted = 0;
         foreach ($request->rows as $row) {
             $name = trim($row['name'] ?? '');

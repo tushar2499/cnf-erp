@@ -50,6 +50,11 @@ class RoleController extends Controller
 
                     return $badges ?: '<span class="text-muted small">—</span>';
                 })
+                ->filterColumn('companies_badges', function ($query, $keyword) {
+                    $query->whereHas('companies', function ($q) use ($keyword) {
+                        $q->where('companies.name', 'like', "%{$keyword}%");
+                    });
+                })
                 ->addColumn('action', function (Role $role) use ($request) {
                     $html = '';
                     if ($request->user()->hasPermission('admin.roles.view')) {

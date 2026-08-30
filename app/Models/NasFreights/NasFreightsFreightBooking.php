@@ -14,9 +14,9 @@ class NasFreightsFreightBooking extends Model
     protected $fillable = [
         'freight_booking_no', 'branch_id', 'rfq_id', 'rfq_no',
         'customer_id', 'salesperson_id', 'overseas_agent_id', 'shipping_carrier_id',
-        'booking_date', 'type', 'service_type', 'incoterms', 'currency',
+        'booking_date', 'service_type', 'incoterms', 'currency',
         'pol', 'pod', 'place_of_receipt', 'place_of_delivery',
-        'commodity_description', 'vessel_name', 'voyage_no', 'bl_no',
+        'commodity_description', 'vessel_name', 'voyage_no', 'bl_no', 'igm_no', 'delivery_order_no',
         'etd', 'eta', 'status', 'remarks',
     ];
 
@@ -61,7 +61,7 @@ class NasFreightsFreightBooking extends Model
 
     public static function generateFreightBookingNo(): string
     {
-        $prefix = 'FBK-'.now()->format('Ymd').'-';
+        $prefix = 'FIB-'.now()->format('Ymd').'-';
         $last = static::lockForUpdate()
             ->where('freight_booking_no', 'like', $prefix.'%')
             ->max(DB::raw('CAST(SUBSTRING(freight_booking_no, '.(strlen($prefix) + 1).') AS UNSIGNED)'));
@@ -72,11 +72,6 @@ class NasFreightsFreightBooking extends Model
     public static function statuses(): array
     {
         return ['Draft', 'Confirmed', 'In-Transit', 'Delivered', 'Cancelled'];
-    }
-
-    public static function types(): array
-    {
-        return ['import' => 'Import', 'export' => 'Export'];
     }
 
     public static function serviceTypes(): array
