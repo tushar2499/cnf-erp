@@ -61,12 +61,12 @@ class NasFreightsFreightBooking extends Model
 
     public static function generateFreightBookingNo(): string
     {
-        $prefix = 'FIB-'.now()->format('Ymd').'-';
-        $last = static::lockForUpdate()
-            ->where('freight_booking_no', 'like', $prefix.'%')
-            ->max(DB::raw('CAST(SUBSTRING(freight_booking_no, '.(strlen($prefix) + 1).') AS UNSIGNED)'));
+        $prefix = 'FIB-' . now()->format('Ymd') . '-';
+        $last   = static::lockForUpdate()
+            ->where('freight_booking_no', 'like', $prefix . '%')
+            ->max(DB::raw('CAST(SUBSTRING(freight_booking_no, ' . (strlen($prefix) + 1) . ') AS UNSIGNED)'));
 
-        return $prefix.str_pad(($last ?? 0) + 1, 4, '0', STR_PAD_LEFT);
+        return $prefix . str_pad(($last ?? 0) + 1, 4, '0', STR_PAD_LEFT);
     }
 
     public static function statuses(): array
@@ -76,6 +76,6 @@ class NasFreightsFreightBooking extends Model
 
     public static function serviceTypes(): array
     {
-        return ['FCL', 'LCL', 'Air', 'Truck', 'Road'];
+        return ['FCL', 'LCL', 'Air', 'SEA', 'Truck', 'Road', 'Handling', 'Other'];
     }
 }
