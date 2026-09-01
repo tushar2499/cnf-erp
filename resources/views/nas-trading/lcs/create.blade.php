@@ -650,7 +650,45 @@
                         </div>
                     </div>
 
+                    {{-- Bill Paid (multiple, dynamic) --}}
+                    <div class="lc-card mt-3" style="margin-bottom:0">
+                        <div class="lc-section-header">
+                            <span><i class="fa fa-file-invoice-dollar me-2"></i>Bill Paid</span>
+                        </div>
+                        <div class="d-flex justify-content-end mt-2 mb-1">
+                            <button type="button" class="btn btn-secondary btn-sm py-0 px-2" id="btnAddBillPaid"
+                                style="font-size:.77rem"><i class="fa fa-plus me-1"></i>Add Bill Paid</button>
+                        </div>
+                        <div class="p-0" style="overflow-x:auto">
+                            <table class="table table-sm table-bordered items-table mb-0 w-100" id="billPaidTable">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center" style="width:32px">#</th>
+                                        <th style="width:140px">Date</th>
+                                        <th style="min-width:140px">Posting</th>
+                                        <th style="min-width:180px">Remarks</th>
+                                        <th style="width:160px">Amount</th>
+                                        <th style="width:32px"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="billPaidBody"></tbody>
+                            </table>
+                        </div>
+                        <div id="billPaidEmpty" class="text-center py-2" style="font-size:.78rem;color:#adb5bd">
+                            No bill paid entries added yet.
+                        </div>
+                    </div>
 
+                    {{-- Total Bill Paid (auto-sum) --}}
+                    <div class="d-flex justify-content-end align-items-center mt-2">
+                        <label class="form-label me-2 mb-0 fw-semibold" style="font-size:.82rem">Total Bill Paid:</label>
+                        <div class="input-group input-group-sm" style="width:180px">
+                            <input type="number" name="total_bill_paid" id="totalBillPaid"
+                                class="form-control form-control-sm bg-light fw-bold" readonly step="0.0001"
+                                placeholder="0.00">
+                            <span class="input-group-text">BDT</span>
+                        </div>
+                    </div>
 
                 </div>
 
@@ -842,6 +880,7 @@
         var otherChargeRowIdx = 0;
         var invoiceRowIdx = 0;
         var boeIdx = 0;
+        var billPaidRowIdx = 0;
         var dutyAdvanceCounters = {};
 
         function validateIdentification() {
@@ -1007,6 +1046,46 @@
             $('#totalReceived').val(total > 0 ? total.toFixed(2) : '');
         }
 
+        // ── Bill Paid ────────────────────────────────────────────────────────────
+        function addBillPaidRow(data) {
+            data = data || {};
+            var idx = billPaidRowIdx++;
+            var rowNum = $('#billPaidBody tr').length + 1;
+            var html = `
+            <tr>
+                <td class="text-center bill-paid-row-num" style="font-size:.75rem;vertical-align:middle">${rowNum}</td>
+                <td><input type="date" class="form-control form-control-sm" name="bill_paid[${idx}][date]" value="${data.date || ''}"></td>
+                <td><input type="text" class="form-control form-control-sm" name="bill_paid[${idx}][posting]" value="${data.posting || ''}" placeholder="e.g. BP-001"></td>
+                <td><input type="text" class="form-control form-control-sm" name="bill_paid[${idx}][remarks]" value="${data.remarks || ''}" placeholder="Any remarks..."></td>
+                <td>
+                    <div class="input-group input-group-sm">
+                        <input type="number" class="form-control form-control-sm bill-paid-amount" name="bill_paid[${idx}][amount]" value="${data.amount || ''}" step="0.0001" min="0" placeholder="0.00">
+                        <span class="input-group-text">BDT</span>
+                    </div>
+                </td>
+                <td class="text-center" style="vertical-align:middle">
+                    <button type="button" class="btn btn-sm btn-outline-danger btn-remove-bill-paid p-0" style="width:24px;height:24px" title="Remove">
+                        <i class="fa fa-times" style="font-size:.65rem"></i>
+                    </button>
+                </td>
+            </tr>`;
+            $('#billPaidBody').append(html);
+            syncBillPaidEmpty();
+        }
+
+        function syncBillPaidTotal() {
+            var total = 0;
+            $('.bill-paid-amount').each(function() {
+                total += parseFloat($(this).val()) || 0;
+            });
+            $('#totalBillPaid').val(total > 0 ? total.toFixed(2) : '');
+        }
+
+        function syncBillPaidEmpty() {
+            var empty = $('#billPaidBody tr').length === 0;
+            $('#billPaidEmpty').toggle(empty);
+        }
+
         // ── Bill of Entry ────────────────────────────────────────────────────────
         function syncBoeEmpty() {
             var empty = $('#boeContainer .boe-card').length === 0;
@@ -1023,6 +1102,21 @@
         function syncDaEmpty(boeIndex) {
             var empty = $('#daBody_' + boeIndex + ' tr').length === 0;
             $('#daEmpty_' + boeIndex).toggle(empty);
+        }
+
+        function syncDaTotal(boeIndex) {
+            var total = 0;
+            $('#daBody_' + boeIndex + ' .da-amount').each(function() {
+                total += parseFloat($(this).val()) || 0;
+            });
+            var $row = $('#daTotalRow_' + boeIndex);
+            if (total > 0) {
+                $('#daTotal_' + boeIndex).val(total.toFixed(2));
+                $row.show();
+            } else {
+                $('#daTotal_' + boeIndex).val('');
+                $row.hide();
+            }
         }
 
         function addBoeCard(data) {
@@ -1107,9 +1201,9 @@
                         <thead>
                             <tr>
                                 <th class="text-center" style="width:32px">#</th>
-                                <th style="width:190px">Duty Advance</th>
                                 <th style="width:150px">Date</th>
                                 <th>Posting</th>
+                                <th style="width:190px">Amount</th>
                                 <th style="width:32px"></th>
                             </tr>
                         </thead>
@@ -1118,6 +1212,13 @@
                 </div>
                 <div class="text-center py-1" id="daEmpty_${idx}"
                      style="font-size:.76rem;color:#adb5bd">No duty advances added.</div>
+                <div class="d-flex justify-content-end align-items-center mt-2" id="daTotalRow_${idx}" style="display:none">
+                    <label class="form-label me-2 mb-0 fw-semibold" style="font-size:.82rem">Total Advance:</label>
+                    <div class="input-group input-group-sm" style="width:180px">
+                        <input type="text" id="daTotal_${idx}" class="form-control form-control-sm bg-light fw-bold" readonly placeholder="0.00">
+                        <span class="input-group-text">BDT</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>`;
@@ -1136,15 +1237,6 @@
     <tr>
         <td class="text-center da-row-num" style="font-size:.75rem;vertical-align:middle">${rowNum}</td>
         <td>
-            <input type="hidden" name="bill_of_entries[${boeIndex}][duty_advances][${idx}][id]" value="${data.id || ''}">
-            <div class="input-group input-group-sm">
-                <input type="number" class="form-control form-control-sm"
-                       name="bill_of_entries[${boeIndex}][duty_advances][${idx}][amount]"
-                       value="${data.amount || ''}" step="0.0001" min="0" placeholder="0.00">
-                <span class="input-group-text">BDT</span>
-            </div>
-        </td>
-        <td>
             <input type="date" class="form-control form-control-sm"
                    name="bill_of_entries[${boeIndex}][duty_advances][${idx}][date]"
                    value="${data.date || ''}">
@@ -1153,6 +1245,16 @@
             <input type="text" class="form-control form-control-sm"
                    name="bill_of_entries[${boeIndex}][duty_advances][${idx}][posting]"
                    value="${data.posting || ''}" placeholder="e.g. DA-001">
+        </td>
+        <td>
+            <input type="hidden" name="bill_of_entries[${boeIndex}][duty_advances][${idx}][id]" value="${data.id || ''}">
+            <div class="input-group input-group-sm">
+                <input type="number" class="form-control form-control-sm da-amount"
+                       data-boe-idx="${boeIndex}"
+                       name="bill_of_entries[${boeIndex}][duty_advances][${idx}][amount]"
+                       value="${data.amount || ''}" step="0.0001" min="0" placeholder="0.00">
+                <span class="input-group-text">BDT</span>
+            </div>
         </td>
         <td class="text-center" style="vertical-align:middle">
             <button type="button" class="btn btn-sm btn-outline-danger btn-remove-da p-0"
@@ -1164,6 +1266,7 @@
 
             $('#daBody_' + boeIndex).append(html);
             syncDaEmpty(boeIndex);
+            syncDaTotal(boeIndex);
         }
 
         // ── Line Items ──────────────────────────────────────────────────────────
@@ -1375,6 +1478,17 @@
                 syncPaymentTotal();
             });
 
+            // Bill Paid rows
+            syncBillPaidEmpty();
+            $('#btnAddBillPaid').on('click', () => addBillPaidRow());
+            $(document).on('input', '.bill-paid-amount', syncBillPaidTotal);
+            $(document).on('click', '.btn-remove-bill-paid', function() {
+                $(this).closest('tr').remove();
+                $('#billPaidBody tr').each((i, tr) => $(tr).find('.bill-paid-row-num').text(i + 1));
+                syncBillPaidTotal();
+                syncBillPaidEmpty();
+            });
+
             // Bill of Entry
             syncBoeEmpty();
             $('#btnAddBoe').on('click', () => addBoeCard());
@@ -1385,6 +1499,9 @@
                 $(this).closest('.boe-card').remove();
                 syncBoeEmpty();
             });
+            $(document).on('input', '.da-amount', function() {
+                syncDaTotal($(this).data('boe-idx'));
+            });
             $(document).on('click', '.btn-remove-da', function() {
                 var boeIndex = $(this).data('boe-idx');
                 $(this).closest('tr').remove();
@@ -1392,6 +1509,7 @@
                     $(this).find('.da-row-num').text(i + 1);
                 });
                 syncDaEmpty(boeIndex);
+                syncDaTotal(boeIndex);
             });
 
             $(document).on('input change', '.boe-req, .da-req', function() {

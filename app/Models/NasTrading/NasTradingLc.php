@@ -19,7 +19,7 @@ class NasTradingLc extends Model
         'doc_rt_rate', 'lc_retirement_date', 'lc_rt_value', 'lc_commission_percent', 'lc_commission_flat', 'lc_charge_posting',
         'advance_received_bdt', 'advance_date', 'advance_posting',
         'rest_amount_bdt', 'rest_amount_date', 'rest_amount_posting',
-        'total_received_bdt', 'lc_closing_bill', 'lc_closing_bill_date',
+        'total_received_bdt', 'lc_closing_bill', 'lc_closing_bill_date', 'total_bill_paid',
         'payable_receivable', 'received_amount', 'received_date',
         'vat_return', 'vat_return_date', 'vat_return_posting', 'income_tax',
         'bank_statement_amt', 'bank_lc_diff', 'lc_commission', 'lc_commission_date',
@@ -88,6 +88,11 @@ class NasTradingLc extends Model
     public function billOfEntries()
     {
         return $this->hasMany(NasTradingLcBillOfEntry::class, 'lc_id');
+    }
+
+    public function billPaids()
+    {
+        return $this->hasMany(NasTradingLcBillPaid::class, 'lc_id');
     }
 
     public function openingBank()

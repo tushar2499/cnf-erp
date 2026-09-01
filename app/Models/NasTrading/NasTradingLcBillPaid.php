@@ -4,9 +4,9 @@ namespace App\Models\NasTrading;
 
 use Illuminate\Database\Eloquent\Model;
 
-class NasTradingLcPayment extends Model
+class NasTradingLcBillPaid extends Model
 {
-    protected $fillable = ['lc_id', 'payment_type', 'receipt_no', 'date', 'amount'];
+    protected $fillable = ['lc_id', 'date', 'posting', 'remarks', 'amount'];
 
     protected $casts = ['date' => 'date:Y-m-d'];
 

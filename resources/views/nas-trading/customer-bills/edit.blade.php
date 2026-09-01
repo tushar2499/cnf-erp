@@ -183,6 +183,7 @@
                             $customerBill->lc?->payments?->where('payment_type', 'advance')->sum('amount') ?? 0;
                         $dutyAdvance = (float) ($customerBill->lc?->billOfEntries->flatMap->dutyAdvances->sum('amount') ?? 0);
                         $totalAdvance = $advancePayment + $dutyAdvance;
+                        $totalBillPaid = $customerBill->lc?->total_bill_paid ?? 0;
                     @endphp
                     <hr class="my-2">
                     <div class="d-flex justify-content-between mb-1">
@@ -196,6 +197,11 @@
                     <div class="d-flex justify-content-between">
                         <span class="fw-bold" style="font-size:.85rem">Total Advance</span>
                         <strong style="font-size:.9rem;color:#0c2340">BDT {{ number_format($totalAdvance, 2) }}</strong>
+                    </div>
+                    <hr class="my-2">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-bold" style="font-size:.85rem">Bill Paid</span>
+                        <strong style="font-size:.9rem;color:#0c2340">BDT {{ number_format($totalBillPaid, 2) }}</strong>
                     </div>
                     <hr class="my-2">
                     <div class="d-flex justify-content-between">
@@ -221,6 +227,7 @@
         var expenseHeads = @json($expenseHeads->pluck('name', 'id'));
         var existingItems = @json($customerBill->items);
         var totalAdvance = {{ $totalAdvance }};
+        var totalBillPaid = {{ $totalBillPaid }};
 
         function addLine(d) {
             d = d || {};
@@ -246,11 +253,11 @@
             });
             var vat = sub * (parseFloat($('#vatPct').val()) || 0) / 100;
             var total = sub + vat;
-            var net = total - totalAdvance;
-            $('#dispSubTotal').text(sub.toFixed(2));
-            $('#dispVat').text(vat.toFixed(2));
-            $('#dispTotal').text(total.toFixed(2));
-            $('#dispFinalAmount').text(net.toFixed(2));
+            var net = total - totalAdvance - totalBillPaid;
+            $('#dispSubTotal').text('BDT ' + sub.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            $('#dispVat').text('BDT ' + vat.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            $('#dispTotal').text('BDT ' + total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            $('#dispFinalAmount').text('BDT ' + net.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
             $('#subTotal').val(sub.toFixed(2));
             $('#vatAmount').val(vat.toFixed(2));
             $('#totalAmount').val(net.toFixed(2));

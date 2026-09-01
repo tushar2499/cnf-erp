@@ -15,10 +15,12 @@
 .info-body { padding:.75rem 1rem; }
 .info-label { font-size:.75rem; color:#6b7280; font-weight:600; text-transform:uppercase; letter-spacing:.03em; margin-bottom:.1rem; }
 .info-value { font-size:.85rem; color:#111; font-weight:500; }
-.exp-table th { background:#1a6b60; color:#fff; font-size:.77rem; padding:.4rem .6rem; }
-.exp-table td { font-size:.8rem; padding:.35rem .6rem; vertical-align:middle; }
-.pay-table th { background:#17375e; color:#fff; font-size:.77rem; padding:.35rem .6rem; }
-.pay-table td { font-size:.8rem; padding:.3rem .6rem; vertical-align:middle; }
+.exp-table th { background:#1a6b60; color:#fff; font-size:.82rem; padding:.45rem .7rem; white-space:nowrap; }
+.exp-table td { font-size:.84rem; padding:.38rem .7rem; vertical-align:middle; white-space:nowrap; }
+.pay-table th { background:#17375e; color:#fff; font-size:.82rem; padding:.4rem .7rem; white-space:nowrap; }
+.pay-table td { font-size:.84rem; padding:.35rem .7rem; vertical-align:middle; white-space:nowrap; }
+.da-inner-table th { background:#e9ecef; color:#374151; font-size:.82rem; padding:.38rem .6rem; white-space:nowrap; }
+.da-inner-table td { font-size:.84rem; padding:.35rem .6rem; vertical-align:middle; white-space:nowrap; }
 .badge-posting { font-size:.7rem; }
 
 /* Print button inside section headers */
@@ -254,7 +256,7 @@
                 @if($lc->items->count())
                 <div style="overflow-x:auto">
                     <table class="table table-bordered exp-table mb-0 w-100">
-                        <thead><tr><th>#</th><th>Product</th><th>Code</th><th>HS Code</th><th>Qty</th><th>Unit</th><th>Weight</th><th>W.Unit</th><th>Unit Price</th><th>Amount</th><th>Curr.</th></tr></thead>
+                        <thead><tr><th style="min-width:32px">#</th><th style="min-width:150px">Product</th><th style="min-width:85px">Code</th><th style="min-width:90px">HS Code</th><th style="min-width:65px">Qty</th><th style="min-width:55px">Unit</th><th style="min-width:70px">Weight</th><th style="min-width:58px">W.Unit</th><th style="min-width:95px">Unit Price</th><th style="min-width:95px">Amount</th><th style="min-width:52px">Curr.</th></tr></thead>
                         <tbody>
                             @foreach($lc->items as $idx => $item)
                             <tr>
@@ -360,25 +362,31 @@
                                     <i class="fa fa-coins me-1 text-muted"></i>Duty Advances
                                 </div>
                                 <div style="overflow-x:auto">
-                                    <table class="table table-sm table-bordered mb-0 w-100" style="font-size:.8rem">
+                                    <table class="table table-sm table-bordered da-inner-table mb-0 w-100">
                                         <thead>
                                             <tr>
-                                                <th class="text-center" style="width:32px;background:#e9ecef;padding:.3rem .5rem">#</th>
-                                                <th style="background:#e9ecef;padding:.3rem .5rem">Amount (BDT)</th>
-                                                <th style="background:#e9ecef;padding:.3rem .5rem">Date</th>
-                                                <th style="background:#e9ecef;padding:.3rem .5rem">Posting</th>
+                                                <th class="text-center" style="width:32px;background:#e9ecef;padding:.35rem .5rem">#</th>
+                                                <th style="min-width:95px;background:#e9ecef;padding:.35rem .5rem">Date</th>
+                                                <th style="min-width:110px;background:#e9ecef;padding:.35rem .5rem">Posting</th>
+                                                <th style="min-width:110px;background:#e9ecef;padding:.35rem .5rem">Amount (BDT)</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @foreach($boe->dutyAdvances as $daIdx => $da)
                                             <tr>
                                                 <td class="text-center" style="padding:.3rem .5rem">{{ $daIdx + 1 }}</td>
-                                                <td style="padding:.3rem .5rem">{{ number_format((float)$da->amount, 2) }}</td>
                                                 <td style="padding:.3rem .5rem">{{ $da->date ? $da->date->format('d-M-Y') : $dash }}</td>
                                                 <td style="padding:.3rem .5rem">{{ $da->posting ?? $dash }}</td>
+                                                <td style="padding:.3rem .5rem">{{ number_format((float)$da->amount, 2) }}</td>
                                             </tr>
                                             @endforeach
                                         </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colspan="3" class="text-end fw-bold" style="padding:.3rem .5rem;font-size:.78rem;background:#f8f9fa">Total Advance</td>
+                                                <td class="fw-bold" style="padding:.3rem .5rem;background:#f8f9fa">{{ number_format($boe->dutyAdvances->sum('amount'), 2) }}</td>
+                                            </tr>
+                                        </tfoot>
                                     </table>
                                 </div>
                                 @endif
@@ -388,10 +396,11 @@
                     </div>
                     @endif
 
+                    <div class="info-label mb-2"><i class="fa fa-money-bill-wave me-1"></i>Payment Receipts</div>
                     @if($lc->payments->count())
                     <div style="overflow-x:auto">
                         <table class="table table-bordered pay-table mb-0 w-100">
-                            <thead><tr><th>#</th><th>Type</th><th>Receipt No</th><th>Date</th><th>Amount (BDT)</th></tr></thead>
+                            <thead><tr><th style="min-width:32px">#</th><th style="min-width:90px">Type</th><th style="min-width:110px">Receipt No</th><th style="min-width:95px">Date</th><th style="min-width:110px">Amount (BDT)</th></tr></thead>
                             <tbody>
                                 @foreach($lc->payments as $idx => $pay)
                                 <tr>
@@ -414,6 +423,47 @@
                     @else
                     <div class="text-center text-muted py-2" style="font-size:.82rem"><i class="fa fa-money-bill-wave fa-2x mb-2 d-block opacity-50"></i>No payment receipts recorded.</div>
                     @endif
+
+                    {{-- Bill Paid --}}
+                    <div class="mt-3">
+                        <div class="info-label mb-2"><i class="fa fa-file-invoice-dollar me-1"></i>Bill Paid</div>
+                        @if($lc->billPaids->count())
+                        <div style="overflow-x:auto">
+                            <table class="table table-bordered pay-table mb-0 w-100">
+                                <thead>
+                                    <tr>
+                                        <th style="min-width:32px">#</th>
+                                        <th style="min-width:95px">Date</th>
+                                        <th style="min-width:110px">Posting</th>
+                                        <th style="min-width:130px">Remarks</th>
+                                        <th style="min-width:110px">Amount (BDT)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($lc->billPaids as $idx => $bp)
+                                    <tr>
+                                        <td>{{ $idx + 1 }}</td>
+                                        <td>{{ $bp->date ? $bp->date->format('d-M-Y') : $dash }}</td>
+                                        <td>{{ $bp->posting ?? $dash }}</td>
+                                        <td>{{ $bp->remarks ?? $dash }}</td>
+                                        <td>{{ number_format((float)$bp->amount, 2) }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="4" class="text-end fw-bold" style="font-size:.8rem">Total</td>
+                                        <td class="fw-bold" style="font-size:.8rem">{{ number_format((float)$lc->total_bill_paid, 2) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        @else
+                        <div class="text-center text-muted py-2" style="font-size:.82rem">
+                            <i class="fa fa-file-invoice-dollar fa-2x mb-2 d-block opacity-50"></i>No bill paid entries recorded.
+                        </div>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>
@@ -515,12 +565,12 @@
                             <div class="info-label mb-1">Other Charges</div>
                             @if($lc->otherChargeItems->count())
                             <div style="overflow-x:auto">
-                                <table class="table table-sm table-bordered mb-1 w-100" style="font-size:.8rem">
+                                <table class="table table-sm table-bordered da-inner-table mb-1 w-100">
                                     <thead>
                                         <tr>
-                                            <th class="text-center" style="width:32px;background:#e9ecef;padding:.3rem .5rem">#</th>
-                                            <th style="background:#e9ecef;padding:.3rem .5rem">Charge Name</th>
-                                            <th style="width:160px;background:#e9ecef;padding:.3rem .5rem">Amount (BDT)</th>
+                                            <th class="text-center" style="width:32px;background:#e9ecef;padding:.35rem .5rem">#</th>
+                                            <th style="min-width:150px;background:#e9ecef;padding:.35rem .5rem">Charge Name</th>
+                                            <th style="min-width:120px;background:#e9ecef;padding:.35rem .5rem">Amount (BDT)</th>
                                         </tr>
                                     </thead>
                                     <tbody>
