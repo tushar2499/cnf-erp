@@ -14,7 +14,7 @@ class NasTradingLcBillOfEntry extends Model
     ];
 
     protected $casts = [
-        'be_date' => 'date',
+        'be_date' => 'date:Y-m-d',
     ];
 
     public function lc()

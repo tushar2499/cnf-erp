@@ -311,7 +311,8 @@
             $advancePayment = $customerBill->lc?->payments?->where('payment_type', 'advance')->sum('amount') ?? 0;
             $dutyAdvance = (float) ($customerBill->lc?->billOfEntries->flatMap->dutyAdvances->sum('amount') ?? 0);
             $totalAdvance = $advancePayment + $dutyAdvance;
-            $transportAmt = $customerBill->sub_total + $customerBill->vat_amount - $totalAdvance;
+            $totalBillPaid = $customerBill->lc?->total_bill_paid ?? 0;
+            $transportAmt = $customerBill->sub_total + $customerBill->vat_amount - $totalAdvance - $totalBillPaid;
 
             $amountInWords = \App\Helpers\NumberHelper::amountInWords($transportAmt);
         @endphp
@@ -319,17 +320,17 @@
             <tr>
                 <td style="padding:.2rem .5rem;color:#555;">Sub Total</td>
                 <td style="padding:.2rem .5rem;text-align:right;font-weight:600;color:#000;">
-                    {{ number_format($customerBill->sub_total, 2) }}</td>
+                    BDT {{ number_format($customerBill->sub_total, 2) }}</td>
             </tr>
             <tr class="border-dotted-top">
                 <td style="padding:.2rem .5rem;color:#555;">VAT ({{ floatval($customerBill->vat_pct) }}%)</td>
                 <td style="padding:.2rem .5rem;text-align:right;font-weight:600;color:#000;">
-                    {{ number_format($customerBill->vat_amount, 2) }}</td>
+                    BDT {{ number_format($customerBill->vat_amount, 2) }}</td>
             </tr>
             <tr class="border-solid-both">
                 <td style="padding:.25rem .5rem;font-weight:700;color:#000;">Total Amount</td>
                 <td style="padding:.25rem .5rem;text-align:right;font-weight:700;color:#000;">
-                    {{ number_format($customerBill->sub_total + $customerBill->vat_amount, 2) }}
+                    BDT {{ number_format($customerBill->sub_total + $customerBill->vat_amount, 2) }}
                     {{ $customerBill->currency }}</td>
             </tr>
             <tr class="border-dotted-top">
@@ -345,6 +346,11 @@
                 <td style="padding:.2rem .5rem;font-weight:700;color:#000;">Total Advance</td>
                 <td style="padding:.2rem .5rem;text-align:right;font-weight:700;color:#000;">BDT
                     {{ number_format($totalAdvance, 2) }}</td>
+            </tr>
+            <tr class="border-dotted-top">
+                <td style="padding:.2rem .5rem;font-weight:700;color:#000;">Total Bill Paid</td>
+                <td style="padding:.2rem .5rem;text-align:right;font-weight:700;color:#000;">BDT
+                    {{ number_format($totalBillPaid, 2) }}</td>
             </tr>
             <tr class="border-solid-top">
                 <td style="padding:.25rem .5rem;font-weight:700;color:#000;">{{ $transportAmt >= 0 ? 'Due' : 'Balance' }}
@@ -493,21 +499,22 @@
                             $customerBill->lc?->payments?->where('payment_type', 'advance')->sum('amount') ?? 0;
                         $dutyAdvance = (float) ($customerBill->lc?->billOfEntries->flatMap->dutyAdvances->sum('amount') ?? 0);
                         $totalAdvance = $advancePayment + $dutyAdvance;
-                        $transportAmt = $customerBill->sub_total + $customerBill->vat_amount - $totalAdvance;
+                        $totalBillPaid = $customerBill->lc?->total_bill_paid ?? 0;
+                        $transportAmt = $customerBill->sub_total + $customerBill->vat_amount - $totalAdvance - $totalBillPaid;
                     @endphp
                     <table class="table table-sm mb-0">
                         <tr>
                             <td class="text-muted">Sub Total</td>
-                            <td class="text-end fw-bold">{{ number_format($customerBill->sub_total, 2) }}</td>
+                            <td class="text-end fw-bold">BDT {{ number_format($customerBill->sub_total, 2) }}</td>
                         </tr>
                         <tr>
                             <td class="text-muted">VAT ({{ floatval($customerBill->vat_pct) }}%)</td>
-                            <td class="text-end fw-bold">{{ number_format($customerBill->vat_amount, 2) }}</td>
+                            <td class="text-end fw-bold">BDT {{ number_format($customerBill->vat_amount, 2) }}</td>
                         </tr>
                         <tr class="table-success">
                             <td class="fw-bold fs-6">Total Amount</td>
                             <td class="text-end fw-bold fs-6">
-                                {{ number_format($customerBill->sub_total + $customerBill->vat_amount, 2) }}
+                                BDT {{ number_format($customerBill->sub_total + $customerBill->vat_amount, 2) }}
                                 {{ $customerBill->currency }}</td>
                         </tr>
                     </table>
@@ -523,6 +530,11 @@
                     <div class="d-flex justify-content-between">
                         <span class="fw-bold" style="font-size:.85rem">Total Advance</span>
                         <strong style="font-size:.9rem;color:#0c2340">BDT {{ number_format($totalAdvance, 2) }}</strong>
+                    </div>
+                    <hr class="my-2">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-bold" style="font-size:.85rem">Bill Paid</span>
+                        <strong style="font-size:.9rem;color:#0c2340">BDT {{ number_format($totalBillPaid, 2) }}</strong>
                     </div>
                     <hr class="my-2">
                     <div class="d-flex justify-content-between">

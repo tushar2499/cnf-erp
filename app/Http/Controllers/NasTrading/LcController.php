@@ -58,7 +58,7 @@ class LcController extends Controller
         DB::transaction(function () use ($request) {
             $lc = NasTradingLc::create(array_merge(
                 ['lc_no_system' => NasTradingLc::generateLcNo(), 'created_by' => auth()->user()?->id],
-                $request->except(['_token', 'items', 'payments', 'other_charge_items', 'invoices', 'bill_of_entries', 'rt_values'])
+                $request->except(['_token', 'items', 'payments', 'other_charge_items', 'invoices', 'bill_of_entries', 'rt_values', 'bill_paid'])
             ));
 
             foreach ($request->input('rt_values', []) as $rtv) {
@@ -91,6 +91,19 @@ class LcController extends Controller
                 }
             }
 
+            foreach ($request->input('bill_paid', []) as $bp) {
+                if (! empty($bp['amount'])) {
+                    $lc->billPaids()->create([
+                        'date'    => $bp['date'] ?? null,
+                        'posting' => $bp['posting'] ?? null,
+                        'remarks' => $bp['remarks'] ?? null,
+                        'amount'  => $bp['amount'],
+                    ]);
+                }
+            }
+
+            $lc->update(['total_bill_paid' => $lc->billPaids()->sum('amount')]);
+
             foreach ($request->input('bill_of_entries', []) as $boeData) {
                 if (! empty($boeData['be_no'])) {
                     $boe = $lc->billOfEntries()->create([
@@ -121,7 +134,7 @@ class LcController extends Controller
 
     public function show(NasTradingLc $lc)
     {
-        $lc->load('items', 'payments', 'otherChargeItems', 'invoiceValues', 'expenses.expenseHead', 'billOfEntries.dutyAdvances', 'rtValues');
+        $lc->load('items', 'payments', 'otherChargeItems', 'invoiceValues', 'expenses.expenseHead', 'billOfEntries.dutyAdvances', 'rtValues', 'billPaids');
         $banks = NasTradingBank::where('status', 'Active')->get();
         $importers = NasTradingImporter::where('status', 'Active')->get();
         $psiCompanies = NasTradingPsiCompany::where('status', 'Active')->get();
@@ -133,7 +146,7 @@ class LcController extends Controller
 
     public function edit(NasTradingLc $lc)
     {
-        $lc->load('items', 'payments', 'otherChargeItems', 'invoiceValues', 'billOfEntries.dutyAdvances', 'rtValues');
+        $lc->load('items', 'payments', 'otherChargeItems', 'invoiceValues', 'billOfEntries.dutyAdvances', 'rtValues', 'billPaids');
         $banks = NasTradingBank::where('status', 'Active')->get();
         $importers = NasTradingImporter::where('status', 'Active')->get();
         $psiCompanies = NasTradingPsiCompany::where('status', 'Active')->get();
@@ -145,7 +158,7 @@ class LcController extends Controller
     public function update(StoreNasTradingLcRequest $request, NasTradingLc $lc)
     {
         DB::transaction(function () use ($request, $lc) {
-            $lc->update($request->except(['_token', '_method', 'items', 'payments', 'other_charge_items', 'invoices', 'bill_of_entries', 'rt_values']));
+            $lc->update($request->except(['_token', '_method', 'items', 'payments', 'other_charge_items', 'invoices', 'bill_of_entries', 'rt_values', 'bill_paid']));
 
             $lc->rtValues()->delete();
             foreach ($request->input('rt_values', []) as $rtv) {
@@ -181,6 +194,20 @@ class LcController extends Controller
                     $lc->invoiceValues()->create($invoice);
                 }
             }
+
+            $lc->billPaids()->delete();
+            foreach ($request->input('bill_paid', []) as $bp) {
+                if (! empty($bp['amount'])) {
+                    $lc->billPaids()->create([
+                        'date'    => $bp['date'] ?? null,
+                        'posting' => $bp['posting'] ?? null,
+                        'remarks' => $bp['remarks'] ?? null,
+                        'amount'  => $bp['amount'],
+                    ]);
+                }
+            }
+
+            $lc->update(['total_bill_paid' => $lc->billPaids()->sum('amount')]);
 
             $survivingBoeIds = [];
             foreach ($request->input('bill_of_entries', []) as $boeData) {
