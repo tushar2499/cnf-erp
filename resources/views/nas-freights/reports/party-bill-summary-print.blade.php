@@ -25,12 +25,12 @@ body { font-family: Arial, sans-serif; font-size:9px; color:#000; background:#ff
 .info-box td.left { width:50%; border-right:1px solid #000; line-height:1.8; }
 .info-box td.right { line-height:2; }
 table.items { width:100%; border-collapse:collapse; table-layout:fixed; }
-table.items th { background:#000; color:#fff; font-size:7pt; padding:3px 2px; text-align:center; border:1px solid #000; word-wrap:break-word; }
+table.items th { background:none; color:#000; font-size:7pt; font-weight:bold; padding:3px 2px; text-align:center; border:1px solid #000; word-wrap:break-word; }
 table.items td { font-size:7.5pt; padding:2px 3px; border:1px solid #ccc; vertical-align:middle; word-wrap:break-word; line-height:1.4; }
 table.items td.r { text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 table.items td.c { text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .even-row { background:#f5faf9; }
-table.items tfoot td, table.items tr.total-row td { background:#d4e8d4; font-weight:bold; font-size:8pt; padding:3px; border:1px solid #000; }
+table.items tfoot td, table.items tr.total-row td { background:none; color:#000; font-weight:bold; font-size:8pt; padding:3px; border:1px solid #000; border-top:2px solid #000; }
 table.items tfoot td.r, table.items tr.total-row td.r { text-align:right; }
 .amount-words { margin-top:10px; font-size:9.5pt; }
 .sig-wrap { margin-top:22px; font-size:9.5pt; }

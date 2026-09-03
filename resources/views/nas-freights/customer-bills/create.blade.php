@@ -11,6 +11,7 @@
 #rowsTable td { font-size:.75rem; padding:.25rem .3rem; vertical-align:middle; white-space:nowrap; }
 #rowsTable input[type=number], #rowsTable input[type=text] { font-size:.75rem; padding:.2rem .3rem; height:auto; min-width:60px; }
 .req { color:#dc3545; }
+.form-control[readonly] { background-color: #e8eff5 !important; color: #6b7280; cursor: not-allowed; }
 </style>
 @endpush
 
@@ -273,7 +274,7 @@ function addRow(item) {
             <input type="number" class="form-control form-control-sm row-demday text-end" value="${demDay.toFixed(2)}" min="0" step="0.01" style="width:75px" oninput="rowDemRecalc(this)">
             <input class="row-demrate" type="hidden" value="${demRate}">
         </td>
-        <td><input type="number" class="form-control form-control-sm row-demamt text-end bg-light" value="${demAmt.toFixed(2)}" readonly style="width:85px"></td>
+        <td><input type="number" class="form-control form-control-sm row-demamt text-end" value="${demAmt.toFixed(2)}" min="0" step="0.01" style="width:85px" oninput="recalcBill()"></td>
         <td><input type="number" class="form-control form-control-sm row-discpct text-end" value="${discPct}" min="0" step="0.01" style="width:65px" oninput="rowRecalc(this)"></td>
         <td><input type="number" class="form-control form-control-sm row-disc text-end bg-light" value="${disc.toFixed(2)}" readonly style="width:80px"></td>
         <td><input type="number" class="form-control form-control-sm row-aitpct text-end" value="${aitPct}" min="0" step="0.01" style="width:65px" oninput="rowRecalc(this)"></td>

@@ -120,6 +120,7 @@
                         <th>Booking Date</th>
                         <th>Delivery Date</th>
                         <th>Item Code</th>
+                        <th>Challan No</th>
                         <th>Item Name</th>
                         <th>Location</th>
                         <th class="text-end">B.Qty</th>
@@ -141,6 +142,7 @@
                         <td>{{ $item->booking_date ? \Carbon\Carbon::parse($item->booking_date)->format('d-M-Y') : '—' }}</td>
                         <td>{{ $item->delivery_date ? \Carbon\Carbon::parse($item->delivery_date)->format('d-M-Y') : '—' }}</td>
                         <td>{{ $item->item_code }}</td>
+                        <td>{{ $item->bookingItem?->challan_no ?? '—' }}</td>
                         <td>{{ $item->item_name }}</td>
                         <td>{{ $item->location }}</td>
                         <td class="text-end">{{ number_format($item->b_qty, 2) }}</td>
@@ -158,7 +160,7 @@
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="15" class="text-end">Total Amount:</td>
+                        <td colspan="16" class="text-end">Total Amount:</td>
                         <td class="text-end text-success">{{ number_format($customerBill->total_amount, 2) }}</td>
                     </tr>
                 </tfoot>

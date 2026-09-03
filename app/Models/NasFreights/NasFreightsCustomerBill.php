@@ -27,7 +27,7 @@ class NasFreightsCustomerBill extends Model
 
     public function items()
     {
-        return $this->hasMany(NasFreightsCustomerBillItem::class, 'bill_id');
+        return $this->hasMany(NasFreightsCustomerBillItem::class, 'bill_id')->orderBy('delivery_date', 'asc');
     }
 
     public static function generateBillNo(int $branchId, string $deliveryType): string

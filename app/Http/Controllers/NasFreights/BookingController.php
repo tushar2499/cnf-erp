@@ -172,6 +172,7 @@ class BookingController extends Controller
                 NasFreightsBookingItem::create([
                     'booking_id'           => $booking->id,
                     'cover_van_no'         => $item['cover_van_no'] ?? null,
+                    'challan_no'           => $item['challan_no'] ?? null,
                     'capacity'             => $item['capacity'] ?? null,
                     'supplier_id'          => $item['supplier_id'] ?: null,
                     'supplier_name'        => $item['supplier_name'] ?? null,
@@ -258,6 +259,7 @@ class BookingController extends Controller
                 NasFreightsBookingItem::create([
                     'booking_id'           => $booking->id,
                     'cover_van_no'         => $item['cover_van_no'] ?? null,
+                    'challan_no'           => $item['challan_no'] ?? null,
                     'capacity'             => $item['capacity'] ?? null,
                     'supplier_id'          => $item['supplier_id'] ?: null,
                     'supplier_name'        => $item['supplier_name'] ?? null,

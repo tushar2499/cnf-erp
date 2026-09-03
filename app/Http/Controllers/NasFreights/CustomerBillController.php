@@ -226,7 +226,7 @@ class CustomerBillController extends Controller
 
     public function show(NasFreightsCustomerBill $customerBill)
     {
-        $customerBill->load('items');
+        $customerBill->load('items.bookingItem');
 
         return view('nas-freights.customer-bills.show', compact('customerBill'));
     }
@@ -345,7 +345,7 @@ class CustomerBillController extends Controller
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet()->setTitle('Transport Bill');
 
-        $sheet->mergeCells('A1:L1');
+        $sheet->mergeCells('A1:M1');
         $sheet->setCellValue('A1', 'TRANSPORT BILL');
         $sheet->getStyle('A1')->applyFromArray(['font' => ['bold' => true, 'size' => 14, 'underline' => true], 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]]);
         $sheet->getRowDimension(1)->setRowHeight(22);
@@ -367,13 +367,13 @@ class CustomerBillController extends Controller
         $sheet->getStyle('H3:H6')->getFont()->setBold(true);
         $sheet->getStyle('I3:I4')->getFont()->setBold(true);
 
-        $headers = ['SL', 'Job No', 'Delivery Date', 'Cover Van No', 'Cover Van Type', 'Capacity', 'Qty', 'Destination', 'Net Amt', 'Dem. Days', 'Total Dem.', 'Total Amt'];
+        $headers = ['SL', 'Job No', 'Delivery Date', 'Cover Van No', 'Challan No', 'Cover Van Type', 'Capacity', 'Qty', 'Destination', 'Net Amt', 'Dem. Days', 'Total Dem.', 'Total Amt'];
         $col = 'A';
         foreach ($headers as $h) {
             $sheet->setCellValue($col.'8', $h);
             $col++;
         }
-        $sheet->getStyle('A8:L8')->applyFromArray([
+        $sheet->getStyle('A8:M8')->applyFromArray([
             'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '000000']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
@@ -398,6 +398,7 @@ class CustomerBillController extends Controller
                 $item->booking?->job_no ?? '—',
                 $item->booking?->delivery_date ? $item->booking->delivery_date->format('d M Y') : '—',
                 $item->item_code,
+                $bItem?->challan_no ?? '—',
                 $vanType,
                 $capacity,
                 (float) $item->b_qty,
@@ -407,44 +408,44 @@ class CustomerBillController extends Controller
                 $demAmt,
                 (float) $rowTot,
             ], null, 'A'.$row);
-            foreach (['I', 'K', 'L'] as $c) {
+            foreach (['J', 'L', 'M'] as $c) {
                 $sheet->getStyle($c.$row)->getNumberFormat()->setFormatCode('#,##0.00');
             }
             if ($row % 2 === 0) {
-                $sheet->getStyle('A'.$row.':L'.$row)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('F5FAF9');
+                $sheet->getStyle('A'.$row.':M'.$row)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('F5FAF9');
             }
             $row++;
         }
 
-        $sheet->mergeCells('A'.$row.':H'.$row);
+        $sheet->mergeCells('A'.$row.':I'.$row);
         $sheet->setCellValue('A'.$row, 'Total Amount');
-        $sheet->setCellValue('I'.$row, $subTotal);
-        $sheet->setCellValue('J'.$row, $totalDemDays);
-        $sheet->setCellValue('K'.$row, $totalDem);
-        $sheet->setCellValue('L'.$row, $subTotal + $totalDem);
-        $sheet->getStyle('A'.$row.':L'.$row)->applyFromArray(['font' => ['bold' => true], 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E8E8E8']]]);
+        $sheet->setCellValue('J'.$row, $subTotal);
+        $sheet->setCellValue('K'.$row, $totalDemDays);
+        $sheet->setCellValue('L'.$row, $totalDem);
+        $sheet->setCellValue('M'.$row, $subTotal + $totalDem);
+        $sheet->getStyle('A'.$row.':M'.$row)->applyFromArray(['font' => ['bold' => true], 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E8E8E8']]]);
         $sheet->getStyle('A'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        foreach (['I', 'K', 'L'] as $c) {
+        foreach (['J', 'L', 'M'] as $c) {
             $sheet->getStyle($c.$row)->getNumberFormat()->setFormatCode('#,##0.00');
         }
         $row++;
 
-        $sheet->setCellValue('K'.$row, 'TDS Amount ('.number_format($tdsPct, 2).'%)');
-        $sheet->setCellValue('L'.$row, $tdsAmt);
-        $sheet->getStyle('K'.$row)->getFont()->setBold(true);
-        $sheet->getStyle('L'.$row)->getNumberFormat()->setFormatCode('#,##0.00');
+        $sheet->setCellValue('L'.$row, 'TDS Amount ('.number_format($tdsPct, 2).'%)');
+        $sheet->setCellValue('M'.$row, $tdsAmt);
+        $sheet->getStyle('L'.$row)->getFont()->setBold(true);
+        $sheet->getStyle('M'.$row)->getNumberFormat()->setFormatCode('#,##0.00');
         $row++;
 
-        $sheet->setCellValue('K'.$row, 'VAT Amount ('.number_format($vatPct, 2).'%)');
-        $sheet->setCellValue('L'.$row, $vatAmt);
-        $sheet->getStyle('K'.$row)->getFont()->setBold(true);
-        $sheet->getStyle('L'.$row)->getNumberFormat()->setFormatCode('#,##0.00');
+        $sheet->setCellValue('L'.$row, 'VAT Amount ('.number_format($vatPct, 2).'%)');
+        $sheet->setCellValue('M'.$row, $vatAmt);
+        $sheet->getStyle('L'.$row)->getFont()->setBold(true);
+        $sheet->getStyle('M'.$row)->getNumberFormat()->setFormatCode('#,##0.00');
         $row++;
 
-        $sheet->setCellValue('K'.$row, 'Gross Amount');
-        $sheet->setCellValue('L'.$row, $grossAmt);
-        $sheet->getStyle('K'.$row.':L'.$row)->applyFromArray(['font' => ['bold' => true], 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D0D0D0']]]);
-        $sheet->getStyle('L'.$row)->getNumberFormat()->setFormatCode('#,##0.00');
+        $sheet->setCellValue('L'.$row, 'Gross Amount');
+        $sheet->setCellValue('M'.$row, $grossAmt);
+        $sheet->getStyle('L'.$row.':M'.$row)->applyFromArray(['font' => ['bold' => true], 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D0D0D0']]]);
+        $sheet->getStyle('M'.$row)->getNumberFormat()->setFormatCode('#,##0.00');
         $row += 2;
 
         $sheet->setCellValue('A'.$row, 'Please make all CHEQUE payable to NAS Freights And Logistics Ltd.');
@@ -455,10 +456,10 @@ class CustomerBillController extends Controller
         $sheet->setCellValue('A'.$row, 'For NAS Freights And Logistics Ltd.');
         $sheet->getStyle('A'.$row)->getFont()->setBold(true);
 
-        foreach (['A' => 5, 'B' => 12, 'C' => 12, 'D' => 12, 'E' => 12, 'F' => 9, 'G' => 8, 'H' => 20, 'I' => 12, 'J' => 10, 'K' => 12, 'L' => 12] as $c => $w) {
+        foreach (['A' => 5, 'B' => 12, 'C' => 12, 'D' => 12, 'E' => 12, 'F' => 12, 'G' => 9, 'H' => 8, 'I' => 20, 'J' => 12, 'K' => 10, 'L' => 12, 'M' => 12] as $c => $w) {
             $sheet->getColumnDimension($c)->setWidth($w);
         }
-        $sheet->getStyle('A8:L'.($row - 4))->applyFromArray(['borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]]]);
+        $sheet->getStyle('A8:M'.($row - 4))->applyFromArray(['borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]]]);
 
         $writer = new Xlsx($spreadsheet);
 
