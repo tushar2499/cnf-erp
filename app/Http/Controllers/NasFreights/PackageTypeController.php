@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\NasFreights\PackageType\DestroyPackageTypeRequest;
+use App\Http\Requests\NasFreights\PackageType\IndexPackageTypeRequest;
+use App\Http\Requests\NasFreights\PackageType\StorePackageTypeRequest;
+use App\Http\Requests\NasFreights\PackageType\UpdatePackageTypeRequest;
 use App\Models\NasFreights\NasFreightsPackageType;
-use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
 class PackageTypeController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexPackageTypeRequest $request)
     {
         if ($request->ajax()) {
             return DataTables::of(NasFreightsPackageType::query()->orderBy('sort_order')->orderBy('name'))
@@ -37,13 +40,8 @@ class PackageTypeController extends Controller
         return view('nas-freights.settings.package-types.index');
     }
 
-    public function store(Request $request)
+    public function store(StorePackageTypeRequest $request)
     {
-        $request->validate([
-            'name'       => 'required|string|max:100|unique:nas_freights_package_types,name',
-            'sort_order' => 'nullable|integer|min:0',
-        ]);
-
         NasFreightsPackageType::create([
             'name'        => $request->name,
             'description' => $request->description,
@@ -54,13 +52,8 @@ class PackageTypeController extends Controller
         return response()->json(['message' => 'Package type created.']);
     }
 
-    public function update(Request $request, NasFreightsPackageType $packageType)
+    public function update(UpdatePackageTypeRequest $request, NasFreightsPackageType $packageType)
     {
-        $request->validate([
-            'name'       => 'required|string|max:100|unique:nas_freights_package_types,name,'.$packageType->id,
-            'sort_order' => 'nullable|integer|min:0',
-        ]);
-
         $packageType->update([
             'name'        => $request->name,
             'description' => $request->description,
@@ -71,7 +64,7 @@ class PackageTypeController extends Controller
         return response()->json(['message' => 'Package type updated.']);
     }
 
-    public function destroy(NasFreightsPackageType $packageType)
+    public function destroy(DestroyPackageTypeRequest $request, NasFreightsPackageType $packageType)
     {
         $packageType->delete();
 

@@ -10,7 +10,11 @@ class QuickStoreItemRequest extends FormRequest
     {
         $user = $this->user();
 
-        return $user && $user->hasPermission('cnf.item.create');
+        return $user && (
+            $user->hasPermission('cnf.item.create') ||
+            $user->hasPermission('cnf.job.create') ||
+            $user->hasPermission('cnf.job.edit')
+        );
     }
 
     public function rules(): array

@@ -3,6 +3,13 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\NasFreights\FreightExportBooking\CreateFreightExportBookingRequest;
+use App\Http\Requests\NasFreights\FreightExportBooking\DestroyFreightExportBookingRequest;
+use App\Http\Requests\NasFreights\FreightExportBooking\EditFreightExportBookingRequest;
+use App\Http\Requests\NasFreights\FreightExportBooking\IndexFreightExportBookingRequest;
+use App\Http\Requests\NasFreights\FreightExportBooking\ShowFreightExportBookingRequest;
+use App\Http\Requests\NasFreights\FreightExportBooking\StoreFreightExportBookingRequest;
+use App\Http\Requests\NasFreights\FreightExportBooking\UpdateFreightExportBookingRequest;
 use App\Models\NasFreights\NasFreightsContainerType;
 use App\Models\NasFreights\NasFreightsCustomer;
 use App\Models\NasFreights\NasFreightsEmployee;
@@ -30,7 +37,7 @@ class FreightExportBookingController extends Controller
         ];
     }
 
-    public function index(Request $request)
+    public function index(IndexFreightExportBookingRequest $request)
     {
         if ($request->ajax()) {
             $fromDate = $request->input('from_date');
@@ -72,7 +79,7 @@ class FreightExportBookingController extends Controller
         return view('nas-freights.freight-export-bookings.index');
     }
 
-    public function create()
+    public function create(CreateFreightExportBookingRequest $request)
     {
         return view('nas-freights.freight-export-bookings.create', array_merge($this->formData(), [
             'exportBooking'  => null,
@@ -80,12 +87,8 @@ class FreightExportBookingController extends Controller
         ]));
     }
 
-    public function store(Request $request)
+    public function store(StoreFreightExportBookingRequest $request)
     {
-        $request->validate([
-            'booking_date' => ['required', 'date'],
-            'service_type' => ['required'],
-        ]);
 
         DB::transaction(function () use ($request) {
             $exportBooking = NasFreightsFreightExportBooking::create(array_merge($this->prepareData($request), [
@@ -98,14 +101,14 @@ class FreightExportBookingController extends Controller
             ->with('success', 'Freight Export Booking created successfully.');
     }
 
-    public function show(NasFreightsFreightExportBooking $exportBooking)
+    public function show(ShowFreightExportBookingRequest $request, NasFreightsFreightExportBooking $exportBooking)
     {
         $exportBooking->load(['customer', 'salesperson', 'overseasAgent', 'shippingCarrier', 'items']);
 
         return view('nas-freights.freight-export-bookings.show', compact('exportBooking'));
     }
 
-    public function edit(NasFreightsFreightExportBooking $exportBooking)
+    public function edit(EditFreightExportBookingRequest $request, NasFreightsFreightExportBooking $exportBooking)
     {
         $exportBooking->load(['items', 'overseasAgent', 'shippingCarrier']);
         $existingItems = $exportBooking->items->map(fn ($i) => [
@@ -131,12 +134,8 @@ class FreightExportBookingController extends Controller
         ]));
     }
 
-    public function update(Request $request, NasFreightsFreightExportBooking $exportBooking)
+    public function update(UpdateFreightExportBookingRequest $request, NasFreightsFreightExportBooking $exportBooking)
     {
-        $request->validate([
-            'booking_date' => ['required', 'date'],
-            'service_type' => ['required'],
-        ]);
 
         DB::transaction(function () use ($request, $exportBooking) {
             $exportBooking->update($this->prepareData($request));
@@ -147,7 +146,7 @@ class FreightExportBookingController extends Controller
         return back()->with('success', 'Freight Export Booking '.$exportBooking->export_booking_no.' updated.');
     }
 
-    public function destroy(NasFreightsFreightExportBooking $exportBooking)
+    public function destroy(DestroyFreightExportBookingRequest $request, NasFreightsFreightExportBooking $exportBooking)
     {
         $exportBooking->delete();
 

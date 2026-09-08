@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\EmployeeImportController;
+use App\Http\Controllers\Api\Chevron\CtgJobImportController;
 use App\Http\Controllers\Api\Chevron\CustomerImportController;
 use App\Http\Controllers\Api\Chevron\DhkJobExpenseImportController;
 use App\Http\Controllers\Api\Chevron\DhkJobImportController;
@@ -17,6 +18,9 @@ Route::prefix('chevron')->group(function () {
 
     Route::post('/jobs/import/preview', [JobImportController::class, 'preview']);
     Route::post('/jobs/import', [JobImportController::class, 'import']);
+
+    Route::post('/jobs/ctg/import/preview', [CtgJobImportController::class, 'preview']);
+    Route::post('/jobs/ctg/import', [CtgJobImportController::class, 'import']);
 
     Route::post('/jobs/dhk/import/preview', [DhkJobImportController::class, 'preview']);
     Route::post('/jobs/dhk/import', [DhkJobImportController::class, 'import']);

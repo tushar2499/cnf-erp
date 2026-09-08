@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\NasFreights\OverseasAgent\DestroyOverseasAgentRequest;
+use App\Http\Requests\NasFreights\OverseasAgent\IndexOverseasAgentRequest;
+use App\Http\Requests\NasFreights\OverseasAgent\StoreOverseasAgentRequest;
+use App\Http\Requests\NasFreights\OverseasAgent\UpdateOverseasAgentRequest;
 use App\Models\NasFreights\NasFreightsOverseasAgent;
-use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
 class OverseasAgentController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexOverseasAgentRequest $request)
     {
         if ($request->ajax()) {
             return DataTables::of(NasFreightsOverseasAgent::query())
@@ -47,14 +50,8 @@ class OverseasAgentController extends Controller
         return view('nas-freights.settings.overseas-agents.index');
     }
 
-    public function store(Request $request)
+    public function store(StoreOverseasAgentRequest $request)
     {
-        $request->validate([
-            'name'    => 'required|string|max:255',
-            'country' => 'required|string|max:100',
-            'email'   => 'nullable|email|max:255',
-        ]);
-
         NasFreightsOverseasAgent::create([
             'agent_code'     => NasFreightsOverseasAgent::generateCode(),
             'name'           => $request->name,
@@ -74,14 +71,8 @@ class OverseasAgentController extends Controller
         return response()->json(['message' => 'Overseas agent created.']);
     }
 
-    public function update(Request $request, NasFreightsOverseasAgent $overseasAgent)
+    public function update(UpdateOverseasAgentRequest $request, NasFreightsOverseasAgent $overseasAgent)
     {
-        $request->validate([
-            'name'    => 'required|string|max:255',
-            'country' => 'required|string|max:100',
-            'email'   => 'nullable|email|max:255',
-        ]);
-
         $overseasAgent->update([
             'name'           => $request->name,
             'country'        => $request->country,
@@ -100,7 +91,7 @@ class OverseasAgentController extends Controller
         return response()->json(['message' => 'Overseas agent updated.']);
     }
 
-    public function destroy(NasFreightsOverseasAgent $overseasAgent)
+    public function destroy(DestroyOverseasAgentRequest $request, NasFreightsOverseasAgent $overseasAgent)
     {
         $overseasAgent->delete();
 

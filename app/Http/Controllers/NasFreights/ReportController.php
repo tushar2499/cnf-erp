@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\NasFreights\Report\BillDetailsRequest;
+use App\Http\Requests\NasFreights\Report\BookingReportRequest;
+use App\Http\Requests\NasFreights\Report\PartyBillSummaryRequest;
 use App\Models\Company;
 use App\Models\NasFreights\NasFreightsBookingItem;
 use App\Models\NasFreights\NasFreightsCustomer;
@@ -23,14 +26,14 @@ class ReportController extends Controller
 {
     // ─────────────────────────── BOOKING REPORT ───────────────────────────
 
-    public function bookingReport(Request $request)
+    public function bookingReport(BookingReportRequest $request)
     {
         $rows = $this->getBookingRows($request);
 
         return view('nas-freights.reports.booking', compact('rows'));
     }
 
-    public function bookingReportPrint(Request $request)
+    public function bookingReportPrint(BookingReportRequest $request)
     {
         $rows = $this->getBookingRows($request);
         $company = Company::where('slug', 'nas-freights')->first();
@@ -38,7 +41,7 @@ class ReportController extends Controller
         return view('nas-freights.reports.booking-print', compact('rows', 'company'));
     }
 
-    public function bookingReportPdf(Request $request)
+    public function bookingReportPdf(BookingReportRequest $request)
     {
         $rows = $this->getBookingRows($request);
         $company = Company::where('slug', 'nas-freights')->first();
@@ -48,7 +51,7 @@ class ReportController extends Controller
         return $pdf->download('booking-report-'.now()->format('Ymd-His').'.pdf');
     }
 
-    public function bookingReportExcel(Request $request)
+    public function bookingReportExcel(BookingReportRequest $request)
     {
         $rows = $this->getBookingRows($request);
         $company = Company::where('slug', 'nas-freights')->first();
@@ -135,14 +138,14 @@ class ReportController extends Controller
 
     // ─────────────────────── PARTY BILL SUMMARY ───────────────────────────
 
-    public function partyBillSummary(Request $request)
+    public function partyBillSummary(PartyBillSummaryRequest $request)
     {
         [$bills, $customer] = $this->getBills($request);
 
         return view('nas-freights.reports.party-bill-summary', compact('bills', 'customer'));
     }
 
-    public function partyBillSummaryPrint(Request $request)
+    public function partyBillSummaryPrint(PartyBillSummaryRequest $request)
     {
         [$bills, $customer] = $this->getBills($request);
         $company = Company::where('slug', 'nas-freights')->first();
@@ -150,7 +153,7 @@ class ReportController extends Controller
         return view('nas-freights.reports.party-bill-summary-print', compact('bills', 'customer', 'company'));
     }
 
-    public function partyBillSummaryPdf(Request $request)
+    public function partyBillSummaryPdf(PartyBillSummaryRequest $request)
     {
         [$bills, $customer] = $this->getBills($request);
         $company = Company::where('slug', 'nas-freights')->first();
@@ -160,7 +163,7 @@ class ReportController extends Controller
         return $pdf->download('party-bill-summary-'.now()->format('Ymd-His').'.pdf');
     }
 
-    public function partyBillSummaryExcel(Request $request)
+    public function partyBillSummaryExcel(PartyBillSummaryRequest $request)
     {
         [$bills, $customer] = $this->getBills($request);
         $company = Company::where('slug', 'nas-freights')->first();
@@ -258,14 +261,14 @@ class ReportController extends Controller
 
     // ─────────────────────────── BILL DETAILS ─────────────────────────────
 
-    public function billDetails(Request $request)
+    public function billDetails(BillDetailsRequest $request)
     {
         [$items, $customer, $bills] = $this->getBillItems($request);
 
         return view('nas-freights.reports.bill-details', compact('items', 'customer', 'bills'));
     }
 
-    public function billDetailsPrint(Request $request)
+    public function billDetailsPrint(BillDetailsRequest $request)
     {
         [$items, $customer, $bills] = $this->getBillItems($request);
         $company = Company::where('slug', 'nas-freights')->first();
@@ -273,7 +276,7 @@ class ReportController extends Controller
         return view('nas-freights.reports.bill-details-print', compact('items', 'customer', 'bills', 'company'));
     }
 
-    public function billDetailsPdf(Request $request)
+    public function billDetailsPdf(BillDetailsRequest $request)
     {
         [$items, $customer, $bills] = $this->getBillItems($request);
         $company = Company::where('slug', 'nas-freights')->first();
@@ -283,7 +286,7 @@ class ReportController extends Controller
         return $pdf->download('bill-details-'.now()->format('Ymd-His').'.pdf');
     }
 
-    public function billDetailsExcel(Request $request)
+    public function billDetailsExcel(BillDetailsRequest $request)
     {
         [$items, $customer, $bills] = $this->getBillItems($request);
         $company = Company::where('slug', 'nas-freights')->first();

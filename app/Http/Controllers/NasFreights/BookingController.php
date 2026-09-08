@@ -3,6 +3,14 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\NasFreights\Booking\ConfirmBookingRequest;
+use App\Http\Requests\NasFreights\Booking\CreateBookingRequest;
+use App\Http\Requests\NasFreights\Booking\DestroyBookingRequest;
+use App\Http\Requests\NasFreights\Booking\EditBookingRequest;
+use App\Http\Requests\NasFreights\Booking\IndexBookingRequest;
+use App\Http\Requests\NasFreights\Booking\RejectBookingRequest;
+use App\Http\Requests\NasFreights\Booking\StoreBookingRequest;
+use App\Http\Requests\NasFreights\Booking\UpdateBookingRequest;
 use App\Models\NasFreights\NasFreightsBooking;
 use App\Models\NasFreights\NasFreightsBookingItem;
 use App\Models\NasFreights\NasFreightsBookingProduct;
@@ -18,7 +26,7 @@ use Yajra\DataTables\Facades\DataTables;
 
 class BookingController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexBookingRequest $request)
     {
         if ($request->ajax()) {
             $fromDate = $request->input('from_date');
@@ -88,38 +96,27 @@ class BookingController extends Controller
         return view('nas-freights.bookings.index');
     }
 
-    public function confirm(NasFreightsBooking $booking)
+    public function confirm(ConfirmBookingRequest $request, NasFreightsBooking $booking)
     {
         $booking->update(['status' => 'Approved']);
 
         return response()->json(['message' => 'Booking '.$booking->job_no.' confirmed.']);
     }
 
-    public function reject(NasFreightsBooking $booking)
+    public function reject(RejectBookingRequest $request, NasFreightsBooking $booking)
     {
         $booking->update(['status' => 'Rejected']);
 
         return response()->json(['message' => 'Booking '.$booking->job_no.' rejected.']);
     }
 
-    public function create()
+    public function create(CreateBookingRequest $request)
     {
         return view('nas-freights.bookings.create', $this->formData());
     }
 
-    public function store(Request $request)
+    public function store(StoreBookingRequest $request)
     {
-        $request->validate([
-            'booking_prefix'         => ['required'],
-            'sales_type'             => ['required'],
-            'job_date'               => ['required', 'date'],
-            'customer_id'            => ['required'],
-            'delivery_date'          => ['required', 'date'],
-            'cover_van_no'           => ['required', 'string'],
-            'items'                  => ['required', 'array', 'min:1'],
-            'products'               => ['nullable', 'array'],
-            'products.*.goods_name'  => ['nullable', 'string', 'max:255'],
-        ]);
 
         DB::transaction(function () use ($request) {
             $firstProduct = $request->products[0] ?? [];
@@ -192,26 +189,15 @@ class BookingController extends Controller
         return response()->json(['message' => 'Booking created successfully.', 'redirect' => route('nas-freights.bookings.index')]);
     }
 
-    public function edit(NasFreightsBooking $booking)
+    public function edit(EditBookingRequest $request, NasFreightsBooking $booking)
     {
         $booking->load(['items', 'products']);
 
         return view('nas-freights.bookings.edit', array_merge($this->formData(), compact('booking')));
     }
 
-    public function update(Request $request, NasFreightsBooking $booking)
+    public function update(UpdateBookingRequest $request, NasFreightsBooking $booking)
     {
-        $request->validate([
-            'booking_prefix'         => ['required'],
-            'sales_type'             => ['required'],
-            'job_date'               => ['required', 'date'],
-            'customer_id'            => ['required'],
-            'delivery_date'          => ['required', 'date'],
-            'cover_van_no'           => ['required', 'string'],
-            'items'                  => ['required', 'array', 'min:1'],
-            'products'               => ['nullable', 'array'],
-            'products.*.goods_name'  => ['nullable', 'string', 'max:255'],
-        ]);
 
         DB::transaction(function () use ($request, $booking) {
             $firstProduct = $request->products[0] ?? [];
@@ -279,7 +265,7 @@ class BookingController extends Controller
         return response()->json(['message' => 'Booking updated successfully.', 'redirect' => route('nas-freights.bookings.index')]);
     }
 
-    public function destroy(NasFreightsBooking $booking)
+    public function destroy(DestroyBookingRequest $request, NasFreightsBooking $booking)
     {
         $booking->items()->delete();
         $booking->delete();

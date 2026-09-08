@@ -112,6 +112,8 @@
         $canSeeAccount          = $user->hasPermission('cnf.account.list');
         $canSeeSettings = $canSeeService || $canSeeJobType || $canSeePort || $canSeeExpenseCategory
             || $canSeeExpenseHead || $canSeeBranch || $canSeeItem || $canSeeAccount;
+
+        $canSeeJobExpenseSummary = $user->hasPermission('cnf.report.job-expense-summary');
     @endphp
 
     <div class="nav-item-group">
@@ -162,6 +164,7 @@
     @endif
 
     {{-- Reports (single item — flat) --}}
+    @if($canSeeJobExpenseSummary)
     <div class="nav-item-group">
         <div class="nav-section">Reports</div>
         <a href="{{ route('chevron.reports.job-expense-summary') }}"
@@ -169,6 +172,7 @@
             <i class="fa fa-chart-line"></i> Expense Summary
         </a>
     </div>
+    @endif
 
     {{-- Stakeholders --}}
     @if($canSeeCustomer)
@@ -271,7 +275,9 @@
         @if($canSeeReceipt)
         { label: 'Money Receipts',     section: 'C&F Operations',   url: '{{ route("chevron.cnf.money-receipts.index") }}',              icon: 'fa-money-bill-wave' },
         @endif
+        @if($canSeeJobExpenseSummary)
         { label: 'Expense Summary',    section: 'Reports',          url: '{{ route("chevron.reports.job-expense-summary") }}',           icon: 'fa-chart-line' },
+        @endif
         @if($canSeeCustomer)
         { label: 'Customers',          section: 'Stakeholders',     url: '{{ route("chevron.stakeholders.customers.index") }}',          icon: 'fa-users' },
         @endif

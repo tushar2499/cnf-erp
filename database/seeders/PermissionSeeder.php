@@ -11,7 +11,7 @@ class PermissionSeeder extends Seeder
     {
         $permissions = [
 
-// ── System (company_id = null) ─────────────────────────────────
+            // ── System (company_id = null) ─────────────────────────────────
 
             // Admin Users
             ['company_id' => null, 'module' => 'Admin Users', 'name' => 'admin.users.list', 'sorting_order' => 10],
@@ -45,7 +45,7 @@ class PermissionSeeder extends Seeder
             ['company_id' => null, 'module' => 'Designations', 'name' => 'admin.designations.edit', 'sorting_order' => 52],
             ['company_id' => null, 'module' => 'Designations', 'name' => 'admin.designations.delete', 'sorting_order' => 53],
 
-// ── Chevron Lines (C&F) — company_id = 1 ──────────────────────
+            // ── Chevron Lines (C&F) — company_id = 1 ──────────────────────
 
             // Jobs
             ['company_id' => 1, 'module' => 'Jobs', 'name' => 'cnf.job.list', 'sorting_order' => 10],
@@ -128,19 +128,130 @@ class PermissionSeeder extends Seeder
             ['company_id' => 1, 'module' => 'Expense Categories', 'name' => 'cnf.expense-category.edit', 'sorting_order' => 132],
             ['company_id' => 1, 'module' => 'Expense Categories', 'name' => 'cnf.expense-category.delete', 'sorting_order' => 133],
 
-// ── NAS Freights — company_id = 2 ─────────────────────────────
+            // Reports
+            ['company_id' => 1, 'module' => 'Reports', 'name' => 'cnf.report.job-expense-summary', 'sorting_order' => 140],
 
-            // Bookings
-            ['company_id' => 2, 'module' => 'Bookings', 'name' => 'bookings.list', 'sorting_order' => 10],
-            ['company_id' => 2, 'module' => 'Bookings', 'name' => 'bookings.view', 'sorting_order' => 11],
-            ['company_id' => 2, 'module' => 'Bookings', 'name' => 'bookings.create', 'sorting_order' => 12],
-            ['company_id' => 2, 'module' => 'Bookings', 'name' => 'bookings.edit', 'sorting_order' => 13],
-            ['company_id' => 2, 'module' => 'Bookings', 'name' => 'bookings.delete', 'sorting_order' => 14],
-            ['company_id' => 2, 'module' => 'Bookings', 'name' => 'bookings.print', 'sorting_order' => 15],
-            ['company_id' => 2, 'module' => 'Bookings', 'name' => 'bookings.confirm', 'sorting_order' => 16],
-            ['company_id' => 2, 'module' => 'Bookings', 'name' => 'bookings.reject', 'sorting_order' => 17],
+            // ── NAS Freights — company_id = 2 ─────────────────────────────
 
-// ── NAS Trading — company_id = 3 ──────────────────────────────
+            // RFQ
+            ['company_id' => 2, 'module' => 'RFQ', 'name' => 'freight.rfq.list', 'sorting_order' => 10],
+            ['company_id' => 2, 'module' => 'RFQ', 'name' => 'freight.rfq.view', 'sorting_order' => 11],
+            ['company_id' => 2, 'module' => 'RFQ', 'name' => 'freight.rfq.create', 'sorting_order' => 12],
+            ['company_id' => 2, 'module' => 'RFQ', 'name' => 'freight.rfq.edit', 'sorting_order' => 13],
+            ['company_id' => 2, 'module' => 'RFQ', 'name' => 'freight.rfq.delete', 'sorting_order' => 14],
+            ['company_id' => 2, 'module' => 'RFQ', 'name' => 'freight.rfq.update-status', 'sorting_order' => 15],
+            ['company_id' => 2, 'module' => 'RFQ', 'name' => 'freight.rfq.convert', 'sorting_order' => 16],
+
+            // Freight Import Bookings
+            ['company_id' => 2, 'module' => 'Freight Import Bookings', 'name' => 'freight.import-booking.list', 'sorting_order' => 20],
+            ['company_id' => 2, 'module' => 'Freight Import Bookings', 'name' => 'freight.import-booking.view', 'sorting_order' => 21],
+            ['company_id' => 2, 'module' => 'Freight Import Bookings', 'name' => 'freight.import-booking.create', 'sorting_order' => 22],
+            ['company_id' => 2, 'module' => 'Freight Import Bookings', 'name' => 'freight.import-booking.edit', 'sorting_order' => 23],
+            ['company_id' => 2, 'module' => 'Freight Import Bookings', 'name' => 'freight.import-booking.delete', 'sorting_order' => 24],
+
+            // Freight Export Bookings
+            ['company_id' => 2, 'module' => 'Freight Export Bookings', 'name' => 'freight.export-booking.list', 'sorting_order' => 30],
+            ['company_id' => 2, 'module' => 'Freight Export Bookings', 'name' => 'freight.export-booking.view', 'sorting_order' => 31],
+            ['company_id' => 2, 'module' => 'Freight Export Bookings', 'name' => 'freight.export-booking.create', 'sorting_order' => 32],
+            ['company_id' => 2, 'module' => 'Freight Export Bookings', 'name' => 'freight.export-booking.edit', 'sorting_order' => 33],
+            ['company_id' => 2, 'module' => 'Freight Export Bookings', 'name' => 'freight.export-booking.delete', 'sorting_order' => 34],
+
+            // Transport Bookings
+            ['company_id' => 2, 'module' => 'Transport Bookings', 'name' => 'freight.booking.list', 'sorting_order' => 40],
+            ['company_id' => 2, 'module' => 'Transport Bookings', 'name' => 'freight.booking.create', 'sorting_order' => 41],
+            ['company_id' => 2, 'module' => 'Transport Bookings', 'name' => 'freight.booking.edit', 'sorting_order' => 42],
+            ['company_id' => 2, 'module' => 'Transport Bookings', 'name' => 'freight.booking.delete', 'sorting_order' => 43],
+            ['company_id' => 2, 'module' => 'Transport Bookings', 'name' => 'freight.booking.confirm', 'sorting_order' => 44],
+            ['company_id' => 2, 'module' => 'Transport Bookings', 'name' => 'freight.booking.reject', 'sorting_order' => 45],
+
+            // Customer Bills
+            ['company_id' => 2, 'module' => 'Customer Bills', 'name' => 'freight.customer-bill.list', 'sorting_order' => 50],
+            ['company_id' => 2, 'module' => 'Customer Bills', 'name' => 'freight.customer-bill.view', 'sorting_order' => 51],
+            ['company_id' => 2, 'module' => 'Customer Bills', 'name' => 'freight.customer-bill.create', 'sorting_order' => 52],
+            ['company_id' => 2, 'module' => 'Customer Bills', 'name' => 'freight.customer-bill.edit', 'sorting_order' => 53],
+            ['company_id' => 2, 'module' => 'Customer Bills', 'name' => 'freight.customer-bill.delete', 'sorting_order' => 54],
+            ['company_id' => 2, 'module' => 'Customer Bills', 'name' => 'freight.customer-bill.print', 'sorting_order' => 55],
+            ['company_id' => 2, 'module' => 'Customer Bills', 'name' => 'freight.customer-bill.confirm', 'sorting_order' => 56],
+
+            // Due List
+            ['company_id' => 2, 'module' => 'Due List', 'name' => 'freight.due-list.view', 'sorting_order' => 60],
+
+            // Supplier Bills
+            ['company_id' => 2, 'module' => 'Supplier Bills', 'name' => 'freight.supplier-bill.list', 'sorting_order' => 70],
+            ['company_id' => 2, 'module' => 'Supplier Bills', 'name' => 'freight.supplier-bill.view', 'sorting_order' => 71],
+            ['company_id' => 2, 'module' => 'Supplier Bills', 'name' => 'freight.supplier-bill.create', 'sorting_order' => 72],
+            ['company_id' => 2, 'module' => 'Supplier Bills', 'name' => 'freight.supplier-bill.edit', 'sorting_order' => 73],
+            ['company_id' => 2, 'module' => 'Supplier Bills', 'name' => 'freight.supplier-bill.delete', 'sorting_order' => 74],
+            ['company_id' => 2, 'module' => 'Supplier Bills', 'name' => 'freight.supplier-bill.print', 'sorting_order' => 75],
+            ['company_id' => 2, 'module' => 'Supplier Bills', 'name' => 'freight.supplier-bill.confirm', 'sorting_order' => 76],
+
+            // Money Receipts
+            ['company_id' => 2, 'module' => 'Money Receipts', 'name' => 'freight.money-receipt.list', 'sorting_order' => 80],
+            ['company_id' => 2, 'module' => 'Money Receipts', 'name' => 'freight.money-receipt.view', 'sorting_order' => 81],
+            ['company_id' => 2, 'module' => 'Money Receipts', 'name' => 'freight.money-receipt.create', 'sorting_order' => 82],
+            ['company_id' => 2, 'module' => 'Money Receipts', 'name' => 'freight.money-receipt.print', 'sorting_order' => 83],
+
+            // Supplier Payments
+            ['company_id' => 2, 'module' => 'Supplier Payments', 'name' => 'freight.supplier-payment.list', 'sorting_order' => 90],
+            ['company_id' => 2, 'module' => 'Supplier Payments', 'name' => 'freight.supplier-payment.view', 'sorting_order' => 91],
+            ['company_id' => 2, 'module' => 'Supplier Payments', 'name' => 'freight.supplier-payment.create', 'sorting_order' => 92],
+
+            // Vehicles
+            ['company_id' => 2, 'module' => 'Vehicles', 'name' => 'freight.vehicle.list', 'sorting_order' => 100],
+            ['company_id' => 2, 'module' => 'Vehicles', 'name' => 'freight.vehicle.view', 'sorting_order' => 101],
+            ['company_id' => 2, 'module' => 'Vehicles', 'name' => 'freight.vehicle.create', 'sorting_order' => 102],
+            ['company_id' => 2, 'module' => 'Vehicles', 'name' => 'freight.vehicle.edit', 'sorting_order' => 103],
+            ['company_id' => 2, 'module' => 'Vehicles', 'name' => 'freight.vehicle.delete', 'sorting_order' => 104],
+
+            // Suppliers (Stakeholders)
+            ['company_id' => 2, 'module' => 'Suppliers', 'name' => 'freight.supplier.list', 'sorting_order' => 110],
+            ['company_id' => 2, 'module' => 'Suppliers', 'name' => 'freight.supplier.create', 'sorting_order' => 111],
+            ['company_id' => 2, 'module' => 'Suppliers', 'name' => 'freight.supplier.edit', 'sorting_order' => 112],
+            ['company_id' => 2, 'module' => 'Suppliers', 'name' => 'freight.supplier.delete', 'sorting_order' => 113],
+
+            // Customers (Stakeholders)
+            ['company_id' => 2, 'module' => 'Customers', 'name' => 'freight.customer.list', 'sorting_order' => 120],
+            ['company_id' => 2, 'module' => 'Customers', 'name' => 'freight.customer.view', 'sorting_order' => 121],
+            ['company_id' => 2, 'module' => 'Customers', 'name' => 'freight.customer.create', 'sorting_order' => 122],
+            ['company_id' => 2, 'module' => 'Customers', 'name' => 'freight.customer.edit', 'sorting_order' => 123],
+            ['company_id' => 2, 'module' => 'Customers', 'name' => 'freight.customer.delete', 'sorting_order' => 124],
+
+            // Reports
+            ['company_id' => 2, 'module' => 'Reports', 'name' => 'freight.report.booking', 'sorting_order' => 130],
+            ['company_id' => 2, 'module' => 'Reports', 'name' => 'freight.report.party-bill-summary', 'sorting_order' => 131],
+            ['company_id' => 2, 'module' => 'Reports', 'name' => 'freight.report.bill-details', 'sorting_order' => 132],
+
+            // Settings: Branches
+            ['company_id' => 2, 'module' => 'Freight Branches', 'name' => 'freight.branch.list', 'sorting_order' => 150],
+            ['company_id' => 2, 'module' => 'Freight Branches', 'name' => 'freight.branch.create', 'sorting_order' => 151],
+            ['company_id' => 2, 'module' => 'Freight Branches', 'name' => 'freight.branch.edit', 'sorting_order' => 152],
+            ['company_id' => 2, 'module' => 'Freight Branches', 'name' => 'freight.branch.delete', 'sorting_order' => 153],
+
+            // Settings: Container Types
+            ['company_id' => 2, 'module' => 'Container Types', 'name' => 'freight.container-type.list', 'sorting_order' => 160],
+            ['company_id' => 2, 'module' => 'Container Types', 'name' => 'freight.container-type.create', 'sorting_order' => 161],
+            ['company_id' => 2, 'module' => 'Container Types', 'name' => 'freight.container-type.edit', 'sorting_order' => 162],
+            ['company_id' => 2, 'module' => 'Container Types', 'name' => 'freight.container-type.delete', 'sorting_order' => 163],
+
+            // Settings: Package Types
+            ['company_id' => 2, 'module' => 'Package Types', 'name' => 'freight.package-type.list', 'sorting_order' => 170],
+            ['company_id' => 2, 'module' => 'Package Types', 'name' => 'freight.package-type.create', 'sorting_order' => 171],
+            ['company_id' => 2, 'module' => 'Package Types', 'name' => 'freight.package-type.edit', 'sorting_order' => 172],
+            ['company_id' => 2, 'module' => 'Package Types', 'name' => 'freight.package-type.delete', 'sorting_order' => 173],
+
+            // Settings: Overseas Agents
+            ['company_id' => 2, 'module' => 'Overseas Agents', 'name' => 'freight.overseas-agent.list', 'sorting_order' => 180],
+            ['company_id' => 2, 'module' => 'Overseas Agents', 'name' => 'freight.overseas-agent.create', 'sorting_order' => 181],
+            ['company_id' => 2, 'module' => 'Overseas Agents', 'name' => 'freight.overseas-agent.edit', 'sorting_order' => 182],
+            ['company_id' => 2, 'module' => 'Overseas Agents', 'name' => 'freight.overseas-agent.delete', 'sorting_order' => 183],
+
+            // Settings: Shipping Carriers
+            ['company_id' => 2, 'module' => 'Shipping Carriers', 'name' => 'freight.shipping-carrier.list', 'sorting_order' => 190],
+            ['company_id' => 2, 'module' => 'Shipping Carriers', 'name' => 'freight.shipping-carrier.create', 'sorting_order' => 191],
+            ['company_id' => 2, 'module' => 'Shipping Carriers', 'name' => 'freight.shipping-carrier.edit', 'sorting_order' => 192],
+            ['company_id' => 2, 'module' => 'Shipping Carriers', 'name' => 'freight.shipping-carrier.delete', 'sorting_order' => 193],
+
+            // ── NAS Trading — company_id = 3 ──────────────────────────────
 
             // LCs
             ['company_id' => 3, 'module' => 'LCs', 'name' => 'lcs.list', 'sorting_order' => 10],
@@ -161,5 +272,4 @@ class PermissionSeeder extends Seeder
         }
 
     }
-
 }

@@ -3,6 +3,11 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\NasFreights\MoneyReceipt\CreateMoneyReceiptRequest;
+use App\Http\Requests\NasFreights\MoneyReceipt\IndexMoneyReceiptRequest;
+use App\Http\Requests\NasFreights\MoneyReceipt\PrintMoneyReceiptRequest;
+use App\Http\Requests\NasFreights\MoneyReceipt\ShowMoneyReceiptRequest;
+use App\Http\Requests\NasFreights\MoneyReceipt\StoreMoneyReceiptRequest;
 use App\Models\Company;
 use App\Models\NasFreights\NasFreightsCustomer;
 use App\Models\NasFreights\NasFreightsCustomerBill;
@@ -14,7 +19,7 @@ use Yajra\DataTables\Facades\DataTables;
 
 class MoneyReceiptController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexMoneyReceiptRequest $request)
     {
         if ($request->ajax()) {
             $fromDate = $request->input('from_date');
@@ -39,7 +44,7 @@ class MoneyReceiptController extends Controller
         return view('nas-freights.money-receipts.index');
     }
 
-    public function create()
+    public function create(CreateMoneyReceiptRequest $request)
     {
         return view('nas-freights.money-receipts.create', [
             'paymentModes' => NasFreightsMoneyReceipt::paymentModes(),
@@ -65,14 +70,8 @@ class MoneyReceiptController extends Controller
         );
     }
 
-    public function store(Request $request)
+    public function store(StoreMoneyReceiptRequest $request)
     {
-        $request->validate([
-            'receipt_date'    => ['required', 'date'],
-            'bill_id'         => ['required', 'exists:nas_freights_customer_bills,id'],
-            'amount_received' => ['required', 'numeric', 'min:0.01'],
-            'payment_mode'    => ['required'],
-        ]);
 
         DB::transaction(function () use ($request) {
             $bill = NasFreightsCustomerBill::findOrFail($request->bill_id);
@@ -100,12 +99,12 @@ class MoneyReceiptController extends Controller
         return response()->json(['message' => 'Money receipt created successfully.', 'redirect' => route('nas-freights.money-receipts.index')]);
     }
 
-    public function show(NasFreightsMoneyReceipt $moneyReceipt)
+    public function show(ShowMoneyReceiptRequest $request, NasFreightsMoneyReceipt $moneyReceipt)
     {
         return view('nas-freights.money-receipts.show', compact('moneyReceipt'));
     }
 
-    public function printView(NasFreightsMoneyReceipt $moneyReceipt)
+    public function printView(PrintMoneyReceiptRequest $request, NasFreightsMoneyReceipt $moneyReceipt)
     {
         $company = Company::where('slug', 'nas-freights')->first();
 

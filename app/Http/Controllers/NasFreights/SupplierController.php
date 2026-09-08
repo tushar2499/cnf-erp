@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\NasFreights\Supplier\DestroySupplierRequest;
+use App\Http\Requests\NasFreights\Supplier\IndexSupplierRequest;
+use App\Http\Requests\NasFreights\Supplier\StoreSupplierRequest;
+use App\Http\Requests\NasFreights\Supplier\UpdateSupplierRequest;
 use App\Models\NasFreights\NasFreightsSupplier;
-use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
 class SupplierController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexSupplierRequest $request)
     {
         if ($request->ajax()) {
             return DataTables::of(NasFreightsSupplier::where('branch_id', session('nas_freights_branch_id')))
@@ -54,22 +57,8 @@ class SupplierController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreSupplierRequest $request)
     {
-        $request->validate([
-            'company_name'   => ['required', 'string', 'max:255'],
-            'owner_name'     => ['nullable', 'string', 'max:255'],
-            'address'        => ['nullable', 'string'],
-            'phone_no'       => ['nullable', 'string', 'max:30'],
-            'fax'            => ['nullable', 'string', 'max:30'],
-            'url'            => ['nullable', 'string', 'max:255'],
-            'mobile_no'      => ['nullable', 'string', 'max:30'],
-            'email'          => ['nullable', 'email', 'max:255'],
-            'contact'        => ['nullable', 'string', 'max:255'],
-            'designation'    => ['nullable', 'string', 'max:255'],
-            'supplier_group' => ['nullable', 'string'],
-            'taxscope'       => ['required', 'string'],
-        ]);
 
         NasFreightsSupplier::create([
             'branch_id'      => session('nas_freights_branch_id'),
@@ -92,22 +81,8 @@ class SupplierController extends Controller
         return response()->json(['message' => 'Supplier created successfully.']);
     }
 
-    public function update(Request $request, NasFreightsSupplier $supplier)
+    public function update(UpdateSupplierRequest $request, NasFreightsSupplier $supplier)
     {
-        $request->validate([
-            'company_name'   => ['required', 'string', 'max:255'],
-            'owner_name'     => ['nullable', 'string', 'max:255'],
-            'address'        => ['nullable', 'string'],
-            'phone_no'       => ['nullable', 'string', 'max:30'],
-            'fax'            => ['nullable', 'string', 'max:30'],
-            'url'            => ['nullable', 'string', 'max:255'],
-            'mobile_no'      => ['nullable', 'string', 'max:30'],
-            'email'          => ['nullable', 'email', 'max:255'],
-            'contact'        => ['nullable', 'string', 'max:255'],
-            'designation'    => ['nullable', 'string', 'max:255'],
-            'supplier_group' => ['nullable', 'string'],
-            'taxscope'       => ['required', 'string'],
-        ]);
 
         $supplier->update([
             'company_name'   => $request->company_name,
@@ -128,7 +103,7 @@ class SupplierController extends Controller
         return response()->json(['message' => 'Supplier updated successfully.']);
     }
 
-    public function destroy(NasFreightsSupplier $supplier)
+    public function destroy(DestroySupplierRequest $request, NasFreightsSupplier $supplier)
     {
         $supplier->delete();
 

@@ -41,8 +41,9 @@
 
 {{-- ── Row 1: KPI Cards ── --}}
 <div class="row g-3 mb-3">
+    @if($canSeeBooking)
     {{-- Total Bookings --}}
-    <div class="col-6 col-lg-2">
+    <div class="col-6 col-lg">
         <div class="card kpi-card bg-grad-teal p-3 h-100">
             <div class="kpi-val">{{ number_format($stats['bookings_total']) }}</div>
             <div class="kpi-lbl">Total Bookings</div>
@@ -51,7 +52,7 @@
         </div>
     </div>
     {{-- Pending Jobs --}}
-    <div class="col-6 col-lg-2">
+    <div class="col-6 col-lg">
         <div class="card kpi-card bg-grad-orange p-3 h-100">
             <div class="kpi-val">{{ $stats['bookings_draft'] }}</div>
             <div class="kpi-lbl">Pending Jobs</div>
@@ -59,8 +60,10 @@
             <i class="fa fa-hourglass-half kpi-icon"></i>
         </div>
     </div>
+    @endif
+    @if($canSeeDueList)
     {{-- Customer Due --}}
-    <div class="col-6 col-lg-2">
+    <div class="col-6 col-lg">
         <div class="card kpi-card bg-grad-red p-3 h-100">
             <div class="kpi-val" style="font-size:1.3rem">৳{{ number_format($stats['cust_due_amount'], 0) }}</div>
             <div class="kpi-lbl">Customer Due</div>
@@ -69,7 +72,7 @@
         </div>
     </div>
     {{-- Supplier Due --}}
-    <div class="col-6 col-lg-2">
+    <div class="col-6 col-lg">
         <div class="card kpi-card bg-grad-purple p-3 h-100">
             <div class="kpi-val" style="font-size:1.3rem">৳{{ number_format($stats['sup_due_amount'], 0) }}</div>
             <div class="kpi-lbl">Supplier Due</div>
@@ -77,8 +80,10 @@
             <i class="fa fa-truck kpi-icon"></i>
         </div>
     </div>
+    @endif
+    @if($canSeeMoneyReceipt)
     {{-- Received This Month --}}
-    <div class="col-6 col-lg-2">
+    <div class="col-6 col-lg">
         <div class="card kpi-card bg-grad-green p-3 h-100">
             <div class="kpi-val" style="font-size:1.3rem">৳{{ number_format($stats['receipts_month'], 0) }}</div>
             <div class="kpi-lbl">Received (Month)</div>
@@ -86,8 +91,10 @@
             <i class="fa fa-money-bill-wave kpi-icon"></i>
         </div>
     </div>
+    @endif
+    @if($canSeeSupplierPayment)
     {{-- Paid This Month --}}
-    <div class="col-6 col-lg-2">
+    <div class="col-6 col-lg">
         <div class="card kpi-card bg-grad-blue p-3 h-100">
             <div class="kpi-val" style="font-size:1.3rem">৳{{ number_format($stats['payments_month'], 0) }}</div>
             <div class="kpi-lbl">Paid Suppliers (Month)</div>
@@ -95,12 +102,19 @@
             <i class="fa fa-hand-holding-usd kpi-icon"></i>
         </div>
     </div>
+    @endif
 </div>
 
 {{-- ── Row 2: Status Breakdown + Stakeholders ── --}}
+@if($canSeeBooking || $canSeeCustomerBill || $canSeeSupplierBill)
+@php
+    $statusCount = (int)$canSeeBooking + (int)$canSeeCustomerBill + (int)$canSeeSupplierBill;
+    $statusCol = $statusCount === 1 ? 'col-12 col-md-6' : ($statusCount === 2 ? 'col-md-6' : 'col-md-4');
+@endphp
 <div class="row g-3 mb-3">
+    @if($canSeeBooking)
     {{-- Booking Status --}}
-    <div class="col-md-4">
+    <div class="{{ $statusCol }}">
         <div class="card h-100">
             <div class="card-header py-2" style="background:#1a6b60;color:#fff;font-size:.8rem;font-weight:600">
                 <i class="fa fa-clipboard-list me-2"></i> Booking Status
@@ -129,9 +143,11 @@
             </div>
         </div>
     </div>
+    @endif
 
+    @if($canSeeCustomerBill)
     {{-- Customer Bill Status --}}
-    <div class="col-md-4">
+    <div class="{{ $statusCol }}">
         <div class="card h-100">
             <div class="card-header py-2" style="background:#0c2340;color:#fff;font-size:.8rem;font-weight:600">
                 <i class="fa fa-file-invoice-dollar me-2"></i> Customer Bills
@@ -160,9 +176,11 @@
             </div>
         </div>
     </div>
+    @endif
 
+    @if($canSeeSupplierBill)
     {{-- Supplier Bill Status + Stakeholders --}}
-    <div class="col-md-4">
+    <div class="{{ $statusCol }}">
         <div class="card h-100">
             <div class="card-header py-2" style="background:#5b21b6;color:#fff;font-size:.8rem;font-weight:600">
                 <i class="fa fa-file-invoice me-2"></i> Payment Orders
@@ -186,16 +204,23 @@
                 </div>
                 @endforeach
                 <div class="d-flex justify-content-between align-items-center mt-2 pt-1" style="border-top:1px solid #f1f3f5">
+                    @if($canSeeCustomer)
                     <span style="font-size:.72rem;color:#6b7280"><i class="fa fa-users me-1"></i>Customers: <strong>{{ $stats['total_customers'] }}</strong></span>
+                    @endif
+                    @if($canSeeSupplier)
                     <span style="font-size:.72rem;color:#6b7280"><i class="fa fa-truck-loading me-1"></i>Suppliers: <strong>{{ $stats['total_suppliers'] }}</strong></span>
+                    @endif
                     <a href="{{ route('nas-freights.supplier-bills.index') }}" class="btn btn-sm btn-outline-secondary" style="font-size:.7rem;padding:2px 8px">View All</a>
                 </div>
             </div>
         </div>
     </div>
+    @endif
 </div>
+@endif
 
 {{-- ── Row 3: Recent Bookings ── --}}
+@if($canSeeBooking)
 <div class="row g-3 mb-3">
     <div class="col-12">
         <div class="card">
@@ -253,8 +278,10 @@
         </div>
     </div>
 </div>
+@endif
 
 {{-- ── Row 4: Customer Due + Supplier Due ── --}}
+@if($canSeeDueList)
 <div class="row g-3">
     {{-- Customer Due --}}
     <div class="col-md-6">
@@ -291,7 +318,9 @@
                                 @endif
                             </td>
                             <td class="text-center">
+                                @if($canSeeMoneyReceipt)
                                 <a href="{{ route('nas-freights.money-receipts.create') }}?bill_id={{ $bill->id }}" class="btn btn-sm btn-outline-success" style="padding:1px 5px;font-size:.65rem" title="Receive"><i class="fa fa-money-bill-wave"></i></a>
+                                @endif
                             </td>
                         </tr>
                         @empty
@@ -347,7 +376,9 @@
                                 @endif
                             </td>
                             <td class="text-center">
+                                @if($canSeeSupplierPayment)
                                 <a href="{{ route('nas-freights.supplier-payments.create') }}?bill_id={{ $bill->id }}" class="btn btn-sm btn-outline-primary" style="padding:1px 5px;font-size:.65rem" title="Pay"><i class="fa fa-money-check"></i></a>
+                                @endif
                             </td>
                         </tr>
                         @empty
@@ -368,5 +399,6 @@
         </div>
     </div>
 </div>
+@endif
 
 @endsection

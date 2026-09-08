@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\NasFreights\ShippingCarrier\DestroyShippingCarrierRequest;
+use App\Http\Requests\NasFreights\ShippingCarrier\IndexShippingCarrierRequest;
+use App\Http\Requests\NasFreights\ShippingCarrier\StoreShippingCarrierRequest;
+use App\Http\Requests\NasFreights\ShippingCarrier\UpdateShippingCarrierRequest;
 use App\Models\NasFreights\NasFreightsShippingCarrier;
-use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
 class ShippingCarrierController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexShippingCarrierRequest $request)
     {
         if ($request->ajax()) {
             return DataTables::of(NasFreightsShippingCarrier::query()->orderBy('name'))
@@ -38,13 +41,8 @@ class ShippingCarrierController extends Controller
         return view('nas-freights.settings.shipping-carriers.index');
     }
 
-    public function store(Request $request)
+    public function store(StoreShippingCarrierRequest $request)
     {
-        $request->validate([
-            'name'      => 'required|string|max:255',
-            'scac_code' => 'nullable|string|max:20',
-        ]);
-
         NasFreightsShippingCarrier::create([
             'carrier_code' => NasFreightsShippingCarrier::generateCode(),
             'name'         => $request->name,
@@ -55,13 +53,8 @@ class ShippingCarrierController extends Controller
         return response()->json(['message' => 'Shipping carrier created.']);
     }
 
-    public function update(Request $request, NasFreightsShippingCarrier $shippingCarrier)
+    public function update(UpdateShippingCarrierRequest $request, NasFreightsShippingCarrier $shippingCarrier)
     {
-        $request->validate([
-            'name'      => 'required|string|max:255',
-            'scac_code' => 'nullable|string|max:20',
-        ]);
-
         $shippingCarrier->update([
             'name'      => $request->name,
             'scac_code' => $request->scac_code ? strtoupper($request->scac_code) : null,
@@ -71,7 +64,7 @@ class ShippingCarrierController extends Controller
         return response()->json(['message' => 'Shipping carrier updated.']);
     }
 
-    public function destroy(NasFreightsShippingCarrier $shippingCarrier)
+    public function destroy(DestroyShippingCarrierRequest $request, NasFreightsShippingCarrier $shippingCarrier)
     {
         $shippingCarrier->delete();
 

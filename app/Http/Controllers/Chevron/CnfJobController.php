@@ -113,10 +113,10 @@ class CnfJobController extends Controller
 
         $data = $this->prepareData($request);
         $jobTypeId = (int) $request->job_type_id;
-        $portId = (int) $request->port_id;
+        $branchId = (int) session('active_branch_id');
 
-        $job = DB::transaction(function () use ($data, $jobTypeId, $portId) {
-            $data['job_no'] = ChevronJob::generateJobNo($jobTypeId, $portId);
+        $job = DB::transaction(function () use ($data, $jobTypeId, $branchId) {
+            $data['job_no'] = ChevronJob::generateJobNo($jobTypeId, $branchId);
 
             return ChevronJob::create($data);
         });

@@ -3,6 +3,11 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\NasFreights\Customer\DestroyCustomerRequest;
+use App\Http\Requests\NasFreights\Customer\IndexCustomerRequest;
+use App\Http\Requests\NasFreights\Customer\ShowCustomerRequest;
+use App\Http\Requests\NasFreights\Customer\StoreCustomerRequest;
+use App\Http\Requests\NasFreights\Customer\UpdateCustomerRequest;
 use App\Models\NasFreights\NasFreightsCustomer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -10,7 +15,7 @@ use Yajra\DataTables\Facades\DataTables;
 
 class CustomerController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexCustomerRequest $request)
     {
         if ($request->ajax()) {
             return DataTables::of(NasFreightsCustomer::where('branch_id', session('nas_freights_branch_id')))
@@ -45,22 +50,13 @@ class CustomerController extends Controller
         return response()->json(['customer_id' => NasFreightsCustomer::generateCustomerId($prefix)]);
     }
 
-    public function show(NasFreightsCustomer $customer)
+    public function show(ShowCustomerRequest $request, NasFreightsCustomer $customer)
     {
         return response()->json($customer);
     }
 
-    public function store(Request $request)
+    public function store(StoreCustomerRequest $request)
     {
-        $request->validate([
-            'id_prefix' => ['required', 'string', 'max:20'],
-            'name'      => ['required', 'string', 'max:255'],
-        ]);
-
-        if ($request->filled('portal_password')) {
-            $request->validate(['portal_password_confirm' => ['same:portal_password']]);
-        }
-
         DB::transaction(function () use ($request) {
             NasFreightsCustomer::create([
                 'branch_id'              => session('nas_freights_branch_id'),
@@ -104,14 +100,8 @@ class CustomerController extends Controller
         return response()->json(['message' => 'Customer created successfully.']);
     }
 
-    public function update(Request $request, NasFreightsCustomer $customer)
+    public function update(UpdateCustomerRequest $request, NasFreightsCustomer $customer)
     {
-        $request->validate(['name' => ['required', 'string', 'max:255']]);
-
-        if ($request->filled('portal_password')) {
-            $request->validate(['portal_password_confirm' => ['same:portal_password']]);
-        }
-
         $customer->update([
             'customer_group'         => $request->customer_group,
             'name'                   => $request->name,
@@ -150,7 +140,7 @@ class CustomerController extends Controller
         return response()->json(['message' => 'Customer updated successfully.']);
     }
 
-    public function destroy(NasFreightsCustomer $customer)
+    public function destroy(DestroyCustomerRequest $request, NasFreightsCustomer $customer)
     {
         $customer->delete();
 

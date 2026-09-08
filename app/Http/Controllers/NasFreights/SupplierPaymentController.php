@@ -3,6 +3,10 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\NasFreights\SupplierPayment\CreateSupplierPaymentRequest;
+use App\Http\Requests\NasFreights\SupplierPayment\IndexSupplierPaymentRequest;
+use App\Http\Requests\NasFreights\SupplierPayment\ShowSupplierPaymentRequest;
+use App\Http\Requests\NasFreights\SupplierPayment\StoreSupplierPaymentRequest;
 use App\Models\NasFreights\NasFreightsSupplier;
 use App\Models\NasFreights\NasFreightsSupplierBill;
 use App\Models\NasFreights\NasFreightsSupplierPayment;
@@ -13,7 +17,7 @@ use Yajra\DataTables\Facades\DataTables;
 
 class SupplierPaymentController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexSupplierPaymentRequest $request)
     {
         if ($request->ajax()) {
             $fromDate = $request->input('from_date');
@@ -38,7 +42,7 @@ class SupplierPaymentController extends Controller
         return view('nas-freights.supplier-payments.index');
     }
 
-    public function create()
+    public function create(CreateSupplierPaymentRequest $request)
     {
         return view('nas-freights.supplier-payments.create', [
             'paymentModes' => NasFreightsSupplierPayment::paymentModes(),
@@ -64,14 +68,8 @@ class SupplierPaymentController extends Controller
         );
     }
 
-    public function store(Request $request)
+    public function store(StoreSupplierPaymentRequest $request)
     {
-        $request->validate([
-            'payment_date' => ['required', 'date'],
-            'bill_id'      => ['required', 'exists:nas_freights_supplier_bills,id'],
-            'amount_paid'  => ['required', 'numeric', 'min:0.01'],
-            'payment_mode' => ['required'],
-        ]);
 
         DB::transaction(function () use ($request) {
             $bill = NasFreightsSupplierBill::findOrFail($request->bill_id);
@@ -99,7 +97,7 @@ class SupplierPaymentController extends Controller
         return response()->json(['message' => 'Supplier payment created successfully.', 'redirect' => route('nas-freights.supplier-payments.index')]);
     }
 
-    public function show(NasFreightsSupplierPayment $supplierPayment)
+    public function show(ShowSupplierPaymentRequest $request, NasFreightsSupplierPayment $supplierPayment)
     {
         return view('nas-freights.supplier-payments.show', compact('supplierPayment'));
     }

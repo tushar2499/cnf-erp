@@ -3,6 +3,16 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\NasFreights\CustomerBill\ConfirmCustomerBillRequest;
+use App\Http\Requests\NasFreights\CustomerBill\CreateCustomerBillRequest;
+use App\Http\Requests\NasFreights\CustomerBill\DestroyCustomerBillRequest;
+use App\Http\Requests\NasFreights\CustomerBill\EditCustomerBillRequest;
+use App\Http\Requests\NasFreights\CustomerBill\IndexCustomerBillRequest;
+use App\Http\Requests\NasFreights\CustomerBill\LoadItemsCustomerBillRequest;
+use App\Http\Requests\NasFreights\CustomerBill\PrintCustomerBillRequest;
+use App\Http\Requests\NasFreights\CustomerBill\ShowCustomerBillRequest;
+use App\Http\Requests\NasFreights\CustomerBill\StoreCustomerBillRequest;
+use App\Http\Requests\NasFreights\CustomerBill\UpdateCustomerBillRequest;
 use App\Models\NasFreights\NasFreightsBookingItem;
 use App\Models\NasFreights\NasFreightsCustomer;
 use App\Models\NasFreights\NasFreightsCustomerBill;
@@ -21,7 +31,7 @@ use Yajra\DataTables\Facades\DataTables;
 
 class CustomerBillController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexCustomerBillRequest $request)
     {
         if ($request->ajax()) {
             $fromDate = $request->input('from_date');
@@ -71,7 +81,7 @@ class CustomerBillController extends Controller
         return view('nas-freights.customer-bills.index');
     }
 
-    public function create()
+    public function create(CreateCustomerBillRequest $request)
     {
         return view('nas-freights.customer-bills.create', [
             'deliveryTypes' => NasFreightsCustomerBill::deliveryTypes(),
@@ -79,13 +89,8 @@ class CustomerBillController extends Controller
         ]);
     }
 
-    public function loadItems(Request $request)
+    public function loadItems(LoadItemsCustomerBillRequest $request)
     {
-        $request->validate([
-            'from_date'   => ['required', 'date'],
-            'to_date'     => ['required', 'date'],
-            'customer_id' => ['required'],
-        ]);
 
         // (booking_id, cover_van_no) pairs already present in any customer bill item
         $billedPairs = NasFreightsCustomerBillItem::select('booking_id', 'item_code')
@@ -147,15 +152,8 @@ class CustomerBillController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreCustomerBillRequest $request)
     {
-        $request->validate([
-            'from_date'     => ['required', 'date'],
-            'to_date'       => ['required', 'date'],
-            'bill_date'     => ['required', 'date'],
-            'delivery_type' => ['required'],
-            'bill_type'     => ['required'],
-        ]);
 
         // Items arrive as a JSON string, not a nested array — a bill with enough
         // rows (17 fields each) blows past PHP's default max_input_vars (1000)
@@ -224,14 +222,14 @@ class CustomerBillController extends Controller
         return response()->json(['message' => 'Customer bill created successfully.', 'redirect' => route('nas-freights.customer-bills.index')]);
     }
 
-    public function show(NasFreightsCustomerBill $customerBill)
+    public function show(ShowCustomerBillRequest $request, NasFreightsCustomerBill $customerBill)
     {
         $customerBill->load('items.bookingItem');
 
         return view('nas-freights.customer-bills.show', compact('customerBill'));
     }
 
-    public function edit(NasFreightsCustomerBill $customerBill)
+    public function edit(EditCustomerBillRequest $request, NasFreightsCustomerBill $customerBill)
     {
         $customerBill->load('items.booking');
 
@@ -242,15 +240,8 @@ class CustomerBillController extends Controller
         ]);
     }
 
-    public function update(Request $request, NasFreightsCustomerBill $customerBill)
+    public function update(UpdateCustomerBillRequest $request, NasFreightsCustomerBill $customerBill)
     {
-        $request->validate([
-            'from_date'     => ['required', 'date'],
-            'to_date'       => ['required', 'date'],
-            'bill_date'     => ['required', 'date'],
-            'delivery_type' => ['required'],
-            'bill_type'     => ['required'],
-        ]);
 
         $items = json_decode($request->input('items', '[]'), true) ?: [];
 
@@ -311,14 +302,14 @@ class CustomerBillController extends Controller
         return response()->json(['message' => 'Customer bill updated successfully.', 'redirect' => route('nas-freights.customer-bills.index')]);
     }
 
-    public function printView(NasFreightsCustomerBill $customerBill)
+    public function printView(PrintCustomerBillRequest $request, NasFreightsCustomerBill $customerBill)
     {
         $customerBill->load(['items.booking.products', 'items.bookingItem']);
 
         return view('nas-freights.customer-bills.print', compact('customerBill'));
     }
 
-    public function billExcel(NasFreightsCustomerBill $customerBill)
+    public function billExcel(PrintCustomerBillRequest $request, NasFreightsCustomerBill $customerBill)
     {
         $customerBill->load(['items.booking.products', 'items.bookingItem']);
 
@@ -470,7 +461,7 @@ class CustomerBillController extends Controller
         );
     }
 
-    public function mushakView(NasFreightsCustomerBill $customerBill)
+    public function mushakView(PrintCustomerBillRequest $request, NasFreightsCustomerBill $customerBill)
     {
         $customerBill->load(['items.booking', 'items.bookingItem']);
         $customer = NasFreightsCustomer::find($customerBill->customer_id);
@@ -478,14 +469,14 @@ class CustomerBillController extends Controller
         return view('nas-freights.customer-bills.mushak', compact('customerBill', 'customer'));
     }
 
-    public function confirm(NasFreightsCustomerBill $customerBill)
+    public function confirm(ConfirmCustomerBillRequest $request, NasFreightsCustomerBill $customerBill)
     {
         $customerBill->update(['status' => 'Approved']);
 
         return response()->json(['message' => 'Bill confirmed successfully.']);
     }
 
-    public function destroy(NasFreightsCustomerBill $customerBill)
+    public function destroy(DestroyCustomerBillRequest $request, NasFreightsCustomerBill $customerBill)
     {
         $customerBill->items()->delete();
         $customerBill->delete();

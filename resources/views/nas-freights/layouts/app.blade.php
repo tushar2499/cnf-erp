@@ -90,23 +90,62 @@
         </button>
 
         @php
-            $operationsActive = request()->routeIs(
-                'nas-freights.bookings.*',
-                'nas-freights.customer-bills.*',
-                'nas-freights.supplier-bills.*',
-            );
-            $freightImportActive = request()->routeIs('nas-freights.rfqs.*', 'nas-freights.freight-import-bookings.*');
-            $freightExportActive = request()->routeIs('nas-freights.rfqs.*', 'nas-freights.freight-export-bookings.*');
+            $user = auth()->user();
 
-            $dueListsActive = request()->routeIs('nas-freights.due-lists.*');
-            $collectionsActive = request()->routeIs(
-                'nas-freights.money-receipts.*',
-                'nas-freights.supplier-payments.*',
-            );
-            $reportsActive = request()->routeIs('nas-freights.reports.*');
-            $stakeholdersActive = request()->routeIs('nas-freights.stakeholders.*');
-            $importActive = request()->routeIs('nas-freights.import.*');
-            $settingsActive = request()->routeIs('nas-freights.settings.*');
+            // Local Logistics
+            $canSeeBooking      = $user->hasPermission('freight.booking.list');
+            $canSeeCustomerBill = $user->hasPermission('freight.customer-bill.list');
+            $canSeeSupplierBill = $user->hasPermission('freight.supplier-bill.list');
+            $canSeeLocalOps     = $canSeeBooking || $canSeeCustomerBill || $canSeeSupplierBill;
+
+            // Freight Import
+            $canSeeRfq           = $user->hasPermission('freight.rfq.list');
+            $canSeeImportBooking = $user->hasPermission('freight.import-booking.list');
+            $canSeeFreightImport = $canSeeRfq || $canSeeImportBooking;
+
+            // Freight Export
+            $canSeeExportBooking = $user->hasPermission('freight.export-booking.list');
+
+            // Due Lists
+            $canSeeDueList = $user->hasPermission('freight.due-list.view');
+
+            // Collections
+            $canSeeMoneyReceipt    = $user->hasPermission('freight.money-receipt.list');
+            $canSeeSupplierPayment = $user->hasPermission('freight.supplier-payment.list');
+            $canSeeCollections     = $canSeeMoneyReceipt || $canSeeSupplierPayment;
+
+            // Reports
+            $canSeeBookingReport     = $user->hasPermission('freight.report.booking');
+            $canSeePartyBillSummary  = $user->hasPermission('freight.report.party-bill-summary');
+            $canSeeBillDetails       = $user->hasPermission('freight.report.bill-details');
+            $canSeeReports           = $canSeeBookingReport || $canSeePartyBillSummary || $canSeeBillDetails;
+
+            // Fleet
+            $canSeeVehicle = $user->hasPermission('freight.vehicle.list');
+
+            // Stakeholders
+            $canSeeSupplier     = $user->hasPermission('freight.supplier.list');
+            $canSeeCustomer     = $user->hasPermission('freight.customer.list');
+            $canSeeStakeholders = $canSeeSupplier || $canSeeCustomer;
+
+            // Settings
+            $canSeeBranch          = $user->hasPermission('freight.branch.list');
+            $canSeeContainerType   = $user->hasPermission('freight.container-type.list');
+            $canSeePackageType     = $user->hasPermission('freight.package-type.list');
+            $canSeeOverseasAgent   = $user->hasPermission('freight.overseas-agent.list');
+            $canSeeShippingCarrier = $user->hasPermission('freight.shipping-carrier.list');
+            $canSeeSettings        = $canSeeBranch || $canSeeContainerType || $canSeePackageType
+                || $canSeeOverseasAgent || $canSeeShippingCarrier;
+
+            // Active states
+            $operationsActive    = request()->routeIs('nas-freights.bookings.*', 'nas-freights.customer-bills.*', 'nas-freights.supplier-bills.*');
+            $freightImportActive = request()->routeIs('nas-freights.rfqs.*', 'nas-freights.freight-import-bookings.*');
+            $freightExportActive = request()->routeIs('nas-freights.freight-export-bookings.*');
+            $dueListsActive      = request()->routeIs('nas-freights.due-lists.*');
+            $collectionsActive   = request()->routeIs('nas-freights.money-receipts.*', 'nas-freights.supplier-payments.*');
+            $reportsActive       = request()->routeIs('nas-freights.reports.*');
+            $stakeholdersActive  = request()->routeIs('nas-freights.stakeholders.*');
+            $settingsActive      = request()->routeIs('nas-freights.settings.*');
         @endphp
 
         <div class="nav-item-group">
@@ -117,7 +156,8 @@
             </a>
         </div>
 
-        {{-- Operations --}}
+        {{-- Local Logistics --}}
+        @if($canSeeLocalOps)
         <div class="nav-item-group">
             <div class="nav-section">Local Logistics</div>
             <a href="#freightOperationsMenu" class="nav-link {{ $operationsActive ? 'active' : '' }}"
@@ -127,22 +167,30 @@
                 <i class="fa fa-chevron-down ms-auto"></i>
             </a>
             <div class="collapse {{ $operationsActive ? 'show' : '' }}" id="freightOperationsMenu">
+                @if($canSeeBooking)
                 <a href="{{ route('nas-freights.bookings.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.bookings.*') ? 'active' : '' }}">
                     <i class="fa fa-truck"></i> Transport Bookings
                 </a>
+                @endif
+                @if($canSeeCustomerBill)
                 <a href="{{ route('nas-freights.customer-bills.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.customer-bills.*') ? 'active' : '' }}">
                     <i class="fa fa-file-invoice-dollar"></i> Customer Bills
                 </a>
+                @endif
+                @if($canSeeSupplierBill)
                 <a href="{{ route('nas-freights.supplier-bills.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.supplier-bills.*') ? 'active' : '' }}">
                     <i class="fa fa-file-invoice"></i> Supplier Bills
                 </a>
+                @endif
             </div>
         </div>
+        @endif
 
-        {{-- Freight Operations --}}
+        {{-- Freight Import --}}
+        @if($canSeeFreightImport)
         <div class="nav-item-group">
             <div class="nav-section">Freight Import</div>
             <a href="#freightFreightOpsMenu" class="nav-link {{ $freightImportActive ? 'active' : '' }}"
@@ -152,18 +200,24 @@
                 <i class="fa fa-chevron-down ms-auto"></i>
             </a>
             <div class="collapse {{ $freightImportActive ? 'show' : '' }}" id="freightFreightOpsMenu">
+                @if($canSeeRfq)
                 <a href="{{ route('nas-freights.rfqs.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.rfqs.*') ? 'active' : '' }}">
                     <i class="fa fa-file-signature"></i> RFQs
                 </a>
+                @endif
+                @if($canSeeImportBooking)
                 <a href="{{ route('nas-freights.freight-import-bookings.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.freight-import-bookings.*') ? 'active' : '' }}">
                     <i class="fa fa-ship"></i> Freight Import Bookings
                 </a>
+                @endif
             </div>
         </div>
+        @endif
 
-        {{-- Freight Operations --}}
+        {{-- Freight Export --}}
+        @if($canSeeExportBooking)
         <div class="nav-item-group">
             <div class="nav-section">Freight Export</div>
             <a href="#freightFreightExportMenu" class="nav-link {{ $freightExportActive ? 'active' : '' }}"
@@ -179,8 +233,10 @@
                 </a>
             </div>
         </div>
+        @endif
 
         {{-- Due Lists --}}
+        @if($canSeeDueList)
         <div class="nav-item-group">
             <div class="nav-section">Due Lists</div>
             <a href="#freightDueListMenu" class="nav-link {{ $dueListsActive ? 'active' : '' }}" data-bs-toggle="collapse"
@@ -199,8 +255,10 @@
                 </a>
             </div>
         </div>
+        @endif
 
         {{-- Collections --}}
+        @if($canSeeCollections)
         <div class="nav-item-group">
             <div class="nav-section">Collections</div>
             <a href="#freightCollectionsMenu" class="nav-link {{ $collectionsActive ? 'active' : '' }}"
@@ -210,18 +268,24 @@
                 <i class="fa fa-chevron-down ms-auto"></i>
             </a>
             <div class="collapse {{ $collectionsActive ? 'show' : '' }}" id="freightCollectionsMenu">
+                @if($canSeeMoneyReceipt)
                 <a href="{{ route('nas-freights.money-receipts.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.money-receipts.*') ? 'active' : '' }}">
                     <i class="fa fa-money-bill-wave"></i> Money Receipts
                 </a>
+                @endif
+                @if($canSeeSupplierPayment)
                 <a href="{{ route('nas-freights.supplier-payments.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.supplier-payments.*') ? 'active' : '' }}">
                     <i class="fa fa-hand-holding-usd"></i> Supplier Payments
                 </a>
+                @endif
             </div>
         </div>
+        @endif
 
         {{-- Reports --}}
+        @if($canSeeReports)
         <div class="nav-item-group">
             <div class="nav-section">Reports</div>
             <a href="#freightReportsMenu" class="nav-link {{ $reportsActive ? 'active' : '' }}" data-bs-toggle="collapse"
@@ -230,22 +294,30 @@
                 <i class="fa fa-chevron-down ms-auto"></i>
             </a>
             <div class="collapse {{ $reportsActive ? 'show' : '' }}" id="freightReportsMenu">
+                @if($canSeeBookingReport)
                 <a href="{{ route('nas-freights.reports.booking') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.reports.booking*') ? 'active' : '' }}">
                     <i class="fa fa-chart-bar"></i> Booking Report
                 </a>
+                @endif
+                @if($canSeePartyBillSummary)
                 <a href="{{ route('nas-freights.reports.party-bill-summary') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.reports.party-bill-summary*') ? 'active' : '' }}">
                     <i class="fa fa-file-alt"></i> Bill Summary
                 </a>
+                @endif
+                @if($canSeeBillDetails)
                 <a href="{{ route('nas-freights.reports.bill-details') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.reports.bill-details*') ? 'active' : '' }}">
                     <i class="fa fa-list-alt"></i> Bill Details
                 </a>
+                @endif
             </div>
         </div>
+        @endif
 
-        {{-- Fleet (single item — flat) --}}
+        {{-- Fleet --}}
+        @if($canSeeVehicle)
         <div class="nav-item-group">
             <div class="nav-section">Fleet</div>
             <a href="{{ route('nas-freights.vehicles.index') }}"
@@ -253,8 +325,10 @@
                 <i class="fa fa-truck"></i> Vehicles
             </a>
         </div>
+        @endif
 
         {{-- Stakeholders --}}
+        @if($canSeeStakeholders)
         <div class="nav-item-group">
             <div class="nav-section">Stakeholders</div>
             <a href="#freightStakeholdersMenu" class="nav-link {{ $stakeholdersActive ? 'active' : '' }}"
@@ -264,54 +338,24 @@
                 <i class="fa fa-chevron-down ms-auto"></i>
             </a>
             <div class="collapse {{ $stakeholdersActive ? 'show' : '' }}" id="freightStakeholdersMenu">
+                @if($canSeeSupplier)
                 <a href="{{ route('nas-freights.stakeholders.suppliers.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.stakeholders.suppliers.*') ? 'active' : '' }}">
                     <i class="fa fa-truck-loading"></i> Suppliers
                 </a>
+                @endif
+                @if($canSeeCustomer)
                 <a href="{{ route('nas-freights.stakeholders.customers.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.stakeholders.customers.*') ? 'active' : '' }}">
                     <i class="fa fa-users"></i> Customers
                 </a>
+                @endif
             </div>
         </div>
-
-        {{-- Import --}}
-        {{-- <div class="nav-item-group">
-            <div class="nav-section">Import</div>
-            <a href="#freightImportMenu" class="nav-link {{ $importActive ? 'active' : '' }}" data-bs-toggle="collapse"
-                aria-expanded="{{ $importActive ? 'true' : 'false' }}" aria-controls="freightImportMenu">
-                <i class="fa fa-file-import"></i><span> Import</span>
-                <i class="fa fa-chevron-down ms-auto"></i>
-            </a>
-            <div class="collapse {{ $importActive ? 'show' : '' }}" id="freightImportMenu">
-                <a href="{{ route('nas-freights.import.supplier-payments') }}"
-                    class="nav-link ps-4 {{ request()->routeIs('nas-freights.import.supplier-payments*') ? 'active' : '' }}">
-                    <i class="fa fa-file-import"></i> Supplier Payments
-                </a>
-                <a href="{{ route('nas-freights.import.customer-bills') }}"
-                    class="nav-link ps-4 {{ request()->routeIs('nas-freights.import.customer-bills*') ? 'active' : '' }}">
-                    <i class="fa fa-file-import"></i> Customer Bills
-                </a>
-                <a href="{{ route('nas-freights.import.bookings') }}"
-                    class="nav-link ps-4 {{ request()->routeIs('nas-freights.import.bookings*') ? 'active' : '' }}">
-                    <i class="fa fa-file-import"></i> Bookings
-                </a>
-                <a href="{{ route('nas-freights.import.vehicles') }}"
-                    class="nav-link ps-4 {{ request()->routeIs('nas-freights.import.vehicles*') ? 'active' : '' }}">
-                    <i class="fa fa-file-import"></i> Vehicles
-                </a>
-                <a href="{{ route('nas-freights.import.booking-updates') }}"
-                    class="nav-link ps-4 {{ request()->routeIs('nas-freights.import.booking-updates*') ? 'active' : '' }}">
-                    <i class="fa fa-file-import"></i> Booking Updates
-                </a>
-                <a href="{{ route('nas-freights.import.customer-bill-summary') }}"
-                    class="nav-link ps-4 {{ request()->routeIs('nas-freights.import.customer-bill-summary*') ? 'active' : '' }}">
-                    <i class="fa fa-file-import"></i> Bill Summary
-                </a>
-            </div>
-        </div> --}}
+        @endif
 
         {{-- Settings --}}
+        @if($canSeeSettings)
         <div class="nav-item-group">
             <div class="nav-section">Settings</div>
             <a href="#freightSettingsMenu" class="nav-link {{ $settingsActive ? 'active' : '' }}"
@@ -321,28 +365,39 @@
                 <i class="fa fa-chevron-down ms-auto"></i>
             </a>
             <div class="collapse {{ $settingsActive ? 'show' : '' }}" id="freightSettingsMenu">
+                @if($canSeeBranch)
                 <a href="{{ route('nas-freights.settings.branches.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.settings.branches.*') ? 'active' : '' }}">
                     <i class="fa fa-code-branch"></i> Branches
                 </a>
+                @endif
+                @if($canSeeContainerType)
                 <a href="{{ route('nas-freights.settings.container-types.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.settings.container-types.*') ? 'active' : '' }}">
                     <i class="fa fa-box"></i> Container Types
                 </a>
+                @endif
+                @if($canSeePackageType)
                 <a href="{{ route('nas-freights.settings.package-types.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.settings.package-types.*') ? 'active' : '' }}">
                     <i class="fa fa-cube"></i> Package Types
                 </a>
+                @endif
+                @if($canSeeOverseasAgent)
                 <a href="{{ route('nas-freights.settings.overseas-agents.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.settings.overseas-agents.*') ? 'active' : '' }}">
                     <i class="fa fa-globe"></i> Overseas Agents
                 </a>
+                @endif
+                @if($canSeeShippingCarrier)
                 <a href="{{ route('nas-freights.settings.shipping-carriers.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.settings.shipping-carriers.*') ? 'active' : '' }}">
                     <i class="fa fa-ship"></i> Shipping Carriers
                 </a>
+                @endif
             </div>
         </div>
+        @endif
     </div>
 @endsection
 
@@ -351,27 +406,67 @@
 (function () {
     var items = [
         { label: 'Dashboard',          section: 'Main',             url: '{{ route("nas-freights.dashboard") }}',                           icon: 'fa-tachometer-alt' },
+        @if($canSeeBooking)
         { label: 'Transport Bookings',  section: 'Local Logistics',  url: '{{ route("nas-freights.bookings.index") }}',                      icon: 'fa-truck' },
+        @endif
+        @if($canSeeCustomerBill)
         { label: 'Customer Bills',      section: 'Local Logistics',  url: '{{ route("nas-freights.customer-bills.index") }}',                icon: 'fa-file-invoice-dollar' },
+        @endif
+        @if($canSeeSupplierBill)
         { label: 'Supplier Bills',      section: 'Local Logistics',  url: '{{ route("nas-freights.supplier-bills.index") }}',                icon: 'fa-file-invoice' },
+        @endif
+        @if($canSeeRfq)
         { label: 'RFQs',                section: 'Freight Import',   url: '{{ route("nas-freights.rfqs.index") }}',                          icon: 'fa-file-signature' },
+        @endif
+        @if($canSeeImportBooking)
         { label: 'Freight Import Bookings', section: 'Freight Import', url: '{{ route("nas-freights.freight-import-bookings.index") }}',     icon: 'fa-ship' },
+        @endif
+        @if($canSeeExportBooking)
         { label: 'Freight Export Bookings', section: 'Freight Export', url: '{{ route("nas-freights.freight-export-bookings.index") }}',    icon: 'fa-ship' },
+        @endif
+        @if($canSeeDueList)
         { label: 'Customer Due',        section: 'Due Lists',        url: '{{ route("nas-freights.due-lists.customer") }}',                  icon: 'fa-user-clock' },
         { label: 'Supplier Due',        section: 'Due Lists',        url: '{{ route("nas-freights.due-lists.supplier") }}',                  icon: 'fa-truck-loading' },
+        @endif
+        @if($canSeeMoneyReceipt)
         { label: 'Money Receipts',      section: 'Collections',      url: '{{ route("nas-freights.money-receipts.index") }}',                icon: 'fa-money-bill-wave' },
+        @endif
+        @if($canSeeSupplierPayment)
         { label: 'Supplier Payments',   section: 'Collections',      url: '{{ route("nas-freights.supplier-payments.index") }}',             icon: 'fa-hand-holding-usd' },
+        @endif
+        @if($canSeeBookingReport)
         { label: 'Booking Report',      section: 'Reports',          url: '{{ route("nas-freights.reports.booking") }}',                      icon: 'fa-chart-bar' },
+        @endif
+        @if($canSeePartyBillSummary)
         { label: 'Bill Summary',        section: 'Reports',          url: '{{ route("nas-freights.reports.party-bill-summary") }}',          icon: 'fa-file-alt' },
+        @endif
+        @if($canSeeBillDetails)
         { label: 'Bill Details',        section: 'Reports',          url: '{{ route("nas-freights.reports.bill-details") }}',                icon: 'fa-list-alt' },
+        @endif
+        @if($canSeeVehicle)
         { label: 'Vehicles',            section: 'Fleet',            url: '{{ route("nas-freights.vehicles.index") }}',                      icon: 'fa-truck' },
+        @endif
+        @if($canSeeSupplier)
         { label: 'Suppliers',           section: 'Stakeholders',     url: '{{ route("nas-freights.stakeholders.suppliers.index") }}',        icon: 'fa-truck-loading' },
+        @endif
+        @if($canSeeCustomer)
         { label: 'Customers',           section: 'Stakeholders',     url: '{{ route("nas-freights.stakeholders.customers.index") }}',        icon: 'fa-users' },
+        @endif
+        @if($canSeeBranch)
         { label: 'Branches',            section: 'Settings',         url: '{{ route("nas-freights.settings.branches.index") }}',             icon: 'fa-code-branch' },
+        @endif
+        @if($canSeeContainerType)
         { label: 'Container Types',     section: 'Settings',         url: '{{ route("nas-freights.settings.container-types.index") }}',     icon: 'fa-box' },
+        @endif
+        @if($canSeePackageType)
         { label: 'Package Types',       section: 'Settings',         url: '{{ route("nas-freights.settings.package-types.index") }}',       icon: 'fa-cube' },
+        @endif
+        @if($canSeeOverseasAgent)
         { label: 'Overseas Agents',     section: 'Settings',         url: '{{ route("nas-freights.settings.overseas-agents.index") }}',     icon: 'fa-globe' },
+        @endif
+        @if($canSeeShippingCarrier)
         { label: 'Shipping Carriers',   section: 'Settings',         url: '{{ route("nas-freights.settings.shipping-carriers.index") }}',   icon: 'fa-ship' },
+        @endif
     ];
 
     var navGroups = document.querySelectorAll('.sidebar .nav-item-group');
