@@ -165,12 +165,8 @@
 
     @php
         $totLcCost = 0;
-        $totBank = 0;
-        $totIns = 0;
         $totAmendment = 0;
         $totOtherCharges = 0;
-        $totTotal = 0;
-        $totAdvance = 0;
         $totDues = 0;
     @endphp
 
@@ -201,12 +197,8 @@
                     <th>LC No</th>
                     <th>LC Date</th>
                     <th>LC RT Value BDT</th>
-                    <th>Bank Charge BDT</th>
-                    <th>Insurance BDT</th>
                     <th>LC Amendment BDT</th>
                     <th>Other Charges BDT</th>
-                    <th>Total Cost BDT</th>
-                    <th>(-) Advance BDT</th>
                     <th>Dues BDT</th>
                 </tr>
             </thead>
@@ -220,19 +212,10 @@
                         $amendment = (float) ($lc?->lc_amendment_charge ?? 0);
                         $otherCharges = $lc ? (float) $lc->otherChargeItems->sum('amount') : 0.0;
                         $total = $lcCost + $bank + $ins + $amendment + $otherCharges;
-                        $advancePmt = $lc
-                            ? (float) $lc->payments->where('payment_type', 'advance')->sum('amount')
-                            : 0.0;
-                        $dutyAdv = $lc ? (float) $lc->billOfEntries->flatMap->dutyAdvances->sum('amount') : 0.0;
-                        $advance = $advancePmt + $dutyAdv;
-                        $dues = $total - $advance;
+                        $dues = $total;
                         $totLcCost += $lcCost;
-                        $totBank += $bank;
-                        $totIns += $ins;
                         $totAmendment += $amendment;
                         $totOtherCharges += $otherCharges;
-                        $totTotal += $total;
-                        $totAdvance += $advance;
                         $totDues += $dues;
                     @endphp
                     <tr>
@@ -242,12 +225,8 @@
                         <td>{{ $lc?->lc_no ?? '-' }}</td>
                         <td class="text-center">{{ $lc?->lc_open_date?->format('d.m.Y') ?? '-' }}</td>
                         <td class="text-right">{{ $lcCost ? number_format($lcCost, 2) : '-' }}</td>
-                        <td class="text-right">{{ $bank ? number_format($bank, 2) : '-' }}</td>
-                        <td class="text-right">{{ $ins ? number_format($ins, 2) : '-' }}</td>
                         <td class="text-right">{{ $amendment ? number_format($amendment, 2) : '-' }}</td>
                         <td class="text-right">{{ $otherCharges ? number_format($otherCharges, 2) : '-' }}</td>
-                        <td class="text-right">{{ $total ? number_format($total, 2) : '-' }}</td>
-                        <td class="text-right">{{ $advance ? number_format($advance, 2) : '-' }}</td>
                         <td class="text-right">{{ number_format($dues, 2) }}</td>
                     </tr>
                 @endforeach
@@ -256,12 +235,8 @@
                 <tr>
                     <td colspan="5" class="text-right">Total</td>
                     <td class="text-right">{{ number_format($totLcCost, 2) }}</td>
-                    <td class="text-right">{{ number_format($totBank, 2) }}</td>
-                    <td class="text-right">{{ number_format($totIns, 2) }}</td>
                     <td class="text-right">{{ number_format($totAmendment, 2) }}</td>
                     <td class="text-right">{{ number_format($totOtherCharges, 2) }}</td>
-                    <td class="text-right">{{ number_format($totTotal, 2) }}</td>
-                    <td class="text-right">{{ number_format($totAdvance, 2) }}</td>
                     <td class="text-right">{{ number_format($totDues, 2) }}</td>
                 </tr>
             </tfoot>

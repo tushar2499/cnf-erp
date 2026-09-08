@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>C&F Bill Statement — {{ $lcBillStatement->bill_no }}</title>
+    <title>C&F Bills — {{ $lcBillStatement->bill_no }}</title>
     <style>
         * {
             margin: 0;
@@ -80,12 +80,20 @@
                 max-width: 100%;
                 padding: 0;
             }
+
+            #print-wrap .doc {
+                break-after: page;
+            }
+
+            #print-wrap .doc:last-child {
+                break-after: auto;
+            }
         }
 
-        .doc {
+        #print-wrap .doc {
             width: 100%;
             max-width: 720px;
-            margin: 0 auto;
+            margin: 0 auto 24px;
             background: #fff;
             padding: 24px 28px;
         }
@@ -100,19 +108,19 @@
         .to-block {
             margin: 8px 0 6px;
             font-size: 11px;
-            line-height: 1.6;
+            line-height: 1.7;
         }
 
         .subject {
-            margin: 10px 0 4px;
+            margin: 8px 0 10px;
             font-size: 11px;
         }
 
         .doc-title {
             text-align: center;
             font-weight: bold;
-            font-size: 12px;
-            margin: 10px 0 8px;
+            font-size: 13px;
+            margin: 10px 0 10px;
         }
 
         table {
@@ -155,7 +163,7 @@
                 <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z" />
                 <path
                     d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z" />
-            </svg> Print</button>
+            </svg> Print All</button>
         <button class="btn-act btn-act-close" onclick="window.close()"><svg xmlns="http://www.w3.org/2000/svg"
                 width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                 <path
@@ -163,73 +171,63 @@
             </svg> Close</button>
     </div>
 
-    <div class="doc">
-        <div class="header-row">
-            <span>Date: {{ $lcBillStatement->bill_date?->format('d.m.Y') }}</span>
-            <span>Bill No. {{ $lcBillStatement->bill_no }}</span>
-        </div>
+    <div id="print-wrap">
+        @foreach ($lcBillStatement->items as $item)
+            @php
+                $cnf = (float) ($item->lc?->total_lc_cost ?? 0);
+                $advance = (float) ($item->lc?->advance_received_bdt ?? 0);
+                $dues = $cnf - $advance;
+            @endphp
+            <div class="doc">
+                <div class="header-row">
+                    <span>Bill No. {{ $item->serial_number ?? $lcBillStatement->bill_no }}</span>
+                    <span>Date: {{ $lcBillStatement->bill_date?->format('d.m.Y') }}</span>
+                </div>
 
-        <div class="to-block">
-            To,<br>
-            {{ $lcBillStatement->customer?->company_name }}<br>
-            {{ $lcBillStatement->customer?->address }}
-        </div>
+                <div class="to-block">
+                    To,<br>
+                    {{ $lcBillStatement->customer?->company_name }}<br>
+                    {{ $lcBillStatement->customer?->address }}
+                </div>
 
-        <div class="subject">
-            Sub: Dues C&amp;F bill statement of {{ $lcBillStatement->customer?->company_name }}.
-        </div>
+                <div class="subject">
+                    Sub: C&amp;F Bill for LC No. {{ $item->lc?->lc_no ?? '-' }} / PFI No. {{ $item->lc?->pfi_no ?? '-' }}
+                </div>
 
-        <div class="doc-title">C&amp;F Bill Statement</div>
+                <div class="doc-title">C&amp;F Bill</div>
 
-        @php
-            $totalCnf = 0;
-            $totalAdvance = 0;
-            $totalDues = 0;
-        @endphp
-
-        <table>
-            <thead>
-                <tr>
-                    <th style="width:30px">SL</th>
-                    <th>PFI NO</th>
-                    <th>LC/TT NO</th>
-                    <th>Total C&amp;F Bill BDT</th>
-                    <th>Advance From DIIL BDT</th>
-                    <th>Dues BDT</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($lcBillStatement->items as $i => $item)
-                    @php
-                        $boeEntries = $item->lc?->billOfEntries ?? collect();
-                        $cnf = $boeEntries->sum(
-                            fn($b) => (float) ($b->customs_duty ?? 0) + (float) ($b->cnf_total_costing ?? 0),
-                        );
-                        $advance = (float) ($item->lc?->advance_received_bdt ?? 0);
-                        $dues = $cnf - $advance;
-                        $totalCnf += $cnf;
-                        $totalAdvance += $advance;
-                        $totalDues += $dues;
-                    @endphp
-                    <tr>
-                        <td class="text-center">{{ $i + 1 }}</td>
-                        <td>{{ $item->lc?->pfi_no ?? '-' }}</td>
-                        <td>{{ $item->lc?->lc_no ?? '-' }}</td>
-                        <td class="text-right">{{ $cnf ? number_format($cnf, 2) : '-' }}</td>
-                        <td class="text-right">{{ $advance ? number_format($advance, 2) : '-' }}</td>
-                        <td class="text-right">{{ number_format($dues, 2) }}</td>
-                    </tr>
-                @endforeach
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="3" class="text-right">Total</td>
-                    <td class="text-right">{{ number_format($totalCnf, 2) }}</td>
-                    <td class="text-right">{{ number_format($totalAdvance, 2) }}</td>
-                    <td class="text-right">{{ number_format($totalDues, 2) }}</td>
-                </tr>
-            </tfoot>
-        </table>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:30px">SL</th>
+                            <th>PFI No.</th>
+                            <th>LC/TT No.</th>
+                            <th>Total C&amp;F Bill BDT</th>
+                            <th>Advance From DIIL BDT</th>
+                            <th>Dues BDT</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="text-center">1</td>
+                            <td>{{ $item->lc?->pfi_no ?? '-' }}</td>
+                            <td>{{ $item->lc?->lc_no ?? '-' }}</td>
+                            <td class="text-right">{{ $cnf ? number_format($cnf, 2) : '-' }}</td>
+                            <td class="text-right">{{ $advance ? number_format($advance, 2) : '-' }}</td>
+                            <td class="text-right">{{ number_format($dues, 2) }}</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-right">Total</td>
+                            <td class="text-right">{{ $cnf ? number_format($cnf, 2) : '-' }}</td>
+                            <td class="text-right">{{ $advance ? number_format($advance, 2) : '-' }}</td>
+                            <td class="text-right">{{ number_format($dues, 2) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        @endforeach
     </div>
 </body>
 

@@ -56,7 +56,7 @@
                 <li><a class="dropdown-item" href="{{ route('nas-trading.lc-bill-statements.print.commission-statement', $lcBillStatement->id) }}" target="_blank"><i class="fa fa-file-alt me-2 text-secondary"></i>LC Commission Bill Statement</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><h6 class="dropdown-header" style="font-size:.7rem;color:#6c757d;">C&amp;F Bill</h6></li>
-                <li><a class="dropdown-item" href="{{ route('nas-trading.lc-bill-statements.print.cnf-dues', $lcBillStatement->id) }}" target="_blank"><i class="fa fa-file-invoice me-2 text-secondary"></i>C&amp;F Bill Statement (All)</a></li>
+                <li><a class="dropdown-item" href="{{ route('nas-trading.lc-bill-statements.print.cnf-dues', $lcBillStatement->id) }}" target="_blank"><i class="fa fa-file-invoice me-2 text-secondary"></i>C&amp;F Bill (All)</a></li>
                 <li><a class="dropdown-item" href="{{ route('nas-trading.lc-bill-statements.print.bill-statement', $lcBillStatement->id) }}" target="_blank"><i class="fa fa-receipt me-2 text-secondary"></i>C&amp;F Bill Statement</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><h6 class="dropdown-header" style="font-size:.7rem;color:#6c757d;">LC Closing Bill</h6></li>

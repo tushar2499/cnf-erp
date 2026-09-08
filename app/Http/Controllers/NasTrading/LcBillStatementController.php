@@ -158,7 +158,7 @@ class LcBillStatementController extends Controller
 
     public function printCnfDues(NasTradingLcBillStatement $lcBillStatement)
     {
-        $lcBillStatement->load(['customer', 'items.lc.billOfEntries']);
+        $lcBillStatement->load(['customer', 'items.lc']);
 
         return view('nas-trading.lc-bill-statements.prints.cnf-dues', compact('lcBillStatement'));
     }
