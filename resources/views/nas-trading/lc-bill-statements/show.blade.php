@@ -10,6 +10,12 @@
 .stmt-table th { background:#1a6b60; color:#fff; font-size:.77rem; padding:.4rem .5rem; white-space:nowrap; }
 .stmt-table td { font-size:.8rem; padding:.35rem .5rem; vertical-align:middle; white-space:nowrap; }
 .table-scroll-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+#lcEntriesTable thead tr.dt-search-row th {
+    background:#fff; color:#333; padding:.3rem .4rem;
+}
+#lcEntriesTable thead tr.dt-search-row th input.form-control {
+    min-width:80px; width:100%; font-size:.72rem; padding:.25rem .4rem;
+}
 
 @media print {
     .top-navbar, .mobile-context-bar, .sidebar, footer, .d-print-none { display:none !important; }
@@ -116,11 +122,15 @@
         <tbody>
             @forelse ($lcBillStatement->items as $i => $item)
             <tr>
+                @php
+                    $itemFirstRt = $item->lc?->rtValues?->sortBy('date')->first();
+                    $itemRetirementDate = $itemFirstRt?->date ?? $item->lc?->lc_retirement_date;
+                @endphp
                 <td style="border:1px solid #999;padding:.25rem .4rem;text-align:center;color:#000;">{{ $i + 1 }}</td>
                 <td style="border:1px solid #999;padding:.25rem .4rem;color:#000;">{{ $item->lc?->pfi_no ?? '-' }}</td>
                 <td style="border:1px solid #999;padding:.25rem .4rem;color:#000;">{{ $item->lc?->lc_no ?? '-' }}</td>
                 <td style="border:1px solid #999;padding:.25rem .4rem;color:#000;">{{ $item->lc?->lc_open_date?->format('d-M-Y') ?? '-' }}</td>
-                <td style="border:1px solid #999;padding:.25rem .4rem;color:#000;">{{ $item->lc?->lc_retirement_date?->format('d-M-Y') ?? '-' }}</td>
+                <td style="border:1px solid #999;padding:.25rem .4rem;color:#000;">{{ $itemRetirementDate?->format('d-M-Y') ?? '-' }}</td>
                 <td style="border:1px solid #999;padding:.25rem .4rem;text-align:right;color:#000;">{{ $item->lc?->lc_rt_value ? number_format($item->lc->lc_rt_value, 2) : '-' }}</td>
                 <td style="border:1px solid #999;padding:.25rem .4rem;text-align:right;color:#000;">{{ $item->lc?->lc_commission_percent ? rtrim(rtrim(number_format($item->lc->lc_commission_percent, 4), '0'), '.').'%' : '-' }}</td>
                 <td style="border:1px solid #999;padding:.25rem .4rem;text-align:right;color:#000;">{{ $item->lc?->lc_commission_flat ? number_format($item->lc->lc_commission_flat, 2) : '-' }}</td>
@@ -192,7 +202,7 @@
     <div class="info-card">
         <div class="info-header"><i class="fa fa-file-contract me-2"></i> LC Entries</div>
         <div class="table-scroll-wrap">
-            <table class="table table-bordered stmt-table mb-0" style="min-width:1100px;width:100%">
+            <table id="lcEntriesTable" class="table table-bordered stmt-table mb-0" style="min-width:1100px;width:100%">
                 <thead>
                     <tr>
                         <th style="width:80px" class="text-center">Print</th>
@@ -207,10 +217,27 @@
                         <th class="text-end">Commission %</th>
                         <th class="text-end">Commission Amt (BDT)</th>
                     </tr>
+                    <tr class="dt-search-row">
+                        <th></th>
+                        <th></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search LC No"></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search Bill No"></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search PFI No"></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search LC/TT No"></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search Date"></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search Date"></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search Value"></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search Comm %"></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search Comm Amt"></th>
+                    </tr>
                 </thead>
                 <tbody>
-                    @forelse ($lcBillStatement->items as $i => $item)
+                    @foreach ($lcBillStatement->items as $i => $item)
                     <tr>
+                        @php
+                            $itemFirstRt = $item->lc?->rtValues?->sortBy('date')->first();
+                            $itemRetirementDate = $itemFirstRt?->date ?? $item->lc?->lc_retirement_date;
+                        @endphp
                         <td class="text-center">
                             <div class="btn-group">
                                 <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="padding:2px 7px;font-size:.7rem;">
@@ -229,16 +256,12 @@
                         <td>{{ $item->lc?->pfi_no ?? '-' }}</td>
                         <td>{{ $item->lc?->lc_no ?? '-' }}</td>
                         <td>{{ $item->lc?->lc_open_date?->format('d-M-Y') ?? '-' }}</td>
-                        <td>{{ $item->lc?->lc_retirement_date?->format('d-M-Y') ?? '-' }}</td>
+                        <td>{{ $itemRetirementDate?->format('d-M-Y') ?? '-' }}</td>
                         <td class="text-end fw-bold">{{ $item->lc?->lc_rt_value ? number_format($item->lc->lc_rt_value, 2) : '-' }}</td>
                         <td class="text-end">{{ $item->lc?->lc_commission_percent ? rtrim(rtrim(number_format($item->lc->lc_commission_percent, 4), '0'), '.').'%' : '-' }}</td>
                         <td class="text-end fw-bold">{{ $item->lc?->lc_commission_flat ? number_format($item->lc->lc_commission_flat, 2) : '-' }}</td>
                     </tr>
-                    @empty
-                    <tr>
-                        <td colspan="9" class="text-center text-muted">No LC entries</td>
-                    </tr>
-                    @endforelse
+                    @endforeach
                 </tbody>
                 @if ($lcBillStatement->items->count())
                 <tfoot>
@@ -259,6 +282,31 @@
 
 @push('scripts')
 <script>
+$(function () {
+    var timer;
+    $('#lcEntriesTable thead tr.dt-search-row input').on('click mousedown keydown', function (e) {
+        e.stopPropagation();
+    }).on('input', function () {
+        clearTimeout(timer);
+        timer = setTimeout(filterLcRows, 300);
+    });
+
+    function filterLcRows() {
+        var filters = [];
+        $('#lcEntriesTable thead tr.dt-search-row th').each(function (i) {
+            filters.push({ col: i, val: $(this).find('input').val().toLowerCase().trim() });
+        });
+        $('#lcEntriesTable tbody tr').each(function () {
+            var $row = $(this);
+            var show = filters.every(function (f) {
+                if (!f.val) { return true; }
+                return $row.find('td').eq(f.col).text().toLowerCase().indexOf(f.val) !== -1;
+            });
+            $row.toggle(show);
+        });
+    }
+});
+
 $('#btnConfirm').on('click', function () {
     Swal.fire({ title: 'Confirm this statement?', text: 'Status will move to Confirmed.', icon: 'question', showCancelButton: true, confirmButtonColor: '#198754', confirmButtonText: 'Yes, Confirm' })
         .then(res => {

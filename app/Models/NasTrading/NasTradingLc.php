@@ -27,6 +27,7 @@ class NasTradingLc extends Model
         'opening_bank_id', 'port_of_dest_id', 'country_of_origin', 'payment_mode',
         'insurance_amt', 'cover_note', 'insurance_validity', 'psi_no', 'psi_company_id',
         'comm_currency', 'comm_amount', 'bank_charge', 'lc_amendment_charge', 'credit_report_charge', 'other_charges',
+        'invoice_value',
         'doc_status', 'sanction_types', 'third_party', 'remarks', 'created_by',
     ];
 

@@ -81,7 +81,7 @@ class LcBillStatementController extends Controller
 
     public function show(NasTradingLcBillStatement $lcBillStatement)
     {
-        $lcBillStatement->load(['customer', 'items.lc']);
+        $lcBillStatement->load(['customer', 'items.lc.rtValues']);
 
         return view('nas-trading.lc-bill-statements.show', compact('lcBillStatement'));
     }
@@ -158,14 +158,14 @@ class LcBillStatementController extends Controller
 
     public function printCnfDues(NasTradingLcBillStatement $lcBillStatement)
     {
-        $lcBillStatement->load(['customer', 'items.lc']);
+        $lcBillStatement->load(['customer', 'items.lc.billOfEntries']);
 
         return view('nas-trading.lc-bill-statements.prints.cnf-dues', compact('lcBillStatement'));
     }
 
     public function printCommissionBill(NasTradingLcBillStatement $lcBillStatement)
     {
-        $lcBillStatement->load(['customer', 'items.lc']);
+        $lcBillStatement->load(['customer', 'items.lc.rtValues']);
 
         return view('nas-trading.lc-bill-statements.prints.commission-bill-all', compact('lcBillStatement'));
     }
@@ -173,14 +173,14 @@ class LcBillStatementController extends Controller
     public function printCommissionBillItem(NasTradingLcBillStatement $lcBillStatement, NasTradingLcBillStatementItem $item)
     {
         $lcBillStatement->load('customer');
-        $item->load('lc');
+        $item->load(['lc.rtValues']);
 
         return view('nas-trading.lc-bill-statements.prints.commission-bill', compact('lcBillStatement', 'item'));
     }
 
     public function printCommissionStatement(NasTradingLcBillStatement $lcBillStatement)
     {
-        $lcBillStatement->load(['customer', 'items.lc']);
+        $lcBillStatement->load(['customer', 'items.lc.rtValues']);
 
         return view('nas-trading.lc-bill-statements.prints.commission-statement', compact('lcBillStatement'));
     }
@@ -203,21 +203,21 @@ class LcBillStatementController extends Controller
     public function printLcClosingBill(NasTradingLcBillStatement $lcBillStatement, NasTradingLcBillStatementItem $item)
     {
         $lcBillStatement->load('customer');
-        $item->load('lc');
+        $item->load(['lc.payments', 'lc.billOfEntries.dutyAdvances', 'lc.otherChargeItems']);
 
         return view('nas-trading.lc-bill-statements.prints.lc-closing-bill', compact('lcBillStatement', 'item'));
     }
 
     public function printLcClosingBillAll(NasTradingLcBillStatement $lcBillStatement)
     {
-        $lcBillStatement->load(['customer', 'items.lc']);
+        $lcBillStatement->load(['customer', 'items.lc.payments', 'items.lc.billOfEntries.dutyAdvances', 'items.lc.otherChargeItems']);
 
         return view('nas-trading.lc-bill-statements.prints.lc-closing-bill-all', compact('lcBillStatement'));
     }
 
     public function printLcClosingStatement(NasTradingLcBillStatement $lcBillStatement)
     {
-        $lcBillStatement->load(['customer', 'items.lc']);
+        $lcBillStatement->load(['customer', 'items.lc.payments', 'items.lc.billOfEntries.dutyAdvances', 'items.lc.otherChargeItems']);
 
         return view('nas-trading.lc-bill-statements.prints.lc-closing-statement', compact('lcBillStatement'));
     }

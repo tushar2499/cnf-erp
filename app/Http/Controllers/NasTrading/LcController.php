@@ -63,7 +63,11 @@ class LcController extends Controller
 
             foreach ($request->input('rt_values', []) as $rtv) {
                 if (isset($rtv['amount']) && $rtv['amount'] !== '') {
-                    $lc->rtValues()->create(['amount' => $rtv['amount']]);
+                    $lc->rtValues()->create([
+                        'date'   => $rtv['date'] ?? null,
+                        'note'   => $rtv['note'] ?? null,
+                        'amount' => $rtv['amount'],
+                    ]);
                 }
             }
 
@@ -90,6 +94,8 @@ class LcController extends Controller
                     $lc->invoiceValues()->create($invoice);
                 }
             }
+
+            $lc->update(['invoice_value' => $lc->invoiceValues()->sum('invoice_value')]);
 
             foreach ($request->input('bill_paid', []) as $bp) {
                 if (! empty($bp['amount'])) {
@@ -121,6 +127,7 @@ class LcController extends Controller
                                 'amount'  => $daData['amount'],
                                 'date'    => $daData['date'],
                                 'posting' => $daData['posting'] ?? null,
+                                'remark'  => $daData['remark'] ?? null,
                             ]);
                         }
                     }
@@ -163,7 +170,11 @@ class LcController extends Controller
             $lc->rtValues()->delete();
             foreach ($request->input('rt_values', []) as $rtv) {
                 if (isset($rtv['amount']) && $rtv['amount'] !== '') {
-                    $lc->rtValues()->create(['amount' => $rtv['amount']]);
+                    $lc->rtValues()->create([
+                        'date'   => $rtv['date'] ?? null,
+                        'note'   => $rtv['note'] ?? null,
+                        'amount' => $rtv['amount'],
+                    ]);
                 }
             }
 
@@ -194,6 +205,8 @@ class LcController extends Controller
                     $lc->invoiceValues()->create($invoice);
                 }
             }
+
+            $lc->update(['invoice_value' => $lc->invoiceValues()->sum('invoice_value')]);
 
             $lc->billPaids()->delete();
             foreach ($request->input('bill_paid', []) as $bp) {
@@ -243,6 +256,7 @@ class LcController extends Controller
                         'amount'  => $daData['amount'],
                         'date'    => $daData['date'],
                         'posting' => $daData['posting'] ?? null,
+                        'remark'  => $daData['remark'] ?? null,
                     ];
                     if (! empty($daData['id']) && $da = $boe->dutyAdvances()->find((int) $daData['id'])) {
                         $da->update($daFields);

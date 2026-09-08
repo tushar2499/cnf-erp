@@ -368,7 +368,8 @@
                                                 <th class="text-center" style="width:32px;background:#e9ecef;padding:.35rem .5rem">#</th>
                                                 <th style="min-width:95px;background:#e9ecef;padding:.35rem .5rem">Date</th>
                                                 <th style="min-width:110px;background:#e9ecef;padding:.35rem .5rem">Posting</th>
-                                                <th style="min-width:110px;background:#e9ecef;padding:.35rem .5rem">Amount (BDT)</th>
+                                                <th style="min-width:140px;background:#e9ecef;padding:.35rem .5rem">Remark</th>
+<th style="min-width:120px;background:#e9ecef;padding:.35rem .5rem">Amount (BDT)</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -377,13 +378,14 @@
                                                 <td class="text-center" style="padding:.3rem .5rem">{{ $daIdx + 1 }}</td>
                                                 <td style="padding:.3rem .5rem">{{ $da->date ? $da->date->format('d-M-Y') : $dash }}</td>
                                                 <td style="padding:.3rem .5rem">{{ $da->posting ?? $dash }}</td>
+                                                <td style="padding:.3rem .5rem">{{ $da->remark ?? $dash }}</td>
                                                 <td style="padding:.3rem .5rem">{{ number_format((float)$da->amount, 2) }}</td>
                                             </tr>
                                             @endforeach
                                         </tbody>
                                         <tfoot>
                                             <tr>
-                                                <td colspan="3" class="text-end fw-bold" style="padding:.3rem .5rem;font-size:.78rem;background:#f8f9fa">Total Advance</td>
+                                                <td colspan="4" class="text-end fw-bold" style="padding:.3rem .5rem;font-size:.78rem;background:#f8f9fa">Total Advance</td>
                                                 <td class="fw-bold" style="padding:.3rem .5rem;background:#f8f9fa">{{ number_format($boe->dutyAdvances->sum('amount'), 2) }}</td>
                                             </tr>
                                         </tfoot>
@@ -400,21 +402,22 @@
                     @if($lc->payments->count())
                     <div style="overflow-x:auto">
                         <table class="table table-bordered pay-table mb-0 w-100">
-                            <thead><tr><th style="min-width:32px">#</th><th style="min-width:90px">Type</th><th style="min-width:110px">Receipt No</th><th style="min-width:95px">Date</th><th style="min-width:110px">Amount (BDT)</th></tr></thead>
+                            <thead><tr><th style="min-width:32px">#</th><th style="min-width:90px">Type</th><th style="min-width:95px">Date</th><th style="min-width:110px">Receipt No</th><th style="min-width:140px">Remark</th><th style="min-width:120px">Amount (BDT)</th></tr></thead>
                             <tbody>
                                 @foreach($lc->payments as $idx => $pay)
                                 <tr>
                                     <td>{{ $idx + 1 }}</td>
                                     <td>{{ $pay->payment_type == 'advance' ? 'LC Advance' : 'Regular' }}</td>
-                                    <td>{{ $pay->receipt_no ?? $dash }}</td>
                                     <td>{{ $pay->date ? \Carbon\Carbon::parse($pay->date)->format('d-M-Y') : $dash }}</td>
+                                    <td>{{ $pay->receipt_no ?? $dash }}</td>
+                                    <td>{{ $pay->remark ?? $dash }}</td>
                                     <td>{{ number_format((float)$pay->amount, 2) }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <td colspan="4" class="text-end fw-bold" style="font-size:.8rem">Total</td>
+                                    <td colspan="5" class="text-end fw-bold" style="font-size:.8rem">Total</td>
                                     <td class="fw-bold" style="font-size:.8rem">{{ number_format($lc->payments->sum('amount'), 2) }}</td>
                                 </tr>
                             </tfoot>
@@ -526,15 +529,39 @@
                         <div class="col-6 col-md-3"><div class="info-label">Landed Cost</div><div class="info-value">{{ fmtAmt($lc->landed_cost) }}</div></div>
                         <div class="col-6 col-md-3"><div class="info-label">LC Rate Amount</div><div class="info-value">{{ fmtAmt($lc->lc_rate_amount) }}</div></div>
                         <div class="col-6 col-md-3"><div class="info-label">Doc RT Rate</div><div class="info-value">{{ $lc->doc_rt_rate ? 'BDT ' . number_format((float)$lc->doc_rt_rate, 4) : $dash }}</div></div>
-                        <div class="col-6 col-md-3">
-                            <div class="info-label">LC RT Value</div>
+                        <div class="col-12">
+                            <div class="info-label mb-1">LC RT Value</div>
                             @if($lc->rtValues->isNotEmpty())
-                                @foreach($lc->rtValues as $rtv)
-                                    <div class="info-value" style="margin-bottom:2px">BDT {{ number_format((float)$rtv->amount, 2) }}</div>
-                                @endforeach
-                                @if($lc->rtValues->count() > 1)
-                                    <div class="info-value fw-bold border-top mt-1 pt-1" style="font-size:.78rem">Total: BDT {{ number_format($lc->rtValues->sum('amount'), 2) }}</div>
-                                @endif
+                                <div style="overflow-x:auto">
+                                    <table class="table table-sm table-bordered pay-table mb-1 w-100">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center" style="width:32px">#</th>
+                                                <th style="width:140px">Date</th>
+                                                <th>Note</th>
+                                                <th style="min-width:120px">Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($lc->rtValues as $i => $rtv)
+                                            <tr>
+                                                <td class="text-center" style="font-size:.75rem;vertical-align:middle">{{ $i + 1 }}</td>
+                                                <td style="vertical-align:middle;font-size:.82rem">{{ $rtv->date ? $rtv->date->format('d-M-Y') : '—' }}</td>
+                                                <td style="vertical-align:middle;font-size:.82rem">{{ $rtv->note ?: '—' }}</td>
+                                                <td style="vertical-align:middle;font-size:.82rem">BDT {{ number_format((float)$rtv->amount, 2) }}</td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                        @if($lc->rtValues->count() > 1)
+                                        <tfoot>
+                                            <tr>
+                                                <td colspan="3" class="text-end fw-semibold" style="font-size:.78rem">Total:</td>
+                                                <td class="fw-bold" style="font-size:.82rem">BDT {{ number_format($lc->rtValues->sum('amount'), 2) }}</td>
+                                            </tr>
+                                        </tfoot>
+                                        @endif
+                                    </table>
+                                </div>
                             @else
                                 <div class="info-value">—</div>
                             @endif
@@ -565,12 +592,13 @@
                             <div class="info-label mb-1">Other Charges</div>
                             @if($lc->otherChargeItems->count())
                             <div style="overflow-x:auto">
-                                <table class="table table-sm table-bordered da-inner-table mb-1 w-100">
+                                <table class="table table-sm table-bordered pay-table mb-1 w-100">
                                     <thead>
                                         <tr>
-                                            <th class="text-center" style="width:32px;background:#e9ecef;padding:.35rem .5rem">#</th>
-                                            <th style="min-width:150px;background:#e9ecef;padding:.35rem .5rem">Charge Name</th>
-                                            <th style="min-width:120px;background:#e9ecef;padding:.35rem .5rem">Amount (BDT)</th>
+                                            <th class="text-center" style="width:32px">#</th>
+                                            <th style="min-width:150px">Charge Name</th>
+                                            <th style="min-width:140px">Remark</th>
+                                            <th style="min-width:120px">Amount (BDT)</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -578,14 +606,53 @@
                                         <tr>
                                             <td class="text-center" style="padding:.3rem .5rem">{{ $idx + 1 }}</td>
                                             <td style="padding:.3rem .5rem">{{ $charge->name }}</td>
+                                            <td style="padding:.3rem .5rem">{{ $charge->remark ?? $dash }}</td>
                                             <td style="padding:.3rem .5rem">{{ number_format((float)$charge->amount, 2) }}</td>
                                         </tr>
                                         @endforeach
                                     </tbody>
                                     <tfoot>
                                         <tr>
-                                            <td colspan="2" class="text-end fw-bold" style="padding:.3rem .5rem;font-size:.78rem">Total</td>
+                                            <td colspan="3" class="text-end fw-bold" style="padding:.3rem .5rem;font-size:.78rem">Total</td>
                                             <td class="fw-bold" style="padding:.3rem .5rem">{{ number_format($lc->otherChargeItems->sum('amount'), 2) }}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            @else
+                            <div class="info-value">{{ $dash }}</div>
+                            @endif
+                        </div>
+
+                        {{-- Invoices --}}
+                        <div class="col-12 mt-1">
+                            <div class="info-label mb-1">Invoices</div>
+                            @if($lc->invoiceValues->count())
+                            <div style="overflow-x:auto">
+                                <table class="table table-sm table-bordered pay-table mb-1 w-100">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center" style="width:32px">#</th>
+                                            <th style="min-width:150px">Invoice No</th>
+                                            <th style="min-width:140px">Remark</th>
+                                            <th style="min-width:120px">Invoice Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($lc->invoiceValues as $idx => $inv)
+                                        <tr>
+                                            <td class="text-center" style="padding:.3rem .5rem">{{ $idx + 1 }}</td>
+                                            <td style="padding:.3rem .5rem">{{ $inv->invoice_no }}</td>
+                                            <td style="padding:.3rem .5rem">{{ $inv->remark ?? $dash }}</td>
+                                            <td style="padding:.3rem .5rem">{{ number_format((float)$inv->invoice_value, 2) }}</td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="2" class="text-end fw-bold" style="padding:.3rem .5rem;font-size:.78rem">Total</td>
+                                            <td style="padding:.3rem .5rem"></td>
+                                            <td class="fw-bold" style="padding:.3rem .5rem">{{ number_format($lc->invoiceValues->sum('invoice_value'), 2) }}</td>
                                         </tr>
                                     </tfoot>
                                 </table>
