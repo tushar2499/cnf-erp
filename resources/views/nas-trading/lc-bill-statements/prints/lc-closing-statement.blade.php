@@ -164,9 +164,6 @@
     </div>
 
     @php
-        $totLcCost = 0;
-        $totAmendment = 0;
-        $totOtherCharges = 0;
         $totDues = 0;
     @endphp
 
@@ -183,7 +180,7 @@
         </div>
 
         <div class="subject">
-            Sub: LC Closing Bill Statement of {{ $lcBillStatement->customer?->company_name }}.
+            Sub: LC Closing Bill Statement.
         </div>
 
         <div class="doc-title">LC Closing Bill Statement</div>
@@ -196,10 +193,7 @@
                     <th>PFI No</th>
                     <th>LC No</th>
                     <th>LC Date</th>
-                    <th>LC RT Value BDT</th>
-                    <th>LC Amendment BDT</th>
-                    <th>Other Charges BDT</th>
-                    <th>Dues BDT</th>
+                    <th>Amount BDT</th>
                 </tr>
             </thead>
             <tbody>
@@ -207,15 +201,14 @@
                     @php
                         $lc = $item->lc;
                         $lcCost = (float) ($lc?->lc_rt_value ?? 0);
-                        $bank = (float) ($lc?->bank_charge ?? 0);
+                        $bank = (float) ($lc?->lc_open_cost_bdt ?? 0);
                         $ins = (float) ($lc?->insurance_amt ?? 0);
                         $amendment = (float) ($lc?->lc_amendment_charge ?? 0);
+                        $creditReport = (float) ($lc?->credit_report_charge ?? 0);
                         $otherCharges = $lc ? (float) $lc->otherChargeItems->sum('amount') : 0.0;
-                        $total = $lcCost + $bank + $ins + $amendment + $otherCharges;
-                        $dues = $total;
-                        $totLcCost += $lcCost;
-                        $totAmendment += $amendment;
-                        $totOtherCharges += $otherCharges;
+                        $totalCost = $lcCost + $bank + $ins + $amendment + $creditReport + $otherCharges;
+                        $advance = $lc ? (float) $lc->payments->where('payment_type', 'advance')->sum('amount') : 0.0;
+                        $dues = $totalCost - $advance;
                         $totDues += $dues;
                     @endphp
                     <tr>
@@ -224,9 +217,6 @@
                         <td>{{ $lc?->pfi_no ?? '-' }}</td>
                         <td>{{ $lc?->lc_no ?? '-' }}</td>
                         <td class="text-center">{{ $lc?->lc_open_date?->format('d.m.Y') ?? '-' }}</td>
-                        <td class="text-right">{{ $lcCost ? number_format($lcCost, 2) : '-' }}</td>
-                        <td class="text-right">{{ $amendment ? number_format($amendment, 2) : '-' }}</td>
-                        <td class="text-right">{{ $otherCharges ? number_format($otherCharges, 2) : '-' }}</td>
                         <td class="text-right">{{ number_format($dues, 2) }}</td>
                     </tr>
                 @endforeach
@@ -234,9 +224,6 @@
             <tfoot>
                 <tr>
                     <td colspan="5" class="text-right">Total</td>
-                    <td class="text-right">{{ number_format($totLcCost, 2) }}</td>
-                    <td class="text-right">{{ number_format($totAmendment, 2) }}</td>
-                    <td class="text-right">{{ number_format($totOtherCharges, 2) }}</td>
                     <td class="text-right">{{ number_format($totDues, 2) }}</td>
                 </tr>
             </tfoot>

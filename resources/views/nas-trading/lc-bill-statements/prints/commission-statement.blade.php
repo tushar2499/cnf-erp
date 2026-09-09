@@ -160,7 +160,7 @@
 
     <div class="doc">
         <div class="header-row">
-            <span>LC/CB No. {{ $lcBillStatement->bill_no }}</span>
+            <span>LC/CBS No. {{ $lcBillStatement->bill_no }}</span>
             <span>Date: {{ $lcBillStatement->bill_date?->format('d.m.Y') }}</span>
         </div>
 
@@ -199,7 +199,7 @@
                         $retirementDate = $firstRt?->date ?? $item->lc?->lc_retirement_date;
                     @endphp
                     <tr>
-                        <td>{{ $item->serial_number ?? '-' }}</td>
+                        <td> {{ 'NAS/COM/'.$item->serial_number }}</td>
                         <td>{{ $item->lc?->pfi_no ?? '-' }}</td>
                         <td>{{ $item->lc?->lc_no ?? '-' }}</td>
                         <td class="text-center">{{ $item->lc?->lc_open_date?->format('d.m.Y') ?? '-' }}</td>

@@ -120,8 +120,8 @@ $existingLcsJson = json_encode($lcBillStatement->items->map(fn($item) => [
     'lc_rt_value'           => $item->lc?->lc_rt_value,
     'lc_commission_percent' => $item->lc?->lc_commission_percent,
     'lc_commission_flat'    => $item->lc?->lc_commission_flat,
-    'bill_no'               => $item->bill_no,
-    'bill_options'          => $billOptionsByLc->get($item->lc_id, []),
+    'bill_no'      => $item->bill_no,
+    'bill_options' => $billOptionsByLc->get($item->lc_id, []),
 ]));
 @endphp
 @push('scripts')

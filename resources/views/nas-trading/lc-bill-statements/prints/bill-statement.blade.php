@@ -170,7 +170,12 @@
             {{ $lcBillStatement->customer?->address }}
         </div>
 
-        <div class="doc-title">Bill Statement</div>
+
+        <div class="subject">
+            Sub: C&amp;F Bill Statement
+        </div>
+
+        <div class="doc-title">C&amp;F Bill Statement</div>
 
         @php
             $totalAmount = 0;
@@ -191,14 +196,17 @@
             <tbody>
                 @foreach ($lcBillStatement->items as $i => $item)
                     @php
-                        $amount = (float) ($item->lc?->customerBill?->total_amount ?? 0);
+                        $cnf = (float) ($item->lc?->billOfEntries->sum(fn($be) => ($be->customs_duty ?? 0) + ($be->cnf_total_costing ?? 0)) ?? 0);
+                        $advance = (float) ($item->lc?->billOfEntries->flatMap->dutyAdvances->sum('amount') ?? 0);
+                        $amount = $cnf - $advance;
                         $totalAmount += $amount;
                     @endphp
                     <tr>
                         <td class="text-center">{{ $i + 1 }}</td>
-                        <td>{{ $item->lc?->customerBill?->bill_no ?? '-' }}</td>
+                        <td> {{ 'NAS/C&F/'.$item->serial_number }}</td>
                         <td>{{ $item->lc?->lc_no ?? '-' }}</td>
-                        <td class="text-center">{{ $item->lc?->customerBill?->bill_date?->format('d.m.Y') ?? '-' }}</td>
+                        <td class="text-center">{{ $item->lc?->customerBill?->bill_date?->format('d.m.Y') ?? '-' }}
+                        </td>
                         <td>{{ $item->lc?->pfi_no ?? '-' }}</td>
                         <td class="text-center">{{ $item->lc?->pfi_date?->format('d.m.Y') ?? '-' }}</td>
                         <td class="text-right">{{ $amount ? number_format($amount, 2) : '-' }}</td>

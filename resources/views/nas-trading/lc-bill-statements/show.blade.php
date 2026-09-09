@@ -207,20 +207,20 @@
                     <tr>
                         <th style="width:80px" class="text-center">Print</th>
                         <th style="width:40px">#</th>
-                        <th>LC No</th>
+                        <th>Serial</th>
                         <th>Bill No</th>
                         <th>PFI No</th>
                         <th>LC/TT No</th>
                         <th>LC/TT Date</th>
                         <th>LC Retirement Date</th>
-                        <th class="text-end">LC RT/Invoice Value (BDT)</th>
+                        <th class="text-end">LC RT/Invoice Value</th>
                         <th class="text-end">Commission %</th>
                         <th class="text-end">Commission Amt (BDT)</th>
                     </tr>
                     <tr class="dt-search-row">
                         <th></th>
                         <th></th>
-                        <th><input type="text" class="form-control form-control-sm" placeholder="Search LC No"></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search Serial"></th>
                         <th><input type="text" class="form-control form-control-sm" placeholder="Search Bill No"></th>
                         <th><input type="text" class="form-control form-control-sm" placeholder="Search PFI No"></th>
                         <th><input type="text" class="form-control form-control-sm" placeholder="Search LC/TT No"></th>
@@ -240,7 +240,7 @@
                         @endphp
                         <td class="text-center">
                             <div class="btn-group">
-                                <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="padding:2px 7px;font-size:.7rem;">
+                                <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" data-bs-strategy="fixed" aria-expanded="false" style="padding:2px 7px;font-size:.7rem;">
                                     <i class="fa fa-print"></i>
                                 </button>
                                 <ul class="dropdown-menu" style="font-size:.78rem;min-width:170px;">

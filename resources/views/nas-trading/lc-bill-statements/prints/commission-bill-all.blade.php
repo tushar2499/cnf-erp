@@ -177,7 +177,7 @@
             @endphp
             <div class="doc">
                 <div class="header-row">
-                    <span>Bill No. {{ $item->serial_number ?? $lcBillStatement->bill_no }}</span>
+                    <span>Bill No. {{ 'NAS/COM/'.$item->serial_number }}</span>
                     <span>Date: {{ $lcBillStatement->bill_date?->format('d.m.Y') }}</span>
                 </div>
 

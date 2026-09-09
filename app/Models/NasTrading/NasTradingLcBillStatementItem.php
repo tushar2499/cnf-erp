@@ -36,13 +36,17 @@ class NasTradingLcBillStatementItem extends Model
     {
         return DB::transaction(function () {
             $year = now()->format('Y');
+
             $max = self::lockForUpdate()
                 ->whereYear('created_at', $year)
                 ->whereNotNull('serial_number')
-                ->selectRaw('MAX(CAST(SUBSTRING_INDEX(serial_number, "/", -2) AS UNSIGNED)) as max_no')
+                ->where('serial_number', 'like', '%/'.$year)
+                ->selectRaw('MAX(CAST(SUBSTRING_INDEX(serial_number, "/", 1) AS UNSIGNED)) as max_no')
                 ->value('max_no') ?? 0;
 
-            return 'NAS/COM/'.str_pad($max + 1, 2, '0', STR_PAD_LEFT).'/'.$year;
+            $seq = str_pad($max + 1, 3, '0', STR_PAD_LEFT);
+
+            return "{$seq}/{$year}";
         });
     }
 }

@@ -237,14 +237,13 @@
             @php
                 $lc = $item->lc;
                 $lcCost = (float) ($lc?->lc_rt_value ?? 0);
-                $bankCharge = (float) ($lc?->bank_charge ?? 0);
+                $bankCharge = (float) ($lc?->lc_open_cost_bdt ?? 0);
                 $insurance = (float) ($lc?->insurance_amt ?? 0);
                 $amendment = (float) ($lc?->lc_amendment_charge ?? 0);
+                $creditReport = (float) ($lc?->credit_report_charge ?? 0);
                 $otherCharges = $lc ? (float) $lc->otherChargeItems->sum('amount') : 0.0;
-                $totalCost = $lcCost + $bankCharge + $insurance + $amendment + $otherCharges;
-                $advancePmt = $lc ? (float) $lc->payments->where('payment_type', 'advance')->sum('amount') : 0.0;
-                $dutyAdv = $lc ? (float) $lc->billOfEntries->flatMap->dutyAdvances->sum('amount') : 0.0;
-                $advance = $advancePmt + $dutyAdv;
+                $totalCost = $lcCost + $bankCharge + $insurance + $amendment + $creditReport + $otherCharges;
+                $advance = $lc ? (float) $lc->payments->where('payment_type', 'advance')->sum('amount') : 0.0;
                 $dues = $totalCost - $advance;
                 $invoiceNo = $lc?->lc_closing_bill ?? $lcBillStatement->bill_no;
                 $invoiceDate = $lc?->lc_closing_bill_date ?? $lcBillStatement->bill_date;
@@ -289,26 +288,24 @@
                         </tr>
                         <tr>
                             <td class="text-center">3</td>
-                            <td>Insurance Charge</td>
+                            <td>Insurance Amount</td>
                             <td class="text-right">{{ $insurance ? number_format($insurance, 2) : '-' }}</td>
                         </tr>
-                        @php $sl = 3; @endphp
-                        @if ($amendment)
-                            @php $sl++ @endphp
-                            <tr>
-                                <td class="text-center">{{ $sl }}</td>
-                                <td>LC Amendment Charge</td>
-                                <td class="text-right">{{ number_format($amendment, 2) }}</td>
-                            </tr>
-                        @endif
-                        @if ($otherCharges)
-                            @php $sl++ @endphp
-                            <tr>
-                                <td class="text-center">{{ $sl }}</td>
-                                <td>Other Charges</td>
-                                <td class="text-right">{{ number_format($otherCharges, 2) }}</td>
-                            </tr>
-                        @endif
+                        <tr>
+                            <td class="text-center">4</td>
+                            <td>LC Amendment Charge</td>
+                            <td class="text-right">{{ $amendment ? number_format($amendment, 2) : '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center">5</td>
+                            <td>Credit Report Charge</td>
+                            <td class="text-right">{{ $creditReport ? number_format($creditReport, 2) : '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center">6</td>
+                            <td>Other Charges</td>
+                            <td class="text-right">{{ $otherCharges ? number_format($otherCharges, 2) : '-' }}</td>
+                        </tr>
                     </tbody>
                     <tfoot>
                         <tr>

@@ -235,7 +235,6 @@ function updateTotal() {
         if (raw) { total += parseFloat(raw); }
     });
     if ($('#lcBody tr[data-lc-id]').length > 0) {
-        // 9 columns total: # | PFI | LC/TT No | LC/TT Date | Retirement | RT Value | Comm% | Comm Amt | Remove
         $('#lcTfoot').remove();
         $('#lcTable').append(`<tfoot id="lcTfoot"><tr style="background:#f0f4f8">
             <td colspan="8" class="text-end fw-bold" style="font-size:.82rem">Total Commission (BDT)</td>
