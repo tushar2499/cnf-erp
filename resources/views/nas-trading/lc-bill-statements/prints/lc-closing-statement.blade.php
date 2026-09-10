@@ -138,6 +138,11 @@
             background: #f5f5f5;
         }
 
+        table tbody tr.row-total td {
+            font-weight: bold;
+            background: #f5f5f5;
+        }
+
         .text-right {
             text-align: right;
         }
@@ -169,8 +174,8 @@
 
     <div class="doc">
         <div class="header-row">
+            <span>Bill No: LC/CLBS/{{ $lcBillStatement->bill_no }}</span>
             <span>Date: {{ $lcBillStatement->bill_date?->format('d.m.Y') }}</span>
-            <span>Bill No. {{ $lcBillStatement->bill_no }}</span>
         </div>
 
         <div class="to-block">
@@ -213,20 +218,18 @@
                     @endphp
                     <tr>
                         <td class="text-center">{{ $i + 1 }}</td>
-                        <td>{{ $lc?->lc_closing_bill ?? ($item->serial_number ?? '-') }}</td>
+                        <td>LC/CL/{{ $item->serial_number }}</td>
                         <td>{{ $lc?->pfi_no ?? '-' }}</td>
                         <td>{{ $lc?->lc_no ?? '-' }}</td>
                         <td class="text-center">{{ $lc?->lc_open_date?->format('d.m.Y') ?? '-' }}</td>
                         <td class="text-right">{{ number_format($dues, 2) }}</td>
                     </tr>
                 @endforeach
-            </tbody>
-            <tfoot>
-                <tr>
+                <tr class="row-total">
                     <td colspan="5" class="text-right">Total</td>
                     <td class="text-right">{{ number_format($totDues, 2) }}</td>
                 </tr>
-            </tfoot>
+            </tbody>
         </table>
     </div>
 </body>

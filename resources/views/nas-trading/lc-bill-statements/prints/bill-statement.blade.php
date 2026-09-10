@@ -133,6 +133,11 @@
             background: #f5f5f5;
         }
 
+        table tbody tr.row-total td {
+            font-weight: bold;
+            background: #f5f5f5;
+        }
+
         .text-right {
             text-align: right;
         }
@@ -160,7 +165,7 @@
 
     <div class="doc">
         <div class="header-row">
-            <span>{{ $lcBillStatement->bill_no }}</span>
+            <span>Bill NO: NAS/C&FBS/{{ $lcBillStatement->bill_no }}</span>
             <span>Date: {{ $lcBillStatement->bill_date?->format('d.m.Y') }}</span>
         </div>
 
@@ -212,13 +217,11 @@
                         <td class="text-right">{{ $amount ? number_format($amount, 2) : '-' }}</td>
                     </tr>
                 @endforeach
-            </tbody>
-            <tfoot>
-                <tr>
+                <tr class="row-total">
                     <td colspan="6" class="text-right">Total Amount BDT</td>
                     <td class="text-right">{{ number_format($totalAmount, 2) }}</td>
                 </tr>
-            </tfoot>
+            </tbody>
         </table>
     </div>
 </body>

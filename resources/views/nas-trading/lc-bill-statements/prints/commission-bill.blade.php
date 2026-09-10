@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>LC Commission Bill — {{ $item->serial_number ?? $lcBillStatement->bill_no }}</title>
+    <title>LC Commission Bill — LC/COM/{{ $item->serial_number }}</title>
     <style>
         * {
             margin: 0;
@@ -167,7 +167,7 @@
 
     <div class="doc">
         <div class="header-row">
-            <span>Bill No. {{ 'NAS/COM/'.$item->serial_number }}</span>
+            <span>Bill No. LC/COM/{{ $item->serial_number }}</span>
             <span>Date: {{ $lcBillStatement->bill_date?->format('d.m.Y') }}</span>
         </div>
 

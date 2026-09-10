@@ -2,8 +2,8 @@
 @section('title', 'LC Bill Statement — ' . $lcBillStatement->bill_no)
 @push('styles')
 <style>
-.info-card { background:#fff; border:1px solid #dee2e6; border-radius:.5rem; overflow:hidden; margin-bottom:1rem; }
-.info-header { background:#0c2340; color:#fff; padding:.45rem 1rem; font-size:.8rem; font-weight:700; }
+.info-card { background:#fff; border:1px solid #dee2e6; border-radius:.5rem; margin-bottom:1rem; }
+.info-header { background:#0c2340; color:#fff; padding:.45rem 1rem; font-size:.8rem; font-weight:700; border-radius:.5rem .5rem 0 0; }
 .info-body { padding:.75rem 1rem; }
 .info-label { font-size:.72rem; color:#6c757d; text-transform:uppercase; }
 .info-value { font-size:.85rem; font-weight:600; }
@@ -240,7 +240,7 @@
                         @endphp
                         <td class="text-center">
                             <div class="btn-group">
-                                <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" data-bs-strategy="fixed" aria-expanded="false" style="padding:2px 7px;font-size:.7rem;">
+                                <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="padding:2px 7px;font-size:.7rem;">
                                     <i class="fa fa-print"></i>
                                 </button>
                                 <ul class="dropdown-menu" style="font-size:.78rem;min-width:170px;">
@@ -283,6 +283,32 @@
 @push('scripts')
 <script>
 $(function () {
+    // Teleport row-level dropdown menus to <body> so they escape the overflow-x:auto table wrapper
+    $('#lcEntriesTable').on('show.bs.dropdown', '.btn-group', function () {
+        var $toggle = $(this).find('.dropdown-toggle');
+        var $menu   = $(this).find('.dropdown-menu');
+        var rect    = $toggle[0].getBoundingClientRect();
+
+        $menu.data('lc-owner', $(this));
+        $('body').append($menu.detach());
+        $menu.css({
+            position : 'fixed',
+            top      : (rect.bottom + 2) + 'px',
+            left     : rect.left + 'px',
+            margin   : 0,
+            'z-index': 9999
+        });
+    });
+
+    $('#lcEntriesTable').on('hide.bs.dropdown', '.btn-group', function () {
+        var $menu = $('body > ul.dropdown-menu[data-bs-popper]');
+        if (!$menu.length) { $menu = $('body > ul.dropdown-menu.show'); }
+        if ($menu.length && $menu.data('lc-owner')) {
+            $menu.data('lc-owner').append($menu.detach());
+            $menu.removeAttr('style').removeData('lc-owner');
+        }
+    });
+
     var timer;
     $('#lcEntriesTable thead tr.dt-search-row input').on('click mousedown keydown', function (e) {
         e.stopPropagation();

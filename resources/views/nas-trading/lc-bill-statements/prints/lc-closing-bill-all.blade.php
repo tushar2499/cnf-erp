@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>LC Closing Bills — {{ $lcBillStatement->bill_no }}</title>
+    <title>LC Closing Bills — LC/CLBS/{{ $lcBillStatement->bill_no }}</title>
     <style>
         * {
             margin: 0;
@@ -245,13 +245,12 @@
                 $totalCost = $lcCost + $bankCharge + $insurance + $amendment + $creditReport + $otherCharges;
                 $advance = $lc ? (float) $lc->payments->where('payment_type', 'advance')->sum('amount') : 0.0;
                 $dues = $totalCost - $advance;
-                $invoiceNo = $lc?->lc_closing_bill ?? $lcBillStatement->bill_no;
                 $invoiceDate = $lc?->lc_closing_bill_date ?? $lcBillStatement->bill_date;
             @endphp
             <div class="doc">
                 <div class="header-row">
-                    <span><strong>Invoice No:</strong> {{ $invoiceNo }}&nbsp;&nbsp;&nbsp; <strong>Date:</strong>
-                        {{ $invoiceDate?->format('d-m-Y') }}</span>
+                    <span>Bill No: LC/CL/{{ $item->serial_number }}</span>
+                    <span>Date: {{ $lcBillStatement->bill_date?->format('d.m.Y') }}</span>
                 </div>
 
                 <div class="consignee-block">

@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>LC Closing Bill — {{ $item->lc?->lc_closing_bill ?? $lcBillStatement->bill_no }}</title>
+    <title>LC Closing Bill —  LC/CL/{{ $item->serial_number }}</title>
     <style>
         * {
             margin: 0;
@@ -188,7 +188,6 @@
         $totalCost = $lcCost + $bankCharge + $insurance + $amendment + $creditReport + $otherCharges;
         $advance = $lc ? (float) $lc->payments->where('payment_type', 'advance')->sum('amount') : 0.0;
         $dues = $totalCost - $advance;
-        $invoiceNo = $lc?->lc_closing_bill ?? $lcBillStatement->bill_no;
         $invoiceDate = $lc?->lc_closing_bill_date ?? $lcBillStatement->bill_date;
 
         function lcClosingNumberToWords(float $amount): string
@@ -251,7 +250,7 @@
 
     <div class="doc">
         <div class="header-row">
-            <span><strong>Invoice No:</strong> {{ $invoiceNo }}&nbsp;&nbsp;&nbsp; <strong>Date:</strong>
+            <span><strong>Invoice No:</strong> LC/CL/{{ $item->serial_number }}&nbsp;&nbsp;&nbsp; <strong>Date:</strong>
                 {{ $invoiceDate?->format('d-m-Y') }}</span>
         </div>
 

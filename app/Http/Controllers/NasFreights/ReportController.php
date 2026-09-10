@@ -61,12 +61,12 @@ class ReportController extends Controller
         $sheet = $spreadsheet->getActiveSheet()->setTitle('Booking Report');
 
         $statusLabel = $request->filled('status') ? $request->status.' ' : '';
-        $sheet->mergeCells('A1:P1');
+        $sheet->mergeCells('A1:O1');
         $sheet->setCellValue('A1', $coName);
         $sheet->getStyle('A1')->applyFromArray(['font' => ['bold' => true, 'size' => 14], 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]]);
         $sheet->getRowDimension(1)->setRowHeight(22);
 
-        $sheet->mergeCells('A2:P2');
+        $sheet->mergeCells('A2:O2');
         $sheet->setCellValue('A2', $statusLabel.'Booking Report');
         $sheet->getStyle('A2')->applyFromArray(['font' => ['bold' => true, 'size' => 12], 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]]);
 
@@ -77,17 +77,17 @@ class ReportController extends Controller
         if ($request->filled('to_date')) {
             $dateStr .= 'To: '.Carbon::parse($request->to_date)->format('d/m/Y');
         }
-        $sheet->mergeCells('A3:P3');
+        $sheet->mergeCells('A3:O3');
         $sheet->setCellValue('A3', trim($dateStr));
         $sheet->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        $headers = ['SL', 'Job No', 'Job Date', 'Entry Date', 'Entry By', 'Sales Person', 'Customer', 'Supplier', 'Cover Van Details', 'Location', 'Supplier Rate', 'Customer Rate', 'Profit', 'Remarks', 'Billed', 'Bill No'];
+        $headers = ['SL', 'Job No', 'Job Date', 'Entry By', 'Sales Person', 'Customer', 'Supplier', 'Cover Van Details', 'Location', 'Supplier Rate', 'Customer Rate', 'Profit', 'Remarks', 'Billed', 'Bill No'];
         $col = 'A';
         foreach ($headers as $h) {
             $sheet->setCellValue($col.'4', $h);
             $col++;
         }
-        $sheet->getStyle('A4:P4')->applyFromArray([
+        $sheet->getStyle('A4:O4')->applyFromArray([
             'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1A6B60']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
@@ -104,31 +104,31 @@ class ReportController extends Controller
             $ts += $item->supplier_rate;
             $tc += $item->customer_rate;
             $tp += $profit;
-            $sheet->fromArray([$i + 1, $b?->job_no, $b?->job_date?->format('d M Y'), $b?->created_at?->format('d M Y'), $b?->entry_by, $b?->sales_person_name, $b?->customer_name, $item->supplier_name, $item->cover_van_no, $loc, (float) $item->supplier_rate, (float) $item->customer_rate, (float) $profit, $b?->note, $item->is_billed ? 'Billed' : 'Pending', $item->bill_no ?? ''], null, 'A'.$row);
-            foreach (['K', 'L', 'M'] as $c) {
+            $sheet->fromArray([$i + 1, $b?->job_no, $b?->job_date?->format('d M Y'), $b?->entry_by, $b?->sales_person_name, $b?->customer_name, $item->supplier_name, $item->cover_van_no, $loc, (float) $item->supplier_rate, (float) $item->customer_rate, (float) $profit, $b?->note, $item->is_billed ? 'Billed' : 'Pending', $item->bill_no ?? ''], null, 'A'.$row);
+            foreach (['J', 'K', 'L'] as $c) {
                 $sheet->getStyle($c.$row)->getNumberFormat()->setFormatCode('#,##0.00');
             }
             if ($row % 2 === 0) {
-                $sheet->getStyle('A'.$row.':P'.$row)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('F5FAF9');
+                $sheet->getStyle('A'.$row.':O'.$row)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('F5FAF9');
             }
             $row++;
         }
-        $sheet->mergeCells('A'.$row.':J'.$row);
+        $sheet->mergeCells('A'.$row.':I'.$row);
         $sheet->setCellValue('A'.$row, 'Total ('.$rows->count().' rows)');
-        $sheet->setCellValue('K'.$row, $ts);
-        $sheet->setCellValue('L'.$row, $tc);
-        $sheet->setCellValue('M'.$row, $tp);
-        $sheet->getStyle('A'.$row.':P'.$row)->applyFromArray(['font' => ['bold' => true], 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D4E8D4']]]);
+        $sheet->setCellValue('J'.$row, $ts);
+        $sheet->setCellValue('K'.$row, $tc);
+        $sheet->setCellValue('L'.$row, $tp);
+        $sheet->getStyle('A'.$row.':O'.$row)->applyFromArray(['font' => ['bold' => true], 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D4E8D4']]]);
         $sheet->getStyle('A'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        foreach (['K', 'L', 'M'] as $c) {
+        foreach (['J', 'K', 'L'] as $c) {
             $sheet->getStyle($c.$row)->getNumberFormat()->setFormatCode('#,##0.00');
         }
 
-        foreach (['A' => 4, 'B' => 14, 'C' => 12, 'D' => 12, 'E' => 10, 'F' => 14, 'G' => 20, 'H' => 20, 'I' => 16, 'J' => 28, 'K' => 14, 'L' => 14, 'M' => 14, 'N' => 24, 'O' => 10, 'P' => 16] as $c => $w) {
+        foreach (['A' => 4, 'B' => 14, 'C' => 12, 'D' => 10, 'E' => 14, 'F' => 20, 'G' => 20, 'H' => 16, 'I' => 28, 'J' => 14, 'K' => 14, 'L' => 14, 'M' => 24, 'N' => 10, 'O' => 16] as $c => $w) {
             $sheet->getColumnDimension($c)->setWidth($w);
         }
         if ($row > 5) {
-            $sheet->getStyle('A4:P'.$row)->applyFromArray(['borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]]]);
+            $sheet->getStyle('A4:O'.$row)->applyFromArray(['borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]]]);
         }
 
         $writer = new Xlsx($spreadsheet);

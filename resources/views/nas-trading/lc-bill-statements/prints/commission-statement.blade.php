@@ -133,6 +133,11 @@
             background: #f5f5f5;
         }
 
+        table tbody tr.row-total td {
+            font-weight: bold;
+            background: #f5f5f5;
+        }
+
         .text-right {
             text-align: right;
         }
@@ -160,7 +165,7 @@
 
     <div class="doc">
         <div class="header-row">
-            <span>LC/CBS No. {{ $lcBillStatement->bill_no }}</span>
+            <span>Bill No: LC/CBL/{{ $lcBillStatement->bill_no }}</span>
             <span>Date: {{ $lcBillStatement->bill_date?->format('d.m.Y') }}</span>
         </div>
 
@@ -199,7 +204,7 @@
                         $retirementDate = $firstRt?->date ?? $item->lc?->lc_retirement_date;
                     @endphp
                     <tr>
-                        <td> {{ 'NAS/COM/'.$item->serial_number }}</td>
+                        <td> {{ 'LC/COM/'.$item->serial_number }}</td>
                         <td>{{ $item->lc?->pfi_no ?? '-' }}</td>
                         <td>{{ $item->lc?->lc_no ?? '-' }}</td>
                         <td class="text-center">{{ $item->lc?->lc_open_date?->format('d.m.Y') ?? '-' }}</td>
@@ -210,13 +215,11 @@
                         <td class="text-right">{{ $commission ? number_format($commission, 2) : '-' }}</td>
                     </tr>
                 @endforeach
-            </tbody>
-            <tfoot>
-                <tr>
+                <tr class="row-total">
                     <td colspan="7" class="text-right">Total LC Commission Amount BDT</td>
                     <td class="text-right">{{ number_format($totalCommission, 2) }}</td>
                 </tr>
-            </tfoot>
+            </tbody>
         </table>
     </div>
 </body>

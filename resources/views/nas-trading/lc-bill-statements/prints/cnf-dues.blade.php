@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>C&F Bills — {{ $lcBillStatement->bill_no }}</title>
+    <title>C&F Bills — NAS/C&FBS/{{ $lcBillStatement->bill_no }}</title>
     <style>
         * {
             margin: 0;
@@ -217,7 +217,7 @@
             @endphp
             <div class="doc">
                 <div class="header-row">
-                    <span>Bill No.  {{ 'NAS/C&F/'.$item->serial_number }}</span>
+                    <span>Bill No:  {{ 'NAS/C&F/'.$item->serial_number }}</span>
                     <span>Date: {{ $lcBillStatement->bill_date?->format('d.m.Y') }}</span>
                 </div>
 

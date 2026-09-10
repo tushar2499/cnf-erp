@@ -11,6 +11,10 @@
 .lc-table td { font-size:.8rem; padding:.3rem .5rem; vertical-align:middle; white-space:nowrap; }
 .lc-table td .bill-no-input { min-width:120px; }
 .table-scroll-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.lc-search-row th { background:#f1f3f5; padding:.2rem .4rem; }
+.lc-col-search { font-size:.72rem; padding:.15rem .3rem; height:auto; border-color:#ced4da; background:#fff; }
+.lc-col-search:focus { box-shadow:none; border-color:#86b7fe; }
+.lc-col-search::placeholder { color:#adb5bd; }
 </style>
 @endpush
 
@@ -92,6 +96,18 @@
                             <th class="text-end">Commission %</th>
                             <th class="text-end">Commission Amt (BDT)</th>
                             <th style="width:35px"></th>
+                        </tr>
+                        <tr class="lc-search-row">
+                            <th></th>
+                            <th><input type="text" class="form-control lc-col-search" data-col-idx="1" placeholder="PFI No" aria-label="Search PFI No"></th>
+                            <th><input type="text" class="form-control lc-col-search" data-col-idx="2" placeholder="Bill No" aria-label="Search Bill No"></th>
+                            <th><input type="text" class="form-control lc-col-search" data-col-idx="3" placeholder="LC/TT No" aria-label="Search LC/TT No"></th>
+                            <th><input type="text" class="form-control lc-col-search" data-col-idx="4" placeholder="Date" aria-label="Search LC/TT Date"></th>
+                            <th><input type="text" class="form-control lc-col-search" data-col-idx="5" placeholder="Ret. Date" aria-label="Search Retirement Date"></th>
+                            <th><input type="text" class="form-control lc-col-search" data-col-idx="6" placeholder="Value" aria-label="Search Value"></th>
+                            <th><input type="text" class="form-control lc-col-search" data-col-idx="7" placeholder="%" aria-label="Search Commission %"></th>
+                            <th><input type="text" class="form-control lc-col-search" data-col-idx="8" placeholder="Amt" aria-label="Search Commission Amt"></th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody id="lcBody">
@@ -215,6 +231,7 @@ function loadCustomerLcs(customerId) {
 function resetLcSection() {
     addedLcIds  = [];
     customerLcs = [];
+    $('.lc-col-search').val('');
     $('#lcSearch').select2('destroy').empty().append('<option value=""></option>')
         .select2({ theme: 'bootstrap-5', placeholder: '-- Select customer first --' })
         .prop('disabled', true);
@@ -275,7 +292,31 @@ function addLcRow(lc) {
         </tr>
     `);
     updateTotal();
+    filterLcRows();
 }
+
+function filterLcRows() {
+    var filters = [];
+    $('.lc-col-search').each(function () {
+        var val = $(this).val().trim().toLowerCase();
+        if (val) { filters.push({ idx: parseInt($(this).data('col-idx')), val: val }); }
+    });
+
+    $('#lcBody tr[data-lc-id]').each(function () {
+        if (!filters.length) { $(this).show(); return; }
+        var tds = $(this).children('td');
+        var show = filters.every(function (f) {
+            var td = tds.eq(f.idx);
+            var text = f.idx === 2
+                ? td.find('input.bill-no-input').val().toLowerCase()
+                : td.text().toLowerCase().trim();
+            return text.indexOf(f.val) !== -1;
+        });
+        $(this).toggle(show);
+    });
+}
+
+$(document).on('input', '.lc-col-search', filterLcRows);
 
 $(document).on('click', '.btn-remove-lc', function () {
     var row  = $(this).closest('tr');

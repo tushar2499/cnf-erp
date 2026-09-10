@@ -20,27 +20,28 @@ class ItemController extends Controller
 {
     public function index(IndexItemRequest $request)
     {
+
         if ($request->ajax()) {
             return DataTables::of(ChevronItem::query())
                 ->addIndexColumn()
-                ->addColumn('status_badge', fn ($r) => $r->status === 'Active'
+                ->addColumn('status_badge', fn($r) => $r->status === 'Active'
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')
-                ->addColumn('po_so', fn ($r) => ($r->availability_in_po ? '<span class="badge bg-info text-dark me-1">PO</span>' : '').
+                ->addColumn('po_so', fn($r) => ($r->availability_in_po ? '<span class="badge bg-info text-dark me-1">PO</span>' : '') .
                     ($r->availability_in_so ? '<span class="badge bg-primary">SO</span>' : ''))
                 ->addColumn('action', function ($r) use ($request) {
                     $html = '';
 
                     if ($request->user()->hasPermission('cnf.item.edit')) {
-                        $html .= '<button class="btn btn-sm btn-outline-primary btn-edit" data-id="'.$r->id.'">
+                        $html .= '<button class="btn btn-sm btn-outline-primary btn-edit" data-id="' . $r->id . '">
                             <i class="fa fa-edit"></i>
                         </button> ';
                     }
 
                     if ($request->user()->hasPermission('cnf.item.delete')) {
                         $html .= '<button class="btn btn-sm btn-outline-danger btn-delete"
-                            data-url="'.route('chevron.settings.items.destroy', $r->id).'"
-                            data-name="'.e($r->item_code).'">
+                            data-url="' . route('chevron.settings.items.destroy', $r->id) . '"
+                            data-name="' . e($r->item_code) . '">
                             <i class="fa fa-trash"></i>
                         </button>';
                     }
@@ -63,8 +64,8 @@ class ItemController extends Controller
     {
         $last = ChevronItem::max('item_code');
         $next = $last
-            ? 'ITEM-'.str_pad((intval(substr($last, 5)) + 1), 4, '0', STR_PAD_LEFT)
-            : 'ITEM-1001';
+        ? 'ITEM-' . str_pad((intval(substr($last, 5)) + 1), 4, '0', STR_PAD_LEFT)
+        : 'ITEM-1001';
 
         return response()->json(['next_code' => $next]);
     }
@@ -72,6 +73,7 @@ class ItemController extends Controller
     public function store(StoreItemRequest $request)
     {
         $imagePath = null;
+
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('chevron/items', 'public');
         }
@@ -79,8 +81,8 @@ class ItemController extends Controller
         DB::transaction(function () use ($request, $imagePath) {
             $last = ChevronItem::lockForUpdate()->max('item_code');
             $code = $last
-                ? 'ITEM-'.str_pad((intval(substr($last, 5)) + 1), 4, '0', STR_PAD_LEFT)
-                : 'ITEM-1001';
+            ? 'ITEM-' . str_pad((intval(substr($last, 5)) + 1), 4, '0', STR_PAD_LEFT)
+            : 'ITEM-1001';
 
             ChevronItem::create([
                 'item_code'          => $code,
@@ -103,10 +105,13 @@ class ItemController extends Controller
     public function update(UpdateItemRequest $request, ChevronItem $item)
     {
         $imagePath = $item->image;
+
         if ($request->hasFile('image')) {
+
             if ($imagePath) {
                 Storage::disk('public')->delete($imagePath);
             }
+
             $imagePath = $request->file('image')->store('chevron/items', 'public');
         }
 
@@ -129,9 +134,11 @@ class ItemController extends Controller
 
     public function destroy(DestroyItemRequest $request, ChevronItem $item)
     {
+
         if ($item->image) {
             Storage::disk('public')->delete($item->image);
         }
+
         $item->delete();
 
         return response()->json(['message' => 'Item deleted.']);
@@ -141,7 +148,7 @@ class ItemController extends Controller
     {
         $item = DB::transaction(function () use ($request) {
             $last = ChevronItem::lockForUpdate()->max('item_code');
-            $next = $last ? ('ITEM-'.str_pad((intval(substr($last, 5)) + 1), 4, '0', STR_PAD_LEFT)) : 'ITEM-1001';
+            $next = $last ? ('ITEM-' . str_pad((intval(substr($last, 5)) + 1), 4, '0', STR_PAD_LEFT)) : 'ITEM-1001';
 
             return ChevronItem::create([
                 'item_code'          => $next,
@@ -156,10 +163,11 @@ class ItemController extends Controller
 
         return response()->json([
             'id'            => $item->id,
-            'text'          => $item->item_code.' — '.$item->item_name,
+            'text'          => $item->item_code . ' — ' . $item->item_name,
             'name'          => $item->item_name,
             'purchase_unit' => $item->purchase_unit,
-            'message'       => 'Item "'.$item->item_name.'" created successfully.',
+            'message'       => 'Item "' . $item->item_name . '" created successfully.',
         ]);
     }
+
 }
