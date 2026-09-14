@@ -22,7 +22,8 @@ class JobExpenseController extends Controller
     {
         if ($request->ajax()) {
             $query = ChevronJobExpense::with('employee')
-                ->where('branch_id', session('active_branch_id'));
+                ->where('branch_id', session('active_branch_id'))
+                ->latest();
 
             return DataTables::of($query)
                 ->addIndexColumn()

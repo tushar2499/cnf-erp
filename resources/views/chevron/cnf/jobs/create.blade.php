@@ -391,7 +391,7 @@
                             <div class="col-md-4">
                                 <label class="form-label d-flex justify-content-between align-items-center">
                                     <span>Goods Name <span class="req">*</span></span>
-                                    <button type="button" class="btn btn-outline-success btn-sm py-0 px-2 ms-1"
+                                    <button type="button" class="btn btn-success btn-sm py-0 px-2 ms-1"
                                         id="btnQuickItem" title="Create new item">
                                         <i class="fa fa-plus"></i> New
                                     </button>
@@ -940,7 +940,7 @@
                         <div class="invalid-feedback" id="qi_name_err"></div>
                     </div>
                     <div class="mb-2">
-                        <label class="form-label">Unit <span class="req">*</span></label>
+                        <label class="form-label">Unit</label>
                         <select id="qi_unit" class="form-select form-select-sm">
                             <option value="">-- Select Unit --</option>
                             @foreach ($units as $group => $opts)
@@ -954,7 +954,7 @@
                         <div class="invalid-feedback" id="qi_unit_err"></div>
                     </div>
                     <div class="mb-2">
-                        <label class="form-label">Price (BDT) <span class="req">*</span></label>
+                        <label class="form-label">Price (BDT)</label>
                         <input type="number" id="qi_price" class="form-control form-control-sm text-end"
                             step="0.01" min="0" placeholder="0.00" value="0">
                         <div class="invalid-feedback" id="qi_price_err"></div>
@@ -1211,20 +1211,8 @@
                 } else {
                     $('#qi_name').removeClass('is-invalid');
                 }
-                if (!unit) {
-                    $('#qi_unit').addClass('is-invalid');
-                    $('#qi_unit_err').text('Required.');
-                    ok = false;
-                } else {
-                    $('#qi_unit').removeClass('is-invalid');
-                }
-                if (price === '' || isNaN(price) || parseFloat(price) < 0) {
-                    $('#qi_price').addClass('is-invalid');
-                    $('#qi_price_err').text('Enter valid price.');
-                    ok = false;
-                } else {
-                    $('#qi_price').removeClass('is-invalid');
-                }
+                $('#qi_unit').removeClass('is-invalid');
+                $('#qi_price').removeClass('is-invalid');
 
                 if (!ok) return;
 

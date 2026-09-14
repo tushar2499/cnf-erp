@@ -10,15 +10,15 @@ class QuickStoreItemRequest extends FormRequest
     {
         $user = $this->user();
 
-        return $user;
+        return $user !== null;
     }
 
     public function rules(): array
     {
         return [
             'item_name'     => ['required', 'string', 'max:255'],
-            'purchase_unit' => ['required', 'string'],
-            'item_price'    => ['required', 'numeric', 'min:0'],
+            'purchase_unit' => ['nullable', 'string'],
+            'item_price'    => ['nullable', 'numeric', 'min:0'],
         ];
     }
 
