@@ -4,7 +4,6 @@
 
 @push('page-css')
 @page {
-    size: A4 landscape;
     margin-top: 1.0in;
     margin-bottom: 0.8in;
     margin-left: 0.4in;
@@ -79,5 +78,9 @@ table th, table td { font-size: 9px; }
             </tr>
         </tbody>
     </table>
+
+    <div class="in-word">
+        <strong>In Word:</strong> BDT {{ numberToWords($totDues) }} only.
+    </div>
 </div>
 @endsection

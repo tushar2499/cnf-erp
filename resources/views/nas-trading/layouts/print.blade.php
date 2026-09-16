@@ -7,7 +7,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         @page {
-            size: A4 portrait;
             margin-top: 1.3in;
             margin-bottom: 0.9in;
             margin-left: 0.4in;

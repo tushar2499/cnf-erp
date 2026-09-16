@@ -68,6 +68,10 @@
                     </tr>
                 </tfoot>
             </table>
+
+            <div class="in-word">
+                <strong>In Word:</strong> BDT {{ numberToWords($commission) }} only.
+            </div>
         </div>
     @endforeach
 </div>

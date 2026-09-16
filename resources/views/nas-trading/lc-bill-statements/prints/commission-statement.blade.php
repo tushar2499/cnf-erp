@@ -60,5 +60,9 @@
             </tr>
         </tbody>
     </table>
+
+    <div class="in-word">
+        <strong>In Word:</strong> BDT {{ numberToWords($totalCommission) }} only.
+    </div>
 </div>
 @endsection
