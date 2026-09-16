@@ -2,15 +2,6 @@
 
 @section('title', 'LC Closing Statement — ' . $lcBillStatement->bill_no)
 
-@push('page-css')
-@page {
-    margin-top: 1.0in;
-    margin-bottom: 0.8in;
-    margin-left: 0.4in;
-    margin-right: 0.4in;
-}
-@endpush
-
 @push('styles')
 .doc { max-width: 1000px; }
 .to-block { margin-bottom: 6px; line-height: 1.7; }

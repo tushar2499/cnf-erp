@@ -7,7 +7,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         @page {
-            margin-top: 1.3in;
+            margin-top: 1.8in;
             margin-bottom: 0.9in;
             margin-left: 0.4in;
             margin-right: 0.4in;

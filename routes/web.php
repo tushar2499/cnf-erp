@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ProfileController;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -21,12 +22,23 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login')->middl
 Route::post('/login', [AuthController::class, 'login'])->middleware('guest');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
+Route::get('/clear-cache', function () {
+    Artisan::call('config:clear');
+    Artisan::call('route:clear');
+    Artisan::call('view:clear');
+    Artisan::call('cache:clear');
+    Artisan::call('event:clear');
+    Artisan::call('clear-compiled');
+
+    return 'All cache cleared!';
+});
+
 // Company picker
 Route::middleware('auth')->group(function () {
     Route::get('/company/select', [CompanyController::class, 'select'])->name('company.select');
     Route::post('/company/switch/{slug}', [CompanyController::class, 'switch'])->name('company.switch');
     // Keep-alive: called every 10 min from long-form pages to prevent session expiry
-    Route::get('/keepalive', fn () => response()->json(['ok' => true]))->name('keepalive');
+    Route::get('/keepalive', fn() => response()->json(['ok' => true]))->name('keepalive');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
