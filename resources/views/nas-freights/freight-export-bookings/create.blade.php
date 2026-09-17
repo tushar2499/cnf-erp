@@ -148,8 +148,14 @@
 
                 {{-- Row 2: Parties --}}
                 <div class="row g-2 mb-2">
-                    <div class="col-md-4">
-                        <div class="fb-label">Customer (Exporter)</div>
+                    <div class="col-md-3">
+                        <div class="fb-label d-flex justify-content-between align-items-center">
+                            <span>Customer (Exporter)</span>
+                            <button type="button" class="btn btn-success btn-sm py-0 px-2 ms-1"
+                                id="btnQuickCustomer" title="Create new customer">
+                                <i class="fa fa-plus"></i> New
+                            </button>
+                        </div>
                         <select name="customer_id" id="customerSelect" class="form-select fb-input" style="width:100%">
                             @if ($exportBooking?->customer_id)
                                 <option value="{{ $exportBooking->customer_id }}" selected>
@@ -158,8 +164,13 @@
                             @endif
                         </select>
                     </div>
+                    <div class="col-md-2">
+                        <div class="fb-label">Party Bill Date</div>
+                        <input type="date" name="party_bill_date" class="form-control fb-input"
+                            value="{{ old('party_bill_date', $exportBooking?->party_bill_date?->format('Y-m-d')) }}">
+                    </div>
                     <div class="col-md-4">
-                        <div class="fb-label">Overseas Agent</div>
+                        <div class="fb-label">Overseas Agent / Consignee</div>
                         <select name="overseas_agent_id" id="overseasAgentSelect" class="form-select fb-input"
                             style="width:100%">
                             @if ($exportBooking?->overseas_agent_id)
@@ -171,7 +182,7 @@
                             @endif
                         </select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="fb-label">Salesperson</div>
                         <select name="salesperson_id" id="salespersonSelect" class="form-select fb-input"
                             style="width:100%">
@@ -207,17 +218,11 @@
                         <input type="text" name="pod" class="form-control fb-input"
                             value="{{ old('pod', $exportBooking?->pod) }}" placeholder="e.g. Singapore">
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-4">
                         <div class="fb-label">Place of Receipt</div>
                         <input type="text" name="place_of_receipt" class="form-control fb-input"
                             value="{{ old('place_of_receipt', $exportBooking?->place_of_receipt) }}"
                             placeholder="e.g. Dhaka ICD">
-                    </div>
-                    <div class="col-md-2">
-                        <div class="fb-label">Place of Delivery</div>
-                        <input type="text" name="place_of_delivery" class="form-control fb-input"
-                            value="{{ old('place_of_delivery', $exportBooking?->place_of_delivery) }}"
-                            placeholder="e.g. Chittagong">
                     </div>
                 </div>
 
@@ -234,7 +239,7 @@
                             value="{{ old('voyage_no', $exportBooking?->voyage_no) }}" placeholder="e.g. 024W">
                     </div>
                     <div class="col-md-2">
-                        <div class="fb-label">ETD</div>
+                        <div class="fb-label">ETD / Flight Date</div>
                         <input type="date" name="etd" class="form-control fb-input"
                             value="{{ old('etd', $exportBooking?->etd?->format('Y-m-d')) }}">
                     </div>
@@ -253,45 +258,22 @@
 
                 {{-- Row 5: Shipping Documents --}}
                 <div class="row g-2 mb-2">
-                    <div class="col-md-2">
+                    <div class="col-md-4">
                         <div class="fb-label">Export B/L No</div>
                         <input type="text" name="export_bl_no" class="form-control fb-input"
                             value="{{ old('export_bl_no', $exportBooking?->export_bl_no) }}"
                             placeholder="e.g. EXP024W-0001">
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-4">
                         <div class="fb-label">B/L Date</div>
                         <input type="date" name="bl_date" class="form-control fb-input"
                             value="{{ old('bl_date', $exportBooking?->bl_date?->format('Y-m-d')) }}">
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-4">
                         <div class="fb-label">Booking Note No</div>
                         <input type="text" name="booking_note_no" class="form-control fb-input"
                             value="{{ old('booking_note_no', $exportBooking?->booking_note_no) }}"
                             placeholder="e.g. MSL024W-8899">
-                    </div>
-                    <div class="col-md-2">
-                        <div class="fb-label">Transport Doc Type</div>
-                        <select name="transport_doc_type" class="form-select fb-input">
-                            <option value="">-- Select --</option>
-                            @foreach (['MBL', 'HBL', 'MAWB', 'HAWB', 'Bill Of Entry No'] as $docType)
-                                <option value="{{ $docType }}"
-                                    {{ old('transport_doc_type', $exportBooking?->transport_doc_type) === $docType ? 'selected' : '' }}>
-                                    {{ $docType }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="fb-label">Transport Doc No</div>
-                        <input type="text" name="transport_doc_no" class="form-control fb-input"
-                            value="{{ old('transport_doc_no', $exportBooking?->transport_doc_no) }}"
-                            placeholder="e.g. MSCU1234567890">
-                    </div>
-                    <div class="col-md-2">
-                        <div class="fb-label">Transport Doc Date</div>
-                        <input type="date" name="transport_doc_date" class="form-control fb-input"
-                            value="{{ old('transport_doc_date', $exportBooking?->transport_doc_date?->format('Y-m-d')) }}">
                     </div>
                 </div>
 
@@ -451,11 +433,41 @@
                     style="font-size:.72rem;" placeholder="e.g. Fragile"></td>
         </tr>
     </template>
+
+    {{-- Quick Create Customer Modal --}}
+    <div class="modal fade" id="quickCustomerModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header py-2" style="background:#0a4f3c;">
+                    <h6 class="modal-title text-white mb-0"><i class="fa fa-user-plus me-1"></i> New Customer</h6>
+                    <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <div class="mb-2">
+                        <label class="form-label" style="font-size:.75rem; font-weight:600;">Name <span class="text-danger">*</span></label>
+                        <input type="text" id="qc_name" class="form-control form-control-sm" placeholder="e.g. ABC Exports Ltd">
+                        <div class="invalid-feedback" id="qc_name_err"></div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label" style="font-size:.75rem; font-weight:600;">Phone</label>
+                        <input type="text" id="qc_phone" class="form-control form-control-sm" placeholder="e.g. 01700000000">
+                    </div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-sm btn-success" id="btnSaveQuickCustomer">
+                        <i class="fa fa-save me-1"></i> Save &amp; Select
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
     <script>
         var existingItems = @json($existingItems);
+        var QUICK_STORE_CUSTOMER = '{{ route('nas-freights.freight-export-bookings.quick-store-customer') }}';
 
         $(function() {
             $('#customerSelect').select2({
@@ -550,6 +562,51 @@
 
             $(document).on('change', '.item-type-sel', function() {
                 toggleItemTypeFields($(this).closest('tr'));
+            });
+
+            // ── Quick Create Customer ──
+            $('#btnQuickCustomer').on('click', function() {
+                $('#qc_name').val('').removeClass('is-invalid');
+                $('#qc_phone').val('');
+                $('#quickCustomerModal').modal('show');
+            });
+
+            $('#btnSaveQuickCustomer').on('click', function() {
+                var name = $('#qc_name').val().trim();
+                if (!name) {
+                    $('#qc_name').addClass('is-invalid');
+                    $('#qc_name_err').text('Required.');
+                    return;
+                }
+                $('#qc_name').removeClass('is-invalid');
+
+                $('#btnSaveQuickCustomer').prop('disabled', true).html(
+                    '<span class="spinner-border spinner-border-sm me-1"></span>Saving...');
+
+                $.ajax({
+                    url: QUICK_STORE_CUSTOMER,
+                    method: 'POST',
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content'),
+                        name: name,
+                        phone: $('#qc_phone').val().trim()
+                    },
+                }).done(function(r) {
+                    var opt = new Option(r.text, r.id, true, true);
+                    $('#customerSelect').append(opt).trigger('change');
+                    $('#quickCustomerModal').modal('hide');
+                    Swal.fire({ icon: 'success', title: r.message, timer: 1800, showConfirmButton: false });
+                }).fail(function(xhr) {
+                    var errs = xhr.responseJSON?.errors;
+                    if (errs?.name) {
+                        $('#qc_name').addClass('is-invalid');
+                        $('#qc_name_err').text(errs.name[0]);
+                    } else {
+                        Swal.fire({ icon: 'error', title: xhr.responseJSON?.message || 'Save failed.' });
+                    }
+                }).always(function() {
+                    $('#btnSaveQuickCustomer').prop('disabled', false).html('<i class="fa fa-save me-1"></i> Save &amp; Select');
+                });
             });
         });
 

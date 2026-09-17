@@ -64,6 +64,7 @@ Route::prefix('freight-import-bookings')->name('freight-import-bookings.')->grou
 // Freight Export Bookings (separate tables; new export field additions never touch import)
 Route::prefix('freight-export-bookings')->name('freight-export-bookings.')->group(function () {
     Route::get('/search-customers', [FreightExportBookingController::class, 'searchCustomers'])->name('search-customers');
+    Route::post('/quick-store-customer', [FreightExportBookingController::class, 'quickStoreCustomer'])->name('quick-store-customer');
     Route::get('/search-employees', [FreightExportBookingController::class, 'searchEmployees'])->name('search-employees');
     Route::get('/search-overseas-agents', [FreightExportBookingController::class, 'searchOverseasAgents'])->name('search-overseas-agents');
     Route::get('/search-shipping-carriers', [FreightExportBookingController::class, 'searchShippingCarriers'])->name('search-shipping-carriers');

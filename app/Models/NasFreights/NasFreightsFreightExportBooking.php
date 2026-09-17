@@ -13,7 +13,8 @@ class NasFreightsFreightExportBooking extends Model
 
     protected $fillable = [
         'export_booking_no', 'branch_id',
-        'customer_id', 'salesperson_id', 'overseas_agent_id', 'shipping_carrier_id',
+        'customer_id', 'party_bill_date',
+        'salesperson_id', 'overseas_agent_id', 'shipping_carrier_id',
         'booking_date', 'service_type', 'incoterms', 'currency',
         'pol', 'pod', 'place_of_receipt', 'place_of_delivery',
         'commodity_description', 'vessel_name', 'voyage_no', 'export_bl_no', 'bl_date', 'booking_note_no',
@@ -26,6 +27,7 @@ class NasFreightsFreightExportBooking extends Model
     {
         return [
             'booking_date'        => 'date',
+            'party_bill_date'     => 'date',
             'etd'                 => 'date',
             'eta'                 => 'date',
             'exp_date'            => 'date',
