@@ -10,9 +10,9 @@ use App\Http\Requests\NasFreights\FreightImportBooking\IndexFreightImportBooking
 use App\Http\Requests\NasFreights\FreightImportBooking\ShowFreightImportBookingRequest;
 use App\Http\Requests\NasFreights\FreightImportBooking\StoreFreightImportBookingRequest;
 use App\Http\Requests\NasFreights\FreightImportBooking\UpdateFreightImportBookingRequest;
+use App\Models\Employee;
 use App\Models\NasFreights\NasFreightsContainerType;
 use App\Models\NasFreights\NasFreightsCustomer;
-use App\Models\NasFreights\NasFreightsEmployee;
 use App\Models\NasFreights\NasFreightsFreightBooking;
 use App\Models\NasFreights\NasFreightsOverseasAgent;
 use App\Models\NasFreights\NasFreightsPackageType;
@@ -172,7 +172,7 @@ class FreightBookingController extends Controller
         $q = $request->get('q', '');
 
         return response()->json(
-            NasFreightsEmployee::where('name', 'like', '%'.$q.'%')
+            Employee::where('name', 'like', '%'.$q.'%')
                 ->where('is_active', true)
                 ->limit(20)
                 ->select(['id', 'name', 'code'])

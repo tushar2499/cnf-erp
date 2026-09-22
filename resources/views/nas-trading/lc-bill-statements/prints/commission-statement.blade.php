@@ -24,6 +24,7 @@
     <table>
         <thead>
             <tr>
+                <th style="width:28px">SL</th>
                 <th>Bill No.</th>
                 <th>PFI NO.</th>
                 <th>LC No</th>
@@ -35,7 +36,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach ($lcBillStatement->items as $item)
+            @foreach ($lcBillStatement->items as $i => $item)
                 @php
                     $commission = (float) ($item->lc?->lc_commission_flat ?? 0);
                     $totalCommission += $commission;
@@ -44,6 +45,7 @@
                     $retirementDate = $firstRt?->date ?? $item->lc?->lc_retirement_date;
                 @endphp
                 <tr>
+                    <td class="text-center">{{ $i + 1 }}</td>
                     <td>{{ 'LC/COM/' . $item->serial_number }}</td>
                     <td>{{ $item->lc?->pfi_no ?? '-' }}</td>
                     <td>{{ $item->lc?->lc_no ?? '-' }}</td>
@@ -55,7 +57,7 @@
                 </tr>
             @endforeach
             <tr class="row-total">
-                <td colspan="7" class="text-right">Total LC Commission Amount BDT</td>
+                <td colspan="8" class="text-right">Total LC Commission Amount BDT</td>
                 <td class="text-right">{{ number_format($totalCommission, 2) }}</td>
             </tr>
         </tbody>

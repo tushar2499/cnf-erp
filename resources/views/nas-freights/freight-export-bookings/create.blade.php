@@ -165,11 +165,17 @@
                         </select>
                     </div>
                     <div class="col-md-2">
+                        <div class="fb-label">Party Bill Ref No</div>
+                        <input type="text" name="party_bill_ref_no" class="form-control fb-input"
+                            value="{{ old('party_bill_ref_no', $exportBooking?->party_bill_ref_no) }}"
+                            placeholder="e.g. PB-2024-0001">
+                    </div>
+                    <div class="col-md-2">
                         <div class="fb-label">Party Bill Date</div>
                         <input type="date" name="party_bill_date" class="form-control fb-input"
                             value="{{ old('party_bill_date', $exportBooking?->party_bill_date?->format('Y-m-d')) }}">
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="fb-label">Overseas Agent / Consignee</div>
                         <select name="overseas_agent_id" id="overseasAgentSelect" class="form-select fb-input"
                             style="width:100%">
@@ -182,7 +188,7 @@
                             @endif
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="fb-label">Salesperson</div>
                         <select name="salesperson_id" id="salespersonSelect" class="form-select fb-input"
                             style="width:100%">
@@ -357,7 +363,7 @@
                 <i class="fa fa-times me-1"></i> Cancel
             </a>
             <button type="submit" class="btn btn-sm btn-success px-4">
-                <i class="fa fa-save me-1"></i> {{ $exportBooking ? 'Update Export Booking' : 'Save Export Booking' }}
+                <i class="fa fa-save me-1"></i> {{ $exportBooking ? 'Update' : 'Save' }}
             </button>
         </div>
 

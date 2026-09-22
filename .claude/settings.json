@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./vendor/bin/pint app/Models/NasFreights/NasFreightsFreightExportBooking.php app/Http/Controllers/NasFreights/FreightExportBookingController.php --format agent)",
+      "Bash(./vendor/bin/pint app/Models/NasFreights/NasFreightsRfq.php app/Models/NasFreights/NasFreightsFreightBooking.php app/Http/Controllers/NasFreights/RfqController.php app/Http/Controllers/NasFreights/FreightBookingController.php --format agent)"
+    ]
+  }
+}

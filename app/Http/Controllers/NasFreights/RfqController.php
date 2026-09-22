@@ -12,9 +12,9 @@ use App\Http\Requests\NasFreights\Rfq\ShowRfqRequest;
 use App\Http\Requests\NasFreights\Rfq\StoreRfqRequest;
 use App\Http\Requests\NasFreights\Rfq\UpdateRfqRequest;
 use App\Http\Requests\NasFreights\Rfq\UpdateStatusRfqRequest;
+use App\Models\Employee;
 use App\Models\NasFreights\NasFreightsContainerType;
 use App\Models\NasFreights\NasFreightsCustomer;
-use App\Models\NasFreights\NasFreightsEmployee;
 use App\Models\NasFreights\NasFreightsFreightBooking;
 use App\Models\NasFreights\NasFreightsFreightBookingItem;
 use App\Models\NasFreights\NasFreightsOverseasAgent;
@@ -296,7 +296,7 @@ class RfqController extends Controller
     public function searchEmployees(Request $request)
     {
         $q = $request->get('q', '');
-        $results = NasFreightsEmployee::where('name', 'like', '%'.$q.'%')
+        $results = Employee::where('name', 'like', '%'.$q.'%')
             ->where('is_active', true)
             ->limit(20)
             ->select(['id', 'name', 'code'])

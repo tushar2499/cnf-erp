@@ -2,6 +2,7 @@
 
 namespace App\Models\NasFreights;
 
+use App\Models\Employee;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,7 +14,7 @@ class NasFreightsFreightExportBooking extends Model
 
     protected $fillable = [
         'export_booking_no', 'branch_id',
-        'customer_id', 'party_bill_date',
+        'customer_id', 'party_bill_ref_no', 'party_bill_date',
         'salesperson_id', 'overseas_agent_id', 'shipping_carrier_id',
         'booking_date', 'service_type', 'incoterms', 'currency',
         'pol', 'pod', 'place_of_receipt', 'place_of_delivery',
@@ -44,7 +45,7 @@ class NasFreightsFreightExportBooking extends Model
 
     public function salesperson(): BelongsTo
     {
-        return $this->belongsTo(NasFreightsEmployee::class, 'salesperson_id');
+        return $this->belongsTo(Employee::class, 'salesperson_id');
     }
 
     public function overseasAgent(): BelongsTo

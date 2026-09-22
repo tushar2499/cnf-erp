@@ -75,7 +75,7 @@
     <div class="page-header">
         <h4><i class="fa fa-ship me-2 text-primary"></i> Freight Export Bookings</h4>
         <a href="{{ route('nas-freights.freight-export-bookings.create') }}" class="btn btn-sm btn-primary">
-            <i class="fa fa-plus me-1"></i> New Export Booking
+            <i class="fa fa-plus me-1"></i> New Booking
         </a>
     </div>
 

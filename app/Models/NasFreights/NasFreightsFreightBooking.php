@@ -2,6 +2,7 @@
 
 namespace App\Models\NasFreights;
 
+use App\Models\Employee;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -36,7 +37,7 @@ class NasFreightsFreightBooking extends Model
 
     public function salesperson(): BelongsTo
     {
-        return $this->belongsTo(NasFreightsEmployee::class, 'salesperson_id');
+        return $this->belongsTo(Employee::class, 'salesperson_id');
     }
 
     public function overseasAgent(): BelongsTo
@@ -61,12 +62,12 @@ class NasFreightsFreightBooking extends Model
 
     public static function generateFreightBookingNo(): string
     {
-        $prefix = 'FIB-' . now()->format('Ymd') . '-';
-        $last   = static::lockForUpdate()
-            ->where('freight_booking_no', 'like', $prefix . '%')
-            ->max(DB::raw('CAST(SUBSTRING(freight_booking_no, ' . (strlen($prefix) + 1) . ') AS UNSIGNED)'));
+        $prefix = 'FIB-'.now()->format('Ymd').'-';
+        $last = static::lockForUpdate()
+            ->where('freight_booking_no', 'like', $prefix.'%')
+            ->max(DB::raw('CAST(SUBSTRING(freight_booking_no, '.(strlen($prefix) + 1).') AS UNSIGNED)'));
 
-        return $prefix . str_pad(($last ?? 0) + 1, 4, '0', STR_PAD_LEFT);
+        return $prefix.str_pad(($last ?? 0) + 1, 4, '0', STR_PAD_LEFT);
     }
 
     public static function statuses(): array

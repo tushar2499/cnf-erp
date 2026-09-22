@@ -10,9 +10,9 @@ use App\Http\Requests\NasFreights\FreightExportBooking\IndexFreightExportBooking
 use App\Http\Requests\NasFreights\FreightExportBooking\ShowFreightExportBookingRequest;
 use App\Http\Requests\NasFreights\FreightExportBooking\StoreFreightExportBookingRequest;
 use App\Http\Requests\NasFreights\FreightExportBooking\UpdateFreightExportBookingRequest;
+use App\Models\Employee;
 use App\Models\NasFreights\NasFreightsContainerType;
 use App\Models\NasFreights\NasFreightsCustomer;
-use App\Models\NasFreights\NasFreightsEmployee;
 use App\Models\NasFreights\NasFreightsFreightExportBooking;
 use App\Models\NasFreights\NasFreightsOverseasAgent;
 use App\Models\NasFreights\NasFreightsPackageType;
@@ -144,7 +144,7 @@ class FreightExportBookingController extends Controller
             $this->saveItems($exportBooking, $request->input('items', []));
         });
 
-        return back()->with('success', 'Freight Export Booking ' . $exportBooking->export_booking_no . ' updated.');
+        return redirect()->route('nas-freights.freight-export-bookings.index')->with('success', 'Freight Export Booking ' . $exportBooking->export_booking_no . ' updated.');
     }
 
     public function destroy(DestroyFreightExportBookingRequest $request, NasFreightsFreightExportBooking $exportBooking)
@@ -202,7 +202,7 @@ class FreightExportBookingController extends Controller
         $q = $request->get('q', '');
 
         return response()->json(
-            NasFreightsEmployee::where('name', 'like', '%' . $q . '%')
+            Employee::where('name', 'like', '%' . $q . '%')
                 ->where('is_active', true)
                 ->limit(20)
                 ->select(['id', 'name', 'code'])
