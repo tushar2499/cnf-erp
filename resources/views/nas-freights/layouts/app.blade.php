@@ -101,10 +101,12 @@
             // Freight Import
             $canSeeRfq           = $user->hasPermission('freight.rfq.list');
             $canSeeImportBooking = $user->hasPermission('freight.import-booking.list');
-            $canSeeFreightImport = $canSeeRfq || $canSeeImportBooking;
+            $canSeeImportExpense = $user->hasPermission('freight.import-expense.list');
+            $canSeeFreightImport = $canSeeRfq || $canSeeImportBooking || $canSeeImportExpense;
 
             // Freight Export
             $canSeeExportBooking = $user->hasPermission('freight.export-booking.list');
+            $canSeeExportExpense = $user->hasPermission('freight.export-expense.list');
 
             // Due Lists
             $canSeeDueList = $user->hasPermission('freight.due-list.view');
@@ -133,14 +135,18 @@
             $canSeeContainerType   = $user->hasPermission('freight.container-type.list');
             $canSeePackageType     = $user->hasPermission('freight.package-type.list');
             $canSeeOverseasAgent   = $user->hasPermission('freight.overseas-agent.list');
-            $canSeeShippingCarrier = $user->hasPermission('freight.shipping-carrier.list');
-            $canSeeSettings        = $canSeeBranch || $canSeeContainerType || $canSeePackageType
-                || $canSeeOverseasAgent || $canSeeShippingCarrier;
+            $canSeeShippingCarrier   = $user->hasPermission('freight.shipping-carrier.list');
+            $canSeeExpenseCategory   = $user->hasPermission('freight.expense-category.list');
+            $canSeeExpenseHead       = $user->hasPermission('freight.expense-head.list');
+            $canSeeSettings          = $canSeeBranch || $canSeeContainerType || $canSeePackageType
+                || $canSeeOverseasAgent || $canSeeShippingCarrier || $canSeeExpenseCategory || $canSeeExpenseHead;
+
+            // (import/export expense vars set above with freight import/export sections)
 
             // Active states
             $operationsActive    = request()->routeIs('nas-freights.bookings.*', 'nas-freights.customer-bills.*', 'nas-freights.supplier-bills.*');
-            $freightImportActive = request()->routeIs('nas-freights.rfqs.*', 'nas-freights.freight-import-bookings.*');
-            $freightExportActive = request()->routeIs('nas-freights.freight-export-bookings.*');
+            $freightImportActive = request()->routeIs('nas-freights.rfqs.*', 'nas-freights.freight-import-bookings.*', 'nas-freights.import-expenses.*');
+            $freightExportActive = request()->routeIs('nas-freights.freight-export-bookings.*', 'nas-freights.export-expenses.*');
             $dueListsActive      = request()->routeIs('nas-freights.due-lists.*');
             $collectionsActive   = request()->routeIs('nas-freights.money-receipts.*', 'nas-freights.supplier-payments.*');
             $reportsActive       = request()->routeIs('nas-freights.reports.*');
@@ -212,12 +218,18 @@
                     <i class="fa fa-ship"></i> Freight Import Bookings
                 </a>
                 @endif
+                @if($canSeeImportExpense)
+                <a href="{{ route('nas-freights.import-expenses.index') }}"
+                    class="nav-link ps-4 {{ request()->routeIs('nas-freights.import-expenses.*') ? 'active' : '' }}">
+                    <i class="fa fa-money-bill-wave"></i> Import Expenses
+                </a>
+                @endif
             </div>
         </div>
         @endif
 
         {{-- Freight Export --}}
-        @if($canSeeExportBooking)
+        @if($canSeeExportBooking || $canSeeExportExpense)
         <div class="nav-item-group">
             <div class="nav-section">Freight Export</div>
             <a href="#freightFreightExportMenu" class="nav-link {{ $freightExportActive ? 'active' : '' }}"
@@ -227,10 +239,18 @@
                 <i class="fa fa-chevron-down ms-auto"></i>
             </a>
             <div class="collapse {{ $freightExportActive ? 'show' : '' }}" id="freightFreightExportMenu">
+                @if($canSeeExportBooking)
                 <a href="{{ route('nas-freights.freight-export-bookings.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.freight-export-bookings.*') ? 'active' : '' }}">
                     <i class="fa fa-ship"></i> Freight Export Bookings
                 </a>
+                @endif
+                @if($canSeeExportExpense)
+                <a href="{{ route('nas-freights.export-expenses.index') }}"
+                    class="nav-link ps-4 {{ request()->routeIs('nas-freights.export-expenses.*') ? 'active' : '' }}">
+                    <i class="fa fa-money-bill-wave"></i> Export Expenses
+                </a>
+                @endif
             </div>
         </div>
         @endif
@@ -395,6 +415,18 @@
                     <i class="fa fa-ship"></i> Shipping Carriers
                 </a>
                 @endif
+                @if($canSeeExpenseCategory)
+                <a href="{{ route('nas-freights.settings.expense-categories.index') }}"
+                    class="nav-link ps-4 {{ request()->routeIs('nas-freights.settings.expense-categories.*') ? 'active' : '' }}">
+                    <i class="fa fa-tags"></i> Expense Categories
+                </a>
+                @endif
+                @if($canSeeExpenseHead)
+                <a href="{{ route('nas-freights.settings.expense-heads.index') }}"
+                    class="nav-link ps-4 {{ request()->routeIs('nas-freights.settings.expense-heads.*') ? 'active' : '' }}">
+                    <i class="fa fa-list-ul"></i> Expense Heads
+                </a>
+                @endif
             </div>
         </div>
         @endif
@@ -465,7 +497,19 @@
         { label: 'Overseas Agents',     section: 'Settings',         url: '{{ route("nas-freights.settings.overseas-agents.index") }}',     icon: 'fa-globe' },
         @endif
         @if($canSeeShippingCarrier)
-        { label: 'Shipping Carriers',   section: 'Settings',         url: '{{ route("nas-freights.settings.shipping-carriers.index") }}',   icon: 'fa-ship' },
+        { label: 'Shipping Carriers',   section: 'Settings',         url: '{{ route("nas-freights.settings.shipping-carriers.index") }}',       icon: 'fa-ship' },
+        @endif
+        @if($canSeeImportExpense)
+        { label: 'Import Expenses',     section: 'Freight Import',   url: '{{ route("nas-freights.import-expenses.index") }}',  icon: 'fa-money-bill-wave' },
+        @endif
+        @if($canSeeExportExpense)
+        { label: 'Export Expenses',     section: 'Freight Export',   url: '{{ route("nas-freights.export-expenses.index") }}',  icon: 'fa-money-bill-wave' },
+        @endif
+        @if($canSeeExpenseCategory)
+        { label: 'Expense Categories',  section: 'Settings',         url: '{{ route("nas-freights.settings.expense-categories.index") }}',     icon: 'fa-tags' },
+        @endif
+        @if($canSeeExpenseHead)
+        { label: 'Expense Heads',       section: 'Settings',         url: '{{ route("nas-freights.settings.expense-heads.index") }}',           icon: 'fa-list-ul' },
         @endif
     ];
 

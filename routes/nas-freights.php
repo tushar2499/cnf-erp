@@ -8,7 +8,10 @@ use App\Http\Controllers\NasFreights\CustomerBillController;
 use App\Http\Controllers\NasFreights\CustomerController;
 use App\Http\Controllers\NasFreights\DashboardController;
 use App\Http\Controllers\NasFreights\DueListController;
+use App\Http\Controllers\NasFreights\ExpenseCategoryController;
+use App\Http\Controllers\NasFreights\ExpenseHeadController;
 use App\Http\Controllers\NasFreights\FreightBookingController;
+use App\Http\Controllers\NasFreights\FreightBookingExpenseController;
 use App\Http\Controllers\NasFreights\FreightExportBookingController;
 use App\Http\Controllers\NasFreights\ImportController;
 use App\Http\Controllers\NasFreights\MoneyReceiptController;
@@ -261,4 +264,34 @@ Route::prefix('settings')->name('settings.')->group(function () {
         Route::put('/{shippingCarrier}', [ShippingCarrierController::class, 'update'])->name('update');
         Route::delete('/{shippingCarrier}', [ShippingCarrierController::class, 'destroy'])->name('destroy');
     });
+
+    Route::prefix('expense-categories')->name('expense-categories.')->group(function () {
+        Route::get('/', [ExpenseCategoryController::class, 'index'])->name('index');
+        Route::post('/', [ExpenseCategoryController::class, 'store'])->name('store');
+        Route::put('/{expenseCategory}', [ExpenseCategoryController::class, 'update'])->name('update');
+        Route::delete('/{expenseCategory}', [ExpenseCategoryController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('expense-heads')->name('expense-heads.')->group(function () {
+        Route::get('/', [ExpenseHeadController::class, 'index'])->name('index');
+        Route::get('/{expenseHead}', [ExpenseHeadController::class, 'show'])->name('show');
+        Route::post('/', [ExpenseHeadController::class, 'store'])->name('store');
+        Route::put('/{expenseHead}', [ExpenseHeadController::class, 'update'])->name('update');
+        Route::delete('/{expenseHead}', [ExpenseHeadController::class, 'destroy'])->name('destroy');
+    });
 });
+
+// Import / Export Booking Expenses
+foreach (['import', 'export'] as $_expType) {
+    Route::prefix("{$_expType}-expenses")->name("{$_expType}-expenses.")->group(function () {
+        Route::get('/search-bookings', [FreightBookingExpenseController::class, 'searchBookings'])->name('search-bookings');
+        Route::get('/', [FreightBookingExpenseController::class, 'index'])->name('index');
+        Route::get('/create', [FreightBookingExpenseController::class, 'create'])->name('create');
+        Route::post('/', [FreightBookingExpenseController::class, 'store'])->name('store');
+        Route::get('/{freightBookingExpense}', [FreightBookingExpenseController::class, 'show'])->name('show');
+        Route::get('/{freightBookingExpense}/edit', [FreightBookingExpenseController::class, 'edit'])->name('edit');
+        Route::put('/{freightBookingExpense}', [FreightBookingExpenseController::class, 'update'])->name('update');
+        Route::delete('/{freightBookingExpense}', [FreightBookingExpenseController::class, 'destroy'])->name('destroy');
+    });
+}
+unset($_expType);

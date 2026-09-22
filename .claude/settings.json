@@ -2,7 +2,30 @@
   "permissions": {
     "allow": [
       "Bash(./vendor/bin/pint app/Models/NasFreights/NasFreightsFreightExportBooking.php app/Http/Controllers/NasFreights/FreightExportBookingController.php --format agent)",
-      "Bash(./vendor/bin/pint app/Models/NasFreights/NasFreightsRfq.php app/Models/NasFreights/NasFreightsFreightBooking.php app/Http/Controllers/NasFreights/RfqController.php app/Http/Controllers/NasFreights/FreightBookingController.php --format agent)"
+      "Bash(./vendor/bin/pint app/Models/NasFreights/NasFreightsRfq.php app/Models/NasFreights/NasFreightsFreightBooking.php app/Http/Controllers/NasFreights/RfqController.php app/Http/Controllers/NasFreights/FreightBookingController.php --format agent)",
+      "Bash(grep -E \"\\\\.php$\")",
+      "Bash(awk '{print $1}')",
+      "Bash(php --version)",
+      "Read(//etc/php/**)",
+      "Bash(awk '{print $12}')",
+      "Bash(php -r \"echo opcache_get_status\\(\\) ? 'OPcache enabled' : 'OPcache disabled';\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost/nas-trading/freight-booking-expenses)",
+      "Bash(ls /var/www/html/ | head -10)",
+      "Read(//var/www/html/**)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost/a4bbd-cnf-erp/public/nas-trading/freight-booking-expenses\")",
+      "Bash(curl -sI \"http://localhost/a4bbd-cnf-erp/public/nas-trading/freight-booking-expenses\")",
+      "Bash(php -l app/Http/Controllers/NasTrading/FreightBookingExpenseController.php)",
+      "Bash(php -l app/Http/Controllers/NasTrading/ExpenseCategoryController.php)",
+      "Bash(php -l app/Models/NasTrading/NasTradingFreightBookingExpense.php)",
+      "Bash(php -l app/Models/NasTrading/NasTradingExpenseCategory.php)",
+      "Bash(php -l app/Models/NasTrading/NasTradingFreightBookingExpenseItem.php)",
+      "Bash(php8.3 -r \"echo ini_get\\('opcache.enable'\\) ? 'OPcache enabled' : 'OPcache disabled';\")",
+      "Bash(sudo service apache2 restart)",
+      "Bash(php8.3 -r \"echo 'validate_timestamps: ' . ini_get\\('opcache.validate_timestamps'\\) . PHP_EOL; echo 'revalidate_freq: ' . ini_get\\('opcache.revalidate_freq'\\) . PHP_EOL;\")",
+      "Bash(curl -sI \"http://localhost/a4bbd-cnf-erp/public/nas-trading/dashboard\")",
+      "Bash(git checkout *)",
+      "Bash(grep -n 'protected $table' /var/www/html/a4bbd-cnf-erp/app/Models/NasFreights/NasFreightsBranch.php)"
     ]
   }
 }

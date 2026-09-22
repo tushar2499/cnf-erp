@@ -251,6 +251,32 @@ class PermissionSeeder extends Seeder
             ['company_id' => 2, 'module' => 'Shipping Carriers', 'name' => 'freight.shipping-carrier.edit', 'sorting_order' => 192],
             ['company_id' => 2, 'module' => 'Shipping Carriers', 'name' => 'freight.shipping-carrier.delete', 'sorting_order' => 193],
 
+            // Expense Categories
+            ['company_id' => 2, 'module' => 'Expense Categories', 'name' => 'freight.expense-category.list',   'sorting_order' => 200],
+            ['company_id' => 2, 'module' => 'Expense Categories', 'name' => 'freight.expense-category.create', 'sorting_order' => 201],
+            ['company_id' => 2, 'module' => 'Expense Categories', 'name' => 'freight.expense-category.edit',   'sorting_order' => 202],
+            ['company_id' => 2, 'module' => 'Expense Categories', 'name' => 'freight.expense-category.delete', 'sorting_order' => 203],
+
+            // Expense Heads
+            ['company_id' => 2, 'module' => 'Expense Heads', 'name' => 'freight.expense-head.list',   'sorting_order' => 210],
+            ['company_id' => 2, 'module' => 'Expense Heads', 'name' => 'freight.expense-head.create', 'sorting_order' => 211],
+            ['company_id' => 2, 'module' => 'Expense Heads', 'name' => 'freight.expense-head.edit',   'sorting_order' => 212],
+            ['company_id' => 2, 'module' => 'Expense Heads', 'name' => 'freight.expense-head.delete', 'sorting_order' => 213],
+
+            // Import Booking Expenses
+            ['company_id' => 2, 'module' => 'Import Expenses', 'name' => 'freight.import-expense.list',   'sorting_order' => 220],
+            ['company_id' => 2, 'module' => 'Import Expenses', 'name' => 'freight.import-expense.view',   'sorting_order' => 221],
+            ['company_id' => 2, 'module' => 'Import Expenses', 'name' => 'freight.import-expense.create', 'sorting_order' => 222],
+            ['company_id' => 2, 'module' => 'Import Expenses', 'name' => 'freight.import-expense.edit',   'sorting_order' => 223],
+            ['company_id' => 2, 'module' => 'Import Expenses', 'name' => 'freight.import-expense.delete', 'sorting_order' => 224],
+
+            // Export Booking Expenses
+            ['company_id' => 2, 'module' => 'Export Expenses', 'name' => 'freight.export-expense.list',   'sorting_order' => 225],
+            ['company_id' => 2, 'module' => 'Export Expenses', 'name' => 'freight.export-expense.view',   'sorting_order' => 226],
+            ['company_id' => 2, 'module' => 'Export Expenses', 'name' => 'freight.export-expense.create', 'sorting_order' => 227],
+            ['company_id' => 2, 'module' => 'Export Expenses', 'name' => 'freight.export-expense.edit',   'sorting_order' => 228],
+            ['company_id' => 2, 'module' => 'Export Expenses', 'name' => 'freight.export-expense.delete', 'sorting_order' => 229],
+
             // ── NAS Trading — company_id = 3 ──────────────────────────────
 
             // LCs
