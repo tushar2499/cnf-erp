@@ -122,11 +122,27 @@
                             <input type="text" class="form-control form-control-sm bg-light" value="Auto Entry" readonly>
                         </div>
                         <div class="col-md-3">
+                            <label class="form-label">Invoice No</label>
+                            <input type="text" id="fldInvoiceNo" name="invoice_no" class="form-control form-control-sm" maxlength="100" placeholder="Supplier invoice ref.">
+                        </div>
+                        <div class="col-md-3">
                             <label class="form-label">Bill By</label>
                             <select id="fldBillBy" class="form-select form-select-sm" style="width:100%">
                                 <option value="">Enter Employee Name Or Code (Min 3 chars)</option>
                             </select>
                             <input type="hidden" id="fldBillByName" name="bill_by">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Payment Date</label>
+                            <input type="date" id="fldPaymentDate" name="payment_date" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Money Receipt No</label>
+                            <input type="text" id="fldMoneyReceiptNo" name="money_receipt_no" class="form-control form-control-sm" maxlength="100" placeholder="Receipt number">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Money Receipt Date</label>
+                            <input type="date" id="fldMoneyReceiptDate" name="money_receipt_date" class="form-control form-control-sm">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Note</label>
@@ -470,16 +486,20 @@
                     url: '{{ route('nas-freights.supplier-bills.store') }}',
                     method: 'POST',
                     data: {
-                        _token: CSRF,
-                        from_date: $('#fldFromDate').val(),
-                        to_date: $('#fldToDate').val(),
-                        supplier_id: $('#fldSupplierId').val(),
-                        supplier_name: $('#fldSupplierName').val(),
-                        bill_date: $('#fldBillDate').val(),
-                        bill_by: $('#fldBillByName').val(),
-                        note: $('#fldNote').val(),
-                        total_amount: $('#fldTotalAmountInput').val(),
-                        items: items,
+                        _token:             CSRF,
+                        from_date:          $('#fldFromDate').val(),
+                        to_date:            $('#fldToDate').val(),
+                        supplier_id:        $('#fldSupplierId').val(),
+                        supplier_name:      $('#fldSupplierName').val(),
+                        bill_date:          $('#fldBillDate').val(),
+                        invoice_no:         $('#fldInvoiceNo').val(),
+                        payment_date:       $('#fldPaymentDate').val(),
+                        money_receipt_no:   $('#fldMoneyReceiptNo').val(),
+                        money_receipt_date: $('#fldMoneyReceiptDate').val(),
+                        bill_by:            $('#fldBillByName').val(),
+                        note:               $('#fldNote').val(),
+                        total_amount:       $('#fldTotalAmountInput').val(),
+                        items:              items,
                     },
                 })
                 .done(function(r) {

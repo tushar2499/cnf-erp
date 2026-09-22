@@ -12,14 +12,17 @@ class NasFreightsSupplierBill extends Model
     protected $fillable = [
         'pay_order_no', 'from_date', 'to_date',
         'supplier_id', 'supplier_name',
-        'bill_date', 'bill_by', 'note',
+        'bill_date', 'invoice_no', 'payment_date', 'money_receipt_no', 'money_receipt_date',
+        'bill_by', 'note',
         'branch_id', 'total_amount', 'status', 'entry_by',
     ];
 
     protected $casts = [
-        'from_date' => 'date',
-        'to_date'   => 'date',
-        'bill_date' => 'date',
+        'from_date'          => 'date',
+        'to_date'            => 'date',
+        'bill_date'          => 'date',
+        'payment_date'       => 'date',
+        'money_receipt_date' => 'date',
     ];
 
     public function items()

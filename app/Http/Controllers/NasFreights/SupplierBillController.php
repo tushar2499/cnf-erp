@@ -136,18 +136,22 @@ class SupplierBillController extends Controller
             $total = collect($request->items)->sum('line_amount');
 
             $bill = NasFreightsSupplierBill::create([
-                'branch_id'     => session('nas_freights_branch_id'),
-                'pay_order_no'  => NasFreightsSupplierBill::generatePayOrderNo(),
-                'from_date'     => $request->from_date,
-                'to_date'       => $request->to_date,
-                'supplier_id'   => $request->supplier_id ?: null,
-                'supplier_name' => $request->supplier_name,
-                'bill_date'     => $request->bill_date,
-                'bill_by'       => $request->bill_by,
-                'note'          => $request->note,
-                'total_amount'  => $total,
-                'status'        => 'Draft',
-                'entry_by'      => Auth::user()?->name ?? 'System',
+                'branch_id'          => session('nas_freights_branch_id'),
+                'pay_order_no'       => NasFreightsSupplierBill::generatePayOrderNo(),
+                'from_date'          => $request->from_date,
+                'to_date'            => $request->to_date,
+                'supplier_id'        => $request->supplier_id ?: null,
+                'supplier_name'      => $request->supplier_name,
+                'bill_date'          => $request->bill_date,
+                'invoice_no'         => $request->invoice_no ?: null,
+                'payment_date'       => $request->payment_date ?: null,
+                'money_receipt_no'   => $request->money_receipt_no ?: null,
+                'money_receipt_date' => $request->money_receipt_date ?: null,
+                'bill_by'            => $request->bill_by,
+                'note'               => $request->note,
+                'total_amount'       => $total,
+                'status'             => 'Draft',
+                'entry_by'           => Auth::user()?->name ?? 'System',
             ]);
 
             foreach ($request->items as $item) {
@@ -207,14 +211,18 @@ class SupplierBillController extends Controller
             $total = collect($request->items)->sum('line_amount');
 
             $supplierBill->update([
-                'from_date'     => $request->from_date,
-                'to_date'       => $request->to_date,
-                'supplier_id'   => $request->supplier_id ?: null,
-                'supplier_name' => $request->supplier_name,
-                'bill_date'     => $request->bill_date,
-                'bill_by'       => $request->bill_by,
-                'note'          => $request->note,
-                'total_amount'  => $total,
+                'from_date'          => $request->from_date,
+                'to_date'            => $request->to_date,
+                'supplier_id'        => $request->supplier_id ?: null,
+                'supplier_name'      => $request->supplier_name,
+                'bill_date'          => $request->bill_date,
+                'invoice_no'         => $request->invoice_no ?: null,
+                'payment_date'       => $request->payment_date ?: null,
+                'money_receipt_no'   => $request->money_receipt_no ?: null,
+                'money_receipt_date' => $request->money_receipt_date ?: null,
+                'bill_by'            => $request->bill_by,
+                'note'               => $request->note,
+                'total_amount'       => $total,
             ]);
 
             $supplierBill->items()->delete();

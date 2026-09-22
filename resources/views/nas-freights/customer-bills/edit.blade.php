@@ -79,7 +79,7 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Bill No</label>
-                            <input type="text" class="form-control form-control-sm" value="{{ $customerBill->bill_no }}" readonly>
+                            <input type="text" class="form-control form-control-sm bg-light" value="{{ $customerBill->bill_no }}" readonly>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Bill Type <span class="req">*</span></label>
@@ -91,25 +91,9 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Invoice No</label>
-                            <input type="text" id="fldInvoiceNo" name="invoice_no" class="form-control form-control-sm" maxlength="100" placeholder="Customer invoice ref." value="{{ $customerBill->invoice_no }}">
-                        </div>
-                        <div class="col-md-4">
                             <label class="form-label">Bill By</label>
                             <select id="fldBillBy" class="form-select form-select-sm" style="width:100%"></select>
                             <input type="hidden" id="fldBillByName" name="bill_by" value="{{ $customerBill->bill_by }}">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Payment Date</label>
-                            <input type="date" id="fldPaymentDate" name="payment_date" class="form-control form-control-sm" value="{{ $customerBill->payment_date?->format('Y-m-d') }}">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Money Receipt No</label>
-                            <input type="text" id="fldMoneyReceiptNo" name="money_receipt_no" class="form-control form-control-sm" maxlength="100" placeholder="Receipt number" value="{{ $customerBill->money_receipt_no }}">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Money Receipt Date</label>
-                            <input type="date" id="fldMoneyReceiptDate" name="money_receipt_date" class="form-control form-control-sm" value="{{ $customerBill->money_receipt_date?->format('Y-m-d') }}">
                         </div>
                         <div class="col-12">
                             <label class="form-label">Bill Address</label>
@@ -457,29 +441,25 @@ $('#billForm').on('submit', function (e) {
         url: '{{ route('nas-freights.customer-bills.update', $customerBill->id) }}',
         method: 'POST',
         data: {
-            _token:             CSRF,
-            _method:            'PUT',
-            from_date:          $('#fldFromDate').val(),
-            to_date:            $('#fldToDate').val(),
-            customer_id:        $('#fldCustomerId').val(),
-            customer_name:      $('#fldCustomerName').val(),
-            customer_address:   $('#fldBillAddress').val(),
-            bill_date:          $('#fldBillDate').val(),
-            delivery_type:      $('#fldDeliveryType').val(),
-            invoice_no:         $('#fldInvoiceNo').val(),
-            payment_date:       $('#fldPaymentDate').val(),
-            money_receipt_no:   $('#fldMoneyReceiptNo').val(),
-            money_receipt_date: $('#fldMoneyReceiptDate').val(),
-            tds_percent:        $('#fldTdsPct').val(),
-            tds_amount:         $('#fldTdsAmt').val(),
-            vat_percent:        $('#fldVatPct').val(),
-            vat_amount:         $('#fldVatAmt').val(),
-            total_amount:       $('#fldTotalAmt').val(),
-            bill_type:          $('#fldBillType').val(),
-            bill_by:            $('#fldBillByName').val(),
-            note:               $('#fldNote').val(),
-            sub_total:          $('#fldSubTotal').val(),
-            items:              JSON.stringify(items),
+            _token:           CSRF,
+            _method:          'PUT',
+            from_date:        $('#fldFromDate').val(),
+            to_date:          $('#fldToDate').val(),
+            customer_id:      $('#fldCustomerId').val(),
+            customer_name:    $('#fldCustomerName').val(),
+            customer_address: $('#fldBillAddress').val(),
+            bill_date:        $('#fldBillDate').val(),
+            delivery_type:    $('#fldDeliveryType').val(),
+            tds_percent:      $('#fldTdsPct').val(),
+            tds_amount:       $('#fldTdsAmt').val(),
+            vat_percent:      $('#fldVatPct').val(),
+            vat_amount:       $('#fldVatAmt').val(),
+            total_amount:     $('#fldTotalAmt').val(),
+            bill_type:        $('#fldBillType').val(),
+            bill_by:          $('#fldBillByName').val(),
+            note:             $('#fldNote').val(),
+            sub_total:        $('#fldSubTotal').val(),
+            items:            JSON.stringify(items),
         },
     })
     .done(function (r) {

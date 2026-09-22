@@ -16,10 +16,14 @@ class StoreSupplierBillRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'from_date' => ['required', 'date'],
-            'to_date'   => ['required', 'date'],
-            'bill_date' => ['required', 'date'],
-            'items'     => ['required', 'array', 'min:1'],
+            'from_date'          => ['required', 'date'],
+            'to_date'            => ['required', 'date'],
+            'bill_date'          => ['required', 'date'],
+            'items'              => ['required', 'array', 'min:1'],
+            'invoice_no'         => ['nullable', 'string', 'max:100'],
+            'payment_date'       => ['nullable', 'date'],
+            'money_receipt_no'   => ['nullable', 'string', 'max:100'],
+            'money_receipt_date' => ['nullable', 'date'],
         ];
     }
 

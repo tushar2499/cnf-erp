@@ -70,9 +70,25 @@
                     <input type="text" class="form-control form-control-sm bg-light" value="{{ $supplierBill->pay_order_no }}" readonly>
                 </div>
                 <div class="col-md-3">
+                    <label class="form-label">Invoice No</label>
+                    <input type="text" id="fldInvoiceNo" name="invoice_no" class="form-control form-control-sm" maxlength="100" placeholder="Supplier invoice ref." value="{{ $supplierBill->invoice_no }}">
+                </div>
+                <div class="col-md-3">
                     <label class="form-label">Bill By</label>
                     <select id="fldBillBy" class="form-select form-select-sm" style="width:100%"></select>
                     <input type="hidden" id="fldBillByName" name="bill_by" value="{{ $supplierBill->bill_by }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Payment Date</label>
+                    <input type="date" id="fldPaymentDate" name="payment_date" class="form-control form-control-sm" value="{{ $supplierBill->payment_date?->format('Y-m-d') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Money Receipt No</label>
+                    <input type="text" id="fldMoneyReceiptNo" name="money_receipt_no" class="form-control form-control-sm" maxlength="100" placeholder="Receipt number" value="{{ $supplierBill->money_receipt_no }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Money Receipt Date</label>
+                    <input type="date" id="fldMoneyReceiptDate" name="money_receipt_date" class="form-control form-control-sm" value="{{ $supplierBill->money_receipt_date?->format('Y-m-d') }}">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Note</label>
@@ -347,17 +363,21 @@ $('#billForm').on('submit', function (e) {
         url: '{{ route('nas-freights.supplier-bills.update', $supplierBill->id) }}',
         method: 'POST',
         data: {
-            _token:        CSRF,
-            _method:       'PUT',
-            from_date:     $('#fldFromDate').val(),
-            to_date:       $('#fldToDate').val(),
-            supplier_id:   $('#fldSupplierId').val(),
-            supplier_name: $('#fldSupplierName').val(),
-            bill_date:     $('#fldBillDate').val(),
-            bill_by:       $('#fldBillByName').val(),
-            note:          $('#fldNote').val(),
-            total_amount:  $('#fldTotalAmountInput').val(),
-            items:         items,
+            _token:             CSRF,
+            _method:            'PUT',
+            from_date:          $('#fldFromDate').val(),
+            to_date:            $('#fldToDate').val(),
+            supplier_id:        $('#fldSupplierId').val(),
+            supplier_name:      $('#fldSupplierName').val(),
+            bill_date:          $('#fldBillDate').val(),
+            invoice_no:         $('#fldInvoiceNo').val(),
+            payment_date:       $('#fldPaymentDate').val(),
+            money_receipt_no:   $('#fldMoneyReceiptNo').val(),
+            money_receipt_date: $('#fldMoneyReceiptDate').val(),
+            bill_by:            $('#fldBillByName').val(),
+            note:               $('#fldNote').val(),
+            total_amount:       $('#fldTotalAmountInput').val(),
+            items:              items,
         },
     })
     .done(function (r) {

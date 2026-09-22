@@ -13,7 +13,6 @@ class NasFreightsCustomerBill extends Model
         'bill_no', 'from_date', 'to_date',
         'customer_id', 'customer_name', 'customer_address',
         'bill_date', 'delivery_no', 'delivery_type',
-        'invoice_no', 'payment_date', 'money_receipt_no', 'money_receipt_date',
         'tds_percent', 'tds_amount',
         'vat_percent', 'vat_amount',
         'bill_type', 'bill_by', 'note',
@@ -21,11 +20,9 @@ class NasFreightsCustomerBill extends Model
     ];
 
     protected $casts = [
-        'from_date'          => 'date',
-        'to_date'            => 'date',
-        'bill_date'          => 'date',
-        'payment_date'       => 'date',
-        'money_receipt_date' => 'date',
+        'from_date' => 'date',
+        'to_date'   => 'date',
+        'bill_date' => 'date',
     ];
 
     public function items()
