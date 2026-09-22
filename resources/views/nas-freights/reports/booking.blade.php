@@ -165,6 +165,7 @@
                         <th>Customer</th>
                         <th>Supplier</th>
                         <th>Cover Van Details</th>
+                        <th>Challan No</th>
                         <th>Location</th>
                         <th class="text-end">Supplier Rate</th>
                         <th class="text-end">Customer Rate</th>
@@ -192,6 +193,7 @@
                             <td>{{ $b?->customer_name }}</td>
                             <td>{{ $item->supplier_name }}</td>
                             <td>{{ $item->cover_van_no }}</td>
+                            <td>{{ $item->challan_no ?? '—' }}</td>
                             <td>{{ $loc }}</td>
                             <td class="text-end">{{ number_format($item->supplier_rate, 2) }}</td>
                             <td class="text-end">{{ number_format($item->customer_rate, 2) }}</td>
@@ -210,7 +212,7 @@
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="9" class="text-end">Total</td>
+                        <td colspan="10" class="text-end">Total</td>
                         <td class="text-end">{{ number_format($totalSupplier, 2) }}</td>
                         <td class="text-end">{{ number_format($totalCustomer, 2) }}</td>
                         <td class="text-end">{{ number_format($totalProfit, 2) }}</td>

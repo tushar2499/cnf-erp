@@ -31,22 +31,24 @@
     </div>
     <div class="card-body">
         <div class="row g-3">
+            {{-- Row 1: identification --}}
             <div class="col-md-3">
                 <div class="info-label">Bill No</div>
                 <div class="info-val">{{ $customerBill->bill_no }}</div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-label">Invoice No</div>
+                <div class="info-val">{{ $customerBill->invoice_no ?: '—' }}</div>
             </div>
             <div class="col-md-3">
                 <div class="info-label">Bill Date</div>
                 <div class="info-val">{{ $customerBill->bill_date?->format('d-M-Y') }}</div>
             </div>
             <div class="col-md-3">
-                <div class="info-label">From Date</div>
-                <div class="info-val">{{ $customerBill->from_date?->format('d-M-Y') }}</div>
+                <div class="info-label">From — To Date</div>
+                <div class="info-val">{{ $customerBill->from_date?->format('d-M-Y') }} &mdash; {{ $customerBill->to_date?->format('d-M-Y') }}</div>
             </div>
-            <div class="col-md-3">
-                <div class="info-label">To Date</div>
-                <div class="info-val">{{ $customerBill->to_date?->format('d-M-Y') }}</div>
-            </div>
+            {{-- Row 2: parties --}}
             <div class="col-md-3">
                 <div class="info-label">Customer</div>
                 <div class="info-val">{{ $customerBill->customer_name ?: '—' }}</div>
@@ -63,6 +65,32 @@
                 <div class="info-label">Bill By</div>
                 <div class="info-val">{{ $customerBill->bill_by ?: '—' }}</div>
             </div>
+            {{-- Row 3: payment tracking --}}
+            <div class="col-md-3">
+                <div class="info-label">Payment Date</div>
+                <div class="info-val">{{ $customerBill->payment_date?->format('d-M-Y') ?: '—' }}</div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-label">Money Receipt No</div>
+                <div class="info-val">{{ $customerBill->money_receipt_no ?: '—' }}</div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-label">Money Receipt Date</div>
+                <div class="info-val">{{ $customerBill->money_receipt_date?->format('d-M-Y') ?: '—' }}</div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-label">Status</div>
+                <div class="info-val">
+                    @if($customerBill->status === 'Approved')
+                        <span class="badge bg-success">APPROVED</span>
+                    @elseif($customerBill->status === 'Submitted')
+                        <span class="badge bg-warning text-dark">SUBMITTED</span>
+                    @else
+                        <span class="badge bg-secondary">DRAFT</span>
+                    @endif
+                </div>
+            </div>
+            {{-- Row 4: financials --}}
             <div class="col-md-3">
                 <div class="info-label">TDS %</div>
                 <div class="info-val">{{ $customerBill->tds_percent }}</div>
@@ -79,18 +107,7 @@
                 <div class="info-label">Total Amount</div>
                 <div class="info-val fw-bold text-success fs-6">{{ number_format($customerBill->total_amount, 2) }}</div>
             </div>
-            <div class="col-md-3">
-                <div class="info-label">Status</div>
-                <div class="info-val">
-                    @if($customerBill->status === 'Approved')
-                        <span class="badge bg-success">APPROVED</span>
-                    @elseif($customerBill->status === 'Submitted')
-                        <span class="badge bg-warning text-dark">SUBMITTED</span>
-                    @else
-                        <span class="badge bg-secondary">DRAFT</span>
-                    @endif
-                </div>
-            </div>
+            {{-- Optional long fields --}}
             @if($customerBill->customer_address)
             <div class="col-md-6">
                 <div class="info-label">Bill Address</div>
