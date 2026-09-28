@@ -13,6 +13,7 @@ use App\Http\Requests\NasFreights\FreightExportBooking\UpdateFreightExportBookin
 use App\Models\Employee;
 use App\Models\NasFreights\NasFreightsContainerType;
 use App\Models\NasFreights\NasFreightsCustomer;
+use App\Models\NasFreights\NasFreightsFreightBookingExpense;
 use App\Models\NasFreights\NasFreightsFreightExportBooking;
 use App\Models\NasFreights\NasFreightsOverseasAgent;
 use App\Models\NasFreights\NasFreightsPackageType;
@@ -42,37 +43,65 @@ class FreightExportBookingController extends Controller
 
         if ($request->ajax()) {
             $fromDate = $request->input('from_date');
-            $toDate   = $request->input('to_date');
+            $toDate = $request->input('to_date');
+
+            $canAddExpense = $request->user()->hasPermission('freight.export-expense.create');
+            $canManageTransport = $request->user()->hasPermission('freight.export-booking.transport-manage');
 
             $query = NasFreightsFreightExportBooking::with(['customer', 'shippingCarrier'])
                 ->where('branch_id', session('nas_freights_branch_id'))
-                ->when($request->status_filter, fn($q, $s) => $q->where('status', $s))
-                ->when($fromDate, fn($q) => $q->whereDate('booking_date', '>=', $fromDate))
-                ->when($toDate, fn($q) => $q->whereDate('booking_date', '<=', $toDate))
+                ->when($request->status_filter, fn ($q, $s) => $q->where('status', $s))
+                ->when($fromDate, fn ($q) => $q->whereDate('booking_date', '>=', $fromDate))
+                ->when($toDate, fn ($q) => $q->whereDate('booking_date', '<=', $toDate))
                 ->latest();
 
             return DataTables::of($query)
                 ->addIndexColumn()
-                ->editColumn('booking_date', fn($r) => $r->booking_date?->format('d M Y') ?? '—')
-                ->addColumn('customer_name', fn($r) => $r->customer?->name ?? '—')
-                ->addColumn('export_bl_no', fn($r) => $r->export_bl_no ?? '—')
-                ->addColumn('route', fn($r) => ($r->pol ?? '—') . ' → ' . ($r->pod ?? '—'))
-                ->addColumn('carrier', fn($r) => $r->shippingCarrier?->name ?? '—')
-                ->addColumn('status_badge', fn($r) => match ($r->status) {
+                ->editColumn('booking_date', fn ($r) => $r->booking_date?->format('d M Y') ?? '—')
+                ->addColumn('customer_name', fn ($r) => $r->customer?->name ?? '—')
+                ->addColumn('export_bl_no', fn ($r) => $r->export_bl_no ?? '—')
+                ->addColumn('route', fn ($r) => ($r->pol ?? '—').' → '.($r->pod ?? '—'))
+                ->addColumn('carrier', fn ($r) => $r->shippingCarrier?->name ?? '—')
+                ->addColumn('transport_amount', fn ($r) => $r->transport_amount > 0 ? number_format($r->transport_amount, 2) : '—')
+                ->addColumn('expense_amount', function ($r) {
+                    $total = NasFreightsFreightBookingExpense::where('booking_type', 'export')
+                        ->where('booking_id', $r->id)
+                        ->sum('total_expense_amount');
+
+                    return $total > 0 ? number_format($total, 2) : '—';
+                })
+                ->addColumn('status_badge', fn ($r) => match ($r->status) {
                     'Confirmed'  => '<span class="badge bg-success">Confirmed</span>',
                     'In-Transit' => '<span class="badge bg-info text-dark">In-Transit</span>',
                     'Delivered'  => '<span class="badge bg-primary">Delivered</span>',
                     'Cancelled'  => '<span class="badge bg-danger">Cancelled</span>',
                     default      => '<span class="badge bg-secondary">Draft</span>',
                 })
-                ->addColumn('action', fn($r) => '
-                    <a href="' . route('nas-freights.freight-export-bookings.show', $r->id) . '" class="btn btn-sm btn-outline-info py-0 px-1" title="View"><i class="fa fa-eye"></i></a>
-                    <a href="' . route('nas-freights.freight-export-bookings.edit', $r->id) . '" class="btn btn-sm btn-outline-primary py-0 px-1" title="Edit"><i class="fa fa-edit"></i></a>
-                    <button class="btn btn-sm btn-outline-danger py-0 px-1 btn-delete"
-                        data-url="' . route('nas-freights.freight-export-bookings.destroy', $r->id) . '"
-                        data-name="' . e($r->export_booking_no) . '"><i class="fa fa-trash"></i></button>')
-                ->filterColumn('customer_name', fn($q, $k) => $q->whereHas('customer', fn($s) => $s->where('name', 'like', "%{$k}%")))
-                ->filterColumn('export_bl_no', fn($q, $k) => $q->where('export_bl_no', 'like', "%{$k}%"))
+                ->addColumn('action', function ($r) use ($canAddExpense, $canManageTransport) {
+                    $html = '<div class="d-flex flex-nowrap gap-1">';
+
+                    if ($canAddExpense) {
+                        $expenseUrl = route('nas-freights.export-expenses.create', ['booking_id' => $r->id]);
+                        $html .= '<a href="'.$expenseUrl.'" class="btn btn-sm btn-outline-success py-0 px-1" title="Add Expense"><i class="fa fa-receipt"></i></a>';
+                    }
+
+                    if ($canManageTransport) {
+                        $transportUrl = route('nas-freights.freight-export-bookings.transport.edit', $r->id);
+                        $html .= '<a href="'.$transportUrl.'" class="btn btn-sm btn-outline-warning py-0 px-1" title="Transport"><i class="fa fa-truck"></i></a>';
+                    }
+
+                    $html .= '<a href="'.route('nas-freights.freight-export-bookings.show', $r->id).'" class="btn btn-sm btn-outline-info py-0 px-1" title="View"><i class="fa fa-eye"></i></a>'
+                    .'<a href="'.route('nas-freights.freight-export-bookings.edit', $r->id).'" class="btn btn-sm btn-outline-primary py-0 px-1" title="Edit"><i class="fa fa-edit"></i></a>'
+                    .'<button class="btn btn-sm btn-outline-danger py-0 px-1 btn-delete"'
+                    .' data-url="'.route('nas-freights.freight-export-bookings.destroy', $r->id).'"'
+                    .' data-name="'.e($r->export_booking_no).'"><i class="fa fa-trash"></i></button>';
+
+                    $html .= '</div>';
+
+                    return $html;
+                })
+                ->filterColumn('customer_name', fn ($q, $k) => $q->whereHas('customer', fn ($s) => $s->where('name', 'like', "%{$k}%")))
+                ->filterColumn('export_bl_no', fn ($q, $k) => $q->where('export_bl_no', 'like', "%{$k}%"))
                 ->rawColumns(['status_badge', 'action'])
                 ->make(true);
         }
@@ -104,7 +133,7 @@ class FreightExportBookingController extends Controller
 
     public function show(ShowFreightExportBookingRequest $request, NasFreightsFreightExportBooking $exportBooking)
     {
-        $exportBooking->load(['customer', 'salesperson', 'overseasAgent', 'shippingCarrier', 'items']);
+        $exportBooking->load(['customer', 'salesperson', 'overseasAgent', 'shippingCarrier', 'items', 'transportItems']);
 
         return view('nas-freights.freight-export-bookings.show', compact('exportBooking'));
     }
@@ -112,7 +141,7 @@ class FreightExportBookingController extends Controller
     public function edit(EditFreightExportBookingRequest $request, NasFreightsFreightExportBooking $exportBooking)
     {
         $exportBooking->load(['items', 'overseasAgent', 'shippingCarrier']);
-        $existingItems = $exportBooking->items->map(fn($i) => [
+        $existingItems = $exportBooking->items->map(fn ($i) => [
             'item_type'          => $i->item_type,
             'container_size'     => $i->container_size,
             'container_no'       => $i->container_no,
@@ -144,14 +173,14 @@ class FreightExportBookingController extends Controller
             $this->saveItems($exportBooking, $request->input('items', []));
         });
 
-        return redirect()->route('nas-freights.freight-export-bookings.index')->with('success', 'Freight Export Booking ' . $exportBooking->export_booking_no . ' updated.');
+        return redirect()->route('nas-freights.freight-export-bookings.index')->with('success', 'Freight Export Booking '.$exportBooking->export_booking_no.' updated.');
     }
 
     public function destroy(DestroyFreightExportBookingRequest $request, NasFreightsFreightExportBooking $exportBooking)
     {
         $exportBooking->delete();
 
-        return response()->json(['message' => 'Freight Export Booking ' . $exportBooking->export_booking_no . ' deleted.']);
+        return response()->json(['message' => 'Freight Export Booking '.$exportBooking->export_booking_no.' deleted.']);
     }
 
     public function searchCustomers(Request $request)
@@ -159,12 +188,12 @@ class FreightExportBookingController extends Controller
         $q = $request->get('q', '');
 
         return response()->json(
-            NasFreightsCustomer::where('name', 'like', '%' . $q . '%')
-                ->orWhere('customer_id', 'like', '%' . $q . '%')
+            NasFreightsCustomer::where('name', 'like', '%'.$q.'%')
+                ->orWhere('customer_id', 'like', '%'.$q.'%')
                 ->limit(20)
                 ->select(['id', 'name', 'customer_id', 'address'])
                 ->get()
-                ->map(fn($c) => ['id' => $c->id, 'text' => $c->customer_id . ' — ' . $c->name, 'name' => $c->name, 'address' => $c->address])
+                ->map(fn ($c) => ['id' => $c->id, 'text' => $c->customer_id.' — '.$c->name, 'name' => $c->name, 'address' => $c->address])
         );
     }
 
@@ -190,10 +219,10 @@ class FreightExportBookingController extends Controller
 
         return response()->json([
             'id'      => $customer->id,
-            'text'    => $customer->customer_id . ' — ' . $customer->name,
+            'text'    => $customer->customer_id.' — '.$customer->name,
             'name'    => $customer->name,
             'address' => $customer->address ?? '',
-            'message' => 'Customer "' . $customer->name . '" created successfully.',
+            'message' => 'Customer "'.$customer->name.'" created successfully.',
         ]);
     }
 
@@ -202,12 +231,12 @@ class FreightExportBookingController extends Controller
         $q = $request->get('q', '');
 
         return response()->json(
-            Employee::where('name', 'like', '%' . $q . '%')
+            Employee::where('name', 'like', '%'.$q.'%')
                 ->where('is_active', true)
                 ->limit(20)
                 ->select(['id', 'name', 'code'])
                 ->get()
-                ->map(fn($e) => ['id' => $e->id, 'text' => $e->name])
+                ->map(fn ($e) => ['id' => $e->id, 'text' => $e->name])
         );
     }
 
@@ -217,12 +246,12 @@ class FreightExportBookingController extends Controller
 
         return response()->json(
             NasFreightsOverseasAgent::where('is_active', true)
-                ->where(fn($query) => $query->where('name', 'like', '%' . $q . '%')
-                        ->orWhere('agent_code', 'like', '%' . $q . '%')
-                        ->orWhere('country', 'like', '%' . $q . '%'))
+                ->where(fn ($query) => $query->where('name', 'like', '%'.$q.'%')
+                    ->orWhere('agent_code', 'like', '%'.$q.'%')
+                    ->orWhere('country', 'like', '%'.$q.'%'))
                 ->limit(20)
                 ->get(['id', 'agent_code', 'name', 'country', 'city'])
-                ->map(fn($a) => ['id' => $a->id, 'text' => $a->agent_code . ' — ' . $a->name . ' (' . $a->country . ')'])
+                ->map(fn ($a) => ['id' => $a->id, 'text' => $a->agent_code.' — '.$a->name.' ('.$a->country.')'])
         );
     }
 
@@ -232,12 +261,12 @@ class FreightExportBookingController extends Controller
 
         return response()->json(
             NasFreightsShippingCarrier::where('is_active', true)
-                ->where(fn($query) => $query->where('name', 'like', '%' . $q . '%')
-                        ->orWhere('carrier_code', 'like', '%' . $q . '%')
-                        ->orWhere('scac_code', 'like', '%' . $q . '%'))
+                ->where(fn ($query) => $query->where('name', 'like', '%'.$q.'%')
+                    ->orWhere('carrier_code', 'like', '%'.$q.'%')
+                    ->orWhere('scac_code', 'like', '%'.$q.'%'))
                 ->limit(20)
                 ->get(['id', 'carrier_code', 'name', 'scac_code'])
-                ->map(fn($c) => ['id' => $c->id, 'text' => $c->carrier_code . ' — ' . $c->name . ($c->scac_code ? ' (' . $c->scac_code . ')' : '')])
+                ->map(fn ($c) => ['id' => $c->id, 'text' => $c->carrier_code.' — '.$c->name.($c->scac_code ? ' ('.$c->scac_code.')' : '')])
         );
     }
 
@@ -291,11 +320,10 @@ class FreightExportBookingController extends Controller
                 'weight_unit'        => $item['weight_unit'] ?? 'KG',
                 'volume_cbm'         => is_numeric($item['volume_cbm'] ?? '') ? $item['volume_cbm'] : null,
                 'country_of_origin'  => $item['country_of_origin'] ?? null,
-                'is_dangerous_goods' => !empty($item['is_dangerous_goods']),
+                'is_dangerous_goods' => ! empty($item['is_dangerous_goods']),
                 'special_handling'   => $item['special_handling'] ?? null,
             ]);
         }
 
     }
-
 }

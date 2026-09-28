@@ -25,7 +25,12 @@
       "Bash(php8.3 -r \"echo 'validate_timestamps: ' . ini_get\\('opcache.validate_timestamps'\\) . PHP_EOL; echo 'revalidate_freq: ' . ini_get\\('opcache.revalidate_freq'\\) . PHP_EOL;\")",
       "Bash(curl -sI \"http://localhost/a4bbd-cnf-erp/public/nas-trading/dashboard\")",
       "Bash(git checkout *)",
-      "Bash(grep -n 'protected $table' /var/www/html/a4bbd-cnf-erp/app/Models/NasFreights/NasFreightsBranch.php)"
+      "Bash(grep -n 'protected $table' /var/www/html/a4bbd-cnf-erp/app/Models/NasFreights/NasFreightsBranch.php)",
+      "Bash(./vendor/bin/pint --dirty --format agent app/Http/Controllers/NasFreights/FreightExportBookingController.php app/Http/Controllers/NasFreights/FreightBookingExpenseController.php)",
+      "Bash(git stash *)",
+      "Bash(./vendor/bin/pint --dirty --format agent app/Http/Requests/NasFreights/FreightBookingExpense/StoreFreightBookingExpenseRequest.php app/Http/Requests/NasFreights/FreightBookingExpense/UpdateFreightBookingExpenseRequest.php)",
+      "Bash(php -l app/Http/Controllers/NasFreights/FreightExportBookingTransportController.php)",
+      "Bash(php -l app/Models/NasFreights/NasFreightsFreightExportBookingTransportItem.php)"
     ]
   }
 }

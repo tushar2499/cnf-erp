@@ -21,7 +21,7 @@ class NasFreightsFreightExportBooking extends Model
         'commodity_description', 'vessel_name', 'voyage_no', 'export_bl_no', 'bl_date', 'booking_note_no',
         'transport_doc_type', 'transport_doc_no', 'transport_doc_date',
         'exp_no', 'exp_date', 'invoice_no', 'invoice_date', 'lc_no',
-        'etd', 'eta', 'status', 'remarks',
+        'etd', 'eta', 'status', 'remarks', 'transport_amount',
     ];
 
     protected function casts(): array
@@ -61,6 +61,11 @@ class NasFreightsFreightExportBooking extends Model
     public function items(): HasMany
     {
         return $this->hasMany(NasFreightsFreightExportBookingItem::class, 'export_booking_id');
+    }
+
+    public function transportItems(): HasMany
+    {
+        return $this->hasMany(NasFreightsFreightExportBookingTransportItem::class, 'export_booking_id');
     }
 
     public static function generateExportBookingNo(): string

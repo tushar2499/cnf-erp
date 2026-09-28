@@ -98,13 +98,32 @@ class FreightBookingExpenseController extends Controller
             ->orderBy('name')
             ->get(['id', 'code', 'name']);
 
+        $prefillBooking = null;
+
+        if ($request->booking_id && $bookingType === 'export') {
+            $booking = NasFreightsFreightExportBooking::where('id', $request->booking_id)
+                ->where('branch_id', session('nas_freights_branch_id'))
+                ->first(['id', 'export_booking_no', 'export_bl_no', 'invoice_no']);
+
+            if ($booking) {
+                $prefillBooking = [
+                    'id'                => $booking->id,
+                    'booking_no'        => $booking->export_booking_no,
+                    'bl_no'             => $booking->export_bl_no,
+                    'invoice_no'        => $booking->invoice_no,
+                    'invoice_value_usd' => null,
+                ];
+            }
+        }
+
         return view('nas-freights.freight-booking-expenses.create', [
-            'expense'      => null,
-            'expenseHeads' => $expenseHeads,
-            'employees'    => $employees,
-            'bookingType'  => $bookingType,
-            'routePrefix'  => $routePrefix,
-            'today'        => now()->format('Y-m-d'),
+            'expense'        => null,
+            'expenseHeads'   => $expenseHeads,
+            'employees'      => $employees,
+            'bookingType'    => $bookingType,
+            'routePrefix'    => $routePrefix,
+            'today'          => now()->format('Y-m-d'),
+            'prefillBooking' => $prefillBooking,
         ]);
     }
 
@@ -177,12 +196,13 @@ class FreightBookingExpenseController extends Controller
             ->get(['id', 'code', 'name']);
 
         return view('nas-freights.freight-booking-expenses.create', [
-            'expense'      => $freightBookingExpense,
-            'expenseHeads' => $expenseHeads,
-            'employees'    => $employees,
-            'bookingType'  => $bookingType,
-            'routePrefix'  => $routePrefix,
-            'today'        => now()->format('Y-m-d'),
+            'expense'        => $freightBookingExpense,
+            'expenseHeads'   => $expenseHeads,
+            'employees'      => $employees,
+            'bookingType'    => $bookingType,
+            'routePrefix'    => $routePrefix,
+            'today'          => now()->format('Y-m-d'),
+            'prefillBooking' => null,
         ]);
     }
 

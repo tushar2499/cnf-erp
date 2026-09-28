@@ -13,6 +13,7 @@ use App\Http\Controllers\NasFreights\ExpenseHeadController;
 use App\Http\Controllers\NasFreights\FreightBookingController;
 use App\Http\Controllers\NasFreights\FreightBookingExpenseController;
 use App\Http\Controllers\NasFreights\FreightExportBookingController;
+use App\Http\Controllers\NasFreights\FreightExportBookingTransportController;
 use App\Http\Controllers\NasFreights\ImportController;
 use App\Http\Controllers\NasFreights\MoneyReceiptController;
 use App\Http\Controllers\NasFreights\OverseasAgentController;
@@ -71,6 +72,8 @@ Route::prefix('freight-export-bookings')->name('freight-export-bookings.')->grou
     Route::get('/search-employees', [FreightExportBookingController::class, 'searchEmployees'])->name('search-employees');
     Route::get('/search-overseas-agents', [FreightExportBookingController::class, 'searchOverseasAgents'])->name('search-overseas-agents');
     Route::get('/search-shipping-carriers', [FreightExportBookingController::class, 'searchShippingCarriers'])->name('search-shipping-carriers');
+    Route::get('/transport/search-vehicles', [FreightExportBookingTransportController::class, 'searchVehicles'])->name('transport.search-vehicles');
+    Route::get('/transport/search-suppliers', [FreightExportBookingTransportController::class, 'searchSuppliers'])->name('transport.search-suppliers');
     Route::get('/', [FreightExportBookingController::class, 'index'])->name('index');
     Route::get('/create', [FreightExportBookingController::class, 'create'])->name('create');
     Route::post('/', [FreightExportBookingController::class, 'store'])->name('store');
@@ -78,6 +81,8 @@ Route::prefix('freight-export-bookings')->name('freight-export-bookings.')->grou
     Route::get('/{exportBooking}/edit', [FreightExportBookingController::class, 'edit'])->name('edit');
     Route::put('/{exportBooking}', [FreightExportBookingController::class, 'update'])->name('update');
     Route::delete('/{exportBooking}', [FreightExportBookingController::class, 'destroy'])->name('destroy');
+    Route::get('/{exportBooking}/transport', [FreightExportBookingTransportController::class, 'edit'])->name('transport.edit');
+    Route::put('/{exportBooking}/transport', [FreightExportBookingTransportController::class, 'update'])->name('transport.update');
 });
 
 // Transport Bookings

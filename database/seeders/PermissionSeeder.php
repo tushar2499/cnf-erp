@@ -11,7 +11,7 @@ class PermissionSeeder extends Seeder
     {
         $permissions = [
 
-            // ── System (company_id = null) ─────────────────────────────────
+// ── System (company_id = null) ─────────────────────────────────
 
             // Admin Users
             ['company_id' => null, 'module' => 'Admin Users', 'name' => 'admin.users.list', 'sorting_order' => 10],
@@ -45,7 +45,7 @@ class PermissionSeeder extends Seeder
             ['company_id' => null, 'module' => 'Designations', 'name' => 'admin.designations.edit', 'sorting_order' => 52],
             ['company_id' => null, 'module' => 'Designations', 'name' => 'admin.designations.delete', 'sorting_order' => 53],
 
-            // ── Chevron Lines (C&F) — company_id = 1 ──────────────────────
+// ── Chevron Lines (C&F) — company_id = 1 ──────────────────────
 
             // Jobs
             ['company_id' => 1, 'module' => 'Jobs', 'name' => 'cnf.job.list', 'sorting_order' => 10],
@@ -131,7 +131,7 @@ class PermissionSeeder extends Seeder
             // Reports
             ['company_id' => 1, 'module' => 'Reports', 'name' => 'cnf.report.job-expense-summary', 'sorting_order' => 140],
 
-            // ── NAS Freights — company_id = 2 ─────────────────────────────
+// ── NAS Freights — company_id = 2 ─────────────────────────────
 
             // RFQ
             ['company_id' => 2, 'module' => 'RFQ', 'name' => 'freight.rfq.list', 'sorting_order' => 10],
@@ -155,6 +155,7 @@ class PermissionSeeder extends Seeder
             ['company_id' => 2, 'module' => 'Freight Export Bookings', 'name' => 'freight.export-booking.create', 'sorting_order' => 32],
             ['company_id' => 2, 'module' => 'Freight Export Bookings', 'name' => 'freight.export-booking.edit', 'sorting_order' => 33],
             ['company_id' => 2, 'module' => 'Freight Export Bookings', 'name' => 'freight.export-booking.delete', 'sorting_order' => 34],
+            ['company_id' => 2, 'module' => 'Freight Export Bookings', 'name' => 'freight.export-booking.transport-manage', 'sorting_order' => 36],
 
             // Transport Bookings
             ['company_id' => 2, 'module' => 'Transport Bookings', 'name' => 'freight.booking.list', 'sorting_order' => 40],
@@ -252,32 +253,32 @@ class PermissionSeeder extends Seeder
             ['company_id' => 2, 'module' => 'Shipping Carriers', 'name' => 'freight.shipping-carrier.delete', 'sorting_order' => 193],
 
             // Expense Categories
-            ['company_id' => 2, 'module' => 'Expense Categories', 'name' => 'freight.expense-category.list',   'sorting_order' => 200],
+            ['company_id' => 2, 'module' => 'Expense Categories', 'name' => 'freight.expense-category.list', 'sorting_order' => 200],
             ['company_id' => 2, 'module' => 'Expense Categories', 'name' => 'freight.expense-category.create', 'sorting_order' => 201],
-            ['company_id' => 2, 'module' => 'Expense Categories', 'name' => 'freight.expense-category.edit',   'sorting_order' => 202],
+            ['company_id' => 2, 'module' => 'Expense Categories', 'name' => 'freight.expense-category.edit', 'sorting_order' => 202],
             ['company_id' => 2, 'module' => 'Expense Categories', 'name' => 'freight.expense-category.delete', 'sorting_order' => 203],
 
             // Expense Heads
-            ['company_id' => 2, 'module' => 'Expense Heads', 'name' => 'freight.expense-head.list',   'sorting_order' => 210],
+            ['company_id' => 2, 'module' => 'Expense Heads', 'name' => 'freight.expense-head.list', 'sorting_order' => 210],
             ['company_id' => 2, 'module' => 'Expense Heads', 'name' => 'freight.expense-head.create', 'sorting_order' => 211],
-            ['company_id' => 2, 'module' => 'Expense Heads', 'name' => 'freight.expense-head.edit',   'sorting_order' => 212],
+            ['company_id' => 2, 'module' => 'Expense Heads', 'name' => 'freight.expense-head.edit', 'sorting_order' => 212],
             ['company_id' => 2, 'module' => 'Expense Heads', 'name' => 'freight.expense-head.delete', 'sorting_order' => 213],
 
             // Import Booking Expenses
-            ['company_id' => 2, 'module' => 'Import Expenses', 'name' => 'freight.import-expense.list',   'sorting_order' => 220],
-            ['company_id' => 2, 'module' => 'Import Expenses', 'name' => 'freight.import-expense.view',   'sorting_order' => 221],
+            ['company_id' => 2, 'module' => 'Import Expenses', 'name' => 'freight.import-expense.list', 'sorting_order' => 220],
+            ['company_id' => 2, 'module' => 'Import Expenses', 'name' => 'freight.import-expense.view', 'sorting_order' => 221],
             ['company_id' => 2, 'module' => 'Import Expenses', 'name' => 'freight.import-expense.create', 'sorting_order' => 222],
-            ['company_id' => 2, 'module' => 'Import Expenses', 'name' => 'freight.import-expense.edit',   'sorting_order' => 223],
+            ['company_id' => 2, 'module' => 'Import Expenses', 'name' => 'freight.import-expense.edit', 'sorting_order' => 223],
             ['company_id' => 2, 'module' => 'Import Expenses', 'name' => 'freight.import-expense.delete', 'sorting_order' => 224],
 
             // Export Booking Expenses
-            ['company_id' => 2, 'module' => 'Export Expenses', 'name' => 'freight.export-expense.list',   'sorting_order' => 225],
-            ['company_id' => 2, 'module' => 'Export Expenses', 'name' => 'freight.export-expense.view',   'sorting_order' => 226],
+            ['company_id' => 2, 'module' => 'Export Expenses', 'name' => 'freight.export-expense.list', 'sorting_order' => 225],
+            ['company_id' => 2, 'module' => 'Export Expenses', 'name' => 'freight.export-expense.view', 'sorting_order' => 226],
             ['company_id' => 2, 'module' => 'Export Expenses', 'name' => 'freight.export-expense.create', 'sorting_order' => 227],
-            ['company_id' => 2, 'module' => 'Export Expenses', 'name' => 'freight.export-expense.edit',   'sorting_order' => 228],
+            ['company_id' => 2, 'module' => 'Export Expenses', 'name' => 'freight.export-expense.edit', 'sorting_order' => 228],
             ['company_id' => 2, 'module' => 'Export Expenses', 'name' => 'freight.export-expense.delete', 'sorting_order' => 229],
 
-            // ── NAS Trading — company_id = 3 ──────────────────────────────
+// ── NAS Trading — company_id = 3 ──────────────────────────────
 
             // LCs
             ['company_id' => 3, 'module' => 'LCs', 'name' => 'lcs.list', 'sorting_order' => 10],
@@ -298,4 +299,5 @@ class PermissionSeeder extends Seeder
         }
 
     }
+
 }

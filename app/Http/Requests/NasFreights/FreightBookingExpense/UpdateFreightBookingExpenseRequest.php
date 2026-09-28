@@ -19,7 +19,7 @@ class UpdateFreightBookingExpenseRequest extends FormRequest
             'date'                      => 'required|date',
             'employee_id'               => 'nullable|exists:nas_freights_employees,id',
             'rows'                      => 'required|array|min:1',
-            'rows.*.expense_head_id'    => 'required|exists:nas_freights_expense_heads,id',
+            'rows.*.expense_head_id'    => 'required|exists:nas_freights_expense_heads,id|distinct',
             'rows.*.expense_amount'     => 'required|numeric|min:0',
             'rows.*.approved_amount'    => 'nullable|numeric|min:0',
             'rows.*.receiptable'        => 'nullable|in:Yes,No',

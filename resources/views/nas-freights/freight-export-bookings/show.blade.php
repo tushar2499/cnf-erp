@@ -253,4 +253,78 @@
 
     </div>
 </div>
+
+{{-- Transport Section — full width below two-column layout --}}
+@if(auth()->user()->hasPermission('freight.export-booking.transport-manage'))
+<div class="section-card mt-1">
+    <div class="form-header d-flex justify-content-between align-items-center" style="background:linear-gradient(135deg,#0c2340,#1a6b60)">
+        <span><i class="fa fa-truck me-1"></i> Cover Van / Transport Details
+            @if($exportBooking->transport_amount > 0)
+                <span class="ms-2 badge bg-light text-dark fw-bold" style="font-size:.78rem;">
+                    Total: {{ number_format($exportBooking->transport_amount, 2) }}
+                </span>
+            @endif
+        </span>
+        <a href="{{ route('nas-freights.freight-export-bookings.transport.edit', $exportBooking->id) }}"
+           class="btn btn-sm btn-light py-0 px-2" style="font-size:.72rem;">
+            <i class="fa fa-edit me-1"></i>{{ $exportBooking->transportItems->isEmpty() ? 'Add Transport' : 'Edit Transport' }}
+        </a>
+    </div>
+    @if($exportBooking->transportItems->isEmpty())
+        <div class="section-body text-center text-muted py-3" style="font-size:.8rem;">
+            <i class="fa fa-truck me-1"></i> No transport details added yet.
+        </div>
+    @else
+        <div class="p-0" style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
+            <table class="table table-bordered table-hover mb-0" style="font-size:.73rem; white-space:nowrap; min-width:900px;">
+                <thead>
+                    <tr style="background:#1a6b60; color:#fff;">
+                        <th style="padding:.3rem .5rem; width:35px;">#</th>
+                        <th style="padding:.3rem .5rem;">Cover Van No</th>
+                        <th style="padding:.3rem .5rem;">Challan No</th>
+                        <th style="padding:.3rem .5rem;">Capacity</th>
+                        <th style="padding:.3rem .5rem;">Supplier</th>
+                        <th style="padding:.3rem .5rem; text-align:right;">Qty</th>
+                        <th style="padding:.3rem .5rem; text-align:right;">Sup. Rate</th>
+                        <th style="padding:.3rem .5rem; text-align:right;">Cus. Rate</th>
+                        <th style="padding:.3rem .5rem; text-align:right;">Demrr. Days</th>
+                        <th style="padding:.3rem .5rem; text-align:right;">Cus. Demurrage</th>
+                        <th style="padding:.3rem .5rem; text-align:right;">Sup. Demurrage</th>
+                        <th style="padding:.3rem .5rem; text-align:right;">Amount</th>
+                        <th style="padding:.3rem .5rem;">From</th>
+                        <th style="padding:.3rem .5rem;">To</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($exportBooking->transportItems as $i => $ti)
+                    <tr>
+                        <td class="text-center fw-bold" style="padding:.3rem .5rem;">{{ $i + 1 }}</td>
+                        <td class="fw-semibold" style="padding:.3rem .5rem;">{{ $ti->cover_van_no ?? '—' }}</td>
+                        <td style="padding:.3rem .5rem;">{{ $ti->challan_no ?? '—' }}</td>
+                        <td style="padding:.3rem .5rem;">{{ $ti->capacity ?? '—' }}</td>
+                        <td style="padding:.3rem .5rem;">{{ $ti->supplier_name ?? '—' }}</td>
+                        <td class="text-end" style="padding:.3rem .5rem;">{{ number_format($ti->qty, 2) }}</td>
+                        <td class="text-end" style="padding:.3rem .5rem;">{{ number_format($ti->supplier_rate, 2) }}</td>
+                        <td class="text-end" style="padding:.3rem .5rem;">{{ number_format($ti->customer_rate, 2) }}</td>
+                        <td class="text-center" style="padding:.3rem .5rem;">{{ $ti->demurrage_days }}</td>
+                        <td class="text-end" style="padding:.3rem .5rem;">{{ number_format($ti->cus_demurrage_charge, 2) }}</td>
+                        <td class="text-end" style="padding:.3rem .5rem;">{{ number_format($ti->sup_demurrage_charge, 2) }}</td>
+                        <td class="text-end fw-bold" style="padding:.3rem .5rem; color:#0a4f3c;">{{ number_format($ti->amount, 2) }}</td>
+                        <td style="padding:.3rem .5rem;">{{ $ti->location_from ?? '—' }}</td>
+                        <td style="padding:.3rem .5rem;">{{ $ti->location_to ?? '—' }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+                <tfoot>
+                    <tr style="background:#f0f8ff; font-weight:700; border-top:2px solid #0c2340;">
+                        <td colspan="11" class="text-end" style="padding:.35rem .5rem;">Total Transport Amount</td>
+                        <td class="text-end" style="padding:.35rem .5rem; color:#0a4f3c;">{{ number_format($exportBooking->transport_amount, 2) }}</td>
+                        <td colspan="2" style="padding:.35rem .5rem;"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    @endif
+</div>
+@endif
 @endsection

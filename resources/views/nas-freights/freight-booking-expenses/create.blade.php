@@ -45,8 +45,8 @@
     @if($expense) @method('PUT') @endif
 
     {{-- Hidden fields --}}
-    <input type="hidden" name="booking_id"          id="bookingId"          value="{{ old('booking_id', $expense?->booking_id) }}">
-    <input type="hidden" name="booking_no"          id="bookingNo"          value="{{ old('booking_no', $expense?->booking_no) }}">
+    <input type="hidden" name="booking_id" id="bookingId" value="{{ old('booking_id', $expense?->booking_id ?? $prefillBooking['id'] ?? '') }}">
+    <input type="hidden" name="booking_no" id="bookingNo" value="{{ old('booking_no', $expense?->booking_no ?? $prefillBooking['booking_no'] ?? '') }}">
     <input type="hidden" name="employee_id"         id="employeeId"         value="{{ old('employee_id', $expense?->employee_id) }}">
     <input type="hidden" name="total_expense_amount"  id="hidTotalExp"  value="{{ old('total_expense_amount', $expense?->total_expense_amount ?? 0) }}">
     <input type="hidden" name="total_approved_amount" id="hidTotalApp"  value="{{ old('total_approved_amount', $expense?->total_approved_amount ?? 0) }}">
@@ -65,13 +65,15 @@
                             <select id="bookingSelect" class="form-select form-select-sm w-100">
                                 @if($expense?->booking_no)
                                     <option value="{{ $expense->booking_id }}" selected>{{ $expense->booking_no }}</option>
+                                @elseif($prefillBooking)
+                                    <option value="{{ $prefillBooking['id'] }}" selected>{{ $prefillBooking['booking_no'] }}</option>
                                 @endif
                             </select>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Invoice No</label>
                             <input type="text" name="invoice_no" id="invoiceNo" class="form-control form-control-sm ro-field" readonly
-                                   value="{{ old('invoice_no', $expense?->invoice_no) }}" placeholder="Auto-filled from booking">
+                                   value="{{ old('invoice_no', $expense?->invoice_no ?? $prefillBooking['invoice_no'] ?? '') }}" placeholder="Auto-filled from booking">
                         </div>
                         <div class="col-12">
                             <label class="form-label">Total Expense Amount</label>
@@ -109,7 +111,7 @@
                         <div class="col-12">
                             <label class="form-label">Invoice Value (USD)</label>
                             <input type="text" name="invoice_value_usd" id="invoiceValueUsd" class="form-control form-control-sm ro-field" readonly
-                                   value="{{ old('invoice_value_usd', $expense?->invoice_value_usd) }}" placeholder="Auto-filled from booking">
+                                   value="{{ old('invoice_value_usd', $expense?->invoice_value_usd ?? $prefillBooking['invoice_value_usd'] ?? '') }}" placeholder="Auto-filled from booking">
                         </div>
                         <div class="col-12">
                             <label class="form-label">Total Approved Amount</label>
@@ -119,7 +121,7 @@
                         <div class="col-12">
                             <label class="form-label">B/L No</label>
                             <input type="text" name="bl_no" id="blNo" class="form-control form-control-sm ro-field" readonly
-                                   value="{{ old('bl_no', $expense?->bl_no) }}" placeholder="Auto-filled from booking">
+                                   value="{{ old('bl_no', $expense?->bl_no ?? $prefillBooking['bl_no'] ?? '') }}" placeholder="Auto-filled from booking">
                         </div>
                     </div>
                 </div>
@@ -309,6 +311,7 @@ $(function () {
         $(this).closest('tr').remove();
         reindex();
         recalcTotals();
+        highlightDuplicates();
     });
 
     function reindex() {
@@ -336,6 +339,31 @@ $(function () {
         $('#hidTotalApp').val(app.toFixed(2));
     }
 
+    // ── Duplicate expense head check ──
+    function getDuplicateHeadIds() {
+        var seen = {}, dupes = {};
+        $('#rowsBody .expense-head-select').each(function () {
+            var v = $(this).val();
+            if (!v) { return; }
+            if (seen[v]) { dupes[v] = true; } else { seen[v] = true; }
+        });
+        return dupes;
+    }
+
+    function highlightDuplicates() {
+        var dupes = getDuplicateHeadIds();
+        $('#rowsBody .expense-head-select').each(function () {
+            var v = $(this).val();
+            var $container = $(this).closest('td');
+            if (v && dupes[v]) {
+                $container.addClass('table-danger');
+            } else {
+                $container.removeClass('table-danger');
+            }
+        });
+        return Object.keys(dupes).length > 0;
+    }
+
     // ── Auto-fill expense amount from head ──
     $(document).on('change', '.expense-head-select', function () {
         var amount = $(this).find(':selected').data('amount');
@@ -344,9 +372,21 @@ $(function () {
             $row.find('.expense-amt').val(parseFloat(amount));
             recalcTotals();
         }
+        var hasDupes = highlightDuplicates();
+        if (hasDupes) {
+            Swal.fire({ icon: 'warning', title: 'Duplicate expense head selected.', text: 'Each expense head can only appear once per entry.', timer: 2500, showConfirmButton: false });
+        }
     });
 
     $(document).on('input', '.expense-amt, .approved-amt', recalcTotals);
+
+    // ── Submit guard ──
+    $('#expenseForm').on('submit', function (e) {
+        if (highlightDuplicates()) {
+            e.preventDefault();
+            Swal.fire({ icon: 'error', title: 'Duplicate Expense Heads', text: 'Remove duplicate expense heads before submitting.' });
+        }
+    });
 
     reindex();
     recalcTotals();

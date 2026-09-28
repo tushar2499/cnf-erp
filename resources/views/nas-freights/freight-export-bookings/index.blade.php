@@ -138,6 +138,8 @@
                             <th>Service</th>
                             <th>POL → POD</th>
                             <th>Carrier</th>
+                            <th>Transport Amt</th>
+                            <th>Expense Amt</th>
                             <th>Status</th>
                             <th>Action</th>
                         </tr>
@@ -150,6 +152,8 @@
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th></th>
+                            <th></th>
                             <th></th>
                             <th></th>
                         </tr>
@@ -223,6 +227,20 @@
                         data: 'carrier',
                         name: 'shippingCarrier.name',
                         defaultContent: '—'
+                    },
+                    {
+                        data: 'transport_amount',
+                        name: 'transport_amount',
+                        className: 'text-end',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
+                        data: 'expense_amount',
+                        name: 'expense_amount',
+                        className: 'text-end',
+                        orderable: false,
+                        searchable: false
                     },
                     {
                         data: 'status_badge',
