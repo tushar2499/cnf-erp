@@ -4,9 +4,6 @@
 
 @push('styles')
 <style>
-.exp-topbar { background: linear-gradient(135deg, #0d2626 0%, #0d6e6e 60%, #14b8a6 100%); color: #fff; padding: .55rem 1rem; display: flex; align-items: center; justify-content: space-between; margin: -1.5rem -1.5rem 1.25rem; }
-.exp-topbar .title { font-size: 1rem; font-weight: 700; letter-spacing: .02em; }
-.exp-topbar .btn { font-size: .8rem; }
 .form-label { font-size: .78rem; font-weight: 600; color: #374151; margin-bottom: .18rem; }
 .req { color: #dc2626; }
 .ro-field { background: #f1f5f9 !important; color: #6b7280; }
@@ -18,18 +15,17 @@
 
 @section('content')
 
-{{-- Top bar --}}
-<div class="exp-topbar">
-    <div class="d-flex gap-2">
-        <a href="{{ route($routePrefix.'.index') }}" class="btn btn-sm btn-light text-dark">
+<div class="d-flex align-items-center justify-content-between mb-2">
+    <div></div>
+    <div class="fw-bold" style="font-size:.9rem; color:#0a4f3c;">
+        {{ $bookingType === 'export' ? 'Export' : 'Import' }} Expense Entry
+        @if($expense)<span class="ms-2 badge bg-light text-dark border">{{ $expense->expense_no }}</span>@endif
+    </div>
+    <div>
+        <a href="{{ route($routePrefix.'.index') }}" class="btn btn-sm btn-outline-secondary">
             <i class="fa fa-arrow-left me-1"></i> Back To List
         </a>
     </div>
-    <div class="title">
-        {{ $bookingType === 'export' ? 'Export' : 'Import' }} Expense Entry
-        @if($expense)<span class="ms-2 badge bg-light text-dark">{{ $expense->expense_no }}</span>@endif
-    </div>
-    <div></div>
 </div>
 
 @if($errors->any())
@@ -194,7 +190,7 @@
 
     {{-- Submit bar --}}
     <div class="d-flex justify-content-end gap-2 mt-3 mb-4">
-        <a href="{{ route($routePrefix.'.index') }}" class="btn btn-outline-secondary btn-sm px-4">
+        <a href="{{ route($routePrefix.'.index') }}" class="btn btn-sm btn-outline-secondary">
             <i class="fa fa-times me-1"></i> Cancel
         </a>
         <button type="submit" class="btn btn-sm px-5 text-white fw-600" style="background:#0d9488; border-color:#0d9488;">

@@ -103,6 +103,7 @@
                     <thead>
                         <tr>
                             <th>#</th>
+                            <th>Action</th>
                             <th>Supplier ID</th>
                             <th>Company Name</th>
                             <th>Owner Name</th>
@@ -113,9 +114,9 @@
                             <th>Group</th>
                             <th>Taxscope</th>
                             <th>Status</th>
-                            <th>Action</th>
                         </tr>
                         <tr>
+                            <th></th>
                             <th></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."
                                     aria-label="Search Supplier ID"></th>
@@ -135,7 +136,6 @@
                                     aria-label="Search Group"></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."
                                     aria-label="Search Taxscope"></th>
-                            <th></th>
                             <th></th>
                         </tr>
                     </thead>
@@ -306,6 +306,13 @@
                         width: '45px'
                     },
                     {
+                        data: 'action',
+                        name: 'action',
+                        orderable: false,
+                        searchable: false,
+                        width: '90px'
+                    },
+                    {
                         data: 'code',
                         name: 'code'
                     },
@@ -347,13 +354,6 @@
                         name: 'is_active',
                         orderable: false,
                         searchable: false
-                    },
-                    {
-                        data: 'action',
-                        name: 'action',
-                        orderable: false,
-                        searchable: false,
-                        width: '90px'
                     },
                 ],
                 dom: "<'row mb-1'<'col-sm-6'l><'col-sm-6'f>>" +

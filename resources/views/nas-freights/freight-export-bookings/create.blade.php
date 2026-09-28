@@ -150,13 +150,13 @@
                 <div class="row g-2 mb-2">
                     <div class="col-md-3">
                         <div class="fb-label d-flex justify-content-between align-items-center">
-                            <span>Customer (Exporter)</span>
+                            <span>Customer (Exporter) <span class="text-danger">*</span></span>
                             <button type="button" class="btn btn-success btn-sm py-0 px-2 ms-1"
                                 id="btnQuickCustomer" title="Create new customer">
                                 <i class="fa fa-plus"></i> New
                             </button>
                         </div>
-                        <select name="customer_id" id="customerSelect" class="form-select fb-input" style="width:100%">
+                        <select name="customer_id" id="customerSelect" class="form-select fb-input" style="width:100%" required>
                             @if ($exportBooking?->customer_id)
                                 <option value="{{ $exportBooking->customer_id }}" selected>
                                     {{ $exportBooking->customer?->customer_id }} — {{ $exportBooking->customer?->name }}

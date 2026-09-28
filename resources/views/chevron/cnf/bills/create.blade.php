@@ -137,18 +137,90 @@
             cursor: not-allowed;
             pointer-events: none;
         }
+
+        /* ── Responsive ── */
+        @media (max-width: 575.98px) {
+            .bill-input {
+                height: 38px;
+                font-size: .8rem;
+                padding: .35rem .5rem;
+            }
+
+            .input-group>.bill-input {
+                height: 38px;
+                font-size: .8rem;
+                padding: .35rem .5rem;
+            }
+
+            .bill-textarea {
+                font-size: .8rem;
+            }
+
+            .totals-input {
+                height: 36px;
+                font-size: .75rem;
+            }
+
+            .totals-label {
+                width: 95px;
+                min-width: 95px;
+                font-size: .62rem;
+            }
+
+            .form-header {
+                font-size: .75rem;
+            }
+
+            .page-header-top {
+                flex-wrap: wrap;
+                gap: .4rem;
+            }
+
+            .page-header-top .page-title {
+                order: -1;
+                width: 100%;
+                text-align: center;
+            }
+
+            .comm-rate-row {
+                flex-wrap: wrap;
+                gap: .3rem;
+            }
+
+            .comm-rate-row>input {
+                width: 100% !important;
+                flex: 1 1 auto !important;
+            }
+        }
+
+        @media (min-width: 576px) and (max-width: 767.98px) {
+            .bill-input {
+                height: 34px;
+                font-size: .78rem;
+            }
+
+            .input-group>.bill-input {
+                height: 34px;
+                font-size: .78rem;
+            }
+
+            .totals-label {
+                width: 105px;
+                min-width: 105px;
+            }
+        }
     </style>
 @endpush
 
 @section('content')
     {{-- Page Header --}}
-    <div class="d-flex align-items-center justify-content-between mb-2">
+    <div class="d-flex align-items-center justify-content-between mb-2 page-header-top">
         <div class="d-flex align-items-center gap-2">
             <a href="{{ route('chevron.cnf.bills.index') }}" class="btn btn-sm btn-outline-secondary">
                 <i class="fa fa-arrow-left me-1"></i> Back To List
             </a>
         </div>
-        <div class="fw-bold" style="font-size:.9rem; color:#0a4f3c;">
+        <div class="fw-bold page-title" style="font-size:.9rem; color:#0a4f3c;">
             Bill Entry @if ($bill)
                 <span class="ms-2 badge bg-light text-dark border">{{ $bill->bill_no }}</span>
             @endif
@@ -206,7 +278,7 @@
                 {{-- Row 2: Job No | Party Name | Address --}}
                 <div class="row g-2 mb-2">
                     <div class="col-md-4">
-                        <div class="bill-form-label">Job No</div>
+                        <div class="bill-form-label">Job No <span class="text-danger">*</span></div>
                         <select name="job_id" id="jobSelect" class="form-select bill-input" style="width:100%">
                             @if ($bill?->job_id)
                                 <option value="{{ $bill->job_id }}" selected>{{ $bill->job_no }} — {{ $bill->party_name }}
@@ -372,7 +444,7 @@
         {{-- ═══ EXPENSE ROWS + TOTALS ═══ --}}
         <div class="row g-3">
             {{-- Expense Rows --}}
-            <div class="col-lg-8">
+            <div class="col-12 col-lg-8">
                 <div class="section-card">
                     <div class="form-header d-flex justify-content-between align-items-center">
                         <span><i class="fa fa-list me-1"></i> Expense Details</span>
@@ -381,27 +453,29 @@
                         </button>
                     </div>
                     <div class="section-body p-0">
-                        <table class="table table-bordered mb-0" id="rowsTable">
+                        <div class="table-responsive">
+                        <table class="table table-bordered mb-0" id="rowsTable" style="min-width:820px;">
                             <thead>
                                 <tr>
                                     <th style="width:35px">SL</th>
                                     <th style="width:30px"></th>
-                                    <th>Expense Category</th>
-                                    <th>Particular Info (Head)</th>
+                                    <th style="min-width:160px;">Expense Category</th>
+                                    <th style="min-width:150px;">Particular Info (Head)</th>
                                     <th style="width:85px">Rate</th>
                                     <th style="width:75px">Qty</th>
                                     <th style="width:110px">Amount</th>
-                                    <th>Note</th>
+                                    <th style="min-width:140px;">Note</th>
                                 </tr>
                             </thead>
                             <tbody id="rowsBody"></tbody>
                         </table>
+                        </div>{{-- /table-responsive --}}
                     </div>
                 </div>
             </div>
 
             {{-- Totals --}}
-            <div class="col-lg-4">
+            <div class="col-12 col-lg-4">
                 <div class="section-card">
                     <div class="form-header"><i class="fa fa-calculator me-1"></i> Summary</div>
                     <div class="section-body p-0">
@@ -428,7 +502,7 @@
                         {{-- Comm Rate + Amount --}}
                         <div class="totals-row">
                             <span class="totals-label">Comm. Rate %</span>
-                            <div class="d-flex gap-1" style="flex:1; min-width:0;">
+                            <div class="d-flex gap-1 comm-rate-row" style="flex:1; min-width:0;">
                                 <input type="number" name="commission_rate" id="commissionRate"
                                     class="form-control totals-input text-end" step="0.01"
                                     value="{{ in_array(old('commission_on', $bill?->commission_on ?? 'ASSESSABLE'), ['MINIMUM', 'MAXIMUM']) ? '0' : old('commission_rate', $bill?->commission_rate) }}"
@@ -493,7 +567,7 @@
         </div>
 
         {{-- Submit --}}
-        <div class="d-flex justify-content-end gap-2 mt-3 mb-4">
+        <div class="d-flex flex-column flex-sm-row justify-content-end gap-2 mt-3 mb-4">
             <a href="{{ route('chevron.cnf.bills.index') }}" class="btn btn-sm btn-outline-secondary">
                 <i class="fa fa-times me-1"></i> Cancel
             </a>

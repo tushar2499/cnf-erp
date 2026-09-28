@@ -105,8 +105,9 @@
             $canSeeFreightImport = $canSeeRfq || $canSeeImportBooking || $canSeeImportExpense;
 
             // Freight Export
-            $canSeeExportBooking = $user->hasPermission('freight.export-booking.list');
-            $canSeeExportExpense = $user->hasPermission('freight.export-expense.list');
+            $canSeeExportBooking     = $user->hasPermission('freight.export-booking.list');
+            $canSeeExportBookingBill = $user->hasPermission('freight.export-booking-bill.list');
+            $canSeeExportExpense     = $user->hasPermission('freight.export-expense.list');
 
             // Due Lists
             $canSeeDueList = $user->hasPermission('freight.due-list.view');
@@ -146,7 +147,7 @@
             // Active states
             $operationsActive    = request()->routeIs('nas-freights.bookings.*', 'nas-freights.customer-bills.*', 'nas-freights.supplier-bills.*');
             $freightImportActive = request()->routeIs('nas-freights.rfqs.*', 'nas-freights.freight-import-bookings.*', 'nas-freights.import-expenses.*');
-            $freightExportActive = request()->routeIs('nas-freights.freight-export-bookings.*', 'nas-freights.export-expenses.*');
+            $freightExportActive = request()->routeIs('nas-freights.freight-export-bookings.*', 'nas-freights.export-expenses.*', 'nas-freights.freight-export-booking-bills.*');
             $dueListsActive      = request()->routeIs('nas-freights.due-lists.*');
             $collectionsActive   = request()->routeIs('nas-freights.money-receipts.*', 'nas-freights.supplier-payments.*');
             $reportsActive       = request()->routeIs('nas-freights.reports.*');
@@ -229,7 +230,7 @@
         @endif
 
         {{-- Freight Export --}}
-        @if($canSeeExportBooking || $canSeeExportExpense)
+        @if($canSeeExportBooking || $canSeeExportExpense || $canSeeExportBookingBill)
         <div class="nav-item-group">
             <div class="nav-section">Freight Export</div>
             <a href="#freightFreightExportMenu" class="nav-link {{ $freightExportActive ? 'active' : '' }}"
@@ -249,6 +250,13 @@
                 <a href="{{ route('nas-freights.export-expenses.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.export-expenses.*') ? 'active' : '' }}">
                     <i class="fa fa-money-bill-wave"></i> Export Expenses
+                </a>
+                @endif
+
+                @if($canSeeExportBookingBill)
+                <a href="{{ route('nas-freights.freight-export-booking-bills.index') }}"
+                    class="nav-link ps-4 {{ request()->routeIs('nas-freights.freight-export-booking-bills.*') ? 'active' : '' }}">
+                    <i class="fa fa-file-invoice-dollar"></i> Export Booking Bills
                 </a>
                 @endif
             </div>
@@ -455,6 +463,9 @@
         @endif
         @if($canSeeExportBooking)
         { label: 'Freight Export Bookings', section: 'Freight Export', url: '{{ route("nas-freights.freight-export-bookings.index") }}',    icon: 'fa-ship' },
+        @endif
+        @if($canSeeExportBookingBill)
+        { label: 'Export Booking Bills', section: 'Freight Export', url: '{{ route("nas-freights.freight-export-booking-bills.index") }}', icon: 'fa-file-invoice-dollar' },
         @endif
         @if($canSeeDueList)
         { label: 'Customer Due',        section: 'Due Lists',        url: '{{ route("nas-freights.due-lists.customer") }}',                  icon: 'fa-user-clock' },

@@ -12,6 +12,7 @@ use App\Http\Controllers\NasFreights\ExpenseCategoryController;
 use App\Http\Controllers\NasFreights\ExpenseHeadController;
 use App\Http\Controllers\NasFreights\FreightBookingController;
 use App\Http\Controllers\NasFreights\FreightBookingExpenseController;
+use App\Http\Controllers\NasFreights\FreightExportBookingBillController;
 use App\Http\Controllers\NasFreights\FreightExportBookingController;
 use App\Http\Controllers\NasFreights\FreightExportBookingTransportController;
 use App\Http\Controllers\NasFreights\ImportController;
@@ -83,6 +84,19 @@ Route::prefix('freight-export-bookings')->name('freight-export-bookings.')->grou
     Route::delete('/{exportBooking}', [FreightExportBookingController::class, 'destroy'])->name('destroy');
     Route::get('/{exportBooking}/transport', [FreightExportBookingTransportController::class, 'edit'])->name('transport.edit');
     Route::put('/{exportBooking}/transport', [FreightExportBookingTransportController::class, 'update'])->name('transport.update');
+});
+
+// Freight Export Booking Bills
+Route::prefix('freight-export-booking-bills')->name('freight-export-booking-bills.')->group(function () {
+    Route::get('/search-bookings', [FreightExportBookingBillController::class, 'searchBookings'])->name('search-bookings');
+    Route::get('/', [FreightExportBookingBillController::class, 'index'])->name('index');
+    Route::get('/create', [FreightExportBookingBillController::class, 'create'])->name('create');
+    Route::post('/', [FreightExportBookingBillController::class, 'store'])->name('store');
+    Route::get('/{freightExportBookingBill}', [FreightExportBookingBillController::class, 'show'])->name('show');
+    Route::get('/{freightExportBookingBill}/edit', [FreightExportBookingBillController::class, 'edit'])->name('edit');
+    Route::get('/{freightExportBookingBill}/print', [FreightExportBookingBillController::class, 'printView'])->name('print');
+    Route::put('/{freightExportBookingBill}', [FreightExportBookingBillController::class, 'update'])->name('update');
+    Route::delete('/{freightExportBookingBill}', [FreightExportBookingBillController::class, 'destroy'])->name('destroy');
 });
 
 // Transport Bookings

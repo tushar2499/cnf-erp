@@ -237,19 +237,6 @@
         </div>
         @endif
 
-        <div class="section-card">
-            <div class="form-header"><i class="fa fa-info-circle me-1"></i> Record Info</div>
-            <div class="section-body">
-                <div class="mb-1">
-                    <span class="info-label">Created</span>
-                    <div class="info-value">{{ $exportBooking->created_at->format('d M Y, h:i A') }}</div>
-                </div>
-                <div>
-                    <span class="info-label">Last Updated</span>
-                    <div class="info-value">{{ $exportBooking->updated_at->format('d M Y, h:i A') }}</div>
-                </div>
-            </div>
-        </div>
 
     </div>
 </div>

@@ -131,6 +131,7 @@
                     <thead>
                         <tr>
                             <th>#</th>
+                            <th>Action</th>
                             <th>Booking No</th>
                             <th>Date</th>
                             <th>Customer</th>
@@ -141,18 +142,17 @@
                             <th>Transport Amt</th>
                             <th>Expense Amt</th>
                             <th>Status</th>
-                            <th>Action</th>
                         </tr>
                         <tr>
                             <th></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th></th>
                             <th></th>
                             <th></th>
@@ -195,6 +195,14 @@
                         orderable: false,
                         searchable: false,
                         width: '40px',
+                        className: 'text-center'
+                    },
+                    {
+                        data: 'action',
+                        name: 'action',
+                        orderable: false,
+                        searchable: false,
+                        width: '90px',
                         className: 'text-center'
                     },
                     {
@@ -247,14 +255,6 @@
                         name: 'status',
                         orderable: false,
                         searchable: false
-                    },
-                    {
-                        data: 'action',
-                        name: 'action',
-                        orderable: false,
-                        searchable: false,
-                        width: '90px',
-                        className: 'text-center'
                     },
                 ],
                 dom: "<'row mb-1'<'col-sm-6'l><'col-sm-6'f>>" +

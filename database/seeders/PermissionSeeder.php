@@ -11,7 +11,7 @@ class PermissionSeeder extends Seeder
     {
         $permissions = [
 
-// ── System (company_id = null) ─────────────────────────────────
+            // ── System (company_id = null) ─────────────────────────────────
 
             // Admin Users
             ['company_id' => null, 'module' => 'Admin Users', 'name' => 'admin.users.list', 'sorting_order' => 10],
@@ -45,7 +45,7 @@ class PermissionSeeder extends Seeder
             ['company_id' => null, 'module' => 'Designations', 'name' => 'admin.designations.edit', 'sorting_order' => 52],
             ['company_id' => null, 'module' => 'Designations', 'name' => 'admin.designations.delete', 'sorting_order' => 53],
 
-// ── Chevron Lines (C&F) — company_id = 1 ──────────────────────
+            // ── Chevron Lines (C&F) — company_id = 1 ──────────────────────
 
             // Jobs
             ['company_id' => 1, 'module' => 'Jobs', 'name' => 'cnf.job.list', 'sorting_order' => 10],
@@ -131,7 +131,7 @@ class PermissionSeeder extends Seeder
             // Reports
             ['company_id' => 1, 'module' => 'Reports', 'name' => 'cnf.report.job-expense-summary', 'sorting_order' => 140],
 
-// ── NAS Freights — company_id = 2 ─────────────────────────────
+            // ── NAS Freights — company_id = 2 ─────────────────────────────
 
             // RFQ
             ['company_id' => 2, 'module' => 'RFQ', 'name' => 'freight.rfq.list', 'sorting_order' => 10],
@@ -278,7 +278,15 @@ class PermissionSeeder extends Seeder
             ['company_id' => 2, 'module' => 'Export Expenses', 'name' => 'freight.export-expense.edit', 'sorting_order' => 228],
             ['company_id' => 2, 'module' => 'Export Expenses', 'name' => 'freight.export-expense.delete', 'sorting_order' => 229],
 
-// ── NAS Trading — company_id = 3 ──────────────────────────────
+            // Export Booking Bills
+            ['company_id' => 2, 'module' => 'Export Booking Bills', 'name' => 'freight.export-booking-bill.list', 'sorting_order' => 230],
+            ['company_id' => 2, 'module' => 'Export Booking Bills', 'name' => 'freight.export-booking-bill.view', 'sorting_order' => 231],
+            ['company_id' => 2, 'module' => 'Export Booking Bills', 'name' => 'freight.export-booking-bill.create', 'sorting_order' => 232],
+            ['company_id' => 2, 'module' => 'Export Booking Bills', 'name' => 'freight.export-booking-bill.edit', 'sorting_order' => 233],
+            ['company_id' => 2, 'module' => 'Export Booking Bills', 'name' => 'freight.export-booking-bill.delete', 'sorting_order' => 234],
+            ['company_id' => 2, 'module' => 'Export Booking Bills', 'name' => 'freight.export-booking-bill.print', 'sorting_order' => 235],
+
+            // ── NAS Trading — company_id = 3 ──────────────────────────────
 
             // LCs
             ['company_id' => 3, 'module' => 'LCs', 'name' => 'lcs.list', 'sorting_order' => 10],
@@ -299,5 +307,4 @@ class PermissionSeeder extends Seeder
         }
 
     }
-
 }

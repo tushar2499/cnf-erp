@@ -114,15 +114,16 @@
                     <thead>
                         <tr>
                             <th>#</th>
+                            <th>Action</th>
                             <th>Code</th>
                             <th>Name</th>
                             <th>BIN No</th>
                             <th>Group</th>
                             <th>Mobile</th>
                             <th>Status</th>
-                            <th>Action</th>
                         </tr>
                         <tr>
+                            <th></th>
                             <th></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."
                                     aria-label="Search Code"></th>
@@ -134,7 +135,6 @@
                                     aria-label="Search Group"></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."
                                     aria-label="Search Mobile"></th>
-                            <th></th>
                             <th></th>
                         </tr>
                     </thead>
@@ -248,6 +248,13 @@
                         width: '40px'
                     },
                     {
+                        data: 'action',
+                        name: 'action',
+                        orderable: false,
+                        searchable: false,
+                        width: '70px'
+                    },
+                    {
                         data: 'customer_id',
                         name: 'customer_id'
                     },
@@ -272,13 +279,6 @@
                         name: 'status',
                         orderable: false,
                         searchable: false
-                    },
-                    {
-                        data: 'action',
-                        name: 'action',
-                        orderable: false,
-                        searchable: false,
-                        width: '70px'
                     },
                 ],
                 dom: "<'row mb-1'<'col-sm-6'l><'col-sm-6'f>>" +

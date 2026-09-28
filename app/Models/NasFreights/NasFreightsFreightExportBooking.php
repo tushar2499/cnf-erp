@@ -68,11 +68,16 @@ class NasFreightsFreightExportBooking extends Model
         return $this->hasMany(NasFreightsFreightExportBookingTransportItem::class, 'export_booking_id');
     }
 
+    public function bills(): HasMany
+    {
+        return $this->hasMany(NasFreightsFreightExportBookingBill::class, 'export_booking_id');
+    }
+
     public static function generateExportBookingNo(): string
     {
-        $prefix = 'FEB-'.now()->format('Ymd').'-';
+        $prefix = 'FEB-';
         $last = static::lockForUpdate()
-            ->where('export_booking_no', 'like', $prefix.'%')
+            ->where('export_booking_no', 'REGEXP', '^FEB-[0-9]+$')
             ->max(DB::raw('CAST(SUBSTRING(export_booking_no, '.(strlen($prefix) + 1).') AS UNSIGNED)'));
 
         return $prefix.str_pad(($last ?? 0) + 1, 4, '0', STR_PAD_LEFT);

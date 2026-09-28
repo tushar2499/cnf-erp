@@ -3,8 +3,6 @@
 
 @push('styles')
     <style>
-        .exp-topbar { background: linear-gradient(135deg, #0d2626 0%, #0d6e6e 60%, #14b8a6 100%); color: #fff; padding: .55rem 1rem; display: flex; align-items: center; justify-content: space-between; margin: -1.5rem -1.5rem 1.25rem; }
-        .exp-topbar .title { font-size: 1rem; font-weight: 700; letter-spacing: .02em; }
         .info-label { font-size: .78rem; color: #6c757d; font-weight: 500; }
         .info-value { font-size: .9rem; font-weight: 600; }
         #itemsDetailTable th, #itemsDetailTable td { font-size: .8rem; padding: .35rem .5rem; }
@@ -13,18 +11,17 @@
 @endpush
 
 @section('content')
-<div class="exp-topbar">
-    <div class="d-flex gap-2">
-        <a href="{{ route($routePrefix.'.index') }}" class="btn btn-sm btn-light text-dark">
-            <i class="fa fa-arrow-left me-1"></i> Back To List
-        </a>
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div></div>
+    <div class="fw-bold" style="font-size:.95rem; color:#0a4f3c;">
+        Expense &nbsp;<span class="badge bg-light text-dark border fs-6">{{ $freightBookingExpense->expense_no }}</span>
     </div>
-    <div class="title">
-        Expense — {{ $freightBookingExpense->expense_no }}
-    </div>
-    <div>
-        <a href="{{ route($routePrefix.'.edit', $freightBookingExpense->id) }}" class="btn btn-sm btn-light text-dark">
+    <div class="d-flex align-items-center gap-2">
+        <a href="{{ route($routePrefix.'.edit', $freightBookingExpense->id) }}" class="btn btn-sm btn-outline-primary">
             <i class="fa fa-edit me-1"></i> Edit
+        </a>
+        <a href="{{ route($routePrefix.'.index') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fa fa-arrow-left me-1"></i> Back
         </a>
     </div>
 </div>

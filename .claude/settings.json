@@ -30,7 +30,12 @@
       "Bash(git stash *)",
       "Bash(./vendor/bin/pint --dirty --format agent app/Http/Requests/NasFreights/FreightBookingExpense/StoreFreightBookingExpenseRequest.php app/Http/Requests/NasFreights/FreightBookingExpense/UpdateFreightBookingExpenseRequest.php)",
       "Bash(php -l app/Http/Controllers/NasFreights/FreightExportBookingTransportController.php)",
-      "Bash(php -l app/Models/NasFreights/NasFreightsFreightExportBookingTransportItem.php)"
+      "Bash(php -l app/Models/NasFreights/NasFreightsFreightExportBookingTransportItem.php)",
+      "Bash(vendor/bin/pint --dirty --format agent)",
+      "Bash(php -r ' *)",
+      "Bash(./vendor/bin/pint app/Http/Controllers/NasFreights/FreightExportBookingBillController.php --format agent)",
+      "Bash(./vendor/bin/pint app/Http/Requests/Chevron/Bill/StoreBillRequest.php app/Http/Requests/Chevron/Bill/UpdateBillRequest.php --format agent)",
+      "Bash(./vendor/bin/pint app/Http/Controllers/NasFreights/FreightExportBookingBillController.php app/Http/Requests/NasFreights/FreightExportBookingBill/ database/seeders/PermissionSeeder.php --format agent)"
     ]
   }
 }

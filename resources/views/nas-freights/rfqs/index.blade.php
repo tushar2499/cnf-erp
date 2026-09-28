@@ -130,6 +130,7 @@
                     <thead>
                         <tr>
                             <th>#</th>
+                            <th>Action</th>
                             <th>RFQ No</th>
                             <th>Date</th>
                             <th>Valid Until</th>
@@ -138,10 +139,10 @@
                             <th>Service</th>
                             <th>POL → POD</th>
                             <th>Status</th>
-                            <th>Action</th>
                         </tr>
                         <tr>
                             <th></th>
+                            <th></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
@@ -149,7 +150,6 @@
                             <th></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th></th>
                             <th></th>
                         </tr>
                     </thead>
@@ -193,6 +193,14 @@
                         className: 'text-center'
                     },
                     {
+                        data: 'action',
+                        name: 'action',
+                        orderable: false,
+                        searchable: false,
+                        width: '90px',
+                        className: 'text-center'
+                    },
+                    {
                         data: 'rfq_no',
                         name: 'rfq_no'
                     },
@@ -229,14 +237,6 @@
                         name: 'status',
                         orderable: false,
                         searchable: false
-                    },
-                    {
-                        data: 'action',
-                        name: 'action',
-                        orderable: false,
-                        searchable: false,
-                        width: '90px',
-                        className: 'text-center'
                     },
                 ],
                 dom: "<'row mb-1'<'col-sm-6'l><'col-sm-6'f>>" +

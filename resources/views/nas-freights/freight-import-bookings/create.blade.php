@@ -109,8 +109,8 @@
                             required>
                     </div>
                     <div class="col-md-{{ $freightBooking?->rfq_no ? 3 : 4 }}">
-                        <div class="fb-label">Customer (Importer)</div>
-                        <select name="customer_id" id="customerSelect" class="form-select fb-input" style="width:100%">
+                        <div class="fb-label">Customer (Importer) <span class="text-danger">*</span></div>
+                        <select name="customer_id" id="customerSelect" class="form-select fb-input" style="width:100%" required>
                             @if ($freightBooking?->customer_id)
                                 <option value="{{ $freightBooking->customer_id }}" selected>
                                     {{ $freightBooking->customer?->customer_id }} — {{ $freightBooking->customer?->name }}

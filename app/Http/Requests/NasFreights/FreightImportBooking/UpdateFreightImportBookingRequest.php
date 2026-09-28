@@ -16,6 +16,7 @@ class UpdateFreightImportBookingRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'customer_id'  => ['required', 'exists:nas_freights_customers,id'],
             'booking_date' => ['required', 'date'],
             'service_type' => ['required'],
         ];

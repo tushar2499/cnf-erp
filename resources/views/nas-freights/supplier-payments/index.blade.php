@@ -116,6 +116,7 @@
                     <thead>
                         <tr>
                             <th>#</th>
+                            <th>Action</th>
                             <th>Payment No</th>
                             <th>Hard Copy No</th>
                             <th>Payment Date</th>
@@ -125,10 +126,10 @@
                             <th>Amount Paid</th>
                             <th>Payment Mode</th>
                             <th>Reference No</th>
-                            <th>Action</th>
                         </tr>
                         <tr>
                             <th></th>
+                            <th></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
@@ -138,7 +139,6 @@
                             <th></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th></th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -178,6 +178,13 @@
                         className: 'text-center'
                     },
                     {
+                        data: 'action',
+                        name: 'action',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center'
+                    },
+                    {
                         data: 'payment_no',
                         name: 'payment_no'
                     },
@@ -214,13 +221,6 @@
                     {
                         data: 'reference_no',
                         name: 'reference_no'
-                    },
-                    {
-                        data: 'action',
-                        name: 'action',
-                        orderable: false,
-                        searchable: false,
-                        className: 'text-center'
                     },
                 ],
                 dom: "<'row mb-1'<'col-sm-6'l><'col-sm-6'f>>" +

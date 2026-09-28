@@ -62,9 +62,9 @@ class NasFreightsFreightBooking extends Model
 
     public static function generateFreightBookingNo(): string
     {
-        $prefix = 'FIB-'.now()->format('Ymd').'-';
+        $prefix = 'FIB-';
         $last = static::lockForUpdate()
-            ->where('freight_booking_no', 'like', $prefix.'%')
+            ->where('freight_booking_no', 'REGEXP', '^FIB-[0-9]+$')
             ->max(DB::raw('CAST(SUBSTRING(freight_booking_no, '.(strlen($prefix) + 1).') AS UNSIGNED)'));
 
         return $prefix.str_pad(($last ?? 0) + 1, 4, '0', STR_PAD_LEFT);
