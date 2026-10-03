@@ -135,6 +135,8 @@
                             <th>Booking No</th>
                             <th>Date</th>
                             <th>Customer</th>
+                            <th>Party Bill Ref No</th>
+                            <th>Party Invoice No</th>
                             <th>Export B/L No</th>
                             <th>Service</th>
                             <th>POL → POD</th>
@@ -146,6 +148,8 @@
                         <tr>
                             <th></th>
                             <th></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
@@ -216,6 +220,14 @@
                     {
                         data: 'customer_name',
                         name: 'customer_name'
+                    },
+                    {
+                        data: 'party_bill_ref_no',
+                        name: 'party_bill_ref_no'
+                    },
+                    {
+                        data: 'party_invoice_no',
+                        name: 'party_invoice_no'
                     },
                     {
                         data: 'export_bl_no',

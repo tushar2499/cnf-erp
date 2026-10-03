@@ -104,7 +104,7 @@
                             required>
                     </div>
                     <div class="col-md-2">
-                        <div class="fb-label">Service Type <span class="text-danger">*</span></div>
+                        <div class="fb-label">Service Type/Mode <span class="text-danger">*</span></div>
                         <select name="service_type" class="form-select fb-input" required>
                             @foreach ($serviceTypes as $st)
                                 <option value="{{ $st }}"
@@ -148,7 +148,7 @@
 
                 {{-- Row 2: Parties --}}
                 <div class="row g-2 mb-2">
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <div class="fb-label d-flex justify-content-between align-items-center">
                             <span>Customer (Exporter) <span class="text-danger">*</span></span>
                             <button type="button" class="btn btn-success btn-sm py-0 px-2 ms-1"
@@ -164,18 +164,7 @@
                             @endif
                         </select>
                     </div>
-                    <div class="col-md-2">
-                        <div class="fb-label">Party Bill Ref No</div>
-                        <input type="text" name="party_bill_ref_no" class="form-control fb-input"
-                            value="{{ old('party_bill_ref_no', $exportBooking?->party_bill_ref_no) }}"
-                            placeholder="e.g. PB-2024-0001">
-                    </div>
-                    <div class="col-md-2">
-                        <div class="fb-label">Party Bill Date</div>
-                        <input type="date" name="party_bill_date" class="form-control fb-input"
-                            value="{{ old('party_bill_date', $exportBooking?->party_bill_date?->format('Y-m-d')) }}">
-                    </div>
-                    <div class="col-md-3">
+                    <div class="col-md-5">
                         <div class="fb-label">Overseas Agent / Consignee</div>
                         <select name="overseas_agent_id" id="overseasAgentSelect" class="form-select fb-input"
                             style="width:100%">
@@ -188,7 +177,7 @@
                             @endif
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-3">
                         <div class="fb-label">Salesperson</div>
                         <select name="salesperson_id" id="salespersonSelect" class="form-select fb-input"
                             style="width:100%">
@@ -197,6 +186,27 @@
                                     {{ $exportBooking->salesperson?->name }}</option>
                             @endif
                         </select>
+                    </div>
+                </div>
+
+                {{-- Row 2b: Party Bill Documents --}}
+                <div class="row g-2 mb-2">
+                    <div class="col-md-3">
+                        <div class="fb-label">Party Bill Ref No</div>
+                        <input type="text" name="party_bill_ref_no" class="form-control fb-input"
+                            value="{{ old('party_bill_ref_no', $exportBooking?->party_bill_ref_no) }}"
+                            placeholder="e.g. PB-2024-0001">
+                    </div>
+                    <div class="col-md-3">
+                        <div class="fb-label">Party Invoice No</div>
+                        <input type="text" name="party_invoice_no" class="form-control fb-input"
+                            value="{{ old('party_invoice_no', $exportBooking?->party_invoice_no) }}"
+                            placeholder="e.g. PI-2024-0001">
+                    </div>
+                    <div class="col-md-3">
+                        <div class="fb-label">Party Bill Date</div>
+                        <input type="date" name="party_bill_date" class="form-control fb-input"
+                            value="{{ old('party_bill_date', $exportBooking?->party_bill_date?->format('Y-m-d')) }}">
                     </div>
                 </div>
 

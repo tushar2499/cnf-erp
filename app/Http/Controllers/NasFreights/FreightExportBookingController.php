@@ -13,8 +13,8 @@ use App\Http\Requests\NasFreights\FreightExportBooking\UpdateFreightExportBookin
 use App\Models\Employee;
 use App\Models\NasFreights\NasFreightsContainerType;
 use App\Models\NasFreights\NasFreightsCustomer;
-use App\Models\NasFreights\NasFreightsFreightBookingExpense;
 use App\Models\NasFreights\NasFreightsFreightExportBooking;
+use App\Models\NasFreights\NasFreightsFreightExportBookingExpense;
 use App\Models\NasFreights\NasFreightsOverseasAgent;
 use App\Models\NasFreights\NasFreightsPackageType;
 use App\Models\NasFreights\NasFreightsShippingCarrier;
@@ -45,7 +45,7 @@ class FreightExportBookingController extends Controller
             $fromDate = $request->input('from_date');
             $toDate = $request->input('to_date');
 
-            $canAddExpense = $request->user()->hasPermission('freight.export-expense.create');
+            $canManageExpense = $request->user()->hasPermission('freight.export-booking.expense-manage');
             $canManageTransport = $request->user()->hasPermission('freight.export-booking.transport-manage');
 
             $query = NasFreightsFreightExportBooking::with(['customer', 'shippingCarrier'])
@@ -59,14 +59,15 @@ class FreightExportBookingController extends Controller
                 ->addIndexColumn()
                 ->editColumn('booking_date', fn ($r) => $r->booking_date?->format('d M Y') ?? '—')
                 ->addColumn('customer_name', fn ($r) => $r->customer?->name ?? '—')
+                ->addColumn('party_bill_ref_no', fn ($r) => $r->party_bill_ref_no ?? '—')
+                ->addColumn('party_invoice_no', fn ($r) => $r->party_invoice_no ?? '—')
                 ->addColumn('export_bl_no', fn ($r) => $r->export_bl_no ?? '—')
                 ->addColumn('route', fn ($r) => ($r->pol ?? '—').' → '.($r->pod ?? '—'))
                 ->addColumn('carrier', fn ($r) => $r->shippingCarrier?->name ?? '—')
                 ->addColumn('transport_amount', fn ($r) => $r->transport_amount > 0 ? number_format($r->transport_amount, 2) : '—')
                 ->addColumn('expense_amount', function ($r) {
-                    $total = NasFreightsFreightBookingExpense::where('booking_type', 'export')
-                        ->where('booking_id', $r->id)
-                        ->sum('total_expense_amount');
+                    $total = NasFreightsFreightExportBookingExpense::where('booking_id', $r->id)
+                        ->value('total_expense_amount');
 
                     return $total > 0 ? number_format($total, 2) : '—';
                 })
@@ -77,12 +78,12 @@ class FreightExportBookingController extends Controller
                     'Cancelled'  => '<span class="badge bg-danger">Cancelled</span>',
                     default      => '<span class="badge bg-secondary">Draft</span>',
                 })
-                ->addColumn('action', function ($r) use ($canAddExpense, $canManageTransport) {
+                ->addColumn('action', function ($r) use ($canManageExpense, $canManageTransport) {
                     $html = '<div class="d-flex flex-nowrap gap-1">';
 
-                    if ($canAddExpense) {
-                        $expenseUrl = route('nas-freights.export-expenses.create', ['booking_id' => $r->id]);
-                        $html .= '<a href="'.$expenseUrl.'" class="btn btn-sm btn-outline-success py-0 px-1" title="Add Expense"><i class="fa fa-receipt"></i></a>';
+                    if ($canManageExpense) {
+                        $expenseUrl = route('nas-freights.freight-export-bookings.expense.edit', $r->id);
+                        $html .= '<a href="'.$expenseUrl.'" class="btn btn-sm btn-outline-success py-0 px-1" title="Expense"><i class="fa fa-receipt"></i></a>';
                     }
 
                     if ($canManageTransport) {
@@ -101,6 +102,8 @@ class FreightExportBookingController extends Controller
                     return $html;
                 })
                 ->filterColumn('customer_name', fn ($q, $k) => $q->whereHas('customer', fn ($s) => $s->where('name', 'like', "%{$k}%")))
+                ->filterColumn('party_bill_ref_no', fn ($q, $k) => $q->where('party_bill_ref_no', 'like', "%{$k}%"))
+                ->filterColumn('party_invoice_no', fn ($q, $k) => $q->where('party_invoice_no', 'like', "%{$k}%"))
                 ->filterColumn('export_bl_no', fn ($q, $k) => $q->where('export_bl_no', 'like', "%{$k}%"))
                 ->rawColumns(['status_badge', 'action'])
                 ->make(true);
@@ -133,7 +136,7 @@ class FreightExportBookingController extends Controller
 
     public function show(ShowFreightExportBookingRequest $request, NasFreightsFreightExportBooking $exportBooking)
     {
-        $exportBooking->load(['customer', 'salesperson', 'overseasAgent', 'shippingCarrier', 'items', 'transportItems']);
+        $exportBooking->load(['customer', 'salesperson', 'overseasAgent', 'shippingCarrier', 'items', 'transportItems', 'expense.items.expenseHead']);
 
         return view('nas-freights.freight-export-bookings.show', compact('exportBooking'));
     }
@@ -275,6 +278,8 @@ class FreightExportBookingController extends Controller
         return [
             'branch_id'             => session('nas_freights_branch_id'),
             'customer_id'           => $request->customer_id ?: null,
+            'party_bill_ref_no'     => $request->party_bill_ref_no ?: null,
+            'party_invoice_no'      => $request->party_invoice_no ?: null,
             'party_bill_date'       => $request->party_bill_date ?: null,
             'salesperson_id'        => $request->salesperson_id ?: null,
             'overseas_agent_id'     => $request->overseas_agent_id ?: null,

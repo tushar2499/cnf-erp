@@ -14,6 +14,7 @@ use App\Http\Controllers\NasFreights\FreightBookingController;
 use App\Http\Controllers\NasFreights\FreightBookingExpenseController;
 use App\Http\Controllers\NasFreights\FreightExportBookingBillController;
 use App\Http\Controllers\NasFreights\FreightExportBookingController;
+use App\Http\Controllers\NasFreights\FreightExportBookingExpenseController;
 use App\Http\Controllers\NasFreights\FreightExportBookingTransportController;
 use App\Http\Controllers\NasFreights\ImportController;
 use App\Http\Controllers\NasFreights\MoneyReceiptController;
@@ -84,6 +85,8 @@ Route::prefix('freight-export-bookings')->name('freight-export-bookings.')->grou
     Route::delete('/{exportBooking}', [FreightExportBookingController::class, 'destroy'])->name('destroy');
     Route::get('/{exportBooking}/transport', [FreightExportBookingTransportController::class, 'edit'])->name('transport.edit');
     Route::put('/{exportBooking}/transport', [FreightExportBookingTransportController::class, 'update'])->name('transport.update');
+    Route::get('/{exportBooking}/expense', [FreightExportBookingExpenseController::class, 'edit'])->name('expense.edit');
+    Route::put('/{exportBooking}/expense', [FreightExportBookingExpenseController::class, 'update'])->name('expense.update');
 });
 
 // Freight Export Booking Bills
@@ -300,17 +303,14 @@ Route::prefix('settings')->name('settings.')->group(function () {
     });
 });
 
-// Import / Export Booking Expenses
-foreach (['import', 'export'] as $_expType) {
-    Route::prefix("{$_expType}-expenses")->name("{$_expType}-expenses.")->group(function () {
-        Route::get('/search-bookings', [FreightBookingExpenseController::class, 'searchBookings'])->name('search-bookings');
-        Route::get('/', [FreightBookingExpenseController::class, 'index'])->name('index');
-        Route::get('/create', [FreightBookingExpenseController::class, 'create'])->name('create');
-        Route::post('/', [FreightBookingExpenseController::class, 'store'])->name('store');
-        Route::get('/{freightBookingExpense}', [FreightBookingExpenseController::class, 'show'])->name('show');
-        Route::get('/{freightBookingExpense}/edit', [FreightBookingExpenseController::class, 'edit'])->name('edit');
-        Route::put('/{freightBookingExpense}', [FreightBookingExpenseController::class, 'update'])->name('update');
-        Route::delete('/{freightBookingExpense}', [FreightBookingExpenseController::class, 'destroy'])->name('destroy');
-    });
-}
-unset($_expType);
+// Import Booking Expenses (standalone CRUD; export expenses are nested under freight-export-bookings)
+Route::prefix('import-expenses')->name('import-expenses.')->group(function () {
+    Route::get('/search-bookings', [FreightBookingExpenseController::class, 'searchBookings'])->name('search-bookings');
+    Route::get('/', [FreightBookingExpenseController::class, 'index'])->name('index');
+    Route::get('/create', [FreightBookingExpenseController::class, 'create'])->name('create');
+    Route::post('/', [FreightBookingExpenseController::class, 'store'])->name('store');
+    Route::get('/{freightBookingExpense}', [FreightBookingExpenseController::class, 'show'])->name('show');
+    Route::get('/{freightBookingExpense}/edit', [FreightBookingExpenseController::class, 'edit'])->name('edit');
+    Route::put('/{freightBookingExpense}', [FreightBookingExpenseController::class, 'update'])->name('update');
+    Route::delete('/{freightBookingExpense}', [FreightBookingExpenseController::class, 'destroy'])->name('destroy');
+});

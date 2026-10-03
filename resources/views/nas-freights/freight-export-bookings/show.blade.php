@@ -241,6 +241,78 @@
     </div>
 </div>
 
+{{-- Expense Section --}}
+@if(auth()->user()->hasPermission('freight.export-booking.expense-manage'))
+<div class="section-card mt-1">
+    <div class="form-header d-flex justify-content-between align-items-center" style="background:linear-gradient(135deg,#14532d,#059669)">
+        <span><i class="fa fa-receipt me-1"></i> Expense Details
+            @if($exportBooking->expense && $exportBooking->expense->total_expense_amount > 0)
+                <span class="ms-2 badge bg-light text-dark fw-bold" style="font-size:.78rem;">
+                    Total: {{ number_format($exportBooking->expense->total_expense_amount, 2) }}
+                </span>
+                @if($exportBooking->expense->total_approved_amount > 0)
+                    <span class="ms-1 badge bg-success bg-opacity-75 fw-bold" style="font-size:.78rem;">
+                        Approved: {{ number_format($exportBooking->expense->total_approved_amount, 2) }}
+                    </span>
+                @endif
+            @endif
+        </span>
+        @if(auth()->user()->hasPermission('freight.export-booking.expense-manage'))
+        <a href="{{ route('nas-freights.freight-export-bookings.expense.edit', $exportBooking->id) }}"
+           class="btn btn-sm btn-light py-0 px-2" style="font-size:.72rem;">
+            <i class="fa fa-edit me-1"></i>{{ $exportBooking->expense ? 'Edit Expense' : 'Add Expense' }}
+        </a>
+        @endif
+    </div>
+    @if(!$exportBooking->expense || $exportBooking->expense->items->isEmpty())
+        <div class="section-body text-center text-muted py-3" style="font-size:.8rem;">
+            <i class="fa fa-receipt me-1"></i> No expense added yet.
+        </div>
+    @else
+        <div class="p-0" style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
+            <table class="table table-bordered table-hover mb-0" style="font-size:.73rem; white-space:nowrap; min-width:700px;">
+                <thead>
+                    <tr style="background:#059669; color:#fff;">
+                        <th style="padding:.3rem .5rem; width:35px;">#</th>
+                        <th style="padding:.3rem .5rem;">Expense Head</th>
+                        <th style="padding:.3rem .5rem;">Receiptable</th>
+                        <th style="padding:.3rem .5rem; text-align:right;">Expense Amount</th>
+                        <th style="padding:.3rem .5rem; text-align:right;">Approved Amount</th>
+                        <th style="padding:.3rem .5rem;">Expense Date</th>
+                        <th style="padding:.3rem .5rem;">Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($exportBooking->expense->items as $i => $item)
+                    <tr>
+                        <td class="text-center fw-bold" style="padding:.3rem .5rem;">{{ $i + 1 }}</td>
+                        <td style="padding:.3rem .5rem;" class="fw-semibold">{{ $item->expenseHead?->name ?? '—' }}</td>
+                        <td style="padding:.3rem .5rem;">
+                            <span class="badge {{ $item->receiptable === 'Yes' ? 'bg-success bg-opacity-75' : 'bg-secondary bg-opacity-50' }}">
+                                {{ $item->receiptable }}
+                            </span>
+                        </td>
+                        <td class="text-end" style="padding:.3rem .5rem;">{{ number_format($item->expense_amount, 2) }}</td>
+                        <td class="text-end" style="padding:.3rem .5rem;">{{ number_format($item->approved_amount, 2) }}</td>
+                        <td style="padding:.3rem .5rem;">{{ $item->expense_date?->format('d M Y') ?? '—' }}</td>
+                        <td style="padding:.3rem .5rem;">{{ $item->note ?? '—' }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+                <tfoot>
+                    <tr style="background:#f0fdf4; font-weight:700; border-top:2px solid #14532d;">
+                        <td colspan="3" class="text-end" style="padding:.35rem .5rem;">Total</td>
+                        <td class="text-end" style="padding:.35rem .5rem; color:#14532d;">{{ number_format($exportBooking->expense->total_expense_amount, 2) }}</td>
+                        <td class="text-end" style="padding:.35rem .5rem; color:#059669;">{{ number_format($exportBooking->expense->total_approved_amount, 2) }}</td>
+                        <td colspan="2" style="padding:.35rem .5rem;"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    @endif
+</div>
+@endif
+
 {{-- Transport Section — full width below two-column layout --}}
 @if(auth()->user()->hasPermission('freight.export-booking.transport-manage'))
 <div class="section-card mt-1">

@@ -6,6 +6,7 @@ use App\Models\Employee;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\DB;
 
 class NasFreightsFreightExportBooking extends Model
@@ -14,7 +15,7 @@ class NasFreightsFreightExportBooking extends Model
 
     protected $fillable = [
         'export_booking_no', 'branch_id',
-        'customer_id', 'party_bill_ref_no', 'party_bill_date',
+        'customer_id', 'party_bill_ref_no', 'party_invoice_no', 'party_bill_date',
         'salesperson_id', 'overseas_agent_id', 'shipping_carrier_id',
         'booking_date', 'service_type', 'incoterms', 'currency',
         'pol', 'pod', 'place_of_receipt', 'place_of_delivery',
@@ -71,6 +72,11 @@ class NasFreightsFreightExportBooking extends Model
     public function bills(): HasMany
     {
         return $this->hasMany(NasFreightsFreightExportBookingBill::class, 'export_booking_id');
+    }
+
+    public function expense(): HasOne
+    {
+        return $this->hasOne(NasFreightsFreightExportBookingExpense::class, 'booking_id');
     }
 
     public static function generateExportBookingNo(): string

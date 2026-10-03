@@ -35,7 +35,10 @@
       "Bash(php -r ' *)",
       "Bash(./vendor/bin/pint app/Http/Controllers/NasFreights/FreightExportBookingBillController.php --format agent)",
       "Bash(./vendor/bin/pint app/Http/Requests/Chevron/Bill/StoreBillRequest.php app/Http/Requests/Chevron/Bill/UpdateBillRequest.php --format agent)",
-      "Bash(./vendor/bin/pint app/Http/Controllers/NasFreights/FreightExportBookingBillController.php app/Http/Requests/NasFreights/FreightExportBookingBill/ database/seeders/PermissionSeeder.php --format agent)"
+      "Bash(./vendor/bin/pint app/Http/Controllers/NasFreights/FreightExportBookingBillController.php app/Http/Requests/NasFreights/FreightExportBookingBill/ database/seeders/PermissionSeeder.php --format agent)",
+      "Bash(markitdown '/home/himal/Desktop/nas/BOOKING.xlsx')",
+      "Bash(python3 -c ' *)",
+      "Bash(./vendor/bin/pint app/Http/Controllers/NasFreights/FreightExportBookingController.php --format agent)"
     ]
   }
 }

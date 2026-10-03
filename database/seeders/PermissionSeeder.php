@@ -156,6 +156,7 @@ class PermissionSeeder extends Seeder
             ['company_id' => 2, 'module' => 'Freight Export Bookings', 'name' => 'freight.export-booking.edit', 'sorting_order' => 33],
             ['company_id' => 2, 'module' => 'Freight Export Bookings', 'name' => 'freight.export-booking.delete', 'sorting_order' => 34],
             ['company_id' => 2, 'module' => 'Freight Export Bookings', 'name' => 'freight.export-booking.transport-manage', 'sorting_order' => 36],
+            ['company_id' => 2, 'module' => 'Freight Export Bookings', 'name' => 'freight.export-booking.expense-manage', 'sorting_order' => 37],
 
             // Transport Bookings
             ['company_id' => 2, 'module' => 'Transport Bookings', 'name' => 'freight.booking.list', 'sorting_order' => 40],
@@ -270,13 +271,6 @@ class PermissionSeeder extends Seeder
             ['company_id' => 2, 'module' => 'Import Expenses', 'name' => 'freight.import-expense.create', 'sorting_order' => 222],
             ['company_id' => 2, 'module' => 'Import Expenses', 'name' => 'freight.import-expense.edit', 'sorting_order' => 223],
             ['company_id' => 2, 'module' => 'Import Expenses', 'name' => 'freight.import-expense.delete', 'sorting_order' => 224],
-
-            // Export Booking Expenses
-            ['company_id' => 2, 'module' => 'Export Expenses', 'name' => 'freight.export-expense.list', 'sorting_order' => 225],
-            ['company_id' => 2, 'module' => 'Export Expenses', 'name' => 'freight.export-expense.view', 'sorting_order' => 226],
-            ['company_id' => 2, 'module' => 'Export Expenses', 'name' => 'freight.export-expense.create', 'sorting_order' => 227],
-            ['company_id' => 2, 'module' => 'Export Expenses', 'name' => 'freight.export-expense.edit', 'sorting_order' => 228],
-            ['company_id' => 2, 'module' => 'Export Expenses', 'name' => 'freight.export-expense.delete', 'sorting_order' => 229],
 
             // Export Booking Bills
             ['company_id' => 2, 'module' => 'Export Booking Bills', 'name' => 'freight.export-booking-bill.list', 'sorting_order' => 230],
