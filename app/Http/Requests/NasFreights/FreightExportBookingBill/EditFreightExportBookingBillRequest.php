@@ -20,6 +20,6 @@ class EditFreightExportBookingBillRequest extends FormRequest
 
     protected function failedAuthorization(): void
     {
-        abort(403, 'You do not have permission to edit export booking bills.');
+        abort(403, 'You do not have permission to edit export booking/job bills.');
     }
 }

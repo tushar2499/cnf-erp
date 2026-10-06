@@ -24,11 +24,13 @@ class UpdateFreightExportBookingBillRequest extends FormRequest
             'items'             => ['required', 'array', 'min:1'],
             'items.*.name'      => ['required', 'string', 'max:255'],
             'items.*.amount'    => ['required', 'numeric', 'min:0'],
+            'vat_title'         => ['nullable', 'string', 'max:255'],
+            'vat_amount'        => ['nullable', 'numeric', 'min:0'],
         ];
     }
 
     protected function failedAuthorization(): void
     {
-        abort(403, 'You do not have permission to edit export booking bills.');
+        abort(403, 'You do not have permission to edit export booking/job bills.');
     }
 }

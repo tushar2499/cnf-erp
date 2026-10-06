@@ -92,12 +92,15 @@ class FreightExportBookingBillController extends Controller
 
         $alreadyExists = $booking->bills()->where('bill_type', $request->bill_type)->exists();
         if ($alreadyExists) {
-            return back()->withErrors(['bill_type' => 'A '.$request->bill_type.' bill already exists for this booking.'])->withInput();
+            return back()->withErrors(['bill_type' => 'A '.$request->bill_type.' bill already exists for this booking/job.'])->withInput();
         }
 
         $exchangeRate = (float) $request->exchange_rate;
 
         DB::transaction(function () use ($request, $booking, $exchangeRate) {
+            $vatAmount = round((float) ($request->vat_amount ?? 0), 2);
+            $vatAmountBdt = round($vatAmount * $exchangeRate, 2);
+
             $bill = NasFreightsFreightExportBookingBill::create([
                 'bill_no'           => NasFreightsFreightExportBookingBill::generateBillNo(),
                 'export_booking_id' => $booking->id,
@@ -107,6 +110,9 @@ class FreightExportBookingBillController extends Controller
                 'currency'          => $request->currency,
                 'exchange_rate'     => $exchangeRate,
                 'remarks'           => $request->remarks,
+                'vat_title'         => $request->vat_title,
+                'vat_amount'        => $vatAmount,
+                'vat_amount_bdt'    => $vatAmountBdt,
                 'status'            => 'Draft',
                 'total_amount'      => 0,
                 'total_bdt_amount'  => 0,
@@ -137,7 +143,7 @@ class FreightExportBookingBillController extends Controller
         });
 
         return redirect()->route('nas-freights.freight-export-booking-bills.index')
-            ->with('success', 'Export booking bill created successfully.');
+            ->with('success', 'Export booking/job bill created successfully.');
     }
 
     public function show(ShowFreightExportBookingBillRequest $request, NasFreightsFreightExportBookingBill $freightExportBookingBill)
@@ -172,12 +178,15 @@ class FreightExportBookingBillController extends Controller
             ->where('id', '!=', $bill->id)
             ->exists();
         if ($alreadyExists) {
-            return back()->withErrors(['bill_type' => 'A '.$request->bill_type.' bill already exists for this booking.'])->withInput();
+            return back()->withErrors(['bill_type' => 'A '.$request->bill_type.' bill already exists for this booking/job.'])->withInput();
         }
 
         $exchangeRate = (float) $request->exchange_rate;
 
         DB::transaction(function () use ($request, $bill, $exchangeRate, $newBookingId) {
+            $vatAmount = round((float) ($request->vat_amount ?? 0), 2);
+            $vatAmountBdt = round($vatAmount * $exchangeRate, 2);
+
             $bill->items()->delete();
 
             $totalAmount = 0;
@@ -205,6 +214,9 @@ class FreightExportBookingBillController extends Controller
                 'currency'          => $request->currency,
                 'exchange_rate'     => $exchangeRate,
                 'remarks'           => $request->remarks,
+                'vat_title'         => $request->vat_title,
+                'vat_amount'        => $vatAmount,
+                'vat_amount_bdt'    => $vatAmountBdt,
                 'total_amount'      => round($totalAmount, 2),
                 'total_bdt_amount'  => round($totalBdt, 2),
             ]);

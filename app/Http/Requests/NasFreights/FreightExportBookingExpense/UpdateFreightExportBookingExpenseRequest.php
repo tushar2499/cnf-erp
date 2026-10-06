@@ -26,6 +26,6 @@ class UpdateFreightExportBookingExpenseRequest extends FormRequest
 
     protected function failedAuthorization(): void
     {
-        abort(403, 'You do not have permission to manage export booking expenses.');
+        abort(403, 'You do not have permission to manage export booking/job expenses.');
     }
 }

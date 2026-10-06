@@ -20,6 +20,6 @@ class CreateFreightExportBookingRequest extends FormRequest
 
     protected function failedAuthorization(): void
     {
-        abort(403, 'You do not have permission to create freight export bookings.');
+        abort(403, 'You do not have permission to create freight export booking/jobs.');
     }
 }

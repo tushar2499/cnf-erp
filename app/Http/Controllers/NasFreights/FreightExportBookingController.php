@@ -131,27 +131,27 @@ class FreightExportBookingController extends Controller
         });
 
         return redirect()->route('nas-freights.freight-export-bookings.index')
-            ->with('success', 'Freight Export Booking created successfully.');
+            ->with('success', 'Freight Export Booking/Job created successfully.');
     }
 
     public function show(ShowFreightExportBookingRequest $request, NasFreightsFreightExportBooking $exportBooking)
     {
-        $exportBooking->load(['customer', 'salesperson', 'overseasAgent', 'shippingCarrier', 'items', 'transportItems', 'expense.items.expenseHead']);
+        $exportBooking->load(['customer', 'salesperson', 'overseasAgent', 'shippingCarrier', 'items', 'transportItems', 'bills', 'expense.items.expenseHead']);
 
         return view('nas-freights.freight-export-bookings.show', compact('exportBooking'));
     }
 
     public function edit(EditFreightExportBookingRequest $request, NasFreightsFreightExportBooking $exportBooking)
     {
-        $exportBooking->load(['items', 'overseasAgent', 'shippingCarrier']);
+        $exportBooking->load(['items', 'overseasAgent', 'shippingCarrier', 'transportItems', 'bills', 'expense.items.expenseHead']);
         $existingItems = $exportBooking->items->map(fn ($i) => [
             'item_type'          => $i->item_type,
             'container_size'     => $i->container_size,
             'container_no'       => $i->container_no,
             'seal_no'            => $i->seal_no,
-            'package_type'       => $i->package_type,
-            'hs_code'            => $i->hs_code,
-            'commodity'          => $i->commodity,
+            'package_type'       => $i->item_type === 'package' ? $i->package_type : null,
+            'package_qty'        => $i->item_type === 'container' ? $i->package_qty : null,
+            'package_unit'       => $i->item_type === 'container' ? $i->package_type : null,
             'quantity'           => $i->quantity,
             'gross_weight'       => $i->gross_weight,
             'weight_unit'        => $i->weight_unit,
@@ -176,14 +176,14 @@ class FreightExportBookingController extends Controller
             $this->saveItems($exportBooking, $request->input('items', []));
         });
 
-        return redirect()->route('nas-freights.freight-export-bookings.index')->with('success', 'Freight Export Booking '.$exportBooking->export_booking_no.' updated.');
+        return redirect()->route('nas-freights.freight-export-bookings.index')->with('success', 'Freight Export Booking/Job '.$exportBooking->export_booking_no.' updated.');
     }
 
     public function destroy(DestroyFreightExportBookingRequest $request, NasFreightsFreightExportBooking $exportBooking)
     {
         $exportBooking->delete();
 
-        return response()->json(['message' => 'Freight Export Booking '.$exportBooking->export_booking_no.' deleted.']);
+        return response()->json(['message' => 'Freight Export Booking/Job '.$exportBooking->export_booking_no.' deleted.']);
     }
 
     public function searchCustomers(Request $request)
@@ -279,8 +279,9 @@ class FreightExportBookingController extends Controller
             'branch_id'             => session('nas_freights_branch_id'),
             'customer_id'           => $request->customer_id ?: null,
             'party_bill_ref_no'     => $request->party_bill_ref_no ?: null,
-            'party_invoice_no'      => $request->party_invoice_no ?: null,
             'party_bill_date'       => $request->party_bill_date ?: null,
+            'party_invoice_no'      => $request->party_invoice_no ?: null,
+            'party_invoice_date'    => $request->party_invoice_date ?: null,
             'salesperson_id'        => $request->salesperson_id ?: null,
             'overseas_agent_id'     => $request->overseas_agent_id ?: null,
             'shipping_carrier_id'   => $request->shipping_carrier_id ?: null,
@@ -292,15 +293,38 @@ class FreightExportBookingController extends Controller
             'pod'                   => $request->pod ?: null,
             'place_of_receipt'      => $request->place_of_receipt ?: null,
             'commodity_description' => $request->commodity_description ?: null,
+            'hs_codes'              => $this->normalizeHsCodes($request->input('hs_codes', [])),
             'vessel_name'           => $request->vessel_name ?: null,
             'voyage_no'             => $request->voyage_no ?: null,
             'export_bl_no'          => $request->export_bl_no ?: null,
             'booking_note_no'       => $request->booking_note_no ?: null,
+            'bl_date'               => $request->bl_date ?: null,
+            'exp_no'                => $request->exp_no ?: null,
+            'exp_date'              => $request->exp_date ?: null,
+            'invoice_no'            => $request->invoice_no ?: null,
+            'invoice_date'          => $request->invoice_date ?: null,
+            'lc_no'                 => $request->lc_no ?: null,
             'etd'                   => $request->etd ?: null,
             'eta'                   => $request->eta ?: null,
             'status'                => $request->status ?: 'Draft',
             'remarks'               => $request->remarks ?: null,
         ];
+    }
+
+    /**
+     * @param  array<int, mixed>  $codes
+     * @return array<int, string>|null
+     */
+    private function normalizeHsCodes(array $codes): ?array
+    {
+        $clean = collect($codes)
+            ->map(fn ($code) => trim((string) $code))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        return $clean ?: null;
     }
 
     private function saveItems(NasFreightsFreightExportBooking $exportBooking, array $items): void
@@ -312,14 +336,19 @@ class FreightExportBookingController extends Controller
                 continue;
             }
 
+            $isContainer = $item['item_type'] === 'container';
+
             $exportBooking->items()->create([
                 'item_type'          => $item['item_type'],
-                'container_size'     => $item['item_type'] === 'container' ? ($item['container_size'] ?? null) : null,
-                'container_no'       => $item['item_type'] === 'container' ? ($item['container_no'] ?? null) : null,
-                'seal_no'            => $item['item_type'] === 'container' ? ($item['seal_no'] ?? null) : null,
-                'package_type'       => $item['item_type'] === 'package' ? ($item['package_type'] ?? null) : null,
-                'hs_code'            => $item['hs_code'] ?? null,
-                'commodity'          => $item['commodity'] ?? null,
+                'container_size'     => $isContainer ? ($item['container_size'] ?? null) : null,
+                'container_no'       => $isContainer ? ($item['container_no'] ?? null) : null,
+                'seal_no'            => $isContainer ? ($item['seal_no'] ?? null) : null,
+                'package_type'       => match ($item['item_type']) {
+                    'container' => ($item['package_unit'] ?? null) ?: null,
+                    'package'   => ($item['package_type'] ?? null) ?: null,
+                    default     => null,
+                },
+                'package_qty'        => $isContainer && is_numeric($item['package_qty'] ?? '') ? max(1, (int) $item['package_qty']) : null,
                 'quantity'           => max(1, (int) ($item['quantity'] ?? 1)),
                 'gross_weight'       => is_numeric($item['gross_weight'] ?? '') ? $item['gross_weight'] : null,
                 'weight_unit'        => $item['weight_unit'] ?? 'KG',

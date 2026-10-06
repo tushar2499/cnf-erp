@@ -20,6 +20,6 @@ class ShowFreightExportBookingBillRequest extends FormRequest
 
     protected function failedAuthorization(): void
     {
-        abort(403, 'You do not have permission to view export booking bills.');
+        abort(403, 'You do not have permission to view export booking/job bills.');
     }
 }

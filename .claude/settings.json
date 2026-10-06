@@ -38,7 +38,24 @@
       "Bash(./vendor/bin/pint app/Http/Controllers/NasFreights/FreightExportBookingBillController.php app/Http/Requests/NasFreights/FreightExportBookingBill/ database/seeders/PermissionSeeder.php --format agent)",
       "Bash(markitdown '/home/himal/Desktop/nas/BOOKING.xlsx')",
       "Bash(python3 -c ' *)",
-      "Bash(./vendor/bin/pint app/Http/Controllers/NasFreights/FreightExportBookingController.php --format agent)"
+      "Bash(./vendor/bin/pint app/Http/Controllers/NasFreights/FreightExportBookingController.php --format agent)",
+      "Bash(./vendor/bin/pint --dirty --format agent app/Http/Controllers/NasFreights/FreightExportBookingController.php)",
+      "Bash(mysql --version)",
+      "Bash(python3 ~/.claude/skills/ui-ux-pro-max/scripts/search.py \"dynamic add remove multiple input form labels\" --domain ux -n 4)",
+      "Bash(grep -rnE -e \"->commodity\\([^_a-z]|$\\)|\\\\.commodity\\([^_a-z]|$\\)\" --include='*.php' app resources)",
+      "Bash(grep -vE \"vendor frames|^\\\\s*$\")",
+      "Bash(grep -n 'protected $table\\\\|function expenseHead\\\\|function items\\\\|belongsTo\\\\|hasMany' app/Models/NasFreights/NasFreightsFreightExportBookingExpense.php app/Models/NasFreights/NasFreightsFreightExportBookingTransportItem.php)",
+      "Bash(grep -n 'protected $table' app/Models/Employee.php)",
+      "Bash(grep -vE \"vendor frames|^\\\\s*$|^#[0-9]+ \")",
+      "Bash(mysql -e \"SELECT COLUMN_NAME, COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='a4bbd_cnf_erp' AND TABLE_NAME='nas_freights_freight_export_bookings' AND COLUMN_NAME IN \\('party_invoice_date','hs_codes'\\)\")",
+      "Bash(google-chrome --headless=new --no-sandbox --disable-gpu --virtual-time-budget=5000 --dump-dom file:///tmp/claude-1000/-var-www-html-a4bbd-cnf-erp/9d05dbce-e6a2-434e-b4a0-69e27a651c0a/scratchpad/item_harness.html)",
+      "Bash(grep -vE 'route\\\\\\(|exportBooking|booking_id|export_booking|\\\\$booking|with\\\\\\(\\\\[')",
+      "Bash(xargs sed -i -E \"s/freight export bookings/freight export booking\\\\/jobs/g; s/export booking bills/export booking\\\\/job bills/g; s/export booking expenses/export booking\\\\/job expenses/g\")",
+      "Bash(grep -n 'EXPENSE & TRANSPORT\\\\|/edit-mode sections\\\\|</form>\\\\|justify-content-end gap-2\\\\|CARGO ITEMS\\\\|<template id=\"hsCodeTemplate\">\\\\|@if\\($exportBooking\\)$\\\\|^        @endif$' resources/views/nas-freights/freight-export-bookings/create.blade.php)",
+      "Bash(grep -vE 'Booking/Job|Booking Note|route\\\\\\(|\\\\$exportBooking|\\\\$booking|exportBooking|BookingId|booking-|hidBooking|loadBooking|bookingSelect|bookingInfo|exportBookingsTable|^\\\\S+:[0-9]+:\\\\s*\\(//|\\\\{\\\\{--|/\\\\*\\)')",
+      "Bash(grep -n \"Expense Section\\\\|Transport Section\\\\|@endsection\\\\|@endif$\" resources/views/nas-freights/freight-export-bookings/show.blade.php)",
+      "Bash(google-chrome --headless=new --no-sandbox --disable-gpu --hide-scrollbars --window-size=760,420 --virtual-time-budget=5000 --screenshot=/tmp/claude-1000/-var-www-html-a4bbd-cnf-erp/9d05dbce-e6a2-434e-b4a0-69e27a651c0a/scratchpad/hs2_a.png file:///tmp/claude-1000/-var-www-html-a4bbd-cnf-erp/9d05dbce-e6a2-434e-b4a0-69e27a651c0a/scratchpad/hs2_a.html)",
+      "Bash(vendor/bin/pint --format agent app/Http/Controllers/NasFreights/FreightExportBookingController.php tests/Feature/NasFreights/FreightExportBookingTest.php)"
     ]
   }
 }

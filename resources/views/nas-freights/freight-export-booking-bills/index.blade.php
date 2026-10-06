@@ -1,6 +1,6 @@
 @extends('nas-freights.layouts.app')
 
-@section('title', 'Export Booking Bills')
+@section('title', 'Export Booking/Job Bills')
 
 @push('styles')
 <style>
@@ -59,7 +59,7 @@
 
 @section('content')
 <div class="page-header">
-    <h4><i class="fa fa-file-invoice-dollar me-2 text-success"></i> Export Booking Bills</h4>
+    <h4><i class="fa fa-file-invoice-dollar me-2 text-success"></i> Export Booking/Job Bills</h4>
     <a href="{{ route('nas-freights.freight-export-booking-bills.create') }}" class="btn btn-sm btn-success">
         <i class="fa fa-plus me-1"></i> New Bill
     </a>
@@ -97,7 +97,7 @@
                         <th>Action</th>
                         <th>Bill No</th>
                         <th>Bill Date</th>
-                        <th>Booking No</th>
+                        <th>Booking/Job No</th>
                         <th>Customer</th>
                         <th>Bill Type</th>
                         <th>Currency</th>

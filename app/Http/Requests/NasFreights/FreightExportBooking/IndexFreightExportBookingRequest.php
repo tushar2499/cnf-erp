@@ -20,6 +20,6 @@ class IndexFreightExportBookingRequest extends FormRequest
 
     protected function failedAuthorization(): void
     {
-        abort(403, 'You do not have permission to view freight export bookings.');
+        abort(403, 'You do not have permission to view freight export booking/jobs.');
     }
 }

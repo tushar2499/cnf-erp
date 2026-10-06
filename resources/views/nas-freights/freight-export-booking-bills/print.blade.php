@@ -99,7 +99,7 @@
         }
 
         table.ship tr:last-child td {
-            border-bottom: none;
+            border-bottom: 1px solid #ddd;
         }
 
         table.ship td.k {
@@ -208,7 +208,17 @@
         $booking = $bill->exportBooking;
         $items   = $bill->items;
 
-        /* Amount in words (BDT total) */
+        $isOverseas  = $bill->bill_type === 'Overseas Agent';
+        $isForeign   = $bill->currency !== 'BDT';
+        $showForeign = $isForeign;       // customer+foreign or overseas
+        $showBdt     = ! $isOverseas;   // customer bills only
+        $dualCols    = $showForeign && $showBdt; // customer + foreign → both columns
+
+        $grandTotalBdt     = (float) ($bill->total_bdt_amount + $bill->vat_amount_bdt);
+        $grandTotalForeign = (float) ($bill->total_amount + $bill->vat_amount);
+        $hasVat            = $bill->vat_amount > 0 || $bill->vat_title;
+
+        /* Amount in words (BDT — only used for customer bills) */
         $ones   = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
         $tnsArr = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
         $hunds  = function (int $n) use ($ones, $tnsArr): string {
@@ -218,9 +228,8 @@
             if ($n > 0)    { $o .= $ones[$n].' '; }
             return $o;
         };
-        $totalBdt = (float) $bill->total_bdt_amount;
-        $takaInt  = (int) floor($totalBdt);
-        $paisaInt = (int) round(($totalBdt - $takaInt) * 100);
+        $takaInt  = (int) floor($grandTotalBdt);
+        $paisaInt = (int) round(($grandTotalBdt - $takaInt) * 100);
         $n = $takaInt; $w = '';
         if ($n >= 10000000) { $w .= $hunds((int)($n/10000000)).'Crore ';  $n %= 10000000; }
         if ($n >= 100000)   { $w .= $hunds((int)($n/100000)).'Lakh ';     $n %= 100000; }
@@ -230,24 +239,31 @@
         if ($paisaInt > 0) { $w .= ' and '.trim($hunds($paisaInt)).' Paisa'; }
         $amountInWords = $w.' Only';
 
-        /* Rowspan calculation for left shipment cell */
+        /* Rowspan: items(≥1) + subtotal + (vat?) + total + (words? — customer only) */
         $itemCount      = $items->count();
-        $totalRightRows = max($itemCount, 1) + 3; // items(≥1) + sub-total + total + words
+        $totalRightRows = max($itemCount, 1) + 2 + ($hasVat ? 1 : 0) + ($showBdt ? 1 : 0);
     @endphp
 
     <div class="page">
 
-        {{-- To: Customer --}}
+        {{-- To: address —  customer or overseas agent --}}
         <div class="to-section">
             <strong>To,</strong><br>
-            <strong>{{ $booking->customer?->name ?? '—' }}</strong><br>
-            @if(!empty($booking->customer?->address))
-                {!! nl2br(e($booking->customer->address)) !!}
+            @if($isOverseas)
+                <strong>{{ $booking->overseasAgent?->name ?? '—' }}</strong><br>
+                @if(!empty($booking->overseasAgent?->address))
+                    {!! nl2br(e($booking->overseasAgent->address)) !!}
+                @endif
+            @else
+                <strong>{{ $booking->customer?->name ?? '—' }}</strong><br>
+                @if(!empty($booking->customer?->address))
+                    {!! nl2br(e($booking->customer->address)) !!}
+                @endif
             @endif
         </div>
 
         {{-- Title --}}
-        <div class="bill-title">Freight Invoice</div>
+        <div class="bill-title">{{ $isOverseas ? 'Agent Invoice' : 'Freight Invoice' }}</div>
 
         {{-- Bill Ref / Date --}}
         <div class="ref-date-line">
@@ -260,8 +276,13 @@
             <thead>
                 <tr>
                     <th style="width:44%">Shipment Details</th>
-                    <th style="width:38%">Description</th>
-                    <th style="width:18%">Amount in BDT</th>
+                    <th style="{{ $dualCols ? 'width:28%' : 'width:38%' }}">Description</th>
+                    @if($showForeign)
+                        <th style="width:{{ $dualCols ? '14%' : '18%' }}">Amount ({{ $bill->currency }})</th>
+                    @endif
+                    @if($showBdt)
+                        <th style="width:{{ $dualCols ? '14%' : '18%' }}">Amount {{ $dualCols ? '(BDT)' : 'in BDT' }}</th>
+                    @endif
                 </tr>
             </thead>
             <tbody>
@@ -296,18 +317,11 @@
                                 <td>{{ $booking->pod }}</td>
                             </tr>
                             @endif
-                            @if($booking->service_type)
+                            @if($booking->commodity_description)
                             <tr>
                                 <td class="k">COMMODITY</td>
                                 <td class="sep">:</td>
-                                <td>{{ $booking->service_type }}</td>
-                            </tr>
-                            @endif
-                            @if($booking->incoterms)
-                            <tr>
-                                <td class="k">INCOTERMS</td>
-                                <td class="sep">:</td>
-                                <td>{{ $booking->incoterms }}</td>
+                                <td>{{ $booking->commodity_description }}</td>
                             </tr>
                             @endif
                             @if($booking->invoice_no)
@@ -324,7 +338,35 @@
                                 <td>{{ $booking->exp_no }}</td>
                             </tr>
                             @endif
-                            @if($booking->overseasAgent)
+                            @if($booking->party_bill_ref_no)
+                            <tr>
+                                <td class="k">PARTY BILL REF NO</td>
+                                <td class="sep">:</td>
+                                <td>{{ $booking->party_bill_ref_no }}</td>
+                            </tr>
+                            @endif
+                            @if($booking->party_bill_date)
+                            <tr>
+                                <td class="k">PARTY BILL DATE</td>
+                                <td class="sep">:</td>
+                                <td>{{ $booking->party_bill_date->format('d.m.Y') }}</td>
+                            </tr>
+                            @endif
+                            @if($booking->party_invoice_no)
+                            <tr>
+                                <td class="k">PARTY INVOICE NO</td>
+                                <td class="sep">:</td>
+                                <td>{{ $booking->party_invoice_no }}</td>
+                            </tr>
+                            @endif
+                            @if($booking->party_invoice_date)
+                            <tr>
+                                <td class="k">PARTY INVOICE DATE</td>
+                                <td class="sep">:</td>
+                                <td>{{ $booking->party_invoice_date->format('d.m.Y') }}</td>
+                            </tr>
+                            @endif
+                            @if(! $isOverseas && $booking->overseasAgent)
                             <tr>
                                 <td class="k">CONSIGNEE</td>
                                 <td class="sep">:</td>
@@ -338,10 +380,16 @@
                     @if($itemCount > 0)
                         @php $it = $items->first(); @endphp
                         <td style="padding:2.5px 5px;font-size:10px;">1. {{ $it->name }}</td>
-                        <td style="padding:2.5px 5px;font-size:10px;text-align:right;white-space:nowrap;">{{ number_format($it->amount_bdt, 2) }}</td>
+                        @if($showForeign)
+                            <td style="padding:2.5px 5px;font-size:10px;text-align:right;white-space:nowrap;">{{ number_format($it->amount, 2) }}</td>
+                        @endif
+                        @if($showBdt)
+                            <td style="padding:2.5px 5px;font-size:10px;text-align:right;white-space:nowrap;">{{ number_format($it->amount_bdt, 2) }}</td>
+                        @endif
                     @else
                         <td style="padding:2.5px 5px;">&nbsp;</td>
-                        <td></td>
+                        @if($showForeign)<td></td>@endif
+                        @if($showBdt)<td></td>@endif
                     @endif
                 </tr>
 
@@ -349,29 +397,62 @@
                 @foreach($items->slice(1) as $i => $item)
                 <tr>
                     <td style="padding:2.5px 5px;font-size:10px;border-top:1px solid #ddd;">{{ $i + 2 }}. {{ $item->name }}</td>
-                    <td style="padding:2.5px 5px;font-size:10px;text-align:right;white-space:nowrap;border-top:1px solid #ddd;">{{ number_format($item->amount_bdt, 2) }}</td>
+                    @if($showForeign)
+                        <td style="padding:2.5px 5px;font-size:10px;text-align:right;white-space:nowrap;border-top:1px solid #ddd;">{{ number_format($item->amount, 2) }}</td>
+                    @endif
+                    @if($showBdt)
+                        <td style="padding:2.5px 5px;font-size:10px;text-align:right;white-space:nowrap;border-top:1px solid #ddd;">{{ number_format($item->amount_bdt, 2) }}</td>
+                    @endif
                 </tr>
                 @endforeach
 
                 {{-- Sub-Total --}}
                 <tr>
                     <td style="padding:3px 5px;font-weight:700;font-size:11px;text-align:right;border-top:2px solid #000;">Sub-Total</td>
-                    <td style="padding:3px 5px;font-weight:700;font-size:11px;text-align:right;white-space:nowrap;border-top:2px solid #000;">{{ number_format($bill->total_bdt_amount, 2) }}</td>
+                    @if($showForeign)
+                        <td style="padding:3px 5px;font-weight:700;font-size:11px;text-align:right;white-space:nowrap;border-top:2px solid #000;">{{ number_format($bill->total_amount, 2) }}</td>
+                    @endif
+                    @if($showBdt)
+                        <td style="padding:3px 5px;font-weight:700;font-size:11px;text-align:right;white-space:nowrap;border-top:2px solid #000;">{{ number_format($bill->total_bdt_amount, 2) }}</td>
+                    @endif
                 </tr>
+
+                {{-- VAT row (conditional) --}}
+                @if($hasVat)
+                <tr>
+                    <td style="padding:3px 5px;font-size:10.5px;text-align:right;border-top:1px solid #ddd;">{{ $bill->vat_title ?: 'VAT' }}</td>
+                    @if($showForeign)
+                        <td style="padding:3px 5px;font-size:10.5px;text-align:right;white-space:nowrap;border-top:1px solid #ddd;">{{ number_format($bill->vat_amount, 2) }}</td>
+                    @endif
+                    @if($showBdt)
+                        <td style="padding:3px 5px;font-size:10.5px;text-align:right;white-space:nowrap;border-top:1px solid #ddd;">{{ number_format($bill->vat_amount_bdt, 2) }}</td>
+                    @endif
+                </tr>
+                @endif
 
                 {{-- Total Amount --}}
                 <tr>
                     <td style="padding:3px 5px;font-weight:700;font-size:11px;text-align:right;border-top:1px solid #000;"><strong>Total Amount</strong></td>
-                    <td style="padding:3px 5px;font-weight:700;font-size:11px;text-align:right;white-space:nowrap;border-top:1px solid #000;"><strong>{{ number_format($bill->total_bdt_amount, 2) }}</strong></td>
+                    @if($showForeign)
+                        <td style="padding:3px 5px;font-weight:700;font-size:11px;text-align:right;white-space:nowrap;border-top:1px solid #000;"><strong>{{ number_format($grandTotalForeign, 2) }}</strong></td>
+                    @endif
+                    @if($showBdt)
+                        <td style="padding:3px 5px;font-weight:700;font-size:11px;text-align:right;white-space:nowrap;border-top:1px solid #000;"><strong>{{ number_format($grandTotalBdt, 2) }}</strong></td>
+                    @endif
                 </tr>
 
-                {{-- Total Receivable Taka in words --}}
+                {{-- Total Receivable in words (customer bills only) --}}
+                @if($showBdt)
                 <tr>
-                    <td colspan="2" style="padding:5px 6px;font-weight:700;font-size:10.5px;border-top:2px solid #000;line-height:1.6;">
-                        Total Receivable Taka {{ number_format($bill->total_bdt_amount, 2) }}<br>
+                    <td colspan="{{ $dualCols ? 3 : 2 }}" style="padding:5px 6px;font-weight:700;font-size:10.5px;border-top:2px solid #000;line-height:1.6;">
+                        Total Receivable Taka {{ number_format($grandTotalBdt, 2) }}<br>
                         <span style="font-weight:400">({{ $amountInWords }})</span>
+                        @if($dualCols)
+                            <br><span style="font-weight:700;">Exchange Rate: 1 {{ $bill->currency }} = BDT {{ number_format($bill->exchange_rate, 2) }}</span>
+                        @endif
                     </td>
                 </tr>
+                @endif
 
             </tbody>
         </table>
@@ -379,9 +460,6 @@
         {{-- Footer ref line --}}
         <div class="footer-ref" style="margin-top:5px;">
             <span>REF NO: {{ $booking->export_booking_no }}</span>
-            @if($bill->currency !== 'BDT')
-                <span><strong>Note: - Dollar Rate: BDT {{ number_format($bill->exchange_rate, 2) }}</strong></span>
-            @endif
         </div>
 
         {{-- Company --}}

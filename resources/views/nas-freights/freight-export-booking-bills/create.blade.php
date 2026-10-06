@@ -1,6 +1,6 @@
 @extends('nas-freights.layouts.app')
 
-@section('title', isset($bill) ? 'Edit Bill — '.$bill->bill_no : 'New Export Booking Bill')
+@section('title', isset($bill) ? 'Edit Bill — '.$bill->bill_no : 'New Export Booking/Job Bill')
 
 @push('styles')
 <style>
@@ -43,7 +43,10 @@
 #itemsTable tbody tr:nth-child(even) { background: #f8fafc; }
 #itemsTable input { font-size: .78rem; padding: .2rem .35rem; height: auto; }
 
-.total-row td { font-weight: 700; background: #f0fdf4 !important; border-top: 2px solid #14b8a6 !important; }
+.subtotal-row td { font-weight: 600; background: #f0fdf4 !important; border-top: 2px solid #14b8a6 !important; }
+.vat-row td { background: #fefce8 !important; border-top: 1px solid #e2e8f0 !important; }
+.vat-row .vat-label { font-size: .76rem; font-weight: 700; color: #92400e; white-space: nowrap; }
+.grand-total-row td { font-weight: 700; background: #dcfce7 !important; border-top: 2px solid #16a34a !important; font-size: .83rem; }
 .total-label { font-size: .8rem; }
 
 /* ── Currency badge ── */
@@ -53,6 +56,7 @@
     background: #e0f2fe; color: #0369a1;
 }
 .currency-badge.bdt { background: #dcfce7; color: #166534; }
+
 </style>
 @endpush
 
@@ -64,7 +68,7 @@
         @if(isset($bill))
             Edit Bill &nbsp;<span class="badge bg-light text-dark border">{{ $bill->bill_no }}</span>
         @else
-            New Export Booking Bill
+            New Export Booking/Job Bill
         @endif
     </div>
     <div>
@@ -95,16 +99,16 @@
 
             {{-- Booking Search (create + edit) --}}
             <div class="panel booking-search-panel">
-                <div class="panel-header"><i class="fa fa-search"></i> {{ isset($bill) ? 'Change Booking' : 'Select Booking' }}</div>
+                <div class="panel-header"><i class="fa fa-search"></i> {{ isset($bill) ? 'Change Booking/Job' : 'Select Booking/Job' }}</div>
                 <div class="panel-body">
-                    <label class="form-label">Export Booking No / Customer <span class="req">*</span></label>
+                    <label class="form-label">Export Booking/Job No / Customer <span class="req">*</span></label>
                     <select id="bookingSelect" class="form-select form-select-sm w-100">
                         @if($booking)
                             <option value="{{ $booking->id }}" selected>
                                 {{ $booking->export_booking_no }}{{ $booking->customer ? ' — '.$booking->customer->name : '' }}
                             </option>
                         @else
-                            <option value="">Search booking (min 2 chars)…</option>
+                            <option value="">Search booking/job (min 2 chars)…</option>
                         @endif
                     </select>
                 </div>
@@ -112,7 +116,7 @@
 
             {{-- Booking Info Panel (shown after selection) --}}
             <div class="panel booking-info-panel" id="bookingInfoPanel" @if(!$booking) style="display:none" @endif>
-                <div class="panel-header"><i class="fa fa-ship"></i> Booking Details</div>
+                <div class="panel-header"><i class="fa fa-ship"></i> Booking/Job Details</div>
                 <div class="panel-body" id="bookingInfoBody">
                     @if($booking)
                         @include('nas-freights.freight-export-booking-bills._booking-info', ['booking' => $booking])
@@ -209,7 +213,7 @@
                 </div>
             </div>
 
-            {{-- Items --}}
+            {{-- Items + VAT + Grand Total --}}
             <div class="panel">
                 <div class="panel-header d-flex justify-content-between align-items-center">
                     <span><i class="fa fa-list-ul me-1"></i> Bill Items</span>
@@ -232,10 +236,38 @@
                             {{-- Rows populated by JS --}}
                         </tbody>
                         <tfoot>
-                            <tr class="total-row">
-                                <td colspan="2" class="text-end total-label">Total</td>
+                            {{-- Items subtotal --}}
+                            <tr class="subtotal-row">
+                                <td colspan="2" class="text-end total-label">Items Subtotal</td>
                                 <td class="text-end"><span id="totalAmount">0.00</span></td>
                                 <td class="text-end"><span id="totalBdt">0.00</span></td>
+                                <td></td>
+                            </tr>
+                            {{-- VAT row --}}
+                            <tr class="vat-row">
+                                <td class="text-center vat-label">VAT</td>
+                                <td>
+                                    <input type="text" name="vat_title" id="vatTitle"
+                                        class="form-control form-control-sm"
+                                        placeholder="e.g. VAT 15%, AIT…"
+                                        value="{{ old('vat_title', isset($bill) ? $bill->vat_title : '') }}">
+                                </td>
+                                <td>
+                                    <input type="number" name="vat_amount" id="vatAmount"
+                                        class="form-control form-control-sm text-end"
+                                        placeholder="0.00" min="0" step="0.01"
+                                        value="{{ old('vat_amount', isset($bill) && $bill->vat_amount > 0 ? $bill->vat_amount : '') }}">
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control form-control-sm ro-field text-end" id="vatBdt" readonly value="0.00">
+                                </td>
+                                <td></td>
+                            </tr>
+                            {{-- Grand total --}}
+                            <tr class="grand-total-row">
+                                <td colspan="2" class="text-end total-label">Grand Total</td>
+                                <td class="text-end"><span id="grandTotalAmt">0.00</span></td>
+                                <td class="text-end"><span id="grandTotalBdt">0.00</span></td>
                                 <td></td>
                             </tr>
                         </tfoot>
@@ -243,13 +275,15 @@
                 </div>
             </div>
 
-            <div class="d-flex justify-content-end gap-2">
-                <a href="{{ route('nas-freights.freight-export-booking-bills.index') }}" class="btn btn-sm btn-outline-secondary">
-                    <i class="fa fa-times me-1"></i> Cancel
-                </a>
-                <button type="submit" class="btn btn-success px-4">
-                    <i class="fa fa-save me-1"></i> {{ isset($bill) ? 'Update Bill' : 'Save Bill' }}
-                </button>
+            <div class="panel">
+                <div class="panel-body d-flex justify-content-end gap-2 py-2">
+                    <a href="{{ route('nas-freights.freight-export-booking-bills.index') }}" class="btn btn-outline-secondary">
+                        <i class="fa fa-times me-1"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-success px-4">
+                        <i class="fa fa-save me-1"></i> {{ isset($bill) ? 'Update Bill' : 'Save Bill' }}
+                    </button>
+                </div>
             </div>
 
         </div>
@@ -274,8 +308,17 @@ $(function () {
         $('#hidBillType').val(type);
         $('#billTypeError').hide();
         $('#btnTypeCustomer, #btnTypeAgent').removeClass('active-customer active-agent');
-        if (type === 'Customer')        $('#btnTypeCustomer').addClass('active-customer');
-        if (type === 'Overseas Agent')  $('#btnTypeAgent').addClass('active-agent');
+        if (type === 'Customer') {
+            $('#btnTypeCustomer').addClass('active-customer');
+            // unlock BDT button
+            $('#btnCurrencyBdt').removeClass('disabled-type');
+        }
+        if (type === 'Overseas Agent') {
+            $('#btnTypeAgent').addClass('active-agent');
+            // force foreign currency
+            selectCurrencyMode('foreign');
+            $('#btnCurrencyBdt').addClass('disabled-type');
+        }
     }
 
     // init from hidden field (edit mode)
@@ -323,7 +366,9 @@ $(function () {
         recalc();
     });
 
-    $('#btnCurrencyBdt').on('click', function () { selectCurrencyMode('BDT'); });
+    $('#btnCurrencyBdt').on('click', function () {
+        if (!$(this).hasClass('disabled-type')) selectCurrencyMode('BDT');
+    });
     $('#btnCurrencyForeign').on('click', function () { selectCurrencyMode('foreign'); });
 
     // init on load
@@ -369,22 +414,32 @@ $(function () {
 
     // ── Recalc on amount change ──
     $(document).on('input', '.item-amount', function () { recalc(); });
+    $('#vatAmount').on('input', recalc);
 
     function recalc() {
         var rate       = getExchangeRate();
-        var totalAmt   = 0;
-        var totalBdt   = 0;
+        var subtotalAmt = 0;
+        var subtotalBdt = 0;
 
         $('#itemsBody tr').each(function () {
             var amt    = parseFloat($(this).find('.item-amount').val()) || 0;
             var amtBdt = Math.round(amt * rate * 100) / 100;
             $(this).find('.item-bdt').val(amtBdt.toFixed(2));
-            totalAmt += amt;
-            totalBdt += amtBdt;
+            subtotalAmt += amt;
+            subtotalBdt += amtBdt;
         });
 
-        $('#totalAmount').text(totalAmt.toFixed(2));
-        $('#totalBdt').text(totalBdt.toFixed(2));
+        $('#totalAmount').text(subtotalAmt.toFixed(2));
+        $('#totalBdt').text(subtotalBdt.toFixed(2));
+
+        // VAT
+        var vatAmt = parseFloat($('#vatAmount').val()) || 0;
+        var vatBdt = Math.round(vatAmt * rate * 100) / 100;
+        $('#vatBdt').val(vatBdt.toFixed(2));
+
+        // Grand total
+        $('#grandTotalAmt').text((subtotalAmt + vatAmt).toFixed(2));
+        $('#grandTotalBdt').text((subtotalBdt + vatBdt).toFixed(2));
     }
 
     function reindex() {
@@ -401,7 +456,7 @@ $(function () {
     $('#bookingSelect').select2({
         theme: 'bootstrap-5',
         width: '100%',
-        placeholder: 'Search booking…',
+        placeholder: 'Search booking/job…',
         allowClear: true,
         minimumInputLength: 2,
         ajax: {
@@ -443,6 +498,12 @@ $(function () {
                     $(this).find('span.small').remove();
                 }
             });
+
+            // re-apply overseas currency lock if current type is still Overseas Agent
+            var currentType = $('#hidBillType').val();
+            if (currentType === 'Overseas Agent') {
+                $('#btnCurrencyBdt').addClass('disabled-type');
+            }
         }, 'html');
     }
 
@@ -456,7 +517,7 @@ $(function () {
         }
         if (!$('#hidBookingId').val()) {
             e.preventDefault();
-            Swal.fire({ icon: 'warning', title: 'Please select a booking first.' });
+            Swal.fire({ icon: 'warning', title: 'Please select a booking/job first.' });
             return;
         }
     });

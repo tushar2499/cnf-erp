@@ -125,11 +125,11 @@
 
     {{-- ── Booking Summary (read-only) ── --}}
     <div class="booking-card">
-        <div class="section-bar" style="background:#0a4f3c"><i class="fa fa-ship me-2"></i>Export Booking Information</div>
+        <div class="section-bar" style="background:#0a4f3c"><i class="fa fa-ship me-2"></i>Export Booking/Job Information</div>
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-6 col-md-2">
-                    <div class="info-label">Booking No</div>
+                    <div class="info-label">Booking/Job No</div>
                     <div class="info-value fw-bold">{{ $exportBooking->export_booking_no }}</div>
                 </div>
                 <div class="col-6 col-md-2">

@@ -243,13 +243,13 @@
                 @if($canSeeExportBooking)
                 <a href="{{ route('nas-freights.freight-export-bookings.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.freight-export-bookings.*') ? 'active' : '' }}">
-                    <i class="fa fa-ship"></i> Freight Export Bookings
+                    <i class="fa fa-ship"></i> Export Booking/Jobs
                 </a>
                 @endif
                 @if($canSeeExportBookingBill)
                 <a href="{{ route('nas-freights.freight-export-booking-bills.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.freight-export-booking-bills.*') ? 'active' : '' }}">
-                    <i class="fa fa-file-invoice-dollar"></i> Export Booking Bills
+                    <i class="fa fa-file-invoice-dollar"></i> Export Booking/Job Bills
                 </a>
                 @endif
             </div>
@@ -455,10 +455,10 @@
         { label: 'Freight Import Bookings', section: 'Freight Import', url: '{{ route("nas-freights.freight-import-bookings.index") }}',     icon: 'fa-ship' },
         @endif
         @if($canSeeExportBooking)
-        { label: 'Freight Export Bookings', section: 'Freight Export', url: '{{ route("nas-freights.freight-export-bookings.index") }}',    icon: 'fa-ship' },
+        { label: 'Export Booking/Jobs', section: 'Freight Export', url: '{{ route("nas-freights.freight-export-bookings.index") }}',    icon: 'fa-ship' },
         @endif
         @if($canSeeExportBookingBill)
-        { label: 'Export Booking Bills', section: 'Freight Export', url: '{{ route("nas-freights.freight-export-booking-bills.index") }}', icon: 'fa-file-invoice-dollar' },
+        { label: 'Export Booking/Job Bills', section: 'Freight Export', url: '{{ route("nas-freights.freight-export-booking-bills.index") }}', icon: 'fa-file-invoice-dollar' },
         @endif
         @if($canSeeDueList)
         { label: 'Customer Due',        section: 'Due Lists',        url: '{{ route("nas-freights.due-lists.customer") }}',                  icon: 'fa-user-clock' },

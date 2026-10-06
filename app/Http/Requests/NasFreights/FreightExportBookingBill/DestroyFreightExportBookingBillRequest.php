@@ -20,6 +20,6 @@ class DestroyFreightExportBookingBillRequest extends FormRequest
 
     protected function failedAuthorization(): void
     {
-        abort(403, 'You do not have permission to delete export booking bills.');
+        abort(403, 'You do not have permission to delete export booking/job bills.');
     }
 }

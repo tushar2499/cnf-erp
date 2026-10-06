@@ -15,6 +15,7 @@ class NasFreightsFreightExportBookingBill extends Model
         'bill_no', 'export_booking_id', 'branch_id', 'bill_type',
         'bill_date', 'currency', 'exchange_rate',
         'total_amount', 'total_bdt_amount', 'status', 'remarks',
+        'vat_title', 'vat_amount', 'vat_amount_bdt',
     ];
 
     protected function casts(): array
@@ -24,6 +25,8 @@ class NasFreightsFreightExportBookingBill extends Model
             'exchange_rate'    => 'decimal:4',
             'total_amount'     => 'decimal:2',
             'total_bdt_amount' => 'decimal:2',
+            'vat_amount'       => 'decimal:2',
+            'vat_amount_bdt'   => 'decimal:2',
         ];
     }
 

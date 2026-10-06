@@ -117,7 +117,7 @@
             <span class="text-muted fw-normal">{{ $exportBooking->export_booking_no }}</span>
         </h4>
         <a href="{{ route('nas-freights.freight-export-bookings.show', $exportBooking->id) }}" class="btn btn-sm btn-outline-secondary">
-            <i class="fa fa-arrow-left me-1"></i> Back to Booking
+            <i class="fa fa-arrow-left me-1"></i> Back to Booking/Job
         </a>
     </div>
 
@@ -129,11 +129,11 @@
 
     {{-- Booking Summary --}}
     <div class="booking-card">
-        <div class="section-bar" style="background:#0a4f3c"><i class="fa fa-ship me-2"></i>Export Booking Information</div>
+        <div class="section-bar" style="background:#0a4f3c"><i class="fa fa-ship me-2"></i>Export Booking/Job Information</div>
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-6 col-md-2">
-                    <div class="info-label">Booking No</div>
+                    <div class="info-label">Booking/Job No</div>
                     <div class="info-value fw-bold">{{ $exportBooking->export_booking_no }}</div>
                 </div>
                 <div class="col-6 col-md-2">

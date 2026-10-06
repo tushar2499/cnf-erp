@@ -22,6 +22,6 @@ class UpdateFreightExportBookingTransportRequest extends FormRequest
 
     protected function failedAuthorization(): void
     {
-        abort(403, 'You do not have permission to manage transport for freight export bookings.');
+        abort(403, 'You do not have permission to manage transport for freight export booking/jobs.');
     }
 }
