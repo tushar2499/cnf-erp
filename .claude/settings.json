@@ -55,7 +55,21 @@
       "Bash(grep -vE 'Booking/Job|Booking Note|route\\\\\\(|\\\\$exportBooking|\\\\$booking|exportBooking|BookingId|booking-|hidBooking|loadBooking|bookingSelect|bookingInfo|exportBookingsTable|^\\\\S+:[0-9]+:\\\\s*\\(//|\\\\{\\\\{--|/\\\\*\\)')",
       "Bash(grep -n \"Expense Section\\\\|Transport Section\\\\|@endsection\\\\|@endif$\" resources/views/nas-freights/freight-export-bookings/show.blade.php)",
       "Bash(google-chrome --headless=new --no-sandbox --disable-gpu --hide-scrollbars --window-size=760,420 --virtual-time-budget=5000 --screenshot=/tmp/claude-1000/-var-www-html-a4bbd-cnf-erp/9d05dbce-e6a2-434e-b4a0-69e27a651c0a/scratchpad/hs2_a.png file:///tmp/claude-1000/-var-www-html-a4bbd-cnf-erp/9d05dbce-e6a2-434e-b4a0-69e27a651c0a/scratchpad/hs2_a.html)",
-      "Bash(vendor/bin/pint --format agent app/Http/Controllers/NasFreights/FreightExportBookingController.php tests/Feature/NasFreights/FreightExportBookingTest.php)"
+      "Bash(vendor/bin/pint --format agent app/Http/Controllers/NasFreights/FreightExportBookingController.php tests/Feature/NasFreights/FreightExportBookingTest.php)",
+      "Bash(grep -v 'route\\(\\\\|freightBooking->\\\\|$freightBooking\\\\b')",
+      "Bash(sed -i 's|<div class=\"fb-label\">Shipping Carrier</div>|<div class=\"fb-label\">Shipping Carrier/Airline</div>|; s|Search shipping carrier\\\\.\\\\.\\\\.|Search shipping carrier/airline...|' resources/views/nas-freights/freight-import-bookings/create.blade.php)",
+      "Bash(sed -i 's|<div class=\"info-label\">Shipping Carrier</div>|<div class=\"info-label\">Shipping Carrier/Airline</div>|' resources/views/nas-freights/freight-import-bookings/show.blade.php)",
+      "Bash(grep -i \"^jquery$\\\\|jsdom\\\\|puppeteer\\\\|playwright\")",
+      "Bash(curl -sS -m 15 -o jq.js https://code.jquery.com/jquery-3.7.1.min.js)",
+      "Bash(awk '{print $5}')",
+      "Bash(google-chrome --headless=new --no-sandbox --disable-gpu --virtual-time-budget=5000 --dump-dom file:///tmp/claude-1000/-var-www-html-a4bbd-cnf-erp/b5204d25-18de-4a3b-a269-04ddba938306/scratchpad/weight_harness.html)",
+      "Bash(grep -v \"input\\\\|select\\\\|^.*style=\\\\\"font-size:.72rem;\\\\\">$\")",
+      "Bash(google-chrome --headless=old --no-sandbox --disable-gpu --window-size=1280,900 --virtual-time-budget=4000 --dump-dom file://__TRACKED_VAR__/cargo_harness2.html)",
+      "Bash(python3 scripts/search.py \"form field grouping alignment label input\" --domain ux -n 6)",
+      "Bash(awk -F: '$1>540')",
+      "Bash(awk -F: '$1<540 || $1>940')",
+      "Bash(curl -s https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.css)",
+      "Bash(vendor/bin/pint --dirty --format agent app/Models/NasFreights/NasFreightsFreightBooking.php app/Http/Controllers/NasFreights/FreightBookingController.php app/Http/Requests/NasFreights/FreightImportBooking/StoreFreightImportBookingRequest.php app/Http/Requests/NasFreights/FreightImportBooking/UpdateFreightImportBookingRequest.php)"
     ]
   }
 }

@@ -232,7 +232,7 @@
                 @if($rfq->status === 'Win' && $rfq->converted_freight_booking_id)
                 <div class="mt-2" style="font-size:.75rem;">
                     <i class="fa fa-check-circle text-success me-1"></i>
-                    Freight Import Booking: <a href="{{ route('nas-freights.freight-import-bookings.show', $rfq->converted_freight_booking_id) }}" class="fw-semibold">{{ $rfq->convertedFreightBooking?->freight_booking_no }}</a>
+                    Freight Import Booking/Job: <a href="{{ route('nas-freights.freight-import-bookings.show', $rfq->converted_freight_booking_id) }}" class="fw-semibold">{{ $rfq->convertedFreightBooking?->freight_booking_no }}</a>
                 </div>
                 @endif
             </div>
@@ -280,7 +280,7 @@
 
         @if($rfq->status === 'Win' && $rfq->type === 'import')
         <div class="section-card">
-            <div class="form-header"><i class="fa fa-ship me-1"></i> Convert to Freight Import Booking</div>
+            <div class="form-header"><i class="fa fa-ship me-1"></i> Convert to Freight Import Booking/Job</div>
             <div class="section-body">
                 @if($rfq->converted_freight_booking_id)
                 <div class="text-success text-center" style="font-size:.8rem;">
@@ -289,13 +289,13 @@
                 </div>
                 @else
                 <p style="font-size:.75rem; color:#6b7280; margin-bottom:.6rem;">
-                    Create a Freight Import Booking from this RFQ. All freight details and cargo items will be pre-filled.
+                    Create a Freight Import Booking/Job from this RFQ. All freight details and cargo items will be pre-filled.
                 </p>
                 <form method="POST" action="{{ route('nas-freights.rfqs.convert-freight-booking', $rfq->id) }}">
                     @csrf
                     <button type="submit" class="btn btn-sm btn-success w-100"
-                        onclick="return confirm('Convert RFQ {{ $rfq->rfq_no }} to a Freight Import Booking?')">
-                        <i class="fa fa-ship me-1"></i> Convert to Freight Import Booking
+                        onclick="return confirm('Convert RFQ {{ $rfq->rfq_no }} to a Freight Import Booking/Job?')">
+                        <i class="fa fa-ship me-1"></i> Convert to Freight Import Booking/Job
                     </button>
                 </form>
                 @endif

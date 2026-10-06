@@ -203,6 +203,12 @@ class RfqController extends Controller
                 'place_of_receipt'      => $rfq->place_of_receipt,
                 'place_of_delivery'     => $rfq->place_of_delivery,
                 'commodity_description' => $rfq->commodity_description,
+                'hs_codes'              => $rfq->items->pluck('hs_code')
+                    ->map(fn ($code) => trim((string) $code))
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all() ?: null,
                 'remarks'               => $rfq->remarks,
                 'status'                => 'Draft',
             ]);
@@ -213,8 +219,6 @@ class RfqController extends Controller
                     'item_type'          => $item->item_type,
                     'container_size'     => $item->container_size,
                     'package_type'       => $item->package_type,
-                    'hs_code'            => $item->hs_code,
-                    'commodity'          => $item->commodity,
                     'quantity'           => $item->quantity,
                     'gross_weight'       => $item->gross_weight,
                     'weight_unit'        => $item->weight_unit,
@@ -231,7 +235,7 @@ class RfqController extends Controller
         });
 
         return redirect()->route('nas-freights.freight-import-bookings.show', $freightBooking->id)
-            ->with('success', 'Freight Import Booking '.$freightBooking->freight_booking_no.' created from RFQ '.$rfq->rfq_no.'.');
+            ->with('success', 'Freight Import Booking/Job '.$freightBooking->freight_booking_no.' created from RFQ '.$rfq->rfq_no.'.');
     }
 
     public function destroy(DestroyRfqRequest $request, NasFreightsRfq $rfq)

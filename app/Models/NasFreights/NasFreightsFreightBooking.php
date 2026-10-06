@@ -14,19 +14,33 @@ class NasFreightsFreightBooking extends Model
 
     protected $fillable = [
         'freight_booking_no', 'branch_id', 'rfq_id', 'rfq_no',
-        'customer_id', 'salesperson_id', 'overseas_agent_id', 'shipping_carrier_id',
+        'customer_id', 'customer_invoice_no', 'customer_invoice_date', 'agent_invoice_no',
+        'salesperson_id', 'overseas_agent_id', 'shipping_carrier_id',
         'booking_date', 'service_type', 'incoterms', 'currency',
+        'exchange_rate', 'buy_amount', 'buy_bdt_amount', 'sell_amount', 'sell_bdt_amount',
         'pol', 'pod', 'place_of_receipt', 'place_of_delivery',
-        'commodity_description', 'vessel_name', 'voyage_no', 'bl_no', 'igm_no', 'delivery_order_no',
+        'commodity_description', 'hs_codes', 'vessel_name', 'voyage_no', 'flight_no', 'flight_date',
+        'bl_no', 'mbl_mawb_no', 'mbl_mawb_date', 'hbl_hawb_no', 'hbl_hawb_date',
+        'lc_no', 'cad_no', 'tt_no', 'rfq_tender_no', 'igm_no', 'delivery_order_no',
         'etd', 'eta', 'status', 'remarks',
     ];
 
     protected function casts(): array
     {
         return [
-            'booking_date' => 'date',
-            'etd'          => 'date',
-            'eta'          => 'date',
+            'booking_date'          => 'date',
+            'customer_invoice_date' => 'date',
+            'flight_date'           => 'date',
+            'mbl_mawb_date'         => 'date',
+            'hbl_hawb_date'         => 'date',
+            'hs_codes'              => 'array',
+            'exchange_rate'         => 'decimal:6',
+            'buy_amount'            => 'decimal:2',
+            'buy_bdt_amount'        => 'decimal:2',
+            'sell_amount'           => 'decimal:2',
+            'sell_bdt_amount'       => 'decimal:2',
+            'etd'                   => 'date',
+            'eta'                   => 'date',
         ];
     }
 
@@ -68,6 +82,11 @@ class NasFreightsFreightBooking extends Model
             ->max(DB::raw('CAST(SUBSTRING(freight_booking_no, '.(strlen($prefix) + 1).') AS UNSIGNED)'));
 
         return $prefix.str_pad(($last ?? 0) + 1, 4, '0', STR_PAD_LEFT);
+    }
+
+    public function isAir(): bool
+    {
+        return $this->service_type === 'Air';
     }
 
     public static function statuses(): array

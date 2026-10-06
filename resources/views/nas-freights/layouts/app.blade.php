@@ -216,13 +216,13 @@
                 @if($canSeeImportBooking)
                 <a href="{{ route('nas-freights.freight-import-bookings.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.freight-import-bookings.*') ? 'active' : '' }}">
-                    <i class="fa fa-ship"></i> Freight Import Bookings
+                    <i class="fa fa-ship"></i> Booking/Jobs
                 </a>
                 @endif
                 @if($canSeeImportExpense)
                 <a href="{{ route('nas-freights.import-expenses.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.import-expenses.*') ? 'active' : '' }}">
-                    <i class="fa fa-money-bill-wave"></i> Import Expenses
+                    <i class="fa fa-money-bill-wave"></i> Expenses
                 </a>
                 @endif
             </div>
@@ -243,13 +243,13 @@
                 @if($canSeeExportBooking)
                 <a href="{{ route('nas-freights.freight-export-bookings.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.freight-export-bookings.*') ? 'active' : '' }}">
-                    <i class="fa fa-ship"></i> Export Booking/Jobs
+                    <i class="fa fa-ship"></i> Booking/Jobs
                 </a>
                 @endif
                 @if($canSeeExportBookingBill)
                 <a href="{{ route('nas-freights.freight-export-booking-bills.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.freight-export-booking-bills.*') ? 'active' : '' }}">
-                    <i class="fa fa-file-invoice-dollar"></i> Export Booking/Job Bills
+                    <i class="fa fa-file-invoice-dollar"></i> Booking/Job Bills
                 </a>
                 @endif
             </div>
@@ -452,7 +452,7 @@
         { label: 'RFQs',                section: 'Freight Import',   url: '{{ route("nas-freights.rfqs.index") }}',                          icon: 'fa-file-signature' },
         @endif
         @if($canSeeImportBooking)
-        { label: 'Freight Import Bookings', section: 'Freight Import', url: '{{ route("nas-freights.freight-import-bookings.index") }}',     icon: 'fa-ship' },
+        { label: 'Freight Import Booking/Jobs', section: 'Freight Import', url: '{{ route("nas-freights.freight-import-bookings.index") }}',     icon: 'fa-ship' },
         @endif
         @if($canSeeExportBooking)
         { label: 'Export Booking/Jobs', section: 'Freight Export', url: '{{ route("nas-freights.freight-export-bookings.index") }}',    icon: 'fa-ship' },

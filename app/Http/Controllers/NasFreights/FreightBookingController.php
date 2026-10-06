@@ -98,7 +98,7 @@ class FreightBookingController extends Controller
         });
 
         return redirect()->route('nas-freights.freight-import-bookings.index')
-            ->with('success', 'Freight Import Booking created successfully.');
+            ->with('success', 'Freight Import Booking/Job created successfully.');
     }
 
     public function show(ShowFreightImportBookingRequest $request, NasFreightsFreightBooking $freightBooking)
@@ -116,11 +116,13 @@ class FreightBookingController extends Controller
             'container_size'     => $i->container_size,
             'container_no'       => $i->container_no,
             'seal_no'            => $i->seal_no,
-            'package_type'       => $i->package_type,
-            'hs_code'            => $i->hs_code,
-            'commodity'          => $i->commodity,
+            'package_type'       => $i->item_type === 'package' ? $i->package_type : null,
+            'package_qty'        => $i->item_type === 'container' ? $i->package_qty : null,
+            'package_unit'       => $i->item_type === 'container' ? $i->package_type : null,
             'quantity'           => $i->quantity,
+            'net_weight'         => $i->net_weight,
             'gross_weight'       => $i->gross_weight,
+            'chargeable_weight'  => $i->chargeable_weight,
             'weight_unit'        => $i->weight_unit,
             'volume_cbm'         => $i->volume_cbm,
             'country_of_origin'  => $i->country_of_origin,
@@ -143,14 +145,14 @@ class FreightBookingController extends Controller
             $this->saveItems($freightBooking, $request->input('items', []));
         });
 
-        return back()->with('success', 'Freight Import Booking '.$freightBooking->freight_booking_no.' updated.');
+        return back()->with('success', 'Freight Import Booking/Job '.$freightBooking->freight_booking_no.' updated.');
     }
 
     public function destroy(DestroyFreightImportBookingRequest $request, NasFreightsFreightBooking $freightBooking)
     {
         $freightBooking->delete();
 
-        return response()->json(['message' => 'Freight Import Booking '.$freightBooking->freight_booking_no.' deleted.']);
+        return response()->json(['message' => 'Freight Import Booking/Job '.$freightBooking->freight_booking_no.' deleted.']);
     }
 
     public function searchCustomers(Request $request)
@@ -216,6 +218,9 @@ class FreightBookingController extends Controller
         return [
             'branch_id'             => session('nas_freights_branch_id'),
             'customer_id'           => $request->customer_id ?: null,
+            'customer_invoice_no'   => $request->customer_invoice_no ?: null,
+            'customer_invoice_date' => $request->customer_invoice_date ?: null,
+            'agent_invoice_no'      => $request->agent_invoice_no ?: null,
             'salesperson_id'        => $request->salesperson_id ?: null,
             'overseas_agent_id'     => $request->overseas_agent_id ?: null,
             'shipping_carrier_id'   => $request->shipping_carrier_id ?: null,
@@ -223,16 +228,32 @@ class FreightBookingController extends Controller
             'service_type'          => $request->service_type,
             'incoterms'             => $request->incoterms ?: null,
             'currency'              => $request->currency ?: 'BDT',
+            'exchange_rate'         => $request->exchange_rate ?: null,
+            'buy_amount'            => $request->buy_amount ?: null,
+            'buy_bdt_amount'        => ($request->buy_amount && $request->exchange_rate)
+                                        ? round((float) $request->buy_amount * (float) $request->exchange_rate, 2)
+                                        : null,
+            'sell_amount'           => $request->sell_amount ?: null,
+            'sell_bdt_amount'       => ($request->sell_amount && $request->exchange_rate)
+                                        ? round((float) $request->sell_amount * (float) $request->exchange_rate, 2)
+                                        : null,
             'pol'                   => $request->pol ?: null,
             'pod'                   => $request->pod ?: null,
-            'place_of_receipt'      => $request->place_of_receipt ?: null,
-            'place_of_delivery'     => $request->place_of_delivery ?: null,
             'commodity_description' => $request->commodity_description ?: null,
+            'hs_codes'              => $this->normalizeHsCodes($request->input('hs_codes', [])),
             'vessel_name'           => $request->vessel_name ?: null,
             'voyage_no'             => $request->voyage_no ?: null,
+            'flight_no'             => $request->flight_no ?: null,
+            'flight_date'           => $request->flight_date ?: null,
             'bl_no'                 => $request->bl_no ?: null,
-            'igm_no'                => $request->igm_no ?: null,
-            'delivery_order_no'     => $request->delivery_order_no ?: null,
+            'mbl_mawb_no'           => $request->mbl_mawb_no ?: null,
+            'mbl_mawb_date'         => $request->mbl_mawb_date ?: null,
+            'hbl_hawb_no'           => $request->hbl_hawb_no ?: null,
+            'hbl_hawb_date'         => $request->hbl_hawb_date ?: null,
+            'lc_no'                 => $request->lc_no ?: null,
+            'cad_no'                => $request->cad_no ?: null,
+            'tt_no'                 => $request->tt_no ?: null,
+            'rfq_tender_no'         => $request->rfq_tender_no ?: null,
             'etd'                   => $request->etd ?: null,
             'eta'                   => $request->eta ?: null,
             'status'                => $request->status ?: 'Draft',
@@ -240,23 +261,51 @@ class FreightBookingController extends Controller
         ];
     }
 
+    /**
+     * @param  array<int, mixed>  $codes
+     * @return array<int, string>|null
+     */
+    private function normalizeHsCodes(array $codes): ?array
+    {
+        $clean = collect($codes)
+            ->map(fn ($code) => trim((string) $code))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        return $clean ?: null;
+    }
+
+    /**
+     * Air shipments carry gross + chargeable weight; every other mode carries net + gross weight.
+     */
     private function saveItems(NasFreightsFreightBooking $freightBooking, array $items): void
     {
+        $isAir = $freightBooking->isAir();
+
         foreach ($items as $item) {
             if (empty($item['item_type'])) {
                 continue;
             }
 
+            $isContainer = $item['item_type'] === 'container';
+
             $freightBooking->items()->create([
                 'item_type'          => $item['item_type'],
-                'container_size'     => $item['item_type'] === 'container' ? ($item['container_size'] ?? null) : null,
-                'container_no'       => $item['item_type'] === 'container' ? ($item['container_no'] ?? null) : null,
-                'seal_no'            => $item['item_type'] === 'container' ? ($item['seal_no'] ?? null) : null,
-                'package_type'       => $item['item_type'] === 'package' ? ($item['package_type'] ?? null) : null,
-                'hs_code'            => $item['hs_code'] ?? null,
-                'commodity'          => $item['commodity'] ?? null,
+                'container_size'     => $isContainer ? ($item['container_size'] ?? null) : null,
+                'container_no'       => $isContainer ? ($item['container_no'] ?? null) : null,
+                'seal_no'            => $isContainer ? ($item['seal_no'] ?? null) : null,
+                'package_type'       => match ($item['item_type']) {
+                    'container' => ($item['package_unit'] ?? null) ?: null,
+                    'package'   => ($item['package_type'] ?? null) ?: null,
+                    default     => null,
+                },
+                'package_qty'        => $isContainer && is_numeric($item['package_qty'] ?? '') ? max(1, (int) $item['package_qty']) : null,
                 'quantity'           => max(1, (int) ($item['quantity'] ?? 1)),
+                'net_weight'         => ! $isAir && is_numeric($item['net_weight'] ?? '') ? $item['net_weight'] : null,
                 'gross_weight'       => is_numeric($item['gross_weight'] ?? '') ? $item['gross_weight'] : null,
+                'chargeable_weight'  => $isAir && is_numeric($item['chargeable_weight'] ?? '') ? $item['chargeable_weight'] : null,
                 'weight_unit'        => $item['weight_unit'] ?? 'KG',
                 'volume_cbm'         => is_numeric($item['volume_cbm'] ?? '') ? $item['volume_cbm'] : null,
                 'country_of_origin'  => $item['country_of_origin'] ?? null,
