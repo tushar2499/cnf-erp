@@ -40,13 +40,24 @@
                 <label class="form-label">To Date <span class="req">*</span></label>
                 <input type="date" id="fldToDate" class="form-control form-control-sm" value="{{ $customerBill->to_date?->format('Y-m-d') }}" required>
             </div>
-            <div class="col-md-5">
+            <div class="col-md-3">
                 <label class="form-label">Customer</label>
                 <select id="fldCustomer" class="form-select form-select-sm" style="width:100%"></select>
                 <input type="hidden" id="fldCustomerId" name="customer_id" value="{{ $customerBill->customer_id }}">
                 <input type="hidden" id="fldCustomerName" name="customer_name" value="{{ $customerBill->customer_name }}">
             </div>
             <div class="col-md-3">
+                <label class="form-label" for="fldCapacity">Capacity</label>
+                <input type="text" id="fldCapacity" class="form-control form-control-sm" list="capacityOptions"
+                       placeholder="e.g. 5, 2-3, 10 M/T" autocomplete="off">
+                <datalist id="capacityOptions">
+                    @foreach($capacities as $capacity)
+                        <option value="{{ $capacity }}"></option>
+                    @endforeach
+                </datalist>
+                <div class="form-text" style="font-size:.7rem; margin-top:.1rem">Blank = all. Range like 2-3 also matches vehicles covering it.</div>
+            </div>
+            <div class="col-md-2">
                 <button type="button" id="btnLoadData" class="btn btn-warning btn-sm w-100">
                     <i class="fa fa-sync me-1"></i> Reload Data
                 </button>
@@ -374,7 +385,7 @@ $('#btnLoadData').on('click', function () {
     $.ajax({
         url: '{{ route('nas-freights.customer-bills.load-items') }}',
         method: 'POST',
-        data: { _token: CSRF, from_date: fromDate, to_date: toDate, customer_id: $('#fldCustomerId').val() },
+        data: { _token: CSRF, from_date: fromDate, to_date: toDate, customer_id: $('#fldCustomerId').val(), capacity: $('#fldCapacity').val() },
     })
     .done(function (r) {
         // Append newly available bookings for the (possibly widened) date

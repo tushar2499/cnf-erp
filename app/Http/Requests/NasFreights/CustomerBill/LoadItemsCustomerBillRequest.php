@@ -19,6 +19,7 @@ class LoadItemsCustomerBillRequest extends FormRequest
             'from_date'   => ['required', 'date'],
             'to_date'     => ['required', 'date'],
             'customer_id' => ['required'],
+            'capacity'    => ['nullable', 'string', 'max:100'],
         ];
     }
 

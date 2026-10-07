@@ -19,9 +19,12 @@ use App\Models\NasFreights\NasFreightsCustomerBill;
 use App\Models\NasFreights\NasFreightsCustomerBillItem;
 use App\Models\NasFreights\NasFreightsVehicle;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
@@ -81,14 +84,27 @@ class CustomerBillController extends Controller
         return view('nas-freights.customer-bills.index');
     }
 
+    /**
+     * Show the new customer bill filter form
+     *
+     * @param  CreateCustomerBillRequest  $request  The validated request
+     * @return View
+     */
     public function create(CreateCustomerBillRequest $request)
     {
         return view('nas-freights.customer-bills.create', [
             'deliveryTypes' => NasFreightsCustomerBill::deliveryTypes(),
             'billTypes'     => NasFreightsCustomerBill::billTypes(),
+            'capacities'    => $this->capacityOptions(),
         ]);
     }
 
+    /**
+     * Load billable booking items for a customer and date range
+     *
+     * @param  LoadItemsCustomerBillRequest  $request  The validated request
+     * @return JsonResponse
+     */
     public function loadItems(LoadItemsCustomerBillRequest $request)
     {
 
@@ -100,13 +116,18 @@ class CustomerBillController extends Controller
             ->flip()
             ->toArray();
 
+        $capacityFilter = (string) $request->input('capacity', '');
+
         $bookingItems = NasFreightsBookingItem::with('booking')
-            ->whereHas('booking', function ($q) use ($request) {
-                $q->whereBetween('job_date', [$request->from_date, $request->to_date])
-                    ->where('customer_id', $request->customer_id);
-            })
+            ->join('nas_freights_bookings as load_booking', 'load_booking.id', '=', 'nas_freights_booking_items.booking_id')
+            ->select('nas_freights_booking_items.*')
+            ->whereBetween('load_booking.job_date', [$request->from_date, $request->to_date])
+            ->where('load_booking.customer_id', $request->customer_id)
+            ->orderBy('load_booking.job_date')
+            ->orderBy('nas_freights_booking_items.id')
             ->get()
             ->filter(fn ($item) => ! isset($billedPairs[$item->booking_id.'_'.$item->cover_van_no]))
+            ->filter(fn ($item) => NasFreightsBookingItem::capacityOverlaps($item->capacity, $capacityFilter))
             ->values();
 
         $firstBooking = $bookingItems->first()?->booking;
@@ -237,6 +258,7 @@ class CustomerBillController extends Controller
             'customerBill'  => $customerBill,
             'deliveryTypes' => NasFreightsCustomerBill::deliveryTypes(),
             'billTypes'     => NasFreightsCustomerBill::billTypes(),
+            'capacities'    => $this->capacityOptions(),
         ]);
     }
 
@@ -499,5 +521,20 @@ class CustomerBillController extends Controller
                     'address' => $c->address,
                 ])
         );
+    }
+
+    /**
+     * Distinct capacity values used to suggest filter options
+     *
+     * @return Collection<int, string>
+     */
+    private function capacityOptions(): Collection
+    {
+        return NasFreightsBookingItem::query()
+            ->whereNotNull('capacity')
+            ->where('capacity', '!=', '')
+            ->distinct()
+            ->orderBy('capacity')
+            ->pluck('capacity');
     }
 }
