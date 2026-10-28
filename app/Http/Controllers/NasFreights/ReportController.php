@@ -401,25 +401,18 @@ class ReportController extends Controller
             return collect();
         }
         $rows = NasFreightsBookingItem::with('booking')
-            ->whereHas('booking', function ($q) use ($request) {
-                $q->where('branch_id', session('nas_freights_branch_id'));
-                if ($request->filled('from_date')) {
-                    $q->whereDate('job_date', '>=', $request->from_date);
-                }
-                if ($request->filled('to_date')) {
-                    $q->whereDate('job_date', '<=', $request->to_date);
-                }
-                if ($request->filled('customer_id')) {
-                    $q->where('customer_id', $request->customer_id);
-                }
-                if ($request->filled('status')) {
-                    $q->where('status', $request->status);
-                }
-            })
-            ->when($request->filled('supplier_id'), fn ($q) => $q->where('supplier_id', $request->supplier_id))
-            ->when($request->filled('vehicle'), fn ($q) => $q->where('cover_van_no', 'like', "%{$request->vehicle}%"))
-            ->when($request->filled('location_from'), fn ($q) => $q->where('location_from', 'like', "%{$request->location_from}%"))
-            ->orderBy('id')
+            ->join('nas_freights_bookings', 'nas_freights_bookings.id', '=', 'nas_freights_booking_items.booking_id')
+            ->select('nas_freights_booking_items.*')
+            ->where('nas_freights_bookings.branch_id', session('nas_freights_branch_id'))
+            ->when($request->filled('from_date'), fn ($q) => $q->whereDate('nas_freights_bookings.job_date', '>=', $request->from_date))
+            ->when($request->filled('to_date'), fn ($q) => $q->whereDate('nas_freights_bookings.job_date', '<=', $request->to_date))
+            ->when($request->filled('customer_id'), fn ($q) => $q->where('nas_freights_bookings.customer_id', $request->customer_id))
+            ->when($request->filled('status'), fn ($q) => $q->where('nas_freights_bookings.status', $request->status))
+            ->when($request->filled('supplier_id'), fn ($q) => $q->where('nas_freights_booking_items.supplier_id', $request->supplier_id))
+            ->when($request->filled('vehicle'), fn ($q) => $q->where('nas_freights_booking_items.cover_van_no', 'like', "%{$request->vehicle}%"))
+            ->when($request->filled('location_from'), fn ($q) => $q->where('nas_freights_booking_items.location_from', 'like', "%{$request->location_from}%"))
+            ->orderBy('nas_freights_bookings.job_date')
+            ->orderBy('nas_freights_booking_items.id')
             ->get();
 
         // Attach billed status: match by booking_id + cover_van_no = booking_id + item_code
