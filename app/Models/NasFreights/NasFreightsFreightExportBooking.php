@@ -28,16 +28,16 @@ class NasFreightsFreightExportBooking extends Model
     protected function casts(): array
     {
         return [
-            'booking_date'        => 'date',
-            'party_bill_date'     => 'date',
-            'party_invoice_date'  => 'date',
-            'hs_codes'            => 'array',
-            'etd'                 => 'date',
-            'eta'                 => 'date',
-            'exp_date'            => 'date',
-            'invoice_date'        => 'date',
-            'bl_date'             => 'date',
-            'transport_doc_date'  => 'date',
+            'booking_date'       => 'date',
+            'party_bill_date'    => 'date',
+            'party_invoice_date' => 'date',
+            'hs_codes'           => 'array',
+            'etd'                => 'date',
+            'eta'                => 'date',
+            'exp_date'           => 'date',
+            'invoice_date'       => 'date',
+            'bl_date'            => 'date',
+            'transport_doc_date' => 'date',
         ];
     }
 
@@ -83,12 +83,13 @@ class NasFreightsFreightExportBooking extends Model
 
     public static function generateExportBookingNo(): string
     {
-        $prefix = 'FEB-';
-        $last = static::lockForUpdate()
-            ->where('export_booking_no', 'REGEXP', '^FEB-[0-9]+$')
-            ->max(DB::raw('CAST(SUBSTRING(export_booking_no, '.(strlen($prefix) + 1).') AS UNSIGNED)'));
+        $serialOffset = 9; // NASEXP(6) + YY(2) + 1-based offset
 
-        return $prefix.str_pad(($last ?? 0) + 1, 4, '0', STR_PAD_LEFT);
+        $last = static::lockForUpdate()
+            ->where('export_booking_no', 'REGEXP', '^NASEXP[0-9]{2}[0-9]+$')
+            ->max(DB::raw('CAST(SUBSTRING(export_booking_no, '.$serialOffset.') AS UNSIGNED)'));
+
+        return 'NASEXP'.now()->format('y').str_pad(($last ?? 0) + 1, 3, '0', STR_PAD_LEFT);
     }
 
     public static function statuses(): array
