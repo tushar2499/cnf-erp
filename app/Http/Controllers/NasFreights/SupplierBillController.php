@@ -3,6 +3,16 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\NasFreights\SupplierBill\ConfirmSupplierBillRequest;
+use App\Http\Requests\NasFreights\SupplierBill\CreateSupplierBillRequest;
+use App\Http\Requests\NasFreights\SupplierBill\DestroySupplierBillRequest;
+use App\Http\Requests\NasFreights\SupplierBill\EditSupplierBillRequest;
+use App\Http\Requests\NasFreights\SupplierBill\IndexSupplierBillRequest;
+use App\Http\Requests\NasFreights\SupplierBill\LoadItemsSupplierBillRequest;
+use App\Http\Requests\NasFreights\SupplierBill\PrintSupplierBillRequest;
+use App\Http\Requests\NasFreights\SupplierBill\ShowSupplierBillRequest;
+use App\Http\Requests\NasFreights\SupplierBill\StoreSupplierBillRequest;
+use App\Http\Requests\NasFreights\SupplierBill\UpdateSupplierBillRequest;
 use App\Models\Company;
 use App\Models\NasFreights\NasFreightsBookingItem;
 use App\Models\NasFreights\NasFreightsSupplier;
@@ -16,7 +26,7 @@ use Yajra\DataTables\Facades\DataTables;
 
 class SupplierBillController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexSupplierBillRequest $request)
     {
         if ($request->ajax()) {
             $fromDate = $request->input('from_date');
@@ -61,17 +71,13 @@ class SupplierBillController extends Controller
         return view('nas-freights.supplier-bills.index');
     }
 
-    public function create()
+    public function create(CreateSupplierBillRequest $request)
     {
         return view('nas-freights.supplier-bills.create');
     }
 
-    public function loadItems(Request $request)
+    public function loadItems(LoadItemsSupplierBillRequest $request)
     {
-        $request->validate([
-            'from_date' => ['required', 'date'],
-            'to_date'   => ['required', 'date'],
-        ]);
 
         // (booking_id, cover_van_no) pairs already present in any supplier bill item
         $billedPairs = NasFreightsSupplierBillItem::select('booking_id', 'item_code')
@@ -123,31 +129,29 @@ class SupplierBillController extends Controller
         return response()->json(['items' => $items]);
     }
 
-    public function store(Request $request)
+    public function store(StoreSupplierBillRequest $request)
     {
-        $request->validate([
-            'from_date' => ['required', 'date'],
-            'to_date'   => ['required', 'date'],
-            'bill_date' => ['required', 'date'],
-            'items'     => ['required', 'array', 'min:1'],
-        ]);
 
         DB::transaction(function () use ($request) {
             $total = collect($request->items)->sum('line_amount');
 
             $bill = NasFreightsSupplierBill::create([
-                'branch_id'     => session('nas_freights_branch_id'),
-                'pay_order_no'  => NasFreightsSupplierBill::generatePayOrderNo(),
-                'from_date'     => $request->from_date,
-                'to_date'       => $request->to_date,
-                'supplier_id'   => $request->supplier_id ?: null,
-                'supplier_name' => $request->supplier_name,
-                'bill_date'     => $request->bill_date,
-                'bill_by'       => $request->bill_by,
-                'note'          => $request->note,
-                'total_amount'  => $total,
-                'status'        => 'Draft',
-                'entry_by'      => Auth::user()?->name ?? 'System',
+                'branch_id'          => session('nas_freights_branch_id'),
+                'pay_order_no'       => NasFreightsSupplierBill::generatePayOrderNo(),
+                'from_date'          => $request->from_date,
+                'to_date'            => $request->to_date,
+                'supplier_id'        => $request->supplier_id ?: null,
+                'supplier_name'      => $request->supplier_name,
+                'bill_date'          => $request->bill_date,
+                'invoice_no'         => $request->invoice_no ?: null,
+                'payment_date'       => $request->payment_date ?: null,
+                'money_receipt_no'   => $request->money_receipt_no ?: null,
+                'money_receipt_date' => $request->money_receipt_date ?: null,
+                'bill_by'            => $request->bill_by,
+                'note'               => $request->note,
+                'total_amount'       => $total,
+                'status'             => 'Draft',
+                'entry_by'           => Auth::user()?->name ?? 'System',
             ]);
 
             foreach ($request->items as $item) {
@@ -175,14 +179,14 @@ class SupplierBillController extends Controller
         return response()->json(['message' => 'Payment order created successfully.', 'redirect' => route('nas-freights.supplier-bills.index')]);
     }
 
-    public function show(NasFreightsSupplierBill $supplierBill)
+    public function show(ShowSupplierBillRequest $request, NasFreightsSupplierBill $supplierBill)
     {
         $supplierBill->load('items');
 
         return view('nas-freights.supplier-bills.show', compact('supplierBill'));
     }
 
-    public function printView(NasFreightsSupplierBill $supplierBill)
+    public function printView(PrintSupplierBillRequest $request, NasFreightsSupplierBill $supplierBill)
     {
         $supplierBill->load(['items.booking']);
         $supplier = $supplierBill->supplier_id
@@ -193,34 +197,32 @@ class SupplierBillController extends Controller
         return view('nas-freights.supplier-bills.print', compact('supplierBill', 'supplier', 'company'));
     }
 
-    public function edit(NasFreightsSupplierBill $supplierBill)
+    public function edit(EditSupplierBillRequest $request, NasFreightsSupplierBill $supplierBill)
     {
         $supplierBill->load('items');
 
         return view('nas-freights.supplier-bills.edit', compact('supplierBill'));
     }
 
-    public function update(Request $request, NasFreightsSupplierBill $supplierBill)
+    public function update(UpdateSupplierBillRequest $request, NasFreightsSupplierBill $supplierBill)
     {
-        $request->validate([
-            'from_date' => ['required', 'date'],
-            'to_date'   => ['required', 'date'],
-            'bill_date' => ['required', 'date'],
-            'items'     => ['required', 'array', 'min:1'],
-        ]);
 
         DB::transaction(function () use ($request, $supplierBill) {
             $total = collect($request->items)->sum('line_amount');
 
             $supplierBill->update([
-                'from_date'     => $request->from_date,
-                'to_date'       => $request->to_date,
-                'supplier_id'   => $request->supplier_id ?: null,
-                'supplier_name' => $request->supplier_name,
-                'bill_date'     => $request->bill_date,
-                'bill_by'       => $request->bill_by,
-                'note'          => $request->note,
-                'total_amount'  => $total,
+                'from_date'          => $request->from_date,
+                'to_date'            => $request->to_date,
+                'supplier_id'        => $request->supplier_id ?: null,
+                'supplier_name'      => $request->supplier_name,
+                'bill_date'          => $request->bill_date,
+                'invoice_no'         => $request->invoice_no ?: null,
+                'payment_date'       => $request->payment_date ?: null,
+                'money_receipt_no'   => $request->money_receipt_no ?: null,
+                'money_receipt_date' => $request->money_receipt_date ?: null,
+                'bill_by'            => $request->bill_by,
+                'note'               => $request->note,
+                'total_amount'       => $total,
             ]);
 
             $supplierBill->items()->delete();
@@ -249,14 +251,14 @@ class SupplierBillController extends Controller
         return response()->json(['message' => 'Payment order updated successfully.', 'redirect' => route('nas-freights.supplier-bills.index')]);
     }
 
-    public function confirm(NasFreightsSupplierBill $supplierBill)
+    public function confirm(ConfirmSupplierBillRequest $request, NasFreightsSupplierBill $supplierBill)
     {
         $supplierBill->update(['status' => 'Approved']);
 
         return response()->json(['message' => 'Payment order confirmed successfully.']);
     }
 
-    public function destroy(NasFreightsSupplierBill $supplierBill)
+    public function destroy(DestroySupplierBillRequest $request, NasFreightsSupplierBill $supplierBill)
     {
         $supplierBill->items()->delete();
         $supplierBill->delete();

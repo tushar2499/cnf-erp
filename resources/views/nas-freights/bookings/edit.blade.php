@@ -167,6 +167,7 @@
                     <th style="width:40px"></th>
                     <th style="width:30px">SL</th>
                     <th style="min-width:160px">Cover Van No</th>
+                    <th style="min-width:140px">Challan No</th>
                     <th style="min-width:90px">Capacity</th>
                     <th style="min-width:160px">Supplier</th>
                     <th style="min-width:80px">Qty</th>
@@ -361,6 +362,7 @@ $(function () {
             <td><button type="button" class="row-del-btn" onclick="delRow(this)"><i class="fa fa-times"></i></button></td>
             <td class="sl-no text-center fw-bold">${sl}</td>
             <td><input type="text" name="items[${rowCount}][cover_van_no]" class="form-control form-control-sm" value="${vanNo}" placeholder="Van No"></td>
+            <td><input type="text" name="items[${rowCount}][challan_no]" class="form-control form-control-sm" value="${i.challan_no || ''}" placeholder="Challan No"></td>
             <td><input type="text" name="items[${rowCount}][capacity]" class="form-control form-control-sm" value="${i.capacity || ''}" placeholder="Capacity"></td>
             <td>
                 <select name="items[${rowCount}][supplier_id]" class="form-select form-select-sm row-supplier">

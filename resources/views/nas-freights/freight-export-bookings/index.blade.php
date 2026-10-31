@@ -1,6 +1,6 @@
 @extends('nas-freights.layouts.app')
 
-@section('title', 'Freight Export Bookings')
+@section('title', 'Freight Export Booking/Jobs')
 
 @push('styles')
     <style>
@@ -73,16 +73,16 @@
 
 @section('content')
     <div class="page-header">
-        <h4><i class="fa fa-ship me-2 text-primary"></i> Freight Export Bookings</h4>
+        <h4><i class="fa fa-ship me-2 text-primary"></i> Freight Export Booking/Jobs</h4>
         <a href="{{ route('nas-freights.freight-export-bookings.create') }}" class="btn btn-sm btn-primary">
-            <i class="fa fa-plus me-1"></i> New Export Booking
+            <i class="fa fa-plus me-1"></i> New Booking/Job
         </a>
     </div>
 
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div class="d-flex gap-1 flex-wrap align-items-center">
-                <span class="me-2 fw-semibold"><i class="fa fa-list me-1"></i> All Export Bookings</span>
+                <span class="me-2 fw-semibold"><i class="fa fa-list me-1"></i> All Export Booking/Jobs</span>
                 <button class="btn btn-sm btn-outline-secondary status-tab active" data-status="">All</button>
                 <button class="btn btn-sm btn-outline-secondary status-tab" data-status="Draft">Draft</button>
                 <button class="btn btn-sm btn-outline-success status-tab" data-status="Confirmed">Confirmed</button>
@@ -131,17 +131,22 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Booking No</th>
+                            <th>Action</th>
+                            <th>Booking/Job No</th>
                             <th>Date</th>
                             <th>Customer</th>
+                            <th>Party Bill Ref No</th>
+                            <th>Party Invoice No</th>
                             <th>Export B/L No</th>
                             <th>Service</th>
                             <th>POL → POD</th>
                             <th>Carrier</th>
+                            <th>Transport Amt</th>
+                            <th>Expense Amt</th>
                             <th>Status</th>
-                            <th>Action</th>
                         </tr>
                         <tr>
+                            <th></th>
                             <th></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
@@ -150,6 +155,9 @@
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th></th>
                             <th></th>
                             <th></th>
                         </tr>
@@ -194,6 +202,14 @@
                         className: 'text-center'
                     },
                     {
+                        data: 'action',
+                        name: 'action',
+                        orderable: false,
+                        searchable: false,
+                        width: '90px',
+                        className: 'text-center'
+                    },
+                    {
                         data: 'export_booking_no',
                         name: 'export_booking_no'
                     },
@@ -204,6 +220,14 @@
                     {
                         data: 'customer_name',
                         name: 'customer_name'
+                    },
+                    {
+                        data: 'party_bill_ref_no',
+                        name: 'party_bill_ref_no'
+                    },
+                    {
+                        data: 'party_invoice_no',
+                        name: 'party_invoice_no'
                     },
                     {
                         data: 'export_bl_no',
@@ -225,18 +249,24 @@
                         defaultContent: '—'
                     },
                     {
-                        data: 'status_badge',
-                        name: 'status',
+                        data: 'transport_amount',
+                        name: 'transport_amount',
+                        className: 'text-end',
                         orderable: false,
                         searchable: false
                     },
                     {
-                        data: 'action',
-                        name: 'action',
+                        data: 'expense_amount',
+                        name: 'expense_amount',
+                        className: 'text-end',
                         orderable: false,
-                        searchable: false,
-                        width: '90px',
-                        className: 'text-center'
+                        searchable: false
+                    },
+                    {
+                        data: 'status_badge',
+                        name: 'status',
+                        orderable: false,
+                        searchable: false
                     },
                 ],
                 dom: "<'row mb-1'<'col-sm-6'l><'col-sm-6'f>>" +
@@ -252,7 +282,7 @@
                     extend: 'print'
                 }],
                 language: {
-                    emptyTable: '<div class="text-center py-3 text-muted"><i class="fa fa-inbox fa-2x mb-2 d-block"></i>No export bookings yet.</div>'
+                    emptyTable: '<div class="text-center py-3 text-muted"><i class="fa fa-inbox fa-2x mb-2 d-block"></i>No export booking/jobs yet.</div>'
                 },
                 initComplete: function() {
                     const firstRowH = $('#exportBookingsTable thead tr:first-child').outerHeight();

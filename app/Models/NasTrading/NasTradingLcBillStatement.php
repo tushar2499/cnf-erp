@@ -40,10 +40,10 @@ class NasTradingLcBillStatement extends Model
             $year = now()->format('Y');
             $max = self::lockForUpdate()
                 ->whereYear('created_at', $year)
-                ->selectRaw('MAX(CAST(SUBSTRING_INDEX(bill_no, "/", -2) AS UNSIGNED)) as max_no')
+                ->selectRaw('MAX(CAST(SUBSTRING_INDEX(bill_no, "/", 1) AS UNSIGNED)) as max_no')
                 ->value('max_no') ?? 0;
 
-            return 'LC/COM/'.str_pad($max + 1, 2, '0', STR_PAD_LEFT).'/'.$year;
+            return str_pad($max + 1, 2, '0', STR_PAD_LEFT).'/'.$year;
         });
     }
 }

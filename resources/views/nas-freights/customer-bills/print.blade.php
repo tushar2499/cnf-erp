@@ -56,7 +56,7 @@
         .page {
             width: 210mm;
             margin: 0 auto;
-            padding: 0 14mm;
+            padding: 0 6mm;
         }
 
         .bill-title {
@@ -119,11 +119,8 @@
         }
 
         table.items th {
-            background: #000;
-            color: #fff;
-            print-color-adjust: exact;
-            -webkit-print-color-adjust: exact;
             font-size: 9.5px;
+            font-weight: 700;
             padding: 3px 2px;
             text-align: center;
             border: 1px solid #000;
@@ -150,7 +147,6 @@
 
         table.items tfoot td,
         table.items tr.total-row td {
-            background: #e8e8e8;
             font-weight: 700;
             font-size: 9.5px;
             padding: 3px 3px;
@@ -186,7 +182,6 @@
         }
 
         .summary-table tr.gross td {
-            background: #d0d0d0;
             font-weight: 700;
             font-size: 13px;
         }
@@ -404,17 +399,18 @@
             <thead>
                 <tr>
                     <th style="width:3%">SL</th>
-                    <th style="width:9%">Job No</th>
-                    <th style="width:9%">Delivery Date</th>
-                    <th style="width:10%">Cover Van No</th>
-                    <th style="width:10%">Cover Van Type</th>
-                    <th style="width:6%">Capacity</th>
+                    <th style="width:8%">Job No</th>
+                    <th style="width:8%">Delivery Date</th>
+                    <th style="width:9%">Cover Van No</th>
+                    <th style="width:7%">Challan No</th>
+                    <th style="width:9%">Cover Van Type</th>
+                    <th style="width:5%">Capacity</th>
                     <th style="width:4%">Qty</th>
-                    <th style="width:18%">Destination</th>
-                    <th style="width:9%">Net Amt</th>
+                    <th style="width:16%">Destination</th>
+                    <th style="width:8%">Net Amt</th>
                     <th style="width:5%">Dem. Days</th>
                     <th style="width:8%">Total Dem.</th>
-                    <th style="width:9%">Total Amt</th>
+                    <th style="width:10%">Total Amt</th>
                 </tr>
             </thead>
             <tbody>
@@ -442,6 +438,7 @@
                             {{ $item->booking?->delivery_date ? $item->booking->delivery_date->format('d M Y') : '—' }}
                         </td>
                         <td>{{ $item->item_code }}</td>
+                        <td class="c">{{ $bItem?->challan_no ?? '—' }}</td>
                         <td>{{ $vanType }}</td>
                         <td class="c">{{ $capacity }}</td>
                         <td class="r">{{ number_format($item->b_qty, 2) }}</td>
@@ -453,7 +450,7 @@
                     </tr>
                 @endforeach
                 <tr class="total-row">
-                    <td colspan="8" style="text-align:right">Total Amount</td>
+                    <td colspan="9" style="text-align:right">Total Amount</td>
                     <td class="r">{{ number_format($subTotal, 2) }}</td>
                     <td class="c">{{ $totalDemDays }}</td>
                     <td class="r">{{ number_format($totalDem, 2) }}</td>
@@ -553,7 +550,7 @@
 
             function buildFooterRow(pageNum, totalPages) {
                 var tr = document.createElement('tr');
-                tr.innerHTML = '<td colspan="12" style="border:none;padding:0">' +
+                tr.innerHTML = '<td colspan="13" style="border:none;padding:0">' +
                     '<div class="page-footer"><table><tr>' +
                     '<td style="width:35%"></td>' +
                     '<td style="width:30%;text-align:center">Page ' + pageNum + ' of ' + totalPages + '</td>' +

@@ -9,7 +9,7 @@ class NasTradingLcDutyAdvance extends Model
     protected $table = 'nas_trading_lc_bill_of_entry_duty_advances';
 
     protected $fillable = [
-        'bill_of_entry_id', 'amount', 'date', 'posting',
+        'bill_of_entry_id', 'amount', 'date', 'posting', 'remark',
     ];
 
     protected $casts = [

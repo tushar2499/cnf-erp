@@ -139,6 +139,16 @@
                 </table>
             </div>
         </div>
+        <div class="card-footer bg-white d-flex align-items-center justify-content-end gap-2 py-2 px-3">
+            <span class="text-secondary" style="font-size:.8rem;white-space:nowrap">Go to page</span>
+            <div class="input-group input-group-sm" style="width:auto">
+                <input type="number" id="expGoToPage" min="1"
+                    class="form-control text-center" style="width:64px"
+                    aria-label="Go to page number">
+                <span id="expPageTotal" class="input-group-text text-muted">/ --</span>
+                <button id="expGoToPageBtn" class="btn btn-outline-secondary" type="button">Go</button>
+            </div>
+        </div>
     </div>
 @endsection
 
@@ -265,6 +275,24 @@
                         }
                     });
                 },
+            });
+
+            table.on('draw', function() {
+                var info = table.page.info();
+                $('#expPageTotal').text('/ ' + info.pages);
+                $('#expGoToPage').attr('max', info.pages);
+            });
+
+            $('#expGoToPageBtn').on('click', function() {
+                var page = parseInt($('#expGoToPage').val(), 10);
+                var info = table.page.info();
+                if (!isNaN(page) && page >= 1 && page <= info.pages) {
+                    table.page(page - 1).draw('page');
+                }
+            });
+
+            $('#expGoToPage').on('keydown', function(e) {
+                if (e.key === 'Enter') $('#expGoToPageBtn').trigger('click');
             });
 
             $(document).on('click', '.btn-delete', function() {

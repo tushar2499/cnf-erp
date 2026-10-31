@@ -17,6 +17,7 @@ class StoreBillRequest extends FormRequest
     {
         return [
             'bill_date'                  => ['required', 'date'],
+            'job_no'                     => ['required', 'string'],
             'rows'                       => ['required', 'array', 'min:1'],
             'rows.*.expense_category_id' => ['required'],
         ];

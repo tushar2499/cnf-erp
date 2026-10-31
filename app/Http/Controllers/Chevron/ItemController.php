@@ -20,6 +20,7 @@ class ItemController extends Controller
 {
     public function index(IndexItemRequest $request)
     {
+
         if ($request->ajax()) {
             return DataTables::of(ChevronItem::query())
                 ->addIndexColumn()
@@ -63,8 +64,8 @@ class ItemController extends Controller
     {
         $last = ChevronItem::max('item_code');
         $next = $last
-            ? 'ITEM-'.str_pad((intval(substr($last, 5)) + 1), 4, '0', STR_PAD_LEFT)
-            : 'ITEM-1001';
+        ? 'ITEM-'.str_pad((intval(substr($last, 5)) + 1), 4, '0', STR_PAD_LEFT)
+        : 'ITEM-1001';
 
         return response()->json(['next_code' => $next]);
     }
@@ -72,6 +73,7 @@ class ItemController extends Controller
     public function store(StoreItemRequest $request)
     {
         $imagePath = null;
+
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('chevron/items', 'public');
         }
@@ -79,8 +81,8 @@ class ItemController extends Controller
         DB::transaction(function () use ($request, $imagePath) {
             $last = ChevronItem::lockForUpdate()->max('item_code');
             $code = $last
-                ? 'ITEM-'.str_pad((intval(substr($last, 5)) + 1), 4, '0', STR_PAD_LEFT)
-                : 'ITEM-1001';
+            ? 'ITEM-'.str_pad((intval(substr($last, 5)) + 1), 4, '0', STR_PAD_LEFT)
+            : 'ITEM-1001';
 
             ChevronItem::create([
                 'item_code'          => $code,
@@ -103,10 +105,13 @@ class ItemController extends Controller
     public function update(UpdateItemRequest $request, ChevronItem $item)
     {
         $imagePath = $item->image;
+
         if ($request->hasFile('image')) {
+
             if ($imagePath) {
                 Storage::disk('public')->delete($imagePath);
             }
+
             $imagePath = $request->file('image')->store('chevron/items', 'public');
         }
 
@@ -129,9 +134,11 @@ class ItemController extends Controller
 
     public function destroy(DestroyItemRequest $request, ChevronItem $item)
     {
+
         if ($item->image) {
             Storage::disk('public')->delete($item->image);
         }
+
         $item->delete();
 
         return response()->json(['message' => 'Item deleted.']);
@@ -146,8 +153,8 @@ class ItemController extends Controller
             return ChevronItem::create([
                 'item_code'          => $next,
                 'item_name'          => $request->item_name,
-                'purchase_unit'      => $request->purchase_unit,
-                'item_price'         => $request->item_price,
+                'purchase_unit'      => $request->purchase_unit ?? '',
+                'item_price'         => $request->item_price ?? 0,
                 'status'             => 'Active',
                 'availability_in_po' => true,
                 'availability_in_so' => true,

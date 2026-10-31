@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\NasFreights\ContainerType\DestroyContainerTypeRequest;
+use App\Http\Requests\NasFreights\ContainerType\IndexContainerTypeRequest;
+use App\Http\Requests\NasFreights\ContainerType\StoreContainerTypeRequest;
+use App\Http\Requests\NasFreights\ContainerType\UpdateContainerTypeRequest;
 use App\Models\NasFreights\NasFreightsContainerType;
-use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
 class ContainerTypeController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexContainerTypeRequest $request)
     {
         if ($request->ajax()) {
             return DataTables::of(NasFreightsContainerType::query()->orderBy('sort_order')->orderBy('name'))
@@ -37,13 +40,8 @@ class ContainerTypeController extends Controller
         return view('nas-freights.settings.container-types.index');
     }
 
-    public function store(Request $request)
+    public function store(StoreContainerTypeRequest $request)
     {
-        $request->validate([
-            'name'       => 'required|string|max:50|unique:nas_freights_container_types,name',
-            'sort_order' => 'nullable|integer|min:0',
-        ]);
-
         NasFreightsContainerType::create([
             'name'        => strtoupper(trim($request->name)),
             'description' => $request->description,
@@ -54,13 +52,8 @@ class ContainerTypeController extends Controller
         return response()->json(['message' => 'Container type created.']);
     }
 
-    public function update(Request $request, NasFreightsContainerType $containerType)
+    public function update(UpdateContainerTypeRequest $request, NasFreightsContainerType $containerType)
     {
-        $request->validate([
-            'name'       => 'required|string|max:50|unique:nas_freights_container_types,name,'.$containerType->id,
-            'sort_order' => 'nullable|integer|min:0',
-        ]);
-
         $containerType->update([
             'name'        => strtoupper(trim($request->name)),
             'description' => $request->description,
@@ -71,7 +64,7 @@ class ContainerTypeController extends Controller
         return response()->json(['message' => 'Container type updated.']);
     }
 
-    public function destroy(NasFreightsContainerType $containerType)
+    public function destroy(DestroyContainerTypeRequest $request, NasFreightsContainerType $containerType)
     {
         $containerType->delete();
 

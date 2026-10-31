@@ -20,14 +20,14 @@ class NasFreightsCustomerBill extends Model
     ];
 
     protected $casts = [
-        'from_date'  => 'date',
-        'to_date'    => 'date',
-        'bill_date'  => 'date',
+        'from_date' => 'date',
+        'to_date'   => 'date',
+        'bill_date' => 'date',
     ];
 
     public function items()
     {
-        return $this->hasMany(NasFreightsCustomerBillItem::class, 'bill_id');
+        return $this->hasMany(NasFreightsCustomerBillItem::class, 'bill_id')->orderBy('delivery_date', 'asc');
     }
 
     public static function generateBillNo(int $branchId, string $deliveryType): string

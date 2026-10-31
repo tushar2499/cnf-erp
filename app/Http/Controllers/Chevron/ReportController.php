@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Chevron;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Chevron\Report\JobExpenseSummaryRequest;
 use App\Models\Chevron\ChevronEmployee;
 use App\Models\Chevron\ChevronJobExpense;
-use Illuminate\Http\Request;
 
 class ReportController extends Controller
 {
-    public function jobExpenseSummary(Request $request)
+    public function jobExpenseSummary(JobExpenseSummaryRequest $request)
     {
         $employees = ChevronEmployee::orderBy('name')->get(['id', 'name', 'employee_id']);
 
@@ -40,7 +40,7 @@ class ReportController extends Controller
         return view('chevron.reports.job-expense-summary', compact('employees', 'expenses'));
     }
 
-    public function jobExpenseSummaryPrint(Request $request)
+    public function jobExpenseSummaryPrint(JobExpenseSummaryRequest $request)
     {
         $query = ChevronJobExpense::with([
             'employee:id,name,employee_id',

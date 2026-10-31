@@ -3,6 +3,11 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\NasFreights\Vehicle\DestroyVehicleRequest;
+use App\Http\Requests\NasFreights\Vehicle\IndexVehicleRequest;
+use App\Http\Requests\NasFreights\Vehicle\ShowVehicleRequest;
+use App\Http\Requests\NasFreights\Vehicle\StoreVehicleRequest;
+use App\Http\Requests\NasFreights\Vehicle\UpdateVehicleRequest;
 use App\Models\NasFreights\NasFreightsSupplier;
 use App\Models\NasFreights\NasFreightsVehicle;
 use Illuminate\Http\Request;
@@ -11,7 +16,7 @@ use Yajra\DataTables\Facades\DataTables;
 
 class VehicleController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexVehicleRequest $request)
     {
         if ($request->ajax()) {
             return DataTables::of(NasFreightsVehicle::where('branch_id', session('nas_freights_branch_id')))
@@ -58,19 +63,13 @@ class VehicleController extends Controller
         ]));
     }
 
-    public function show(NasFreightsVehicle $vehicle)
+    public function show(ShowVehicleRequest $request, NasFreightsVehicle $vehicle)
     {
         return response()->json($vehicle);
     }
 
-    public function store(Request $request)
+    public function store(StoreVehicleRequest $request)
     {
-        $request->validate([
-            'vehicle_number' => ['required', 'string', 'max:50', 'unique:nas_freights_vehicles,vehicle_number'],
-            'vehicle_class'  => ['required', 'string'],
-            'vehicle_type'   => ['required', 'string'],
-            'purchase_unit'  => ['nullable', 'string'],
-        ]);
 
         $data = $this->prepareData($request);
         $data['branch_id'] = session('nas_freights_branch_id');
@@ -84,14 +83,8 @@ class VehicleController extends Controller
         return response()->json(['message' => 'Vehicle created successfully.']);
     }
 
-    public function update(Request $request, NasFreightsVehicle $vehicle)
+    public function update(UpdateVehicleRequest $request, NasFreightsVehicle $vehicle)
     {
-        $request->validate([
-            'vehicle_number' => ['required', 'string', 'max:50', 'unique:nas_freights_vehicles,vehicle_number,'.$vehicle->id],
-            'vehicle_class'  => ['required', 'string'],
-            'vehicle_type'   => ['required', 'string'],
-            'purchase_unit'  => ['nullable', 'string'],
-        ]);
 
         $data = $this->prepareData($request);
 
@@ -107,7 +100,7 @@ class VehicleController extends Controller
         return response()->json(['message' => 'Vehicle updated successfully.']);
     }
 
-    public function destroy(NasFreightsVehicle $vehicle)
+    public function destroy(DestroyVehicleRequest $request, NasFreightsVehicle $vehicle)
     {
         if ($vehicle->image) {
             Storage::disk('public')->delete($vehicle->image);

@@ -326,14 +326,14 @@
                                 @if ($rfq->converted_freight_booking_id)
                                     <span class="d-inline-flex align-items-center gap-2"
                                         style="font-size:.8rem; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:.4rem; padding:.4rem .75rem; color:#166534;">
-                                        <i class="fa fa-check-circle"></i> Converted to Freight Import Booking:
+                                        <i class="fa fa-check-circle"></i> Converted to Freight Import Booking/Job:
                                         <a href="{{ route('nas-freights.freight-import-bookings.show', $rfq->converted_freight_booking_id) }}"
                                             class="fw-bold text-success">{{ $rfq->convertedFreightBooking?->freight_booking_no }}</a>
                                     </span>
                                 @else
                                     <label class="rfq-label d-block mb-1">&nbsp;</label>
                                     <button type="button" class="btn btn-sm btn-success" id="btnConvertBooking">
-                                        <i class="fa fa-ship me-1"></i> Convert to Freight Import Booking
+                                        <i class="fa fa-ship me-1"></i> Convert to Freight Import Booking/Job
                                     </button>
                                 @endif
                             </div>

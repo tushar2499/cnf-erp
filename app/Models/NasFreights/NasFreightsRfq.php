@@ -2,6 +2,7 @@
 
 namespace App\Models\NasFreights;
 
+use App\Models\Employee;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -35,7 +36,7 @@ class NasFreightsRfq extends Model
 
     public function salesperson(): BelongsTo
     {
-        return $this->belongsTo(NasFreightsEmployee::class, 'salesperson_id');
+        return $this->belongsTo(Employee::class, 'salesperson_id');
     }
 
     public function overseasAgent(): BelongsTo

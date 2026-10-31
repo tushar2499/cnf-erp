@@ -28,28 +28,28 @@ class ChevronJob extends Model
         'received_amount', 'due_amount', 'assessable_value',
         'currency_type', 'currency_rate', 'assessable_value_bdt',
         'be_efr_no',
-        'pickup_charge_1',   'pickup_charge_2',
-        'cnf_charge_1',      'cnf_charge_2',
+        'pickup_charge_1', 'pickup_charge_2',
+        'cnf_charge_1', 'cnf_charge_2',
         'stuffing_charge_1', 'stuffing_charge_2',
-        'carrier_bill_1',    'carrier_bill_2',
-        'mbl_free_1',        'mbl_free_2',
-        'hbl_charge_1',      'hbl_charge_2',
-        'ps_to_agent_1',     'ps_to_agent_2',
-        'ps_to_b_co_1',      'ps_to_b_co_2',
-        'noc_charge_1',      'noc_charge_2',
-        'other_charge_1',    'other_charge_2',
-        'invoice_value_1',   'invoice_value_2',
-        'duty_rate',     'duty_amount',
-        'ait_rate',      'ait_amount',
-        'sup_tax_rate',  'sup_tax_amount',
-        'vat_rate',      'vat_amount',
-        'rd_rate',       'rd_amount',
-        'atv_rate',      'atv_amount',
-        'df_vat_rate',   'df_vat_amount',
-        'other_rate',    'other_amount',
-        'total_payable_1',  'total_payable_2',
+        'carrier_bill_1', 'carrier_bill_2',
+        'mbl_free_1', 'mbl_free_2',
+        'hbl_charge_1', 'hbl_charge_2',
+        'ps_to_agent_1', 'ps_to_agent_2',
+        'ps_to_b_co_1', 'ps_to_b_co_2',
+        'noc_charge_1', 'noc_charge_2',
+        'other_charge_1', 'other_charge_2',
+        'invoice_value_1', 'invoice_value_2',
+        'duty_rate', 'duty_amount',
+        'ait_rate', 'ait_amount',
+        'sup_tax_rate', 'sup_tax_amount',
+        'vat_rate', 'vat_amount',
+        'rd_rate', 'rd_amount',
+        'atv_rate', 'atv_amount',
+        'df_vat_rate', 'df_vat_amount',
+        'other_rate', 'other_amount',
+        'total_payable_1', 'total_payable_2',
         'comm_discount_pct', 'comm_discount_1', 'comm_discount_2',
-        'net_payable_1',    'net_payable_2',
+        'net_payable_1', 'net_payable_2',
         'status',
     ];
 
@@ -106,19 +106,18 @@ class ChevronJob extends Model
         return $this->belongsTo(ChevronItem::class, 'item_id');
     }
 
-    public static function generateJobNo(int $jobTypeId, int $portId): string
+    public static function generateJobNo(int $jobTypeId, int $branchId): string
     {
         $jobType = ChevronJobType::find($jobTypeId);
-        $port = ChevronPort::find($portId);
+        $branch = ChevronBranch::find($branchId);
 
         $typeCode = $jobType?->code ?? 'XX';
-        $portCode = $port?->code ?? 'XX';
+        $branchCode = $branch?->code ?? 'XX';
         $year = now()->year;
-        $prefix = "CF_{$typeCode}{$portCode}-{$year}-";
-        $scopePattern = 'CF\\___'.$portCode.'-'.$year.'-%';
+        $prefix = "CF_{$typeCode}{$branchCode}-{$year}-";
 
         $last = static::lockForUpdate()
-            ->where('job_no', 'like', $scopePattern)
+            ->where('job_no', 'like', 'CF\\_'.$typeCode.$branchCode.'-'.$year.'-%')
             ->max(DB::raw('CAST(SUBSTRING_INDEX(job_no, \'-\', -1) AS UNSIGNED)'));
 
         $serial = str_pad(($last ?? 0) + 1, 6, '0', STR_PAD_LEFT);

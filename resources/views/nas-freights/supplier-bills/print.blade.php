@@ -410,7 +410,7 @@
                 <td class="header-info">
                     <table class="info-table">
                         <tr>
-                            <td class="lbl">Payment Date:</td>
+                            <td class="lbl">Bill Date:</td>
                             <td>{{ $supplierBill->bill_date?->format('d/m/Y') }}</td>
                         </tr>
                         <tr>
@@ -422,6 +422,30 @@
                             <td>{{ $supplierBill->from_date?->format('d/m/Y') }} –
                                 {{ $supplierBill->to_date?->format('d/m/Y') }}</td>
                         </tr>
+                        @if ($supplierBill->invoice_no)
+                        <tr>
+                            <td class="lbl">Invoice No:</td>
+                            <td>{{ $supplierBill->invoice_no }}</td>
+                        </tr>
+                        @endif
+                        @if ($supplierBill->payment_date)
+                        <tr>
+                            <td class="lbl">Payment Date:</td>
+                            <td>{{ $supplierBill->payment_date?->format('d/m/Y') }}</td>
+                        </tr>
+                        @endif
+                        @if ($supplierBill->money_receipt_no)
+                        <tr>
+                            <td class="lbl">Money Receipt No:</td>
+                            <td>{{ $supplierBill->money_receipt_no }}</td>
+                        </tr>
+                        @endif
+                        @if ($supplierBill->money_receipt_date)
+                        <tr>
+                            <td class="lbl">Money Receipt Date:</td>
+                            <td>{{ $supplierBill->money_receipt_date?->format('d/m/Y') }}</td>
+                        </tr>
+                        @endif
                         <tr>
                             <td class="lbl">Remarks:</td>
                             <td>{{ $supplierBill->note ?: '—' }}</td>

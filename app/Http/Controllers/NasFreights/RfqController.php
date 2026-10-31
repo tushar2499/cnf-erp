@@ -3,9 +3,18 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\NasFreights\Rfq\ConvertRfqRequest;
+use App\Http\Requests\NasFreights\Rfq\CreateRfqRequest;
+use App\Http\Requests\NasFreights\Rfq\DestroyRfqRequest;
+use App\Http\Requests\NasFreights\Rfq\EditRfqRequest;
+use App\Http\Requests\NasFreights\Rfq\IndexRfqRequest;
+use App\Http\Requests\NasFreights\Rfq\ShowRfqRequest;
+use App\Http\Requests\NasFreights\Rfq\StoreRfqRequest;
+use App\Http\Requests\NasFreights\Rfq\UpdateRfqRequest;
+use App\Http\Requests\NasFreights\Rfq\UpdateStatusRfqRequest;
+use App\Models\Employee;
 use App\Models\NasFreights\NasFreightsContainerType;
 use App\Models\NasFreights\NasFreightsCustomer;
-use App\Models\NasFreights\NasFreightsEmployee;
 use App\Models\NasFreights\NasFreightsFreightBooking;
 use App\Models\NasFreights\NasFreightsFreightBookingItem;
 use App\Models\NasFreights\NasFreightsOverseasAgent;
@@ -36,7 +45,7 @@ class RfqController extends Controller
         ];
     }
 
-    public function index(Request $request)
+    public function index(IndexRfqRequest $request)
     {
         if ($request->ajax()) {
             $fromDate = $request->input('from_date');
@@ -78,7 +87,7 @@ class RfqController extends Controller
         return view('nas-freights.rfqs.index');
     }
 
-    public function create()
+    public function create(CreateRfqRequest $request)
     {
         return view('nas-freights.rfqs.create', array_merge($this->formData(), [
             'rfq'           => null,
@@ -86,12 +95,8 @@ class RfqController extends Controller
         ]));
     }
 
-    public function store(Request $request)
+    public function store(StoreRfqRequest $request)
     {
-        $request->validate([
-            'rfq_date' => ['required', 'date'],
-            'type'     => ['required', 'in:import,export'],
-        ]);
 
         DB::transaction(function () use ($request) {
             $rfq = NasFreightsRfq::create(array_merge($this->prepareData($request), [
@@ -104,7 +109,7 @@ class RfqController extends Controller
             ->with('success', 'RFQ created successfully.');
     }
 
-    public function show(NasFreightsRfq $rfq)
+    public function show(ShowRfqRequest $request, NasFreightsRfq $rfq)
     {
         $rfq->load(['customer', 'salesperson', 'convertedFreightBooking', 'items', 'overseasAgent', 'shippingCarrier']);
 
@@ -114,7 +119,7 @@ class RfqController extends Controller
         ]);
     }
 
-    public function edit(NasFreightsRfq $rfq)
+    public function edit(EditRfqRequest $request, NasFreightsRfq $rfq)
     {
         $rfq->load(['items', 'overseasAgent', 'shippingCarrier']);
         $existingItems = $rfq->items->map(fn ($i) => [
@@ -138,12 +143,8 @@ class RfqController extends Controller
         ]));
     }
 
-    public function update(Request $request, NasFreightsRfq $rfq)
+    public function update(UpdateRfqRequest $request, NasFreightsRfq $rfq)
     {
-        $request->validate([
-            'rfq_date' => ['required', 'date'],
-            'type'     => ['required', 'in:import,export'],
-        ]);
 
         DB::transaction(function () use ($request, $rfq) {
             $rfq->update($this->prepareData($request));
@@ -155,12 +156,8 @@ class RfqController extends Controller
             ->with('success', 'RFQ '.$rfq->rfq_no.' updated successfully.');
     }
 
-    public function updateStatus(Request $request, NasFreightsRfq $rfq)
+    public function updateStatus(UpdateStatusRfqRequest $request, NasFreightsRfq $rfq)
     {
-        $request->validate([
-            'status'      => ['required', 'in:Draft,Pending,Win,Lose'],
-            'lost_reason' => ['required_if:status,Lose'],
-        ]);
 
         $rfq->update([
             'status'      => $request->status,
@@ -170,7 +167,7 @@ class RfqController extends Controller
         return back()->with('success', 'Status updated to '.$request->status.'.');
     }
 
-    public function convertToFreightBooking(NasFreightsRfq $rfq)
+    public function convertToFreightBooking(ConvertRfqRequest $request, NasFreightsRfq $rfq)
     {
         if ($rfq->status !== 'Win') {
             return back()->with('error', 'Only Win RFQs can be converted to a freight import booking.');
@@ -206,6 +203,12 @@ class RfqController extends Controller
                 'place_of_receipt'      => $rfq->place_of_receipt,
                 'place_of_delivery'     => $rfq->place_of_delivery,
                 'commodity_description' => $rfq->commodity_description,
+                'hs_codes'              => $rfq->items->pluck('hs_code')
+                    ->map(fn ($code) => trim((string) $code))
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all() ?: null,
                 'remarks'               => $rfq->remarks,
                 'status'                => 'Draft',
             ]);
@@ -216,8 +219,6 @@ class RfqController extends Controller
                     'item_type'          => $item->item_type,
                     'container_size'     => $item->container_size,
                     'package_type'       => $item->package_type,
-                    'hs_code'            => $item->hs_code,
-                    'commodity'          => $item->commodity,
                     'quantity'           => $item->quantity,
                     'gross_weight'       => $item->gross_weight,
                     'weight_unit'        => $item->weight_unit,
@@ -234,10 +235,10 @@ class RfqController extends Controller
         });
 
         return redirect()->route('nas-freights.freight-import-bookings.show', $freightBooking->id)
-            ->with('success', 'Freight Import Booking '.$freightBooking->freight_booking_no.' created from RFQ '.$rfq->rfq_no.'.');
+            ->with('success', 'Freight Import Booking/Job '.$freightBooking->freight_booking_no.' created from RFQ '.$rfq->rfq_no.'.');
     }
 
-    public function destroy(NasFreightsRfq $rfq)
+    public function destroy(DestroyRfqRequest $request, NasFreightsRfq $rfq)
     {
         $rfq->delete();
 
@@ -299,7 +300,7 @@ class RfqController extends Controller
     public function searchEmployees(Request $request)
     {
         $q = $request->get('q', '');
-        $results = NasFreightsEmployee::where('name', 'like', '%'.$q.'%')
+        $results = Employee::where('name', 'like', '%'.$q.'%')
             ->where('is_active', true)
             ->limit(20)
             ->select(['id', 'name', 'code'])

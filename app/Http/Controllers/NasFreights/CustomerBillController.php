@@ -3,15 +3,28 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\NasFreights\CustomerBill\ConfirmCustomerBillRequest;
+use App\Http\Requests\NasFreights\CustomerBill\CreateCustomerBillRequest;
+use App\Http\Requests\NasFreights\CustomerBill\DestroyCustomerBillRequest;
+use App\Http\Requests\NasFreights\CustomerBill\EditCustomerBillRequest;
+use App\Http\Requests\NasFreights\CustomerBill\IndexCustomerBillRequest;
+use App\Http\Requests\NasFreights\CustomerBill\LoadItemsCustomerBillRequest;
+use App\Http\Requests\NasFreights\CustomerBill\PrintCustomerBillRequest;
+use App\Http\Requests\NasFreights\CustomerBill\ShowCustomerBillRequest;
+use App\Http\Requests\NasFreights\CustomerBill\StoreCustomerBillRequest;
+use App\Http\Requests\NasFreights\CustomerBill\UpdateCustomerBillRequest;
 use App\Models\NasFreights\NasFreightsBookingItem;
 use App\Models\NasFreights\NasFreightsCustomer;
 use App\Models\NasFreights\NasFreightsCustomerBill;
 use App\Models\NasFreights\NasFreightsCustomerBillItem;
 use App\Models\NasFreights\NasFreightsVehicle;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
@@ -21,7 +34,7 @@ use Yajra\DataTables\Facades\DataTables;
 
 class CustomerBillController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexCustomerBillRequest $request)
     {
         if ($request->ajax()) {
             $fromDate = $request->input('from_date');
@@ -71,21 +84,29 @@ class CustomerBillController extends Controller
         return view('nas-freights.customer-bills.index');
     }
 
-    public function create()
+    /**
+     * Show the new customer bill filter form
+     *
+     * @param  CreateCustomerBillRequest  $request  The validated request
+     * @return View
+     */
+    public function create(CreateCustomerBillRequest $request)
     {
         return view('nas-freights.customer-bills.create', [
             'deliveryTypes' => NasFreightsCustomerBill::deliveryTypes(),
             'billTypes'     => NasFreightsCustomerBill::billTypes(),
+            'capacities'    => $this->capacityOptions(),
         ]);
     }
 
-    public function loadItems(Request $request)
+    /**
+     * Load billable booking items for a customer and date range
+     *
+     * @param  LoadItemsCustomerBillRequest  $request  The validated request
+     * @return JsonResponse
+     */
+    public function loadItems(LoadItemsCustomerBillRequest $request)
     {
-        $request->validate([
-            'from_date'   => ['required', 'date'],
-            'to_date'     => ['required', 'date'],
-            'customer_id' => ['required'],
-        ]);
 
         // (booking_id, cover_van_no) pairs already present in any customer bill item
         $billedPairs = NasFreightsCustomerBillItem::select('booking_id', 'item_code')
@@ -95,13 +116,18 @@ class CustomerBillController extends Controller
             ->flip()
             ->toArray();
 
+        $capacityFilter = (string) $request->input('capacity', '');
+
         $bookingItems = NasFreightsBookingItem::with('booking')
-            ->whereHas('booking', function ($q) use ($request) {
-                $q->whereBetween('job_date', [$request->from_date, $request->to_date])
-                    ->where('customer_id', $request->customer_id);
-            })
+            ->join('nas_freights_bookings as load_booking', 'load_booking.id', '=', 'nas_freights_booking_items.booking_id')
+            ->select('nas_freights_booking_items.*')
+            ->whereBetween('load_booking.job_date', [$request->from_date, $request->to_date])
+            ->where('load_booking.customer_id', $request->customer_id)
+            ->orderBy('load_booking.job_date')
+            ->orderBy('nas_freights_booking_items.id')
             ->get()
             ->filter(fn ($item) => ! isset($billedPairs[$item->booking_id.'_'.$item->cover_van_no]))
+            ->filter(fn ($item) => NasFreightsBookingItem::capacityOverlaps($item->capacity, $capacityFilter))
             ->values();
 
         $firstBooking = $bookingItems->first()?->booking;
@@ -147,15 +173,8 @@ class CustomerBillController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreCustomerBillRequest $request)
     {
-        $request->validate([
-            'from_date'     => ['required', 'date'],
-            'to_date'       => ['required', 'date'],
-            'bill_date'     => ['required', 'date'],
-            'delivery_type' => ['required'],
-            'bill_type'     => ['required'],
-        ]);
 
         // Items arrive as a JSON string, not a nested array — a bill with enough
         // rows (17 fields each) blows past PHP's default max_input_vars (1000)
@@ -224,14 +243,14 @@ class CustomerBillController extends Controller
         return response()->json(['message' => 'Customer bill created successfully.', 'redirect' => route('nas-freights.customer-bills.index')]);
     }
 
-    public function show(NasFreightsCustomerBill $customerBill)
+    public function show(ShowCustomerBillRequest $request, NasFreightsCustomerBill $customerBill)
     {
-        $customerBill->load('items');
+        $customerBill->load('items.bookingItem');
 
         return view('nas-freights.customer-bills.show', compact('customerBill'));
     }
 
-    public function edit(NasFreightsCustomerBill $customerBill)
+    public function edit(EditCustomerBillRequest $request, NasFreightsCustomerBill $customerBill)
     {
         $customerBill->load('items.booking');
 
@@ -239,18 +258,12 @@ class CustomerBillController extends Controller
             'customerBill'  => $customerBill,
             'deliveryTypes' => NasFreightsCustomerBill::deliveryTypes(),
             'billTypes'     => NasFreightsCustomerBill::billTypes(),
+            'capacities'    => $this->capacityOptions(),
         ]);
     }
 
-    public function update(Request $request, NasFreightsCustomerBill $customerBill)
+    public function update(UpdateCustomerBillRequest $request, NasFreightsCustomerBill $customerBill)
     {
-        $request->validate([
-            'from_date'     => ['required', 'date'],
-            'to_date'       => ['required', 'date'],
-            'bill_date'     => ['required', 'date'],
-            'delivery_type' => ['required'],
-            'bill_type'     => ['required'],
-        ]);
 
         $items = json_decode($request->input('items', '[]'), true) ?: [];
 
@@ -311,14 +324,14 @@ class CustomerBillController extends Controller
         return response()->json(['message' => 'Customer bill updated successfully.', 'redirect' => route('nas-freights.customer-bills.index')]);
     }
 
-    public function printView(NasFreightsCustomerBill $customerBill)
+    public function printView(PrintCustomerBillRequest $request, NasFreightsCustomerBill $customerBill)
     {
         $customerBill->load(['items.booking.products', 'items.bookingItem']);
 
         return view('nas-freights.customer-bills.print', compact('customerBill'));
     }
 
-    public function billExcel(NasFreightsCustomerBill $customerBill)
+    public function billExcel(PrintCustomerBillRequest $request, NasFreightsCustomerBill $customerBill)
     {
         $customerBill->load(['items.booking.products', 'items.bookingItem']);
 
@@ -345,7 +358,7 @@ class CustomerBillController extends Controller
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet()->setTitle('Transport Bill');
 
-        $sheet->mergeCells('A1:L1');
+        $sheet->mergeCells('A1:M1');
         $sheet->setCellValue('A1', 'TRANSPORT BILL');
         $sheet->getStyle('A1')->applyFromArray(['font' => ['bold' => true, 'size' => 14, 'underline' => true], 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]]);
         $sheet->getRowDimension(1)->setRowHeight(22);
@@ -367,13 +380,13 @@ class CustomerBillController extends Controller
         $sheet->getStyle('H3:H6')->getFont()->setBold(true);
         $sheet->getStyle('I3:I4')->getFont()->setBold(true);
 
-        $headers = ['SL', 'Job No', 'Delivery Date', 'Cover Van No', 'Cover Van Type', 'Capacity', 'Qty', 'Destination', 'Net Amt', 'Dem. Days', 'Total Dem.', 'Total Amt'];
+        $headers = ['SL', 'Job No', 'Delivery Date', 'Cover Van No', 'Challan No', 'Cover Van Type', 'Capacity', 'Qty', 'Destination', 'Net Amt', 'Dem. Days', 'Total Dem.', 'Total Amt'];
         $col = 'A';
         foreach ($headers as $h) {
             $sheet->setCellValue($col.'8', $h);
             $col++;
         }
-        $sheet->getStyle('A8:L8')->applyFromArray([
+        $sheet->getStyle('A8:M8')->applyFromArray([
             'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '000000']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
@@ -398,6 +411,7 @@ class CustomerBillController extends Controller
                 $item->booking?->job_no ?? '—',
                 $item->booking?->delivery_date ? $item->booking->delivery_date->format('d M Y') : '—',
                 $item->item_code,
+                $bItem?->challan_no ?? '—',
                 $vanType,
                 $capacity,
                 (float) $item->b_qty,
@@ -407,44 +421,44 @@ class CustomerBillController extends Controller
                 $demAmt,
                 (float) $rowTot,
             ], null, 'A'.$row);
-            foreach (['I', 'K', 'L'] as $c) {
+            foreach (['J', 'L', 'M'] as $c) {
                 $sheet->getStyle($c.$row)->getNumberFormat()->setFormatCode('#,##0.00');
             }
             if ($row % 2 === 0) {
-                $sheet->getStyle('A'.$row.':L'.$row)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('F5FAF9');
+                $sheet->getStyle('A'.$row.':M'.$row)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('F5FAF9');
             }
             $row++;
         }
 
-        $sheet->mergeCells('A'.$row.':H'.$row);
+        $sheet->mergeCells('A'.$row.':I'.$row);
         $sheet->setCellValue('A'.$row, 'Total Amount');
-        $sheet->setCellValue('I'.$row, $subTotal);
-        $sheet->setCellValue('J'.$row, $totalDemDays);
-        $sheet->setCellValue('K'.$row, $totalDem);
-        $sheet->setCellValue('L'.$row, $subTotal + $totalDem);
-        $sheet->getStyle('A'.$row.':L'.$row)->applyFromArray(['font' => ['bold' => true], 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E8E8E8']]]);
+        $sheet->setCellValue('J'.$row, $subTotal);
+        $sheet->setCellValue('K'.$row, $totalDemDays);
+        $sheet->setCellValue('L'.$row, $totalDem);
+        $sheet->setCellValue('M'.$row, $subTotal + $totalDem);
+        $sheet->getStyle('A'.$row.':M'.$row)->applyFromArray(['font' => ['bold' => true], 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E8E8E8']]]);
         $sheet->getStyle('A'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        foreach (['I', 'K', 'L'] as $c) {
+        foreach (['J', 'L', 'M'] as $c) {
             $sheet->getStyle($c.$row)->getNumberFormat()->setFormatCode('#,##0.00');
         }
         $row++;
 
-        $sheet->setCellValue('K'.$row, 'TDS Amount ('.number_format($tdsPct, 2).'%)');
-        $sheet->setCellValue('L'.$row, $tdsAmt);
-        $sheet->getStyle('K'.$row)->getFont()->setBold(true);
-        $sheet->getStyle('L'.$row)->getNumberFormat()->setFormatCode('#,##0.00');
+        $sheet->setCellValue('L'.$row, 'TDS Amount ('.number_format($tdsPct, 2).'%)');
+        $sheet->setCellValue('M'.$row, $tdsAmt);
+        $sheet->getStyle('L'.$row)->getFont()->setBold(true);
+        $sheet->getStyle('M'.$row)->getNumberFormat()->setFormatCode('#,##0.00');
         $row++;
 
-        $sheet->setCellValue('K'.$row, 'VAT Amount ('.number_format($vatPct, 2).'%)');
-        $sheet->setCellValue('L'.$row, $vatAmt);
-        $sheet->getStyle('K'.$row)->getFont()->setBold(true);
-        $sheet->getStyle('L'.$row)->getNumberFormat()->setFormatCode('#,##0.00');
+        $sheet->setCellValue('L'.$row, 'VAT Amount ('.number_format($vatPct, 2).'%)');
+        $sheet->setCellValue('M'.$row, $vatAmt);
+        $sheet->getStyle('L'.$row)->getFont()->setBold(true);
+        $sheet->getStyle('M'.$row)->getNumberFormat()->setFormatCode('#,##0.00');
         $row++;
 
-        $sheet->setCellValue('K'.$row, 'Gross Amount');
-        $sheet->setCellValue('L'.$row, $grossAmt);
-        $sheet->getStyle('K'.$row.':L'.$row)->applyFromArray(['font' => ['bold' => true], 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D0D0D0']]]);
-        $sheet->getStyle('L'.$row)->getNumberFormat()->setFormatCode('#,##0.00');
+        $sheet->setCellValue('L'.$row, 'Gross Amount');
+        $sheet->setCellValue('M'.$row, $grossAmt);
+        $sheet->getStyle('L'.$row.':M'.$row)->applyFromArray(['font' => ['bold' => true], 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D0D0D0']]]);
+        $sheet->getStyle('M'.$row)->getNumberFormat()->setFormatCode('#,##0.00');
         $row += 2;
 
         $sheet->setCellValue('A'.$row, 'Please make all CHEQUE payable to NAS Freights And Logistics Ltd.');
@@ -455,10 +469,10 @@ class CustomerBillController extends Controller
         $sheet->setCellValue('A'.$row, 'For NAS Freights And Logistics Ltd.');
         $sheet->getStyle('A'.$row)->getFont()->setBold(true);
 
-        foreach (['A' => 5, 'B' => 12, 'C' => 12, 'D' => 12, 'E' => 12, 'F' => 9, 'G' => 8, 'H' => 20, 'I' => 12, 'J' => 10, 'K' => 12, 'L' => 12] as $c => $w) {
+        foreach (['A' => 5, 'B' => 12, 'C' => 12, 'D' => 12, 'E' => 12, 'F' => 12, 'G' => 9, 'H' => 8, 'I' => 20, 'J' => 12, 'K' => 10, 'L' => 12, 'M' => 12] as $c => $w) {
             $sheet->getColumnDimension($c)->setWidth($w);
         }
-        $sheet->getStyle('A8:L'.($row - 4))->applyFromArray(['borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]]]);
+        $sheet->getStyle('A8:M'.($row - 4))->applyFromArray(['borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]]]);
 
         $writer = new Xlsx($spreadsheet);
 
@@ -469,7 +483,7 @@ class CustomerBillController extends Controller
         );
     }
 
-    public function mushakView(NasFreightsCustomerBill $customerBill)
+    public function mushakView(PrintCustomerBillRequest $request, NasFreightsCustomerBill $customerBill)
     {
         $customerBill->load(['items.booking', 'items.bookingItem']);
         $customer = NasFreightsCustomer::find($customerBill->customer_id);
@@ -477,14 +491,14 @@ class CustomerBillController extends Controller
         return view('nas-freights.customer-bills.mushak', compact('customerBill', 'customer'));
     }
 
-    public function confirm(NasFreightsCustomerBill $customerBill)
+    public function confirm(ConfirmCustomerBillRequest $request, NasFreightsCustomerBill $customerBill)
     {
         $customerBill->update(['status' => 'Approved']);
 
         return response()->json(['message' => 'Bill confirmed successfully.']);
     }
 
-    public function destroy(NasFreightsCustomerBill $customerBill)
+    public function destroy(DestroyCustomerBillRequest $request, NasFreightsCustomerBill $customerBill)
     {
         $customerBill->items()->delete();
         $customerBill->delete();
@@ -507,5 +521,20 @@ class CustomerBillController extends Controller
                     'address' => $c->address,
                 ])
         );
+    }
+
+    /**
+     * Distinct capacity values used to suggest filter options
+     *
+     * @return Collection<int, string>
+     */
+    private function capacityOptions(): Collection
+    {
+        return NasFreightsBookingItem::query()
+            ->whereNotNull('capacity')
+            ->where('capacity', '!=', '')
+            ->distinct()
+            ->orderBy('capacity')
+            ->pluck('capacity');
     }
 }

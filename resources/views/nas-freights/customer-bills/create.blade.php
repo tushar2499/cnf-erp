@@ -11,6 +11,7 @@
 #rowsTable td { font-size:.75rem; padding:.25rem .3rem; vertical-align:middle; white-space:nowrap; }
 #rowsTable input[type=number], #rowsTable input[type=text] { font-size:.75rem; padding:.2rem .3rem; height:auto; min-width:60px; }
 .req { color:#dc3545; }
+.form-control[readonly] { background-color: #e8eff5 !important; color: #6b7280; cursor: not-allowed; }
 </style>
 @endpush
 
@@ -38,7 +39,7 @@
                 <label class="form-label">To Date <span class="req">*</span></label>
                 <input type="date" id="fldToDate" class="form-control form-control-sm" value="{{ date('Y-m-d') }}" required>
             </div>
-            <div class="col-md-5">
+            <div class="col-md-3">
                 <label class="form-label">Customer</label>
                 <select id="fldCustomer" class="form-select form-select-sm select2-customer" style="width:100%">
                     <option value="">Enter (Code or Name) minimum 3 character</option>
@@ -47,6 +48,17 @@
                 <input type="hidden" id="fldCustomerName" name="customer_name">
             </div>
             <div class="col-md-3">
+                <label class="form-label" for="fldCapacity">Capacity</label>
+                <input type="text" id="fldCapacity" class="form-control form-control-sm" list="capacityOptions"
+                       placeholder="e.g. 5, 2-3, 10 M/T" autocomplete="off">
+                <datalist id="capacityOptions">
+                    @foreach($capacities as $capacity)
+                        <option value="{{ $capacity }}"></option>
+                    @endforeach
+                </datalist>
+                <div class="form-text" style="font-size:.7rem; margin-top:.1rem">Blank = all. Range like 2-3 also matches vehicles covering it.</div>
+            </div>
+            <div class="col-md-2">
                 <button type="button" id="btnLoadData" class="btn btn-success btn-sm w-100">
                     <i class="fa fa-sync me-1"></i> Load Data
                 </button>
@@ -273,7 +285,7 @@ function addRow(item) {
             <input type="number" class="form-control form-control-sm row-demday text-end" value="${demDay.toFixed(2)}" min="0" step="0.01" style="width:75px" oninput="rowDemRecalc(this)">
             <input class="row-demrate" type="hidden" value="${demRate}">
         </td>
-        <td><input type="number" class="form-control form-control-sm row-demamt text-end bg-light" value="${demAmt.toFixed(2)}" readonly style="width:85px"></td>
+        <td><input type="number" class="form-control form-control-sm row-demamt text-end" value="${demAmt.toFixed(2)}" min="0" step="0.01" style="width:85px" oninput="recalcBill()"></td>
         <td><input type="number" class="form-control form-control-sm row-discpct text-end" value="${discPct}" min="0" step="0.01" style="width:65px" oninput="rowRecalc(this)"></td>
         <td><input type="number" class="form-control form-control-sm row-disc text-end bg-light" value="${disc.toFixed(2)}" readonly style="width:80px"></td>
         <td><input type="number" class="form-control form-control-sm row-aitpct text-end" value="${aitPct}" min="0" step="0.01" style="width:65px" oninput="rowRecalc(this)"></td>
@@ -370,6 +382,7 @@ $('#btnLoadData').on('click', function () {
             from_date:   fromDate,
             to_date:     toDate,
             customer_id: $('#fldCustomerId').val(),
+            capacity:    $('#fldCapacity').val(),
         },
     })
     .done(function (r) {

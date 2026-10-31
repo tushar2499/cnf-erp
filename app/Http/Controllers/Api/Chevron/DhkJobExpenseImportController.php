@@ -12,7 +12,6 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use PhpOffice\PhpSpreadsheet\IOFactory;
 
 /**
  * Head Office / Dhaka (branch "DK") job expense importer.
@@ -37,7 +36,8 @@ class DhkJobExpenseImportController extends Controller
             return $this->zipError();
         }
 
-        set_time_limit(120);
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
 
         try {
             $rows = $this->loadRows($request->file('file')->getPathname());
@@ -115,6 +115,7 @@ class DhkJobExpenseImportController extends Controller
         }
 
         set_time_limit(0);
+        ini_set('memory_limit', '512M');
 
         try {
             $rows = $this->loadRows($request->file('file')->getPathname());
@@ -152,18 +153,52 @@ class DhkJobExpenseImportController extends Controller
 
     private function loadRows(string $pathname): array
     {
-        $spreadsheet = IOFactory::load($pathname);
-        $sheet = $spreadsheet->getActiveSheet();
-        $highestRow = $sheet->getHighestDataRow();
+        // PhpSpreadsheet is too slow/memory-hungry for large DHK xlsx files.
+        // Write a Python script to a temp file and execute it to convert xlsx→CSV.
+        $base = sys_get_temp_dir().'/dhk_exp_'.uniqid();
+        $xlsxPath = $base.'.xlsx'; // openpyxl requires a .xlsx extension
+        $pyPath = $base.'.py';
+        $csvPath = $base.'.csv';
 
-        if ($highestRow <= 1) {
-            return [];
+        copy($pathname, $xlsxPath);
+
+        file_put_contents($pyPath,
+            "import csv, openpyxl\n".
+            'wb = openpyxl.load_workbook('.json_encode($xlsxPath, JSON_UNESCAPED_SLASHES).", read_only=True, data_only=True)\n".
+            "ws = wb.active\n".
+            'with open('.json_encode($csvPath, JSON_UNESCAPED_SLASHES).", 'w', newline='', encoding='utf-8') as f:\n".
+            "    w = csv.writer(f)\n".
+            "    from datetime import datetime as dt\n".
+            "    for r in ws.iter_rows():\n".
+            "        row = []\n".
+            "        for c in r[:13]:\n".
+            "            v = c.value\n".
+            "            row.append(v.strftime('%m/%d/%Y') if isinstance(v, dt) else v)\n".
+            "        w.writerow(row)\n".
+            "wb.close()\n"
+        );
+
+        $pyLibs = storage_path('app/pylibs');
+        exec("PYTHONPATH={$pyLibs} /usr/bin/python3 ".escapeshellarg($pyPath).' 2>&1', $output, $exitCode);
+        @unlink($pyPath);
+        @unlink($xlsxPath);
+
+        if ($exitCode !== 0 || ! file_exists($csvPath)) {
+            throw new \RuntimeException('Python xlsx→CSV conversion failed: '.implode("\n", $output));
         }
 
-        // DHK workbook columns: A=SL NO, B=Job NO, C=Importer, D=Exp Date,
-        // E=Exp. By, F=Expense Head, G=Receiptable, H=Amount, I=Complition,
-        // J=Complition Date, K=Remarks
-        return $sheet->rangeToArray('A1:K'.$highestRow, null, true, true, false);
+        $rows = [];
+        $handle = fopen($csvPath, 'r');
+        while (($row = fgetcsv($handle)) !== false) {
+            $rows[] = $row;
+        }
+        fclose($handle);
+        unlink($csvPath);
+
+        // DHK workbook columns (0-indexed): 0=empty, 1=SL NO, 2=Job NO, 3=Importer,
+        // 4=Exp Date, 5=Exp. By, 6=Category, 7=Expense Head, 8=Receiptable,
+        // 9=Amount, 10=Completion, 11=Completion Date, 12=Remarks
+        return $rows;
     }
 
     // ─── Parsing ─────────────────────────────────────────────────────────────
@@ -177,17 +212,17 @@ class DhkJobExpenseImportController extends Controller
                 continue;
             }
 
-            $jobNo = trim($row[1] ?? '');
+            $jobNo = trim($row[2] ?? '');  // C = Job NO
             if ($jobNo === '') {
                 continue;
             }
 
-            $expDate = $this->parseDate($row[3] ?? '');
+            $expDate = $this->parseDate($row[4] ?? '');  // E = Exp Date
             if ($expDate === null) {
                 continue;
             }
 
-            $employee = $this->parseEmployee($row[4] ?? '');
+            $employee = $this->parseEmployee($row[5] ?? '');  // F = Exp. By
             $empKey = $employee['name'] === '' ? '' : $this->normalizeName($employee['name']);
 
             $groupKey = strtolower($jobNo).'|'.$expDate.'|'.$empKey;
@@ -195,7 +230,7 @@ class DhkJobExpenseImportController extends Controller
             if (! isset($groups[$groupKey])) {
                 $groups[$groupKey] = [
                     'job_no'        => $jobNo,
-                    'importer_name' => trim($row[2] ?? ''),
+                    'importer_name' => trim($row[3] ?? ''),  // D = Importer
                     'date'          => $expDate,
                     'employee_name' => $employee['name'],
                     'employee_code' => $employee['code'],
@@ -204,11 +239,11 @@ class DhkJobExpenseImportController extends Controller
             }
 
             $groups[$groupKey]['items'][] = [
-                'category_name' => '',
-                'expense_head'  => trim($row[5] ?? ''),
-                'receiptable'   => $this->mapReceiptable($row[6] ?? ''),
-                'amount'        => $this->parseAmount($row[7] ?? null),
-                'note'          => trim($row[10] ?? '') ?: null,
+                'category_name' => trim($row[6] ?? ''),           // G = Category
+                'expense_head'  => trim($row[7] ?? ''),           // H = Expense Head
+                'receiptable'   => $this->mapReceiptable($row[8] ?? ''),  // I = Receiptable
+                'amount'        => $this->parseAmount($row[9] ?? null),   // J = Amount
+                'note'          => trim($row[12] ?? '') ?: null,           // M = Remarks
             ];
         }
 
@@ -341,8 +376,11 @@ class DhkJobExpenseImportController extends Controller
             foreach ($group['items'] as $item) {
                 $headKey = strtolower($item['expense_head']);
 
-                if ($item['expense_head'] !== '' && ! isset($lookups['heads'][$headKey])) {
-                    $uniqueHeads[$headKey] = $item['expense_head'];
+                if ($item['expense_head'] !== '' && ! isset($lookups['heads'][$headKey]) && ! isset($uniqueHeads[$headKey])) {
+                    $uniqueHeads[$headKey] = [
+                        'name'     => $item['expense_head'],
+                        'category' => $item['category_name'],
+                    ];
                 }
             }
         }
@@ -419,30 +457,31 @@ class DhkJobExpenseImportController extends Controller
                 $lookups['employeesByName'][$nameKey] = $employee->id;
             }
 
-            // 4. Expense heads (under a shared "General" category when new)
-            $fallbackCatId = null;
-            foreach ($uniqueHeads as $key => $name) {
+            // 4. Expense heads — use the CATEGORY column from the file; fall back to "General"
+            $categoryCache = [];
+            foreach ($uniqueHeads as $key => $data) {
                 $head = ChevronExpenseHead::whereRaw('LOWER(TRIM(name)) = ?', [$key])->first();
                 if (! $head) {
-                    if ($fallbackCatId === null) {
-                        $fallback = ChevronExpenseCategory::whereRaw('LOWER(TRIM(name)) = ?', ['miscellaneous'])->first()
-                            ?? ChevronExpenseCategory::whereRaw('LOWER(TRIM(name)) = ?', ['general'])->first()
+                    $catName = ($data['category'] !== '') ? $data['category'] : 'General';
+                    $catKey = strtolower(trim($catName));
+
+                    if (! isset($categoryCache[$catKey])) {
+                        $cat = ChevronExpenseCategory::whereRaw('LOWER(TRIM(name)) = ?', [$catKey])->first()
                             ?? ChevronExpenseCategory::create([
-                                'name'      => 'General',
+                                'name'      => $catName,
                                 'is_bill'   => false,
                                 'is_job'    => true,
                                 'is_active' => true,
                             ]);
-                        $fallbackCatId = $fallback->id;
-
-                        if ($fallback->wasRecentlyCreated) {
+                        if ($cat->wasRecentlyCreated) {
                             $stats['new_categories']++;
                         }
+                        $categoryCache[$catKey] = $cat->id;
                     }
 
                     $head = ChevronExpenseHead::create([
-                        'name'                => $name,
-                        'expense_category_id' => $fallbackCatId,
+                        'name'                => $data['name'],
+                        'expense_category_id' => $categoryCache[$catKey],
                         'type'                => 'External',
                         'is_active'           => true,
                     ]);
@@ -588,7 +627,16 @@ class DhkJobExpenseImportController extends Controller
             return null;
         }
 
-        // Dhaka workbook exposes dates as m/d/Y strings (e.g. "1/4/2026").
+        // Python serialises dates as MM/DD/YYYY (strftime '%m/%d/%Y').
+        // Additional formats kept for backward compat with any text-formatted cells.
+        foreach (['m/d/Y', 'n/j/Y', 'Y-m-d', 'd/M/Y', 'j/M/Y'] as $format) {
+            try {
+                return Carbon::createFromFormat($format, $value)->format('Y-m-d');
+            } catch (\Exception) {
+                // try next format
+            }
+        }
+
         try {
             return Carbon::parse($value)->format('Y-m-d');
         } catch (\Exception) {

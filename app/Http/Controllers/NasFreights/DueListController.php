@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\NasFreights\DueList\ViewDueListRequest;
 use App\Models\NasFreights\NasFreightsCustomer;
 use App\Models\NasFreights\NasFreightsCustomerBill;
 use App\Models\NasFreights\NasFreightsSupplier;
@@ -13,7 +14,7 @@ use Yajra\DataTables\Facades\DataTables;
 class DueListController extends Controller
 {
     /* ── Customer Due: confirmed bills not yet paid ── */
-    public function customerDue(Request $request)
+    public function customerDue(ViewDueListRequest $request)
     {
         if ($request->ajax()) {
             $query = NasFreightsCustomerBill::where('status', 'Approved')
@@ -43,7 +44,7 @@ class DueListController extends Controller
     }
 
     /* ── Supplier Due: confirmed payment orders not yet paid ── */
-    public function supplierDue(Request $request)
+    public function supplierDue(ViewDueListRequest $request)
     {
         if ($request->ajax()) {
             $query = NasFreightsSupplierBill::where('status', 'Approved')

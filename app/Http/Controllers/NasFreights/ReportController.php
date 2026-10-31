@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\NasFreights\Report\BillDetailsRequest;
+use App\Http\Requests\NasFreights\Report\BookingReportRequest;
+use App\Http\Requests\NasFreights\Report\PartyBillSummaryRequest;
 use App\Models\Company;
 use App\Models\NasFreights\NasFreightsBookingItem;
 use App\Models\NasFreights\NasFreightsCustomer;
@@ -23,14 +26,14 @@ class ReportController extends Controller
 {
     // ─────────────────────────── BOOKING REPORT ───────────────────────────
 
-    public function bookingReport(Request $request)
+    public function bookingReport(BookingReportRequest $request)
     {
         $rows = $this->getBookingRows($request);
 
         return view('nas-freights.reports.booking', compact('rows'));
     }
 
-    public function bookingReportPrint(Request $request)
+    public function bookingReportPrint(BookingReportRequest $request)
     {
         $rows = $this->getBookingRows($request);
         $company = Company::where('slug', 'nas-freights')->first();
@@ -38,7 +41,7 @@ class ReportController extends Controller
         return view('nas-freights.reports.booking-print', compact('rows', 'company'));
     }
 
-    public function bookingReportPdf(Request $request)
+    public function bookingReportPdf(BookingReportRequest $request)
     {
         $rows = $this->getBookingRows($request);
         $company = Company::where('slug', 'nas-freights')->first();
@@ -48,7 +51,7 @@ class ReportController extends Controller
         return $pdf->download('booking-report-'.now()->format('Ymd-His').'.pdf');
     }
 
-    public function bookingReportExcel(Request $request)
+    public function bookingReportExcel(BookingReportRequest $request)
     {
         $rows = $this->getBookingRows($request);
         $company = Company::where('slug', 'nas-freights')->first();
@@ -78,7 +81,7 @@ class ReportController extends Controller
         $sheet->setCellValue('A3', trim($dateStr));
         $sheet->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        $headers = ['SL', 'Job No', 'Job Date', 'Entry Date', 'Entry By', 'Sales Person', 'Customer', 'Supplier', 'Cover Van Details', 'Location', 'Supplier Rate', 'Customer Rate', 'Profit', 'Remarks', 'Billed', 'Bill No'];
+        $headers = ['SL', 'Job No', 'Job Date', 'Entry By', 'Sales Person', 'Customer', 'Supplier', 'Cover Van Details', 'Challan No', 'Location', 'Supplier Rate', 'Customer Rate', 'Profit', 'Remarks', 'Billed', 'Bill No'];
         $col = 'A';
         foreach ($headers as $h) {
             $sheet->setCellValue($col.'4', $h);
@@ -101,7 +104,7 @@ class ReportController extends Controller
             $ts += $item->supplier_rate;
             $tc += $item->customer_rate;
             $tp += $profit;
-            $sheet->fromArray([$i + 1, $b?->job_no, $b?->job_date?->format('d M Y'), $b?->created_at?->format('d M Y'), $b?->entry_by, $b?->sales_person_name, $b?->customer_name, $item->supplier_name, $item->cover_van_no, $loc, (float) $item->supplier_rate, (float) $item->customer_rate, (float) $profit, $b?->note, $item->is_billed ? 'Billed' : 'Pending', $item->bill_no ?? ''], null, 'A'.$row);
+            $sheet->fromArray([$i + 1, $b?->job_no, $b?->job_date?->format('d M Y'), $b?->entry_by, $b?->sales_person_name, $b?->customer_name, $item->supplier_name, $item->cover_van_no, $item->challan_no ?? '', $loc, (float) $item->supplier_rate, (float) $item->customer_rate, (float) $profit, $b?->note, $item->is_billed ? 'Billed' : 'Pending', $item->bill_no ?? ''], null, 'A'.$row);
             foreach (['K', 'L', 'M'] as $c) {
                 $sheet->getStyle($c.$row)->getNumberFormat()->setFormatCode('#,##0.00');
             }
@@ -121,7 +124,7 @@ class ReportController extends Controller
             $sheet->getStyle($c.$row)->getNumberFormat()->setFormatCode('#,##0.00');
         }
 
-        foreach (['A' => 4, 'B' => 14, 'C' => 12, 'D' => 12, 'E' => 10, 'F' => 14, 'G' => 20, 'H' => 20, 'I' => 16, 'J' => 28, 'K' => 14, 'L' => 14, 'M' => 14, 'N' => 24, 'O' => 10, 'P' => 16] as $c => $w) {
+        foreach (['A' => 4, 'B' => 14, 'C' => 12, 'D' => 10, 'E' => 14, 'F' => 20, 'G' => 20, 'H' => 16, 'I' => 14, 'J' => 28, 'K' => 14, 'L' => 14, 'M' => 14, 'N' => 24, 'O' => 10, 'P' => 16] as $c => $w) {
             $sheet->getColumnDimension($c)->setWidth($w);
         }
         if ($row > 5) {
@@ -135,14 +138,14 @@ class ReportController extends Controller
 
     // ─────────────────────── PARTY BILL SUMMARY ───────────────────────────
 
-    public function partyBillSummary(Request $request)
+    public function partyBillSummary(PartyBillSummaryRequest $request)
     {
         [$bills, $customer] = $this->getBills($request);
 
         return view('nas-freights.reports.party-bill-summary', compact('bills', 'customer'));
     }
 
-    public function partyBillSummaryPrint(Request $request)
+    public function partyBillSummaryPrint(PartyBillSummaryRequest $request)
     {
         [$bills, $customer] = $this->getBills($request);
         $company = Company::where('slug', 'nas-freights')->first();
@@ -150,7 +153,7 @@ class ReportController extends Controller
         return view('nas-freights.reports.party-bill-summary-print', compact('bills', 'customer', 'company'));
     }
 
-    public function partyBillSummaryPdf(Request $request)
+    public function partyBillSummaryPdf(PartyBillSummaryRequest $request)
     {
         [$bills, $customer] = $this->getBills($request);
         $company = Company::where('slug', 'nas-freights')->first();
@@ -160,7 +163,7 @@ class ReportController extends Controller
         return $pdf->download('party-bill-summary-'.now()->format('Ymd-His').'.pdf');
     }
 
-    public function partyBillSummaryExcel(Request $request)
+    public function partyBillSummaryExcel(PartyBillSummaryRequest $request)
     {
         [$bills, $customer] = $this->getBills($request);
         $company = Company::where('slug', 'nas-freights')->first();
@@ -258,14 +261,14 @@ class ReportController extends Controller
 
     // ─────────────────────────── BILL DETAILS ─────────────────────────────
 
-    public function billDetails(Request $request)
+    public function billDetails(BillDetailsRequest $request)
     {
         [$items, $customer, $bills] = $this->getBillItems($request);
 
         return view('nas-freights.reports.bill-details', compact('items', 'customer', 'bills'));
     }
 
-    public function billDetailsPrint(Request $request)
+    public function billDetailsPrint(BillDetailsRequest $request)
     {
         [$items, $customer, $bills] = $this->getBillItems($request);
         $company = Company::where('slug', 'nas-freights')->first();
@@ -273,7 +276,7 @@ class ReportController extends Controller
         return view('nas-freights.reports.bill-details-print', compact('items', 'customer', 'bills', 'company'));
     }
 
-    public function billDetailsPdf(Request $request)
+    public function billDetailsPdf(BillDetailsRequest $request)
     {
         [$items, $customer, $bills] = $this->getBillItems($request);
         $company = Company::where('slug', 'nas-freights')->first();
@@ -283,7 +286,7 @@ class ReportController extends Controller
         return $pdf->download('bill-details-'.now()->format('Ymd-His').'.pdf');
     }
 
-    public function billDetailsExcel(Request $request)
+    public function billDetailsExcel(BillDetailsRequest $request)
     {
         [$items, $customer, $bills] = $this->getBillItems($request);
         $company = Company::where('slug', 'nas-freights')->first();
@@ -398,25 +401,18 @@ class ReportController extends Controller
             return collect();
         }
         $rows = NasFreightsBookingItem::with('booking')
-            ->whereHas('booking', function ($q) use ($request) {
-                $q->where('branch_id', session('nas_freights_branch_id'));
-                if ($request->filled('from_date')) {
-                    $q->whereDate('job_date', '>=', $request->from_date);
-                }
-                if ($request->filled('to_date')) {
-                    $q->whereDate('job_date', '<=', $request->to_date);
-                }
-                if ($request->filled('customer_id')) {
-                    $q->where('customer_id', $request->customer_id);
-                }
-                if ($request->filled('status')) {
-                    $q->where('status', $request->status);
-                }
-            })
-            ->when($request->filled('supplier_id'), fn ($q) => $q->where('supplier_id', $request->supplier_id))
-            ->when($request->filled('vehicle'), fn ($q) => $q->where('cover_van_no', 'like', "%{$request->vehicle}%"))
-            ->when($request->filled('location_from'), fn ($q) => $q->where('location_from', 'like', "%{$request->location_from}%"))
-            ->orderBy('id')
+            ->join('nas_freights_bookings', 'nas_freights_bookings.id', '=', 'nas_freights_booking_items.booking_id')
+            ->select('nas_freights_booking_items.*')
+            ->where('nas_freights_bookings.branch_id', session('nas_freights_branch_id'))
+            ->when($request->filled('from_date'), fn ($q) => $q->whereDate('nas_freights_bookings.job_date', '>=', $request->from_date))
+            ->when($request->filled('to_date'), fn ($q) => $q->whereDate('nas_freights_bookings.job_date', '<=', $request->to_date))
+            ->when($request->filled('customer_id'), fn ($q) => $q->where('nas_freights_bookings.customer_id', $request->customer_id))
+            ->when($request->filled('status'), fn ($q) => $q->where('nas_freights_bookings.status', $request->status))
+            ->when($request->filled('supplier_id'), fn ($q) => $q->where('nas_freights_booking_items.supplier_id', $request->supplier_id))
+            ->when($request->filled('vehicle'), fn ($q) => $q->where('nas_freights_booking_items.cover_van_no', 'like', "%{$request->vehicle}%"))
+            ->when($request->filled('location_from'), fn ($q) => $q->where('nas_freights_booking_items.location_from', 'like', "%{$request->location_from}%"))
+            ->orderBy('nas_freights_bookings.job_date')
+            ->orderBy('nas_freights_booking_items.id')
             ->get();
 
         // Attach billed status: match by booking_id + cover_van_no = booking_id + item_code

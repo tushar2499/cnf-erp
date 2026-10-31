@@ -3,6 +3,12 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\NasFreights\Import\ImportBookingsRequest;
+use App\Http\Requests\NasFreights\Import\ImportBookingUpdatesRequest;
+use App\Http\Requests\NasFreights\Import\ImportCustomerBillsRequest;
+use App\Http\Requests\NasFreights\Import\ImportCustomerBillSummaryRequest;
+use App\Http\Requests\NasFreights\Import\ImportSupplierPaymentsRequest;
+use App\Http\Requests\NasFreights\Import\ImportVehiclesRequest;
 use App\Models\NasFreights\NasFreightsBooking;
 use App\Models\NasFreights\NasFreightsBookingItem;
 use App\Models\NasFreights\NasFreightsCustomerBill;
@@ -10,7 +16,6 @@ use App\Models\NasFreights\NasFreightsCustomerBillItem;
 use App\Models\NasFreights\NasFreightsSupplierPayment;
 use App\Models\NasFreights\NasFreightsVehicle;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -88,12 +93,12 @@ class ImportController extends Controller
 
     // ── Supplier Payments ──────────────────────────────────────────────────
 
-    public function supplierPaymentsIndex()
+    public function supplierPaymentsIndex(ImportSupplierPaymentsRequest $request)
     {
         return view('nas-freights.import.supplier-payments');
     }
 
-    public function supplierPaymentsPreview(Request $request)
+    public function supplierPaymentsPreview(ImportSupplierPaymentsRequest $request)
     {
         $request->validate(['file' => 'required|file|mimes:xlsx,xls']);
         $storedPath = $request->file('file')->store('imports');
@@ -112,7 +117,7 @@ class ImportController extends Controller
         ]);
     }
 
-    public function supplierPaymentsImport(Request $request)
+    public function supplierPaymentsImport(ImportSupplierPaymentsRequest $request)
     {
         $request->validate(['file_path' => 'required|string']);
         $rows = $this->parseSupplierPaymentRows($this->loadRows($request->file_path));
@@ -160,12 +165,12 @@ class ImportController extends Controller
 
     // ── Customer Bills ─────────────────────────────────────────────────────
 
-    public function customerBillsIndex()
+    public function customerBillsIndex(ImportCustomerBillsRequest $request)
     {
         return view('nas-freights.import.customer-bills');
     }
 
-    public function customerBillsPreview(Request $request)
+    public function customerBillsPreview(ImportCustomerBillsRequest $request)
     {
         $request->validate(['file' => 'required|file|mimes:xlsx,xls']);
         $storedPath = $request->file('file')->store('imports');
@@ -184,7 +189,7 @@ class ImportController extends Controller
         ]);
     }
 
-    public function customerBillsImport(Request $request)
+    public function customerBillsImport(ImportCustomerBillsRequest $request)
     {
         $request->validate(['file_path' => 'required|string']);
         $rows = $this->parseCustomerBillRows($this->loadRows($request->file_path));
@@ -242,12 +247,12 @@ class ImportController extends Controller
 
     // ── Vehicles ──────────────────────────────────────────────────────────
 
-    public function vehiclesIndex()
+    public function vehiclesIndex(ImportVehiclesRequest $request)
     {
         return view('nas-freights.import.vehicles');
     }
 
-    public function vehiclesPreview(Request $request)
+    public function vehiclesPreview(ImportVehiclesRequest $request)
     {
         $request->validate(['file' => 'required|file|mimes:xlsx,xls']);
         $storedPath = $request->file('file')->store('imports');
@@ -266,7 +271,7 @@ class ImportController extends Controller
         ]);
     }
 
-    public function vehiclesImport(Request $request)
+    public function vehiclesImport(ImportVehiclesRequest $request)
     {
         $request->validate(['file_path' => 'required|string']);
         $rows = $this->parseVehicleRows($this->loadRows($request->file_path));
@@ -315,12 +320,12 @@ class ImportController extends Controller
 
     // ── Customer Bill Summary ──────────────────────────────────────────────
 
-    public function customerBillSummaryIndex()
+    public function customerBillSummaryIndex(ImportCustomerBillSummaryRequest $request)
     {
         return view('nas-freights.import.customer-bill-summary');
     }
 
-    public function customerBillSummaryPreview(Request $request)
+    public function customerBillSummaryPreview(ImportCustomerBillSummaryRequest $request)
     {
         $request->validate(['file' => 'required|file|mimes:xlsx,xls']);
         $storedPath = $request->file('file')->store('imports');
@@ -345,7 +350,7 @@ class ImportController extends Controller
         ]);
     }
 
-    public function customerBillSummaryImport(Request $request)
+    public function customerBillSummaryImport(ImportCustomerBillSummaryRequest $request)
     {
         $request->validate(['file_path' => 'required|string']);
         $parsed = $this->parseCustomerBillSummaryFile($this->loadRows($request->file_path));
@@ -578,12 +583,12 @@ class ImportController extends Controller
 
     // ── Booking Updates ────────────────────────────────────────────────────
 
-    public function bookingUpdatesIndex()
+    public function bookingUpdatesIndex(ImportBookingUpdatesRequest $request)
     {
         return view('nas-freights.import.booking-updates');
     }
 
-    public function bookingUpdatesPreview(Request $request)
+    public function bookingUpdatesPreview(ImportBookingUpdatesRequest $request)
     {
         $request->validate(['file' => 'required|file|mimes:xlsx,xls']);
         $storedPath = $request->file('file')->store('imports');
@@ -602,7 +607,7 @@ class ImportController extends Controller
         ]);
     }
 
-    public function bookingUpdatesImport(Request $request)
+    public function bookingUpdatesImport(ImportBookingUpdatesRequest $request)
     {
         $request->validate(['file_path' => 'required|string']);
         $rows = $this->parseBookingUpdateRows($this->loadRows($request->file_path));
@@ -669,12 +674,12 @@ class ImportController extends Controller
 
     // ── Bookings ───────────────────────────────────────────────────────────
 
-    public function bookingsIndex()
+    public function bookingsIndex(ImportBookingsRequest $request)
     {
         return view('nas-freights.import.bookings');
     }
 
-    public function bookingsPreview(Request $request)
+    public function bookingsPreview(ImportBookingsRequest $request)
     {
         $request->validate(['file' => 'required|file|mimes:xlsx,xls']);
         $storedPath = $request->file('file')->store('imports');
@@ -694,7 +699,7 @@ class ImportController extends Controller
         ]);
     }
 
-    public function bookingsImport(Request $request)
+    public function bookingsImport(ImportBookingsRequest $request)
     {
         $request->validate(['file_path' => 'required|string']);
         $rows = $this->parseBookingRows($this->loadRows($request->file_path));

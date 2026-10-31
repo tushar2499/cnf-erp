@@ -424,22 +424,35 @@
                                 <span class="input-group-text">BDT</span>
                             </div>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <label class="form-label">LC RT Value</label>
-                            <div id="rtValueRows">
-                                <div class="rt-value-row d-flex gap-1 mb-1 align-items-center">
-                                    <div class="input-group input-group-sm flex-grow-1">
-                                        <input type="number" name="rt_values[0][amount]" class="form-control form-control-sm rt-value-amount" step="0.0001" placeholder="0.00">
-                                        <span class="input-group-text">BDT</span>
-                                    </div>
-                                    <button type="button" class="btn btn-sm btn-outline-danger btn-remove-rt-value p-0" style="width:24px;height:24px;flex-shrink:0" title="Remove"><i class="fa fa-times" style="font-size:.65rem"></i></button>
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label mb-0">LC RT Value</label>
+                                <button type="button" class="btn btn-secondary btn-sm py-0 px-2" id="btnAddRtValue" style="font-size:.75rem">
+                                    <i class="fa fa-plus me-1"></i>Add RT Value
+                                </button>
+                            </div>
+                            <div style="overflow-x:auto">
+                                <table class="table table-sm table-bordered items-table mb-1 w-100" id="rtValuesTable">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center" style="width:32px">#</th>
+                                            <th style="width:150px">Date</th>
+                                            <th>Note</th>
+                                            <th style="width:180px">Amount</th>
+                                            <th style="width:32px"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="rtValuesBody"></tbody>
+                                </table>
+                            </div>
+                            <div id="rtValuesEmpty" class="text-center py-1" style="font-size:.78rem;color:#adb5bd">No RT values added yet.</div>
+                            <div class="d-flex justify-content-end align-items-center mt-1">
+                                <label class="form-label me-2 mb-0 fw-semibold" style="font-size:.78rem">Total RT Value:</label>
+                                <div class="input-group input-group-sm" style="width:160px">
+                                    <input type="number" name="lc_rt_value" id="lcRtValue" class="form-control form-control-sm bg-light fw-bold" readonly step="0.0001" placeholder="0.00">
+                                    <span class="input-group-text">BDT</span>
                                 </div>
                             </div>
-                            <div class="d-flex justify-content-between align-items-center mt-1">
-                                <button type="button" class="btn btn-secondary btn-sm py-0 px-2" id="btnAddRtValue" style="font-size:.75rem"><i class="fa fa-plus me-1"></i>Add RT Value</button>
-                                <span class="fw-semibold" style="font-size:.82rem">Total: <span id="rtValueTotal">0.00</span> BDT</span>
-                            </div>
-                            <input type="hidden" name="lc_rt_value" id="lcRtValue" value="0">
                         </div>
                         <div class="col-6 col-md-3">
                             <label class="form-label">LC Commission</label>
@@ -523,6 +536,7 @@
                                         <tr>
                                             <th class="text-center" style="width:32px">#</th>
                                             <th>Charge Name</th>
+                                            <th style="min-width:130px">Remark</th>
                                             <th style="width:180px">Amount</th>
                                             <th style="width:32px"></th>
                                         </tr>
@@ -559,6 +573,7 @@
                                         <tr>
                                             <th class="text-center" style="width:32px">#</th>
                                             <th>Invoice No</th>
+                                            <th style="min-width:130px">Remark</th>
                                             <th style="width:200px">Invoice Value</th>
                                             <th style="width:32px"></th>
                                         </tr>
@@ -568,6 +583,15 @@
                             </div>
                             <div id="invoicesEmpty" class="text-center py-1"
                                 style="display:none;font-size:.78rem;color:#adb5bd">No invoices added yet.</div>
+                            <div class="d-flex justify-content-end align-items-center mt-1">
+                                <label class="form-label me-2 mb-0 fw-semibold" style="font-size:.78rem">Total Invoice Value:</label>
+                                <div class="input-group input-group-sm" style="width:200px">
+                                    <input type="number" id="invoicesTotalDisplay"
+                                        class="form-control form-control-sm bg-light fw-bold" readonly step="0.0001"
+                                        placeholder="0.00">
+                                    <span class="input-group-text invoice-fcy-label">USD</span>
+                                </div>
+                            </div>
                         </div>
 
                     </div>
@@ -628,8 +652,9 @@
                                     <tr>
                                         <th class="text-center" style="width:32px">#</th>
                                         <th style="width:110px">Type</th>
-                                        <th style="min-width:140px">Receipt No</th>
                                         <th style="width:140px">Date</th>
+                                        <th style="min-width:140px">Receipt No</th>
+                                        <th style="min-width:140px">Remark</th>
                                         <th style="width:150px">Amount</th>
                                         <th style="width:32px"></th>
                                     </tr>
@@ -882,6 +907,7 @@
         var boeIdx = 0;
         var billPaidRowIdx = 0;
         var dutyAdvanceCounters = {};
+        var rtValueRowIdx = 0;
 
         function validateIdentification() {
             var customerId = $('#customerSelect').val();
@@ -938,6 +964,45 @@
             return (v !== null && v !== '' && v !== undefined) ? parseFloat(v).toString() : '';
         }
 
+        // ── LC RT Values ─────────────────────────────────────────────────────────
+        function addRtValueRow(data) {
+            data = data || {};
+            var idx = rtValueRowIdx++;
+            var rowNum = $('#rtValuesBody tr').length + 1;
+            var html = `
+            <tr>
+                <td class="text-center rt-value-row-num" style="font-size:.75rem;vertical-align:middle">${rowNum}</td>
+                <td><input type="date" class="form-control form-control-sm" name="rt_values[${idx}][date]" value="${data.date || ''}"></td>
+                <td><input type="text" class="form-control form-control-sm" name="rt_values[${idx}][note]" value="${data.note || ''}" placeholder="e.g. Retirement note"></td>
+                <td>
+                    <div class="input-group input-group-sm">
+                        <input type="number" class="form-control form-control-sm rt-value-amount" name="rt_values[${idx}][amount]" value="${data.amount || ''}" step="0.0001" min="0" placeholder="0.00">
+                        <span class="input-group-text">BDT</span>
+                    </div>
+                </td>
+                <td class="text-center" style="vertical-align:middle">
+                    <button type="button" class="btn btn-sm btn-danger btn-remove-rt-value p-0" style="width:24px;height:24px" title="Remove">
+                        <i class="fa fa-times" style="font-size:.65rem"></i>
+                    </button>
+                </td>
+            </tr>`;
+            $('#rtValuesBody').append(html);
+            syncRtValuesEmpty();
+        }
+
+        function syncRtValuesTotal() {
+            var total = 0;
+            $('.rt-value-amount').each(function() { total += parseFloat($(this).val()) || 0; });
+            $('#lcRtValue').val(total > 0 ? total.toFixed(2) : '');
+            var pct = parseFloat($('#lcCommissionPct').val()) || 0;
+            $('#lcCommission').val(total && pct ? (total * pct / 100).toFixed(2) : '');
+        }
+
+        function syncRtValuesEmpty() {
+            var empty = $('#rtValuesBody tr').length === 0;
+            $('#rtValuesEmpty').toggle(empty);
+        }
+
         // ── Other Charges ────────────────────────────────────────────────────────
         function addOtherChargeRow(data) {
             data = data || {};
@@ -947,6 +1012,7 @@
             <tr>
                 <td class="text-center other-charge-row-num" style="font-size:.75rem;vertical-align:middle">${rowNum}</td>
                 <td><input type="text" class="form-control form-control-sm" name="other_charge_items[${idx}][name]" value="${data.name || ''}" placeholder="e.g. Port Charges"></td>
+                <td><input type="text" class="form-control form-control-sm" name="other_charge_items[${idx}][remark]" value="${data.remark || ''}" placeholder="Optional note..."></td>
                 <td>
                     <div class="input-group input-group-sm">
                         <input type="number" class="form-control form-control-sm other-charge-amount" name="other_charge_items[${idx}][amount]" value="${data.amount || ''}" step="0.0001" min="0" placeholder="0.00">
@@ -986,9 +1052,10 @@
             <tr>
                 <td class="text-center invoice-row-num" style="font-size:.75rem;vertical-align:middle">${rowNum}</td>
                 <td><input type="text" class="form-control form-control-sm" name="invoices[${idx}][invoice_no]" value="${data.invoice_no || ''}" placeholder="e.g. INV-001"></td>
+                <td><input type="text" class="form-control form-control-sm" name="invoices[${idx}][remark]" value="${data.remark || ''}" placeholder="Optional note..."></td>
                 <td>
                     <div class="input-group input-group-sm">
-                        <input type="number" class="form-control form-control-sm" name="invoices[${idx}][invoice_value]" value="${fmtQty(data.invoice_value)}" step="0.0001" min="0" placeholder="0.00">
+                        <input type="number" class="form-control form-control-sm invoice-value-amount" name="invoices[${idx}][invoice_value]" value="${fmtQty(data.invoice_value)}" step="0.0001" min="0" placeholder="0.00">
                         <span class="input-group-text invoice-fcy-label">${fcy}</span>
                     </div>
                 </td>
@@ -1007,6 +1074,14 @@
             $('#invoicesEmpty').toggle(empty);
         }
 
+        function syncInvoicesTotal() {
+            var total = 0;
+            $('.invoice-value-amount').each(function() {
+                total += parseFloat($(this).val()) || 0;
+            });
+            $('#invoicesTotalDisplay').val(total > 0 ? total.toFixed(4) : '');
+        }
+
         // ── Payment Receipts ─────────────────────────────────────────────────────
         function addPaymentRow(data) {
             data = data || {};
@@ -1021,8 +1096,9 @@
                         <option value="regular" ${(data.payment_type || '') === 'regular' ? 'selected' : ''}>Regular</option>
                     </select>
                 </td>
-                <td><input type="text" class="form-control form-control-sm" name="payments[${idx}][receipt_no]" value="${data.receipt_no || ''}" placeholder="e.g. MR-001"></td>
                 <td><input type="date" class="form-control form-control-sm" name="payments[${idx}][date]" value="${data.date || ''}"></td>
+                <td><input type="text" class="form-control form-control-sm" name="payments[${idx}][receipt_no]" value="${data.receipt_no || ''}" placeholder="e.g. MR-001"></td>
+                <td><input type="text" class="form-control form-control-sm" name="payments[${idx}][remark]" value="${data.remark || ''}" placeholder="Optional note..."></td>
                 <td>
                     <div class="input-group input-group-sm">
                         <input type="number" class="form-control form-control-sm payment-amount" name="payments[${idx}][amount]" value="${data.amount || ''}" step="0.0001" min="0" placeholder="0.00">
@@ -1202,7 +1278,8 @@
                             <tr>
                                 <th class="text-center" style="width:32px">#</th>
                                 <th style="width:150px">Date</th>
-                                <th>Posting</th>
+                                <th style="min-width:110px">Posting</th>
+                                <th style="min-width:130px">Remark</th>
                                 <th style="width:190px">Amount</th>
                                 <th style="width:32px"></th>
                             </tr>
@@ -1245,6 +1322,11 @@
             <input type="text" class="form-control form-control-sm"
                    name="bill_of_entries[${boeIndex}][duty_advances][${idx}][posting]"
                    value="${data.posting || ''}" placeholder="e.g. DA-001">
+        </td>
+        <td>
+            <input type="text" class="form-control form-control-sm"
+                   name="bill_of_entries[${boeIndex}][duty_advances][${idx}][remark]"
+                   value="${data.remark || ''}" placeholder="Optional note...">
         </td>
         <td>
             <input type="hidden" name="bill_of_entries[${boeIndex}][duty_advances][${idx}][id]" value="${data.id || ''}">
@@ -1398,29 +1480,15 @@
             $('[name=pfi_value],[name=lc_open_rate],[name=margin_percent],[name=freight_value]').on('input',
                 calcFinancials);
 
-            function calcRtTotal() {
-                var total = 0;
-                $('.rt-value-amount').each(function() { total += parseFloat($(this).val()) || 0; });
-                $('#rtValueTotal').text(total.toFixed(2));
-                $('#lcRtValue').val(total.toFixed(2));
-                var pct = parseFloat($('#lcCommissionPct').val()) || 0;
-                $('#lcCommission').val(total && pct ? (total * pct / 100).toFixed(2) : '');
-            }
-            var rtValueIdx = {{ 1 }};
-            $('#btnAddRtValue').on('click', function() {
-                $('#rtValueRows').append(
-                    '<div class="rt-value-row d-flex gap-1 mb-1 align-items-center">' +
-                    '<div class="input-group input-group-sm flex-grow-1">' +
-                    '<input type="number" name="rt_values[' + rtValueIdx + '][amount]" class="form-control form-control-sm rt-value-amount" step="0.0001" placeholder="0.00">' +
-                    '<span class="input-group-text">BDT</span></div>' +
-                    '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-rt-value p-0" style="width:24px;height:24px;flex-shrink:0" title="Remove"><i class="fa fa-times" style="font-size:.65rem"></i></button>' +
-                    '</div>'
-                );
-                rtValueIdx++;
-            });
-            $(document).on('input', '.rt-value-amount', calcRtTotal);
+            // RT Values
+            syncRtValuesEmpty();
+            $('#btnAddRtValue').on('click', () => addRtValueRow());
+            $(document).on('input', '.rt-value-amount', syncRtValuesTotal);
             $(document).on('click', '.btn-remove-rt-value', function() {
-                if ($('.rt-value-row').length > 1) { $(this).closest('.rt-value-row').remove(); calcRtTotal(); }
+                $(this).closest('tr').remove();
+                $('#rtValuesBody tr').each((i, tr) => $(tr).find('.rt-value-row-num').text(i + 1));
+                syncRtValuesTotal();
+                syncRtValuesEmpty();
             });
             $('#lcCommissionPct').on('input', function() {
                 var rtVal = parseFloat($('#lcRtValue').val()) || 0;
@@ -1463,9 +1531,11 @@
             // Invoice rows
             syncInvoicesEmpty();
             $('#btnAddInvoice').on('click', () => addInvoiceRow());
+            $(document).on('input', '.invoice-value-amount', syncInvoicesTotal);
             $(document).on('click', '.btn-remove-invoice-row', function() {
                 $(this).closest('tr').remove();
                 $('#invoicesBody tr').each((i, tr) => $(tr).find('.invoice-row-num').text(i + 1));
+                syncInvoicesTotal();
                 syncInvoicesEmpty();
             });
 

@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\NasFreights;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\NasFreights\Branch\DestroyBranchRequest;
+use App\Http\Requests\NasFreights\Branch\IndexBranchRequest;
+use App\Http\Requests\NasFreights\Branch\StoreBranchRequest;
+use App\Http\Requests\NasFreights\Branch\UpdateBranchRequest;
 use App\Models\NasFreights\NasFreightsBranch;
-use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
 class BranchController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexBranchRequest $request)
     {
         if ($request->ajax()) {
             return DataTables::of(NasFreightsBranch::query())
@@ -38,9 +41,8 @@ class BranchController extends Controller
         return view('nas-freights.settings.branches.index');
     }
 
-    public function store(Request $request)
+    public function store(StoreBranchRequest $request)
     {
-        $request->validate(['name' => 'required|string|max:255']);
         NasFreightsBranch::create([
             'name'      => $request->name,
             'code'      => $request->code ? strtoupper($request->code) : null,
@@ -52,9 +54,8 @@ class BranchController extends Controller
         return response()->json(['message' => 'Branch created successfully.']);
     }
 
-    public function update(Request $request, NasFreightsBranch $branch)
+    public function update(UpdateBranchRequest $request, NasFreightsBranch $branch)
     {
-        $request->validate(['name' => 'required|string|max:255']);
         $branch->update([
             'name'      => $request->name,
             'code'      => $request->code ? strtoupper($request->code) : null,
@@ -66,7 +67,7 @@ class BranchController extends Controller
         return response()->json(['message' => 'Branch updated successfully.']);
     }
 
-    public function destroy(NasFreightsBranch $branch)
+    public function destroy(DestroyBranchRequest $request, NasFreightsBranch $branch)
     {
         $branch->delete();
 

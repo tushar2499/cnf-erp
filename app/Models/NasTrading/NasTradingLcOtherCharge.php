@@ -8,7 +8,7 @@ class NasTradingLcOtherCharge extends Model
 {
     protected $table = 'nas_trading_lc_other_charges';
 
-    protected $fillable = ['lc_id', 'name', 'amount'];
+    protected $fillable = ['lc_id', 'name', 'amount', 'remark'];
 
     public function lc()
     {

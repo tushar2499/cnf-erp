@@ -26,22 +26,24 @@
     </div>
     <div class="card-body">
         <div class="row g-3">
+            {{-- Row 1: identification --}}
             <div class="col-md-3">
                 <div class="info-label">Pay Order No</div>
                 <div class="info-val">{{ $supplierBill->pay_order_no }}</div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-label">Invoice No</div>
+                <div class="info-val">{{ $supplierBill->invoice_no ?: '—' }}</div>
             </div>
             <div class="col-md-3">
                 <div class="info-label">Bill Date</div>
                 <div class="info-val">{{ $supplierBill->bill_date?->format('d-M-Y') }}</div>
             </div>
             <div class="col-md-3">
-                <div class="info-label">From Date</div>
-                <div class="info-val">{{ $supplierBill->from_date?->format('d-M-Y') }}</div>
+                <div class="info-label">From — To Date</div>
+                <div class="info-val">{{ $supplierBill->from_date?->format('d-M-Y') }} &mdash; {{ $supplierBill->to_date?->format('d-M-Y') }}</div>
             </div>
-            <div class="col-md-3">
-                <div class="info-label">To Date</div>
-                <div class="info-val">{{ $supplierBill->to_date?->format('d-M-Y') }}</div>
-            </div>
+            {{-- Row 2: parties --}}
             <div class="col-md-3">
                 <div class="info-label">Supplier</div>
                 <div class="info-val">{{ $supplierBill->supplier_name ?: '—' }}</div>
@@ -66,8 +68,21 @@
                     @endif
                 </div>
             </div>
+            {{-- Row 3: payment tracking --}}
+            <div class="col-md-3">
+                <div class="info-label">Payment Date</div>
+                <div class="info-val">{{ $supplierBill->payment_date?->format('d-M-Y') ?: '—' }}</div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-label">Money Receipt No</div>
+                <div class="info-val">{{ $supplierBill->money_receipt_no ?: '—' }}</div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-label">Money Receipt Date</div>
+                <div class="info-val">{{ $supplierBill->money_receipt_date?->format('d-M-Y') ?: '—' }}</div>
+            </div>
             @if($supplierBill->note)
-            <div class="col-md-6">
+            <div class="col-md-3">
                 <div class="info-label">Note</div>
                 <div class="info-val">{{ $supplierBill->note }}</div>
             </div>

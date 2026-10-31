@@ -8,8 +8,14 @@ use App\Http\Controllers\NasFreights\CustomerBillController;
 use App\Http\Controllers\NasFreights\CustomerController;
 use App\Http\Controllers\NasFreights\DashboardController;
 use App\Http\Controllers\NasFreights\DueListController;
+use App\Http\Controllers\NasFreights\ExpenseCategoryController;
+use App\Http\Controllers\NasFreights\ExpenseHeadController;
 use App\Http\Controllers\NasFreights\FreightBookingController;
+use App\Http\Controllers\NasFreights\FreightBookingExpenseController;
+use App\Http\Controllers\NasFreights\FreightExportBookingBillController;
 use App\Http\Controllers\NasFreights\FreightExportBookingController;
+use App\Http\Controllers\NasFreights\FreightExportBookingExpenseController;
+use App\Http\Controllers\NasFreights\FreightExportBookingTransportController;
 use App\Http\Controllers\NasFreights\ImportController;
 use App\Http\Controllers\NasFreights\MoneyReceiptController;
 use App\Http\Controllers\NasFreights\OverseasAgentController;
@@ -64,9 +70,12 @@ Route::prefix('freight-import-bookings')->name('freight-import-bookings.')->grou
 // Freight Export Bookings (separate tables; new export field additions never touch import)
 Route::prefix('freight-export-bookings')->name('freight-export-bookings.')->group(function () {
     Route::get('/search-customers', [FreightExportBookingController::class, 'searchCustomers'])->name('search-customers');
+    Route::post('/quick-store-customer', [FreightExportBookingController::class, 'quickStoreCustomer'])->name('quick-store-customer');
     Route::get('/search-employees', [FreightExportBookingController::class, 'searchEmployees'])->name('search-employees');
     Route::get('/search-overseas-agents', [FreightExportBookingController::class, 'searchOverseasAgents'])->name('search-overseas-agents');
     Route::get('/search-shipping-carriers', [FreightExportBookingController::class, 'searchShippingCarriers'])->name('search-shipping-carriers');
+    Route::get('/transport/search-vehicles', [FreightExportBookingTransportController::class, 'searchVehicles'])->name('transport.search-vehicles');
+    Route::get('/transport/search-suppliers', [FreightExportBookingTransportController::class, 'searchSuppliers'])->name('transport.search-suppliers');
     Route::get('/', [FreightExportBookingController::class, 'index'])->name('index');
     Route::get('/create', [FreightExportBookingController::class, 'create'])->name('create');
     Route::post('/', [FreightExportBookingController::class, 'store'])->name('store');
@@ -74,6 +83,23 @@ Route::prefix('freight-export-bookings')->name('freight-export-bookings.')->grou
     Route::get('/{exportBooking}/edit', [FreightExportBookingController::class, 'edit'])->name('edit');
     Route::put('/{exportBooking}', [FreightExportBookingController::class, 'update'])->name('update');
     Route::delete('/{exportBooking}', [FreightExportBookingController::class, 'destroy'])->name('destroy');
+    Route::get('/{exportBooking}/transport', [FreightExportBookingTransportController::class, 'edit'])->name('transport.edit');
+    Route::put('/{exportBooking}/transport', [FreightExportBookingTransportController::class, 'update'])->name('transport.update');
+    Route::get('/{exportBooking}/expense', [FreightExportBookingExpenseController::class, 'edit'])->name('expense.edit');
+    Route::put('/{exportBooking}/expense', [FreightExportBookingExpenseController::class, 'update'])->name('expense.update');
+});
+
+// Freight Export Booking Bills
+Route::prefix('freight-export-booking-bills')->name('freight-export-booking-bills.')->group(function () {
+    Route::get('/search-bookings', [FreightExportBookingBillController::class, 'searchBookings'])->name('search-bookings');
+    Route::get('/', [FreightExportBookingBillController::class, 'index'])->name('index');
+    Route::get('/create', [FreightExportBookingBillController::class, 'create'])->name('create');
+    Route::post('/', [FreightExportBookingBillController::class, 'store'])->name('store');
+    Route::get('/{freightExportBookingBill}', [FreightExportBookingBillController::class, 'show'])->name('show');
+    Route::get('/{freightExportBookingBill}/edit', [FreightExportBookingBillController::class, 'edit'])->name('edit');
+    Route::get('/{freightExportBookingBill}/print', [FreightExportBookingBillController::class, 'printView'])->name('print');
+    Route::put('/{freightExportBookingBill}', [FreightExportBookingBillController::class, 'update'])->name('update');
+    Route::delete('/{freightExportBookingBill}', [FreightExportBookingBillController::class, 'destroy'])->name('destroy');
 });
 
 // Transport Bookings
@@ -260,4 +286,31 @@ Route::prefix('settings')->name('settings.')->group(function () {
         Route::put('/{shippingCarrier}', [ShippingCarrierController::class, 'update'])->name('update');
         Route::delete('/{shippingCarrier}', [ShippingCarrierController::class, 'destroy'])->name('destroy');
     });
+
+    Route::prefix('expense-categories')->name('expense-categories.')->group(function () {
+        Route::get('/', [ExpenseCategoryController::class, 'index'])->name('index');
+        Route::post('/', [ExpenseCategoryController::class, 'store'])->name('store');
+        Route::put('/{expenseCategory}', [ExpenseCategoryController::class, 'update'])->name('update');
+        Route::delete('/{expenseCategory}', [ExpenseCategoryController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('expense-heads')->name('expense-heads.')->group(function () {
+        Route::get('/', [ExpenseHeadController::class, 'index'])->name('index');
+        Route::get('/{expenseHead}', [ExpenseHeadController::class, 'show'])->name('show');
+        Route::post('/', [ExpenseHeadController::class, 'store'])->name('store');
+        Route::put('/{expenseHead}', [ExpenseHeadController::class, 'update'])->name('update');
+        Route::delete('/{expenseHead}', [ExpenseHeadController::class, 'destroy'])->name('destroy');
+    });
+});
+
+// Import Booking Expenses (standalone CRUD; export expenses are nested under freight-export-bookings)
+Route::prefix('import-expenses')->name('import-expenses.')->group(function () {
+    Route::get('/search-bookings', [FreightBookingExpenseController::class, 'searchBookings'])->name('search-bookings');
+    Route::get('/', [FreightBookingExpenseController::class, 'index'])->name('index');
+    Route::get('/create', [FreightBookingExpenseController::class, 'create'])->name('create');
+    Route::post('/', [FreightBookingExpenseController::class, 'store'])->name('store');
+    Route::get('/{freightBookingExpense}', [FreightBookingExpenseController::class, 'show'])->name('show');
+    Route::get('/{freightBookingExpense}/edit', [FreightBookingExpenseController::class, 'edit'])->name('edit');
+    Route::put('/{freightBookingExpense}', [FreightBookingExpenseController::class, 'update'])->name('update');
+    Route::delete('/{freightBookingExpense}', [FreightBookingExpenseController::class, 'destroy'])->name('destroy');
 });

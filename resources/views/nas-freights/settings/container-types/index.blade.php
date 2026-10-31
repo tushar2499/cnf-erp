@@ -104,18 +104,18 @@
                 <thead>
                     <tr>
                         <th>#</th>
+                        <th>Action</th>
                         <th>Name</th>
                         <th>Description</th>
                         <th>Sort Order</th>
                         <th>Status</th>
-                        <th>Action</th>
                     </tr>
                     <tr>
+                        <th></th>
                         <th></th>
                         <th><input type="text" class="form-control form-control-sm" placeholder="Search Name"></th>
                         <th><input type="text" class="form-control form-control-sm" placeholder="Search Description"></th>
                         <th><input type="text" class="form-control form-control-sm" placeholder="Search Sort"></th>
-                        <th></th>
                         <th></th>
                     </tr>
                 </thead>
@@ -188,11 +188,11 @@ $(function () {
         ajax: '{{ route('nas-freights.settings.container-types.index') }}',
         columns: [
             { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false, width: '40px', className: 'text-center' },
+            { data: 'action', name: 'action', orderable: false, searchable: false, width: '90px', className: 'text-center' },
             { data: 'name', name: 'name' },
             { data: 'description', name: 'description' },
             { data: 'sort_order', name: 'sort_order', width: '90px' },
             { data: 'status_badge', name: 'status_badge', orderable: false, searchable: false, width: '80px', className: 'text-center' },
-            { data: 'action', name: 'action', orderable: false, searchable: false, width: '90px', className: 'text-center' },
         ],
         dom: "<'row mb-1'<'col-sm-6'l><'col-sm-6'>>" +
             "<'row'<'col-12'tr>>" +
