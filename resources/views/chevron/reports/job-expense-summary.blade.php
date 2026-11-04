@@ -51,7 +51,7 @@ table.exp-table tfoot td.r { text-align:right; }
                 <option value="">All Employees</option>
                 @foreach($employees as $emp)
                     <option value="{{ $emp->id }}" {{ request('employee_id') == $emp->id ? 'selected' : '' }}>
-                        {{ $emp->name }} ({{ $emp->employee_id }})
+                        {{ $emp->name }} ({{ $emp->code }})
                     </option>
                 @endforeach
             </select>
@@ -84,13 +84,13 @@ table.exp-table tfoot td.r { text-align:right; }
 @php
     $items     = $expense->items;
     $subTotal  = $items->sum('expense_amount');
-    $subReceiptable    = $items->where('receiptable', true)->sum('expense_amount');
-    $subNonReceiptable = $items->where('receiptable', false)->sum('expense_amount');
+    $subReceiptable    = $items->where('receiptable', 'Yes')->sum('expense_amount');
+    $subNonReceiptable = $items->where('receiptable', 'No')->sum('expense_amount');
     $grandReceiptable    += $subReceiptable;
     $grandNonReceiptable += $subNonReceiptable;
     $grandTotal          += $subTotal;
-    $countYes += $items->where('receiptable', true)->count();
-    $countNo  += $items->where('receiptable', false)->count();
+    $countYes += $items->where('receiptable', 'Yes')->count();
+    $countNo  += $items->where('receiptable', 'No')->count();
     $empName  = $expense->employee?->name ?? '—';
 @endphp
 <div class="expense-group">
@@ -120,7 +120,7 @@ table.exp-table tfoot td.r { text-align:right; }
                 <td>{{ $item->expenseHead?->name ?? '—' }}</td>
                 <td class="text-center">{{ $item->expense_date?->format('d M Y') }}</td>
                 <td class="text-center">
-                    @if($item->receiptable)
+                    @if($item->receiptable === 'Yes')
                         <span class="badge-yes">Yes</span>
                     @else
                         <span class="badge-no">No</span>
