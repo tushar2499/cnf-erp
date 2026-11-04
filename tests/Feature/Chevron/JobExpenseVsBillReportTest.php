@@ -68,18 +68,26 @@ class JobExpenseVsBillReportTest extends TestCase
         ]);
         $this->createBill($job, 500);
 
-        $rows = $this->renderController('jobExpenseVsBill', ['job_no' => 'JOB-001'])->getData()['rows'];
+        $json = $this->dataTable(['job_no' => 'JOB-001']);
 
-        $this->assertCount(1, $rows);
+        $this->assertSame(1, $json['recordsTotal']);
+        $this->assertCount(1, $json['data']);
 
-        $row = $rows->first();
+        $row = $json['data'][0];
 
-        $this->assertSame('JOB-001', $row->jobExpense->job_no);
-        $this->assertSame('ACME TRADING', $row->jobExpense->job->party_name);
-        $this->assertSame('Job Cost', $row->expenseHead->expenseCategory->name);
-        $this->assertSame('Port Handling', $row->expenseHead->name);
-        $this->assertSame('Yes', $row->receiptable);
-        $this->assertSame(150.0, (float) $row->expense_amount);
+        $this->assertSame('JOB-001', $row['job_no']);
+        $this->assertSame('ACME TRADING', $row['party_name']);
+        $this->assertSame('01 Oct 2026', $row['expense_date']);
+        $this->assertSame('EXP000001', $row['expense_no']);
+        $this->assertSame('Mr. Vs Bill Employee', $row['expense_by']);
+        $this->assertSame('Job Cost', $row['expense_category']);
+        $this->assertSame('Port Handling', $row['expense_head']);
+        $this->assertStringContainsString('Yes', $row['receiptable_badge']);
+        $this->assertSame('150.00', $row['expense_amount']);
+        $this->assertSame('500.00', $row['bill_total']);
+        $this->assertSame('150.00', $json['total_expense']);
+        $this->assertSame('500.00', $json['total_bill']);
+        $this->assertSame('-350.00', $json['difference']);
     }
 
     #[Test]
@@ -93,12 +101,18 @@ class JobExpenseVsBillReportTest extends TestCase
         $this->createBill($job, 400);
         $this->createBill($job, 100);
 
-        $view = $this->renderController('jobExpenseVsBill', ['job_no' => 'JOB-002']);
-        $billTotals = $view->getData()['billTotals'];
+        $json = $this->dataTable(['job_no' => 'JOB-002']);
 
-        $this->assertSame(500.0, (float) $billTotals[$job->id]);
-        $this->assertSame(150.0, (float) $view->getData()['totalExpense']);
-        $this->assertSame(500.0, (float) $view->getData()['totalBill']);
+        $this->assertCount(2, $json['data']);
+
+        foreach ($json['data'] as $row) {
+            $this->assertSame('500.00', $row['bill_total']);
+        }
+
+        $this->assertSame('150.00', $json['total_expense']);
+        $this->assertSame('500.00', $json['total_bill']);
+        $this->assertSame(1, $json['total_jobs']);
+        $this->assertSame(2, $json['total_rows']);
     }
 
     #[Test]
@@ -114,10 +128,11 @@ class JobExpenseVsBillReportTest extends TestCase
             ['receiptable' => 'Yes', 'expense_amount' => 900],
         ]);
 
-        $rows = $this->renderController('jobExpenseVsBill', ['from_date' => '2026-01-01'])->getData()['rows'];
+        $json = $this->dataTable(['from_date' => '2026-01-01']);
 
-        $this->assertCount(1, $rows);
-        $this->assertSame('JOB-003', $rows->first()->jobExpense->job_no);
+        $this->assertCount(1, $json['data']);
+        $this->assertSame('JOB-003', $json['data'][0]['job_no']);
+        $this->assertSame('100.00', $json['total_expense']);
     }
 
     #[Test]
@@ -133,16 +148,16 @@ class JobExpenseVsBillReportTest extends TestCase
             ['receiptable' => 'Yes', 'expense_amount' => 200, 'expense_date' => '2026-08-15'],
         ]);
 
-        $byJob = $this->renderController('jobExpenseVsBill', ['job_no' => 'JOB-005'])->getData()['rows'];
-        $this->assertCount(1, $byJob);
-        $this->assertSame('JOB-005', $byJob->first()->jobExpense->job_no);
+        $byJob = $this->dataTable(['job_no' => 'JOB-005']);
+        $this->assertCount(1, $byJob['data']);
+        $this->assertSame('JOB-005', $byJob['data'][0]['job_no']);
 
-        $byDate = $this->renderController('jobExpenseVsBill', [
+        $byDate = $this->dataTable([
             'from_date' => '2026-08-01',
             'to_date'   => '2026-08-31',
-        ])->getData()['rows'];
-        $this->assertCount(1, $byDate);
-        $this->assertSame('JOB-006', $byDate->first()->jobExpense->job_no);
+        ]);
+        $this->assertCount(1, $byDate['data']);
+        $this->assertSame('JOB-006', $byDate['data'][0]['job_no']);
     }
 
     #[Test]
@@ -193,16 +208,109 @@ class JobExpenseVsBillReportTest extends TestCase
         $this->createExpense($job, [
             ['receiptable' => 'Yes', 'expense_amount' => 100],
         ]);
+        $this->createBill($job, 500);
 
+        $otherJob = $this->createJob('JOB-008', 'OTHER PARTY', 6);
+        $this->createExpense($otherJob, [
+            ['receiptable' => 'Yes', 'expense_amount' => 900],
+        ]);
+
+        $json = $this->dataTable();
+
+        $this->assertCount(0, $json['data']);
+        $this->assertSame('0.00', $json['total_expense']);
+        $this->assertSame('0.00', $json['total_bill']);
+        $this->assertSame(0, $json['total_rows']);
+        $this->assertSame(0, $json['total_jobs']);
+    }
+
+    #[Test]
+    public function column_filters_narrow_the_rows_and_totals(): void
+    {
+        $jobA = $this->createJob('JOB-C1', 'PARTY ONE');
+        $this->createExpense($jobA, [
+            ['receiptable' => 'Yes', 'expense_amount' => 100],
+        ]);
+        $this->createBill($jobA, 500);
+
+        $jobB = $this->createJob('JOB-C2', 'PARTY TWO');
+        $this->createExpense($jobB, [
+            ['receiptable' => 'No', 'expense_amount' => 200],
+        ]);
+        $this->createBill($jobB, 900);
+
+        $byParty = $this->dataTable(['from_date' => '2026-01-01'], ['party_name' => 'PARTY TWO']);
+        $this->assertCount(1, $byParty['data']);
+        $this->assertSame('JOB-C2', $byParty['data'][0]['job_no']);
+        $this->assertSame('200.00', $byParty['total_expense']);
+        $this->assertSame('900.00', $byParty['total_bill']);
+        $this->assertSame(1, $byParty['total_rows']);
+        $this->assertSame(1, $byParty['total_jobs']);
+
+        $byBill = $this->dataTable(['from_date' => '2026-01-01'], ['bill_total' => '500']);
+        $this->assertCount(1, $byBill['data']);
+        $this->assertSame('JOB-C1', $byBill['data'][0]['job_no']);
+        $this->assertSame('500.00', $byBill['total_bill']);
+
+        $byReceiptable = $this->dataTable(['from_date' => '2026-01-01'], ['receiptable_badge' => 'No']);
+        $this->assertCount(1, $byReceiptable['data']);
+        $this->assertSame('JOB-C2', $byReceiptable['data'][0]['job_no']);
+    }
+
+    private function dataTable(array $filters = [], array $columnSearches = []): array
+    {
         $request = JobExpenseVsBillRequest::create(
             route('chevron.reports.job-expense-vs-bill'),
             'GET',
-            ['from_date' => '', 'to_date' => '', 'job_no' => '']
+            array_merge([
+                'draw'    => 1,
+                'start'   => 0,
+                'length'  => 100,
+                'search'  => ['value' => '', 'regex' => 'false'],
+                'columns' => $this->dataTableColumns($columnSearches),
+                'order'   => [['column' => 1, 'dir' => 'asc']],
+            ], $filters)
         );
 
-        $view = app(ReportController::class)->jobExpenseVsBill($request);
+        $request->headers->set('X-Requested-With', 'XMLHttpRequest');
 
-        $this->assertCount(0, $view->getData()['rows']);
+        $this->app->instance('request', $request);
+
+        return app(ReportController::class)
+            ->jobExpenseVsBill($request)
+            ->getData(true);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function dataTableColumns(array $columnSearches = []): array
+    {
+        $columns = [
+            ['data' => 'DT_RowIndex', 'name' => 'DT_RowIndex', 'searchable' => false, 'orderable' => false],
+            ['data' => 'job_no', 'name' => 'job_no'],
+            ['data' => 'party_name', 'name' => 'party_name'],
+            ['data' => 'expense_date', 'name' => 'expense_date'],
+            ['data' => 'expense_no', 'name' => 'expense_no'],
+            ['data' => 'expense_by', 'name' => 'expense_by'],
+            ['data' => 'expense_category', 'name' => 'expense_category'],
+            ['data' => 'expense_head', 'name' => 'expense_head'],
+            ['data' => 'receiptable_badge', 'name' => 'receiptable_badge'],
+            ['data' => 'expense_amount', 'name' => 'expense_amount'],
+            ['data' => 'bill_total', 'name' => 'bill_total'],
+        ];
+
+        return array_map(function (array $column) use ($columnSearches) {
+            $column += [
+                'searchable' => true,
+                'orderable'  => true,
+                'search'     => ['value' => '', 'regex' => 'false'],
+            ];
+
+            $column['search']['value'] = $columnSearches[$column['data']] ?? '';
+
+            return $column;
+        }, $columns);
     }
 
     private function renderController(string $method, array $filters = [])
