@@ -30,7 +30,7 @@ Route::get('/clear-cache', function () {
     Artisan::call('event:clear');
     Artisan::call('clear-compiled');
 
-    return 'All cache cleared!';
+    return 'All cache cleared';
 });
 
 // Company picker
