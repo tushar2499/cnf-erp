@@ -91,4 +91,8 @@
         @endforeach
     </div>
     @endif
+
+    {{-- Read by the bill form JS: decides whether the Bill Ref / Job No prefix inputs show --}}
+    <span id="bookingPrefixData" class="d-none"
+        data-customer-bills="{{ $existingBills->where('bill_type', 'Customer')->count() }}"></span>
 </div>

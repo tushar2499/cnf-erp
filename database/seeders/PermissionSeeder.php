@@ -281,6 +281,12 @@ class PermissionSeeder extends Seeder
             ['company_id' => 2, 'module' => 'Export Booking Bills', 'name' => 'freight.export-booking-bill.delete', 'sorting_order' => 234],
             ['company_id' => 2, 'module' => 'Export Booking Bills', 'name' => 'freight.export-booking-bill.print', 'sorting_order' => 235],
 
+            // Settings: Bill Item Descriptions
+            ['company_id' => 2, 'module' => 'Bill Item Descriptions', 'name' => 'freight.bill-item-description.list', 'sorting_order' => 240],
+            ['company_id' => 2, 'module' => 'Bill Item Descriptions', 'name' => 'freight.bill-item-description.create', 'sorting_order' => 241],
+            ['company_id' => 2, 'module' => 'Bill Item Descriptions', 'name' => 'freight.bill-item-description.edit', 'sorting_order' => 242],
+            ['company_id' => 2, 'module' => 'Bill Item Descriptions', 'name' => 'freight.bill-item-description.delete', 'sorting_order' => 243],
+
             // ── NAS Trading — company_id = 3 ──────────────────────────────
 
             // LCs

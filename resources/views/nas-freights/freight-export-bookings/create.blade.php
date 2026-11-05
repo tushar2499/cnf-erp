@@ -127,8 +127,18 @@
                 <div class="row g-2 mb-2">
                     <div class="col-6 col-md-4 col-xl-2">
                         <label class="fb-label" for="fbBookingNo">Booking/Job No</label>
-                        <input type="text" id="fbBookingNo" class="form-control fb-input bg-light"
-                            value="{{ $exportBooking?->export_booking_no ?? 'Auto Generated' }}" readonly>
+                        @if ($exportBooking)
+                            <input type="text" id="fbBookingNo" class="form-control fb-input bg-light"
+                                value="{{ $exportBooking->export_booking_no }}" readonly>
+                        @else
+                            <input type="text" id="fbBookingNo" name="export_booking_no"
+                                class="form-control fb-input @error('export_booking_no') is-invalid @enderror"
+                                value="{{ old('export_booking_no') }}" maxlength="255"
+                                placeholder="Leave blank to auto generate">
+                            @error('export_booking_no')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        @endif
                     </div>
                     <div class="col-6 col-md-4 col-xl-2">
                         <label class="fb-label" for="fbBookingDate">Booking/Job Date <span class="text-danger">*</span></label>

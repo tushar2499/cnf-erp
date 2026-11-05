@@ -127,6 +127,7 @@
                     <thead>
                         <tr>
                             <th>#</th>
+                            <th>Action</th>
                             <th>Name</th>
                             <th>Type</th>
                             <th>Category</th>
@@ -134,18 +135,17 @@
                             <th>Amount</th>
                             <th>Employees</th>
                             <th>Status</th>
-                            <th>Action</th>
                         </tr>
                         <tr>
                             <th></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -439,6 +439,14 @@
                         className: 'text-center'
                     },
                     {
+                        data: 'action',
+                        name: 'action',
+                        orderable: false,
+                        searchable: false,
+                        width: '80px',
+                        className: 'text-center'
+                    },
+                    {
                         data: 'name',
                         name: 'name'
                     },
@@ -475,14 +483,6 @@
                         data: 'status_badge',
                         name: 'status_badge',
                         width: '75px',
-                        className: 'text-center'
-                    },
-                    {
-                        data: 'action',
-                        name: 'action',
-                        orderable: false,
-                        searchable: false,
-                        width: '80px',
                         className: 'text-center'
                     },
                 ],

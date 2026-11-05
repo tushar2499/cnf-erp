@@ -103,22 +103,22 @@
                     <thead>
                         <tr>
                             <th>#</th>
+                            <th>Action</th>
                             <th>Type</th>
                             <th>Account No</th>
                             <th>Account Name</th>
                             <th>Bank Name</th>
                             <th>Branch</th>
                             <th>Status</th>
-                            <th>Action</th>
                         </tr>
                         <tr>
                             <th></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th></th>
                         </tr>
                     </thead>
@@ -216,6 +216,14 @@
                         className: 'text-center'
                     },
                     {
+                        data: 'action',
+                        name: 'action',
+                        orderable: false,
+                        searchable: false,
+                        width: '90px',
+                        className: 'text-center'
+                    },
+                    {
                         data: 'account_type',
                         name: 'account_type'
                     },
@@ -240,14 +248,6 @@
                         name: 'is_active',
                         searchable: false,
                         orderable: false
-                    },
-                    {
-                        data: 'action',
-                        name: 'action',
-                        orderable: false,
-                        searchable: false,
-                        width: '90px',
-                        className: 'text-center'
                     },
                 ],
                 dom: "<'row mb-1'<'col-sm-6'l><'col-sm-6'f>>" +

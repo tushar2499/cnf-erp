@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\NasFreights\BillItemDescriptionController;
 use App\Http\Controllers\NasFreights\BookingController;
 use App\Http\Controllers\NasFreights\BranchController;
 use App\Http\Controllers\NasFreights\BranchSelectController;
@@ -271,6 +272,13 @@ Route::prefix('settings')->name('settings.')->group(function () {
         Route::post('/', [PackageTypeController::class, 'store'])->name('store');
         Route::put('/{packageType}', [PackageTypeController::class, 'update'])->name('update');
         Route::delete('/{packageType}', [PackageTypeController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('bill-item-descriptions')->name('bill-item-descriptions.')->group(function () {
+        Route::get('/', [BillItemDescriptionController::class, 'index'])->name('index');
+        Route::post('/', [BillItemDescriptionController::class, 'store'])->name('store');
+        Route::put('/{billItemDescription}', [BillItemDescriptionController::class, 'update'])->name('update');
+        Route::delete('/{billItemDescription}', [BillItemDescriptionController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('overseas-agents')->name('overseas-agents.')->group(function () {

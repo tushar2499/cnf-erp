@@ -140,6 +140,7 @@
                     <thead>
                         <tr>
                             <th>#</th>
+                            <th>Action</th>
                             <th>Bill No</th>
                             <th>Bill Date</th>
                             <th>From Date</th>
@@ -151,10 +152,10 @@
                             <th>TDS Amt</th>
                             <th>Total</th>
                             <th>Overdue Days</th>
-                            <th>Action</th>
                         </tr>
                         <tr>
                             <th></th>
+                            <th></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th></th>
@@ -162,7 +163,6 @@
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th></th>
                             <th></th>
                             <th></th>
                             <th></th>
@@ -230,6 +230,13 @@
                     width: '45px'
                 },
                 {
+                    data: 'action',
+                    name: 'action',
+                    orderable: false,
+                    searchable: false,
+                    className: 'text-center'
+                },
+                {
                     data: 'bill_no',
                     name: 'bill_no'
                 },
@@ -285,13 +292,6 @@
                     render: v => v > 0 ?
                         '<span class="badge bg-danger">' + v + 'd</span>' :
                         '<span class="badge bg-secondary">Today</span>'
-                },
-                {
-                    data: 'action',
-                    name: 'action',
-                    orderable: false,
-                    searchable: false,
-                    className: 'text-center'
                 },
             ],
             dom: "<'row mb-1'<'col-sm-6'l><'col-sm-6'f>>" +

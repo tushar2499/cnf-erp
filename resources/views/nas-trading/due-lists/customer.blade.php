@@ -73,15 +73,15 @@
         <table id="dueTable" class="table table-hover table-striped table-bordered dt-table mb-0 w-100">
             <thead>
             <tr>
-                <th>#</th><th>Bill No</th><th>Customer</th><th>Bill Date</th><th>Total Amount</th><th>Overdue Days</th><th>Action</th>
+                <th>#</th><th>Action</th><th>Bill No</th><th>Customer</th><th>Bill Date</th><th>Total Amount</th><th>Overdue Days</th>
             </tr>
             <tr>
+                <th></th>
                 <th></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Bill No"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Customer"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Date"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Amount"></th>
-                <th></th>
                 <th></th>
             </tr>
             </thead>
@@ -119,13 +119,13 @@ $(function () {
         },
         columns: [
             { data: 'DT_RowIndex',   name: 'DT_RowIndex',   orderable: false, searchable: false, width: '40px', className: 'text-center' },
+            { data: 'action',        name: 'action',        orderable: false, searchable: false, width: '80px', className: 'text-center' },
             { data: 'bill_no',       name: 'bill_no' },
             { data: 'customer_name', name: 'customer_name' },
             { data: 'bill_date',     name: 'bill_date' },
             { data: 'total_amount',  name: 'total_amount', className: 'text-end fw-bold' },
             { data: 'overdue_days',  name: 'overdue_days', orderable: false, searchable: false, className: 'text-center',
               render: d => d > 0 ? `<span class="badge bg-danger">${d} days</span>` : `<span class="badge bg-success">Today</span>` },
-            { data: 'action',        name: 'action',        orderable: false, searchable: false, width: '80px', className: 'text-center' },
         ],
         dom: "<'row px-2 pt-2'<'col-sm-6'l><'col-sm-6'>>" +
             "<'row'<'col-12'tr>>" +

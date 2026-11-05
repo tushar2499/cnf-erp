@@ -57,19 +57,19 @@
                 <thead>
                     <tr>
                         <th>#</th>
+                        <th>Action</th>
                         <th>Name</th>
                         <th>Applicable To</th>
                         <th>Description</th>
                         <th>Status</th>
-                        <th>Action</th>
                     </tr>
                     <tr>
                         <th></th>
-                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                         <th></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -226,11 +226,11 @@ $(function () {
         ajax: '{{ route('chevron.settings.expense-categories.index') }}',
         columns: [
             { data: 'DT_RowIndex',  name: 'DT_RowIndex', orderable: false, searchable: false, width: '50px', className: 'text-center' },
+            { data: 'action',       name: 'action', orderable: false, searchable: false, width: '90px', className: 'text-center' },
             { data: 'name',         name: 'name' },
             { data: 'type_badge',   name: 'type_badge', orderable: false },
             { data: 'description',  name: 'description' },
             { data: 'status_badge', name: 'is_active', searchable: false },
-            { data: 'action',       name: 'action', orderable: false, searchable: false, width: '90px', className: 'text-center' },
         ],
         dom: "<'row mb-1'<'col-sm-6'l><'col-sm-6'f>>" +
              "<'row'<'col-12'tr>>" +

@@ -22,10 +22,17 @@ class UpdateFreightExportBookingBillRequest extends FormRequest
             'currency'          => ['required', 'string', 'max:10'],
             'exchange_rate'     => ['required', 'numeric', 'min:0.0001'],
             'items'             => ['required', 'array', 'min:1'],
-            'items.*.name'      => ['required', 'string', 'max:255'],
+            'items.*.name'      => ['required', 'string', 'max:255', 'distinct:ignore_case'],
             'items.*.amount'    => ['required', 'numeric', 'min:0'],
             'vat_title'         => ['nullable', 'string', 'max:255'],
             'vat_amount'        => ['nullable', 'numeric', 'min:0'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'items.*.name.distinct' => 'The bill item description ":input" is used more than once. Each description can be used only once in a bill.',
         ];
     }
 

@@ -50,6 +50,33 @@ class NasFreightsFreightExportBookingBill extends Model
         return ['Draft', 'Confirmed'];
     }
 
+    /**
+     * Prefix typed by the user for a follow-up Customer bill: Bill Ref and/or Job No, joined with "-".
+     * Blank parts are dropped; returns '' when both are blank.
+     */
+    public static function buildPrefix(?string $billRef, ?string $jobNo): string
+    {
+        return collect([$billRef, $jobNo])
+            ->map(fn ($part) => trim((string) $part))
+            ->filter(fn ($part) => $part !== '')
+            ->implode('-');
+    }
+
+    /**
+     * Bill number for a follow-up Customer bill, e.g. "PB-77-2" or "PB-77-EXP-0005-3".
+     * The running number continues from the booking's Customer bill count and skips taken numbers.
+     */
+    public static function generatePrefixedBillNo(NasFreightsFreightExportBooking $booking, string $prefix): string
+    {
+        $sequence = $booking->bills()->where('bill_type', 'Customer')->count() + 1;
+
+        do {
+            $billNo = $prefix.'-'.$sequence++;
+        } while (static::where('bill_no', $billNo)->exists());
+
+        return $billNo;
+    }
+
     public static function generateBillNo(): string
     {
         $prefix = 'FEB-BILL-'.now()->format('Y').'-';

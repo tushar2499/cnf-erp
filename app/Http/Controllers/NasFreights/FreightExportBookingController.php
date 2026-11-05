@@ -52,11 +52,11 @@ class FreightExportBookingController extends Controller
                 ->where('branch_id', session('nas_freights_branch_id'))
                 ->when($request->status_filter, fn ($q, $s) => $q->where('status', $s))
                 ->when($fromDate, fn ($q) => $q->whereDate('booking_date', '>=', $fromDate))
-                ->when($toDate, fn ($q) => $q->whereDate('booking_date', '<=', $toDate))
-                ->latest();
+                ->when($toDate, fn ($q) => $q->whereDate('booking_date', '<=', $toDate));
 
             return DataTables::of($query)
                 ->addIndexColumn()
+                ->orderColumn('export_booking_no', NasFreightsFreightExportBooking::jobNumberOrderSql())
                 ->editColumn('booking_date', fn ($r) => $r->booking_date?->format('d M Y') ?? '—')
                 ->addColumn('customer_name', fn ($r) => $r->customer?->name ?? '—')
                 ->addColumn('party_bill_ref_no', fn ($r) => $r->party_bill_ref_no ?? '—')
@@ -125,7 +125,9 @@ class FreightExportBookingController extends Controller
 
         DB::transaction(function () use ($request) {
             $exportBooking = NasFreightsFreightExportBooking::create(array_merge($this->prepareData($request), [
-                'export_booking_no' => NasFreightsFreightExportBooking::generateExportBookingNo(),
+                'export_booking_no' => $request->filled('export_booking_no')
+                    ? $request->input('export_booking_no')
+                    : NasFreightsFreightExportBooking::generateExportBookingNo(),
             ]));
             $this->saveItems($exportBooking, $request->input('items', []));
         });

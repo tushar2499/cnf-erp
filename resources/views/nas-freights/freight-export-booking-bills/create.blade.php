@@ -42,6 +42,22 @@
 #itemsTable td { padding: .22rem .4rem; vertical-align: middle; }
 #itemsTable tbody tr:nth-child(even) { background: #f8fafc; }
 #itemsTable input { font-size: .78rem; padding: .2rem .35rem; height: auto; }
+#itemsTable .select2-container { min-width: 220px; }
+#itemsTable .select2-container .select2-selection { font-size: .78rem; min-height: calc(1.5em + .5rem + 2px); }
+#itemsTable .select2-container .select2-selection__rendered { padding-top: .1rem; padding-bottom: .1rem; }
+#itemsTable .desc-field { min-width: 0; }
+#itemsTable .btn-desc-mode { flex: 0 0 auto; line-height: 1; }
+.select2-results__option .add-new-desc { color: #15803d; font-weight: 600; }
+
+/* ── Bill number prefix (typed by the user) ── */
+.prefix-note { font-size: .76rem; color: #6b7280; }
+.prefix-preview-line { font-size: .76rem; font-weight: 600; color: #166534; word-break: break-all; }
+
+/* Duplicate description: red border + inline message (icon + text, not colour alone) */
+#itemsTable tr.desc-duplicate .form-control,
+#itemsTable tr.desc-duplicate .select2-container .select2-selection { border-color: #dc2626 !important; box-shadow: 0 0 0 .15rem rgba(220, 38, 38, .15); }
+#itemsTable tr.desc-duplicate { background: #fef2f2 !important; }
+#itemsTable .desc-error { font-size: .72rem; font-weight: 600; color: #b91c1c; margin-top: .2rem; }
 
 .subtotal-row td { font-weight: 600; background: #f0fdf4 !important; border-top: 2px solid #14b8a6 !important; }
 .vat-row td { background: #fefce8 !important; border-top: 1px solid #e2e8f0 !important; }
@@ -155,6 +171,37 @@
                         <input type="hidden" name="bill_type" id="hidBillType" value="{{ old('bill_type', $bill->bill_type ?? '') }}" required>
                         <div id="billTypeError" class="text-danger small mt-1" style="display:none">Please select a bill type.</div>
                     </div>
+
+                    {{-- Bill number prefix: only for the 2nd+ Customer bill of a booking/job (create mode) --}}
+                    @unless(isset($bill))
+                    <div class="mb-3" id="prefixPanel" style="display:none">
+                        <label class="form-label d-block">Bill Number Prefix <span class="req">*</span></label>
+                        <div class="prefix-note mb-2" id="prefixNote"></div>
+                        <div class="row g-2">
+                            <div class="col-sm-6">
+                                <label class="form-label" for="prefixBillRef"><i class="fa fa-receipt me-1"></i> Bill Ref</label>
+                                <input type="text" id="prefixBillRef" name="bill_prefix_ref" maxlength="100" autocomplete="off"
+                                    class="form-control form-control-sm prefix-input @error('bill_prefix_ref') is-invalid @enderror"
+                                    placeholder="Type Bill Ref prefix" value="{{ old('bill_prefix_ref') }}">
+                                @error('bill_prefix_ref')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label" for="prefixJobNo"><i class="fa fa-hashtag me-1"></i> Job No</label>
+                                <input type="text" id="prefixJobNo" name="bill_prefix_job" maxlength="100" autocomplete="off"
+                                    class="form-control form-control-sm prefix-input @error('bill_prefix_job') is-invalid @enderror"
+                                    placeholder="Type Job No prefix" value="{{ old('bill_prefix_job') }}">
+                                @error('bill_prefix_job')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                        </div>
+                        <div class="prefix-preview-line mt-2" id="prefixPreview" aria-live="polite"></div>
+                        <div id="prefixError" class="text-danger small mt-1" style="display:none">
+                            <i class="fa fa-circle-exclamation me-1"></i> Enter a Bill Ref and/or Job No prefix.
+                        </div>
+                        @error('bill_prefix')
+                            <div class="text-danger small mt-1"><i class="fa fa-circle-exclamation me-1"></i> {{ $message }}</div>
+                        @enderror
+                    </div>
+                    @endunless
 
                     {{-- Bill Date --}}
                     <div class="row g-2 mb-3">
@@ -295,6 +342,13 @@
 <script>
 $(function () {
 
+    // Active descriptions from Settings. Only the text is submitted (no ids).
+    var descriptionOptions  = @json($descriptions);
+    var canAddDescription   = @json($canAddDescription);
+    var descriptionStoreUrl = '{{ route('nas-freights.settings.bill-item-descriptions.store') }}';
+    var ADD_NEW             = '__add_new__';
+    var isEditMode          = @json(isset($bill));
+
     // ── Prefill items from server (edit mode) ──
     var existingItems = @json(isset($bill) ? $bill->items->map(fn($i) => ['name' => $i->name, 'amount' => $i->amount]) : []);
     if (existingItems.length) {
@@ -319,11 +373,58 @@ $(function () {
             selectCurrencyMode('foreign');
             $('#btnCurrencyBdt').addClass('disabled-type');
         }
+        updatePrefixPanel();
     }
+
+    // ── Bill number prefix (2nd+ Customer bill of a booking/job, create mode only) ──
+    function updatePrefixPanel() {
+        if (isEditMode) return; // bill number is fixed once the bill exists
+
+        var customers = customerBillCount();
+        var show      = $('#hidBillType').val() === 'Customer' && customers > 0;
+
+        $('#prefixPanel').toggle(show);
+        $('.prefix-input').prop('disabled', !show); // hidden inputs are never submitted
+
+        if (!show) {
+            $('#prefixError').hide();
+            $('.prefix-input').removeClass('is-invalid');
+            return;
+        }
+
+        $('#prefixNote').text('This job already has ' + customers + ' Customer bill' + (customers > 1 ? 's' : '') +
+            '. Type a Bill Ref and/or Job No prefix for this bill\'s number.');
+        updatePrefixPreview();
+    }
+
+    function customerBillCount() {
+        return parseInt($('#bookingPrefixData').attr('data-customer-bills'), 10) || 0;
+    }
+
+    // Typed prefix parts (Bill Ref, then Job No), trimmed, joined with "-".
+    function typedPrefix() {
+        return $.grep([$.trim($('#prefixBillRef').val()), $.trim($('#prefixJobNo').val())], function (part) {
+            return part !== '';
+        }).join('-');
+    }
+
+    function updatePrefixPreview() {
+        var prefix = typedPrefix();
+        $('#prefixPreview').text(prefix
+            ? 'Bill No: ' + prefix + '-' + (customerBillCount() + 1)
+            : 'The bill number preview appears as you type.');
+    }
+
+    $(document).on('input', '.prefix-input', function () {
+        $('#prefixError').hide();
+        $('.prefix-input').removeClass('is-invalid');
+        updatePrefixPreview();
+    });
 
     // init from hidden field (edit mode)
     var initType = $('#hidBillType').val();
     if (initType) selectBillType(initType);
+    updatePrefixPanel();
 
     $('#btnTypeCustomer').on('click', function () { if (!$(this).hasClass('disabled-type')) selectBillType('Customer'); });
     $('#btnTypeAgent').on('click',    function () { if (!$(this).hasClass('disabled-type')) selectBillType('Overseas Agent'); });
@@ -384,8 +485,11 @@ $(function () {
         $tr.append(
             $('<td class="text-center text-muted" style="font-size:.75rem">').text(idx + 1),
             $('<td>').append(
-                $('<input type="text" class="form-control form-control-sm item-name" placeholder="e.g. Air Freight, C&F Charges…">')
-                    .attr('name', 'items[' + idx + '][name]').val(name).prop('required', true)
+                $('<div class="desc-cell d-flex align-items-center gap-1">').append(
+                    $('<div class="desc-field flex-grow-1">'),
+                    $('<button type="button" class="btn btn-sm btn-outline-secondary btn-desc-mode px-2 py-1">')
+                ),
+                $('<div class="desc-error d-none" role="alert"></div>')
             ),
             $('<td>').append(
                 $('<input type="number" class="form-control form-control-sm item-amount text-end" placeholder="0.00" min="0" step="0.01">')
@@ -400,16 +504,213 @@ $(function () {
         );
 
         $('#itemsBody').append($tr);
+        // No saved descriptions yet → start as a plain text input so the user can type straight away.
+        setDescriptionMode($tr, descriptionOptions.length ? 'select' : 'text', name);
         recalc();
+    }
+
+    // ── Description field: dropdown (Select2) <-> plain text input ──
+    function destroyDescriptionSelect($el) {
+        if ($el.hasClass('select2-hidden-accessible')) $el.select2('destroy');
+    }
+
+    function setDescriptionMode($row, mode, value) {
+        var $field = $row.find('.desc-field');
+        var $btn   = $row.find('.btn-desc-mode');
+        value = value || '';
+
+        destroyDescriptionSelect($field.find('.item-name'));
+        $field.empty();
+
+        if (mode === 'select') {
+            var $sel = buildDescriptionSelect(value);
+            $field.append($sel);
+            initDescriptionSelect($sel, value);
+            $btn.html('<i class="fa fa-keyboard"></i>')
+                .attr({ title: 'Type description manually', 'aria-label': 'Type description manually' });
+        } else {
+            $field.append(
+                $('<input type="text" class="form-control form-control-sm item-name" maxlength="255" required placeholder="Type description…">').val(value)
+            );
+            $btn.html('<i class="fa fa-list"></i>')
+                .attr({ title: 'Choose from saved descriptions', 'aria-label': 'Choose from saved descriptions' });
+        }
+
+        $row.data('descMode', mode);
         reindex();
+        validateDuplicateDescriptions();
+    }
+
+    // ── Duplicate description check (case-insensitive, trimmed — mirrors server `distinct:ignore_case`) ──
+    // Marks every repeated row with an inline message and returns the first offending row (or null).
+    function validateDuplicateDescriptions() {
+        var seen = {};
+        var firstDuplicate = null;
+
+        $('#itemsBody tr').each(function (i) {
+            var $row   = $(this);
+            var $field = $row.find('.item-name');
+            var raw    = $.trim($field.val() || '');
+            var key    = raw.toLowerCase();
+            var isDup  = false;
+
+            if (raw !== '' && raw !== ADD_NEW) {
+                if (Object.prototype.hasOwnProperty.call(seen, key)) {
+                    isDup = true;
+                    $row.find('.desc-error').empty()
+                        .append('<i class="fa fa-circle-exclamation me-1"></i>')
+                        .append(document.createTextNode('Duplicate — already used in row ' + (seen[key] + 1) + '. Each description can be used once.'));
+                } else {
+                    seen[key] = i;
+                }
+            }
+
+            $row.toggleClass('desc-duplicate', isDup);
+            $row.find('.desc-error').toggleClass('d-none', !isDup);
+            $field.attr('aria-invalid', isDup ? 'true' : 'false');
+            if (isDup && firstDuplicate === null) firstDuplicate = $row;
+        });
+
+        return firstDuplicate;
+    }
+
+    $(document).on('change input', '.item-name', validateDuplicateDescriptions);
+
+    // Build the <select>; keep a saved value that is no longer in the list (edit mode).
+    function buildDescriptionSelect(name) {
+        var $sel = $('<select class="form-select form-select-sm item-name" required></select>');
+        var found = !name;
+        $sel.append('<option value=""></option>');
+        if (canAddDescription) $sel.append($('<option>').val(ADD_NEW).text('Add new description…'));
+        descriptionOptions.forEach(function (d) {
+            $sel.append($('<option>').val(d).text(d));
+            if (d === name) found = true;
+        });
+        if (!found) $sel.append($('<option>').val(name).text(name));
+        return $sel;
+    }
+
+    function initDescriptionSelect($sel, name) {
+        $sel.val(name || '').data('prev', name || '').select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            tags: true,
+            allowClear: true,
+            placeholder: 'Select or type description…',
+            language: {
+                noResults: function () { return 'No saved descriptions — type your own text'; }
+            },
+            // "Add new" row shows only when nothing is typed, so Enter on a search term
+            // picks the matching description (or "Use …"), never the Add-new row.
+            matcher: function (params, data) {
+                var term = $.trim(params.term || '');
+                if (data.id === ADD_NEW) return term === '' ? data : null;
+                if (term === '') return data;
+                if (typeof data.text === 'undefined') return null;
+                return data.text.toUpperCase().indexOf(params.term.toUpperCase()) > -1 ? data : null;
+            },
+            createTag: function (params) {
+                var term = $.trim(params.term);
+                return term === '' ? null : { id: term, text: term, isNew: true };
+            },
+            templateResult: function (item) {
+                if (item.loading) return item.text;
+                if (item.id === ADD_NEW) {
+                    return $('<span class="add-new-desc"><i class="fa fa-plus me-1"></i>Add new description…</span>');
+                }
+                return item.isNew ? 'Use "' + item.text + '"' : item.text;
+            }
+        });
+    }
+
+    // Select2 4.1 does not auto-focus the search box; do it for the description selects only.
+    $(document).on('select2:open', '.item-name', function () {
+        var field = document.querySelector('.select2-container--open .select2-search__field');
+        if (field) {
+            field.setAttribute('placeholder', 'Search, or type your own text…');
+            field.focus();
+        }
+    });
+
+    // Remember the last real value so "Add new" can restore it if the user cancels.
+    $(document).on('select2:select', '.item-name', function (e) {
+        var $sel = $(this);
+        if (e.params.data.id === ADD_NEW) {
+            $sel.val($sel.data('prev') || '').trigger('change');
+            promptAddDescription($sel);
+            return;
+        }
+        $sel.data('prev', $sel.val());
+    });
+    $(document).on('select2:clear', '.item-name', function () { $(this).data('prev', ''); });
+
+    // Toggle dropdown <-> text input for one row.
+    $(document).on('click', '.btn-desc-mode', function () {
+        var $row  = $(this).closest('tr');
+        var value = $.trim($row.find('.item-name').val() || '');
+        var mode  = $row.data('descMode') === 'select' ? 'text' : 'select';
+        setDescriptionMode($row, mode, value);
+        if (mode === 'text') $row.find('.item-name').trigger('focus');
+    });
+
+    // Save a new description to Settings, add it to every dropdown and use it in this row.
+    function promptAddDescription($sel) {
+        Swal.fire({
+            title: 'Add new description',
+            input: 'text',
+            inputPlaceholder: 'e.g. Air Freight Charges',
+            inputAttributes: { maxlength: 255, 'aria-label': 'Description' },
+            showCancelButton: true,
+            confirmButtonText: 'Save & use',
+            showLoaderOnConfirm: true,
+            allowOutsideClick: function () { return !Swal.isLoading(); },
+            preConfirm: function (value) {
+                value = $.trim(value);
+                if (!value) {
+                    Swal.showValidationMessage('Description is required.');
+                    return false;
+                }
+                return $.ajax({
+                    url: descriptionStoreUrl,
+                    method: 'POST',
+                    data: { _token: $('meta[name="csrf-token"]').attr('content'), name: value, sort_order: 0, is_active: 1 }
+                }).then(
+                    function () { return value; },
+                    function (xhr) {
+                        var errors = xhr.responseJSON && xhr.responseJSON.errors;
+                        Swal.showValidationMessage(
+                            (errors && errors.name && errors.name[0]) ||
+                            (xhr.responseJSON && xhr.responseJSON.message) ||
+                            'Could not save the description.'
+                        );
+                        return false;
+                    }
+                );
+            }
+        }).then(function (result) {
+            if (!result.isConfirmed || !result.value) return;
+            registerDescription(result.value);
+            $sel.val(result.value).data('prev', result.value).trigger('change');
+        });
+    }
+
+    function registerDescription(value) {
+        if (descriptionOptions.indexOf(value) === -1) descriptionOptions.push(value);
+        $('select.item-name').each(function () {
+            var present = $(this).find('option').filter(function () { return this.value === value; }).length > 0;
+            if (!present) $(this).append($('<option>').val(value).text(value));
+        });
     }
 
     // ── Remove row ──
     $(document).on('click', '.btn-remove-row', function () {
         if ($('#itemsBody tr').length <= 1) return; // keep at least one
-        $(this).closest('tr').remove();
+        var $row = $(this).closest('tr');
+        destroyDescriptionSelect($row.find('.item-name'));
+        $row.remove();
         reindex();
         recalc();
+        validateDuplicateDescriptions();
     });
 
     // ── Recalc on amount change ──
@@ -485,6 +786,10 @@ $(function () {
             $('#bookingInfoBody').html(infoHtml);
             $('#bookingInfoPanel').show();
 
+            // a different booking/job has its own running number: start the prefix fresh
+            $('.prefix-input').val('');
+            updatePrefixPanel();
+
             // in edit mode exclude the current bill's own type from "already exists"
             $('#btnTypeCustomer, #btnTypeAgent').each(function () {
                 var t = $(this).data('type');
@@ -519,6 +824,27 @@ $(function () {
             e.preventDefault();
             Swal.fire({ icon: 'warning', title: 'Please select a booking/job first.' });
             return;
+        }
+        if ($('#prefixPanel').is(':visible') && typedPrefix() === '') {
+            e.preventDefault();
+            $('#prefixError').show();
+            $('.prefix-input').addClass('is-invalid');
+            $('html,body').animate({ scrollTop: $('#prefixPanel').offset().top - 80 }, 300);
+            $('#prefixBillRef').trigger('focus');
+            return;
+        }
+
+        var $duplicateRow = validateDuplicateDescriptions();
+        if ($duplicateRow) {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'warning',
+                title: 'Duplicate bill item description',
+                text: 'Each description can be used only once in a bill. Please fix the highlighted row(s).'
+            }).then(function () {
+                $duplicateRow.get(0).scrollIntoView({ behavior: 'smooth', block: 'center' });
+                $duplicateRow.find('.select2-selection, input.item-name').first().trigger('focus');
+            });
         }
     });
 });

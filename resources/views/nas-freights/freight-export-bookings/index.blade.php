@@ -180,7 +180,9 @@
                 autoWidth: false,
                 orderCellsTop: true,
                 pageLength: 15,
-                order: [],
+                order: [
+                    [2, 'desc']
+                ],
                 lengthMenu: [
                     [15, 25, 50, 100, 200, 500, 1000],
                     [15, 25, 50, 100, 200, 500, 1000]

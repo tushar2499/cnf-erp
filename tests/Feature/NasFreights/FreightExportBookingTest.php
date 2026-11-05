@@ -405,6 +405,101 @@ class FreightExportBookingTest extends TestCase
         $this->assertSame('BD', $booking->items()->first()->country_of_origin);
     }
 
+    /**
+     * @return array<int, string>
+     */
+    private function listedBookingNos(string $direction): array
+    {
+        $column = fn (string $name, bool $orderable) => [
+            'data'       => $name,
+            'name'       => $name,
+            'searchable' => 'false',
+            'orderable'  => $orderable ? 'true' : 'false',
+        ];
+
+        $response = $this->withHeaders(['X-Requested-With' => 'XMLHttpRequest'])
+            ->getJson(route('nas-freights.freight-export-bookings.index', [
+                'draw'    => 1,
+                'start'   => 0,
+                'length'  => 15,
+                'columns' => [
+                    $column('DT_RowIndex', false),
+                    $column('action', false),
+                    $column('export_booking_no', true),
+                ],
+                'order' => [['column' => 2, 'dir' => $direction]],
+            ]))
+            ->assertOk();
+
+        return collect($response->json('data'))->pluck('export_booking_no')->all();
+    }
+
+    public function test_index_orders_by_job_number_numerically_with_mixed_formats(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $descending = [
+            'NASEXP261000',
+            'NASEXP26101_PJ1',
+            'NASEXP26101_PJ',
+            'NASEXP26101',
+            'NAS EXP26017',
+            'NASEXP26010',
+            'NASEXP26009',
+            'NAS/TB/RENATA/06/2026',
+            'FEB-20260914-0001',
+            '1122233',
+        ];
+
+        foreach (collect($descending)->shuffle()->all() as $no) {
+            $this->createBooking(['export_booking_no' => $no]);
+        }
+
+        $this->assertSame($descending, $this->listedBookingNos('desc'));
+        $this->assertSame(array_reverse($descending), $this->listedBookingNos('asc'));
+    }
+
+    public function test_store_uses_manual_booking_no_when_provided(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $this->post(route('nas-freights.freight-export-bookings.store'), [
+            'export_booking_no' => 'MANUAL-001',
+            'booking_date'      => '2026-08-29',
+            'service_type'      => 'FCL',
+            'customer_id'       => $this->createCustomer(),
+        ])->assertRedirect(route('nas-freights.freight-export-bookings.index'));
+
+        $this->assertSame('MANUAL-001', NasFreightsFreightExportBooking::first()->export_booking_no);
+    }
+
+    public function test_store_auto_generates_booking_no_when_blank(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $this->post(route('nas-freights.freight-export-bookings.store'), [
+            'export_booking_no' => '',
+            'booking_date'      => '2026-08-29',
+            'service_type'      => 'FCL',
+            'customer_id'       => $this->createCustomer(),
+        ])->assertRedirect(route('nas-freights.freight-export-bookings.index'));
+
+        $this->assertMatchesRegularExpression('/^NASEXP\d{2}\d+$/', NasFreightsFreightExportBooking::first()->export_booking_no);
+    }
+
+    public function test_store_rejects_duplicate_manual_booking_no(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+        $this->createBooking(['export_booking_no' => 'DUP-1']);
+
+        $this->post(route('nas-freights.freight-export-bookings.store'), [
+            'export_booking_no' => 'DUP-1',
+            'booking_date'      => '2026-08-29',
+            'service_type'      => 'FCL',
+            'customer_id'       => $this->createCustomer(),
+        ])->assertSessionHasErrors('export_booking_no');
+    }
+
     public function test_store_saves_multiple_hs_codes_trimmed_and_deduplicated(): void
     {
         $this->withSession($this->sessionWithBranch());

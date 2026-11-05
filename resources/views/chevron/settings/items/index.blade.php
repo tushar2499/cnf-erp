@@ -170,21 +170,21 @@
                     <thead>
                         <tr>
                             <th>#</th>
+                            <th>Action</th>
                             <th>Item Code</th>
                             <th>Item Name</th>
                             <th>Unit</th>
                             <th>Price</th>
                             <th>Availability</th>
                             <th>Status</th>
-                            <th>Action</th>
                         </tr>
                         <tr>
                             <th></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th></th>
                             <th></th>
                         </tr>
@@ -406,6 +406,14 @@
                         className: 'text-center'
                     },
                     {
+                        data: 'action',
+                        name: 'action',
+                        orderable: false,
+                        searchable: false,
+                        width: '90px',
+                        className: 'text-center'
+                    },
+                    {
                         data: 'item_code',
                         name: 'item_code'
                     },
@@ -431,14 +439,6 @@
                         data: 'status_badge',
                         name: 'status',
                         searchable: false
-                    },
-                    {
-                        data: 'action',
-                        name: 'action',
-                        orderable: false,
-                        searchable: false,
-                        width: '90px',
-                        className: 'text-center'
                     },
                 ],
                 dom: "<'row mb-1'<'col-sm-6'l><'col-sm-6'f>>" +

@@ -53,16 +53,16 @@
         <table id="dlvTable" class="table table-hover table-striped table-bordered dt-table mb-0 w-100">
             <thead>
             <tr>
-                <th>#</th><th>Delivery No</th><th>Bill No</th><th>Customer</th><th>Delivery Date</th><th>Address</th><th>Status</th><th>Action</th>
+                <th>#</th><th>Action</th><th>Delivery No</th><th>Bill No</th><th>Customer</th><th>Delivery Date</th><th>Address</th><th>Status</th>
             </tr>
             <tr>
+                <th></th>
                 <th></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Delivery No"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Bill No"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Customer"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Date"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Address"></th>
-                <th></th>
                 <th></th>
             </tr>
             </thead>
@@ -88,13 +88,13 @@ $(function () {
         ajax: '{{ route('nas-trading.deliveries.index') }}',
         columns: [
             { data: 'DT_RowIndex',  name: 'DT_RowIndex',  orderable: false, searchable: false, width: '40px', className: 'text-center' },
+            { data: 'action',       name: 'action',       orderable: false, searchable: false, width: '140px', className: 'text-center' },
             { data: 'delivery_no',  name: 'delivery_no' },
             { data: 'bill_no',      name: 'bill_no' },
             { data: 'customer_name',name: 'customer_name' },
             { data: 'delivery_date',name: 'delivery_date', width: '110px' },
             { data: 'delivery_address', name: 'delivery_address' },
             { data: 'status_badge', name: 'status_badge', orderable: false, searchable: false, width: '100px', className: 'text-center' },
-            { data: 'action',       name: 'action',       orderable: false, searchable: false, width: '140px', className: 'text-center' },
         ],
         dom: "<'row px-2 pt-2'<'col-sm-6'l><'col-sm-6'>>" +
             "<'row'<'col-12'tr>>" +

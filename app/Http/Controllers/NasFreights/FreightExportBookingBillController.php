@@ -11,11 +11,13 @@ use App\Http\Requests\NasFreights\FreightExportBookingBill\PrintFreightExportBoo
 use App\Http\Requests\NasFreights\FreightExportBookingBill\ShowFreightExportBookingBillRequest;
 use App\Http\Requests\NasFreights\FreightExportBookingBill\StoreFreightExportBookingBillRequest;
 use App\Http\Requests\NasFreights\FreightExportBookingBill\UpdateFreightExportBookingBillRequest;
+use App\Models\NasFreights\NasFreightsBillItemDescription;
 use App\Models\NasFreights\NasFreightsFreightExportBooking;
 use App\Models\NasFreights\NasFreightsFreightExportBookingBill;
 use App\Models\NasFreights\NasFreightsFreightExportBookingBillItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Yajra\DataTables\Facades\DataTables;
 
 class FreightExportBookingBillController extends Controller
@@ -79,10 +81,14 @@ class FreightExportBookingBillController extends Controller
                 ->where('branch_id', session('nas_freights_branch_id'))
                 ->findOrFail($request->booking_id);
 
-            $existingBillTypes = $booking->bills->pluck('bill_type')->toArray();
+            // Only Overseas Agent is limited to one bill per booking; Customer bills can repeat.
+            $existingBillTypes = $booking->bills->where('bill_type', 'Overseas Agent')->pluck('bill_type')->values()->toArray();
         }
 
-        return view('nas-freights.freight-export-booking-bills.create', compact('booking', 'existingBillTypes'));
+        $descriptions = NasFreightsBillItemDescription::active()->pluck('name');
+        $canAddDescription = $request->user()->hasPermission('freight.bill-item-description.create');
+
+        return view('nas-freights.freight-export-booking-bills.create', compact('booking', 'existingBillTypes', 'descriptions', 'canAddDescription'));
     }
 
     public function store(StoreFreightExportBookingBillRequest $request)
@@ -90,7 +96,8 @@ class FreightExportBookingBillController extends Controller
         $booking = NasFreightsFreightExportBooking::where('branch_id', session('nas_freights_branch_id'))
             ->findOrFail($request->export_booking_id);
 
-        $alreadyExists = $booking->bills()->where('bill_type', $request->bill_type)->exists();
+        $alreadyExists = $request->bill_type === 'Overseas Agent'
+            && $booking->bills()->where('bill_type', 'Overseas Agent')->exists();
         if ($alreadyExists) {
             return back()->withErrors(['bill_type' => 'A '.$request->bill_type.' bill already exists for this booking/job.'])->withInput();
         }
@@ -98,11 +105,16 @@ class FreightExportBookingBillController extends Controller
         $exchangeRate = (float) $request->exchange_rate;
 
         DB::transaction(function () use ($request, $booking, $exchangeRate) {
+            // Serialise bill numbering per booking so two follow-up Customer bills never share a number.
+            NasFreightsFreightExportBooking::whereKey($booking->id)->lockForUpdate()->first();
+
+            $billNo = $this->resolveBillNo($booking, $request->bill_type, $request->bill_prefix_ref, $request->bill_prefix_job);
+
             $vatAmount = round((float) ($request->vat_amount ?? 0), 2);
             $vatAmountBdt = round($vatAmount * $exchangeRate, 2);
 
             $bill = NasFreightsFreightExportBookingBill::create([
-                'bill_no'           => NasFreightsFreightExportBookingBill::generateBillNo(),
+                'bill_no'           => $billNo,
                 'export_booking_id' => $booking->id,
                 'branch_id'         => session('nas_freights_branch_id'),
                 'bill_type'         => $request->bill_type,
@@ -157,9 +169,16 @@ class FreightExportBookingBillController extends Controller
     {
         $bill = $freightExportBookingBill->load(['exportBooking.customer', 'exportBooking.overseasAgent', 'exportBooking.shippingCarrier', 'exportBooking.items', 'items']);
         $booking = $bill->exportBooking;
-        $existingBillTypes = $booking->bills()->where('id', '!=', $bill->id)->pluck('bill_type')->toArray();
+        $existingBillTypes = $booking->bills()
+            ->where('id', '!=', $bill->id)
+            ->where('bill_type', 'Overseas Agent')
+            ->pluck('bill_type')
+            ->toArray();
 
-        return view('nas-freights.freight-export-booking-bills.create', compact('bill', 'booking', 'existingBillTypes'));
+        $descriptions = NasFreightsBillItemDescription::active()->pluck('name');
+        $canAddDescription = $request->user()->hasPermission('freight.bill-item-description.create');
+
+        return view('nas-freights.freight-export-booking-bills.create', compact('bill', 'booking', 'existingBillTypes', 'descriptions', 'canAddDescription'));
     }
 
     public function update(UpdateFreightExportBookingBillRequest $request, NasFreightsFreightExportBookingBill $freightExportBookingBill)
@@ -173,10 +192,11 @@ class FreightExportBookingBillController extends Controller
             ? NasFreightsFreightExportBooking::where('branch_id', session('nas_freights_branch_id'))->findOrFail($newBookingId)
             : $bill->exportBooking;
 
-        $alreadyExists = $targetBooking->bills()
-            ->where('bill_type', $request->bill_type)
-            ->where('id', '!=', $bill->id)
-            ->exists();
+        $alreadyExists = $request->bill_type === 'Overseas Agent'
+            && $targetBooking->bills()
+                ->where('bill_type', 'Overseas Agent')
+                ->where('id', '!=', $bill->id)
+                ->exists();
         if ($alreadyExists) {
             return back()->withErrors(['bill_type' => 'A '.$request->bill_type.' bill already exists for this booking/job.'])->withInput();
         }
@@ -238,6 +258,32 @@ class FreightExportBookingBillController extends Controller
         $freightExportBookingBill->delete();
 
         return response()->json(['message' => 'Bill deleted.']);
+    }
+
+    /**
+     * First Customer bill (and every Overseas Agent bill) keeps the standard FEB-BILL number.
+     * 2nd and later Customer bills of a booking must carry a typed Bill Ref and/or Job No prefix.
+     *
+     * @throws ValidationException
+     */
+    private function resolveBillNo(NasFreightsFreightExportBooking $booking, string $billType, ?string $billRefPrefix, ?string $jobNoPrefix): string
+    {
+        $isFollowUpCustomerBill = $billType === 'Customer'
+            && $booking->bills()->where('bill_type', 'Customer')->exists();
+
+        if (! $isFollowUpCustomerBill) {
+            return NasFreightsFreightExportBookingBill::generateBillNo();
+        }
+
+        $prefix = NasFreightsFreightExportBookingBill::buildPrefix($billRefPrefix, $jobNoPrefix);
+
+        if ($prefix === '') {
+            throw ValidationException::withMessages([
+                'bill_prefix' => 'This job already has a Customer bill. Enter a Bill Ref and/or Job No prefix for this bill.',
+            ]);
+        }
+
+        return NasFreightsFreightExportBookingBill::generatePrefixedBillNo($booking, $prefix);
     }
 
     public function searchBookings(Request $request)

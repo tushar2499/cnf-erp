@@ -92,6 +92,19 @@ class NasFreightsFreightExportBooking extends Model
         return 'NASEXP'.now()->format('y').str_pad(($last ?? 0) + 1, 3, '0', STR_PAD_LEFT);
     }
 
+    /**
+     * Raw ORDER BY for Yajra `orderColumn()`; `$1` is replaced by the requested direction.
+     *
+     * Sorts by the number after "NASEXP" (spaces ignored), then by full text.
+     * Job numbers in any other format get number 0.
+     */
+    public static function jobNumberOrderSql(): string
+    {
+        return 'CASE WHEN REPLACE(export_booking_no, \' \', \'\') LIKE \'NASEXP%\''
+            .' THEN CAST(SUBSTR(REPLACE(export_booking_no, \' \', \'\'), 7) AS UNSIGNED)'
+            .' ELSE 0 END $1, export_booking_no $1';
+    }
+
     public static function statuses(): array
     {
         return ['Draft', 'Confirmed', 'In-Transit', 'Delivered', 'Cancelled'];

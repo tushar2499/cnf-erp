@@ -16,6 +16,7 @@ class StoreFreightExportBookingRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'export_booking_no'    => ['nullable', 'string', 'max:255', 'unique:nas_freights_freight_export_bookings,export_booking_no'],
             'customer_id'          => ['required', 'exists:nas_freights_customers,id'],
             'booking_date'         => ['required', 'date'],
             'service_type'         => ['required'],
