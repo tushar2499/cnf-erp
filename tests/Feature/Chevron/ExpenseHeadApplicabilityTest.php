@@ -4,13 +4,18 @@ namespace Tests\Feature\Chevron;
 
 use App\Http\Controllers\Chevron\BillController;
 use App\Http\Controllers\Chevron\ExpenseHeadController;
+use App\Http\Controllers\Chevron\JobExpenseController;
 use App\Http\Requests\Chevron\Bill\CreateBillRequest;
+use App\Http\Requests\Chevron\Bill\StoreBillRequest;
 use App\Http\Requests\Chevron\ExpenseHead\StoreExpenseHeadRequest;
+use App\Http\Requests\Chevron\JobExpense\CreateJobExpenseRequest;
+use App\Http\Requests\Chevron\JobExpense\StoreJobExpenseRequest;
 use App\Models\Chevron\ChevronExpenseCategory;
 use App\Models\Chevron\ChevronExpenseHead;
 use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -55,10 +60,18 @@ class ExpenseHeadApplicabilityTest extends TestCase
             $table->unsignedBigInteger('employee_id');
             $table->primary(['expense_head_id', 'employee_id']);
         });
+
+        Schema::create('employee_branch_access', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('employee_id');
+            $table->unsignedBigInteger('company_id');
+            $table->unsignedBigInteger('branch_id');
+        });
     }
 
     protected function tearDown(): void
     {
+        Schema::dropIfExists('employee_branch_access');
         Schema::dropIfExists('chevron_expense_head_employees');
         Schema::dropIfExists('chevron_expense_heads');
         Schema::dropIfExists('chevron_expense_categories');
@@ -172,6 +185,115 @@ class ExpenseHeadApplicabilityTest extends TestCase
 
         $this->assertContains('Bill Head', $headNames);
         $this->assertNotContains('Job Head', $headNames);
+    }
+
+    #[Test]
+    public function job_forms_only_list_heads_applicable_to_jobs(): void
+    {
+        $billCategory = $this->category(['name' => 'BILL CATEGORY', 'is_bill' => true, 'is_job' => false]);
+        $jobCategory = $this->category(['name' => 'JOB CATEGORY', 'is_bill' => false, 'is_job' => true]);
+
+        ChevronExpenseHead::create([
+            'name'                => 'Bill Head',
+            'expense_category_id' => $billCategory->id,
+            'is_bill'             => true,
+            'is_job'              => false,
+            'type'                => 'External',
+            'is_active'           => true,
+        ]);
+
+        ChevronExpenseHead::create([
+            'name'                => 'Job Head',
+            'expense_category_id' => $jobCategory->id,
+            'is_bill'             => false,
+            'is_job'              => true,
+            'type'                => 'External',
+            'is_active'           => true,
+        ]);
+
+        session(['active_branch_id' => 1]);
+        $view = (new JobExpenseController)->create(CreateJobExpenseRequest::create('/chevron/cnf/job-expenses/create', 'GET'));
+        $headNames = collect($view->getData()['expenseHeads'])->pluck('name')->all();
+
+        $this->assertContains('Job Head', $headNames);
+        $this->assertNotContains('Bill Head', $headNames);
+    }
+
+    #[Test]
+    public function job_expense_rows_reject_heads_not_applicable_to_jobs(): void
+    {
+        $billCategory = $this->category(['name' => 'BILL CATEGORY', 'is_bill' => true, 'is_job' => false]);
+        $jobCategory = $this->category(['name' => 'JOB CATEGORY', 'is_bill' => false, 'is_job' => true]);
+
+        $billHead = ChevronExpenseHead::create([
+            'name'                => 'Bill Head',
+            'expense_category_id' => $billCategory->id,
+            'is_bill'             => true,
+            'is_job'              => false,
+            'type'                => 'External',
+            'is_active'           => true,
+        ]);
+
+        $jobHead = ChevronExpenseHead::create([
+            'name'                => 'Job Head',
+            'expense_category_id' => $jobCategory->id,
+            'is_bill'             => false,
+            'is_job'              => true,
+            'type'                => 'External',
+            'is_active'           => true,
+        ]);
+
+        $rules = (new StoreJobExpenseRequest)->rules();
+        $payload = fn (int $headId) => [
+            'job_id'      => 1,
+            'employee_id' => 1,
+            'date'        => '2026-01-01',
+            'rows'        => [[
+                'expense_head_id' => $headId,
+                'expense_date'    => '2026-01-01',
+            ]],
+        ];
+
+        $this->assertTrue(Validator::make($payload($jobHead->id), $rules)->passes());
+        $this->assertTrue(Validator::make($payload($billHead->id), $rules)->errors()->has('rows.0.expense_head_id'));
+    }
+
+    #[Test]
+    public function bill_rows_reject_heads_not_applicable_to_bills(): void
+    {
+        $billCategory = $this->category(['name' => 'BILL CATEGORY', 'is_bill' => true, 'is_job' => false]);
+        $jobCategory = $this->category(['name' => 'JOB CATEGORY', 'is_bill' => false, 'is_job' => true]);
+
+        $billHead = ChevronExpenseHead::create([
+            'name'                => 'Bill Head',
+            'expense_category_id' => $billCategory->id,
+            'is_bill'             => true,
+            'is_job'              => false,
+            'type'                => 'External',
+            'is_active'           => true,
+        ]);
+
+        $jobHead = ChevronExpenseHead::create([
+            'name'                => 'Job Head',
+            'expense_category_id' => $jobCategory->id,
+            'is_bill'             => false,
+            'is_job'              => true,
+            'type'                => 'External',
+            'is_active'           => true,
+        ]);
+
+        $rules = (new StoreBillRequest)->rules();
+        $payload = fn (int $headId) => [
+            'bill_date' => '2026-01-01',
+            'job_no'    => 'JOB-001',
+            'rows'      => [[
+                'expense_category_id' => $billCategory->id,
+                'expense_head_id'     => $headId,
+            ]],
+        ];
+
+        $this->assertTrue(Validator::make($payload($billHead->id), $rules)->passes());
+        $this->assertTrue(Validator::make($payload($jobHead->id), $rules)->errors()->has('rows.0.expense_head_id'));
     }
 
     #[Test]

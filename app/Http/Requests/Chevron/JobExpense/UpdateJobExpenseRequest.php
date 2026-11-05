@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Chevron\JobExpense;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateJobExpenseRequest extends FormRequest
 {
@@ -20,7 +21,7 @@ class UpdateJobExpenseRequest extends FormRequest
             'employee_id'            => ['required'],
             'date'                   => ['required', 'date'],
             'rows'                   => ['required', 'array', 'min:1'],
-            'rows.*.expense_head_id' => ['required'],
+            'rows.*.expense_head_id' => ['required', Rule::exists('chevron_expense_heads', 'id')->where('is_job', true)],
             'rows.*.expense_date'    => ['required', 'date'],
         ];
     }
