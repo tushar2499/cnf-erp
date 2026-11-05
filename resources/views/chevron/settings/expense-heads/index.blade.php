@@ -130,7 +130,7 @@
                             <th>Name</th>
                             <th>Type</th>
                             <th>Category</th>
-                            <th>Category Type</th>
+                            <th>Applicable To</th>
                             <th>Amount</th>
                             <th>Employees</th>
                             <th>Status</th>
@@ -185,11 +185,33 @@
                                 <select id="headCategory" class="form-select select2">
                                     <option value="">-- Select Category --</option>
                                     @foreach ($categories as $cat)
-                                        <option value="{{ $cat->id }}">{{ $cat->name }}
+                                        <option value="{{ $cat->id }}" data-is-bill="{{ (int) $cat->is_bill }}"
+                                            data-is-job="{{ (int) $cat->is_job }}">{{ $cat->name }}
                                             ({{ $cat->is_bill && $cat->is_job ? 'Bill & Job' : ($cat->is_bill ? 'Bill' : 'Job') }})
                                         </option>
                                     @endforeach
                                 </select>
+                            </div>
+                            <div class="col-12" id="headApplicableWrap" style="display:none">
+                                <label class="form-label">Applicable To <span class="text-danger">*</span></label>
+                                <div class="d-flex gap-4 mt-1">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="headIsBill" checked>
+                                        <label class="form-check-label" for="headIsBill">
+                                            <span class="badge text-white" style="background-color:#0891b2">Bill</span>
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="headIsJob">
+                                        <label class="form-check-label" for="headIsJob">
+                                            <span class="badge bg-primary">Job</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="text-muted mt-1" style="font-size:11px">
+                                    This category supports both. Choose whether this head is used for Bill, Job, or both.
+                                </div>
+                                <div class="invalid-feedback d-block d-none" id="headApplicabilityError"></div>
                             </div>
                             <div class="col-12">
                                 <label class="form-label">Amount</label>
@@ -263,7 +285,9 @@
                             <div>
                                 Upload an Excel file (.xlsx / .xls) with columns:
                                 <strong>Name</strong>, <strong>Category</strong>, <strong>Type</strong> (Internal/External),
-                                <strong>Amount</strong>, <strong>Status</strong> (Active/Inactive).<br>
+                                <strong>Amount</strong>, <strong>Status</strong> (Active/Inactive),
+                                <strong>Applicable To</strong> (Bill / Job / Both, optional).
+                                When omitted, the head inherits its category's applicability.<br>
                                 Category must match an existing category name exactly (case-insensitive).<br>
                                 <a href="{{ route('chevron.settings.expense-heads.sample') }}" class="fw-semibold">
                                     <i class="fa fa-download me-1"></i>Download sample file
@@ -302,6 +326,7 @@
                                         <th style="width:10%">Type</th>
                                         <th style="width:9%">Amount</th>
                                         <th style="width:8%">Status</th>
+                                        <th style="width:11%">Applicable To</th>
                                         <th style="width:13%">Result</th>
                                     </tr>
                                 </thead>
@@ -363,6 +388,35 @@
                 $('#headEmployees').val([]).trigger('change');
             });
 
+            function applyCategoryApplicability(keepExisting) {
+                const $opt = $('#headCategory option:selected');
+                const hasCategory = !!$opt.val();
+                const catIsBill = $opt.data('is-bill') == 1;
+                const catIsJob = $opt.data('is-job') == 1;
+
+                if (!hasCategory) {
+                    $('#headApplicableWrap').hide();
+                    return;
+                }
+
+                if (catIsBill && catIsJob) {
+                    $('#headApplicableWrap').show();
+                    if (!keepExisting) {
+                        $('#headIsBill').prop('checked', true);
+                        $('#headIsJob').prop('checked', true);
+                    }
+                } else {
+                    $('#headApplicableWrap').hide();
+                    $('#headIsBill').prop('checked', catIsBill);
+                    $('#headIsJob').prop('checked', catIsJob);
+                }
+            }
+
+            $('#headCategory').on('change', function() {
+                applyCategoryApplicability(false);
+                $('#headApplicabilityError').addClass('d-none').text('');
+            });
+
             // ── DataTable ────────────────────────────────────────────────────────────
             table = $('#expenseHeadsTable').DataTable({
                 processing: true,
@@ -399,8 +453,8 @@
                         name: 'expenseCategory.name'
                     },
                     {
-                        data: 'category_type_badge',
-                        name: 'category_type_badge',
+                        data: 'applicable_badge',
+                        name: 'applicable_badge',
                         orderable: false,
                         width: '100px',
                         className: 'text-center'
@@ -479,10 +533,14 @@
                 $('#headName').val('').removeClass('is-invalid');
                 $('#headCategory').val('').trigger('change').removeClass('is-invalid');
                 $('#headType').val('').trigger('change').removeClass('is-invalid');
+                $('#headIsBill').prop('checked', true);
+                $('#headIsJob').prop('checked', false);
+                $('#headApplicableWrap').hide();
+                $('#headApplicabilityError').addClass('d-none').text('');
                 $('#headAmount').val('').removeClass('is-invalid');
                 $('#headEmployees').val(null).trigger('change');
                 $('#headActive').prop('checked', true);
-                $('.invalid-feedback').remove();
+                $('.invalid-feedback').not('#headApplicabilityError').remove();
             });
 
             $(document).on('click', '.btn-edit', function() {
@@ -491,11 +549,15 @@
                 $('#headId').val(d.id);
                 $('#headName').val(d.name).removeClass('is-invalid');
                 $('#headCategory').val(d.expense_category_id).trigger('change').removeClass('is-invalid');
+                $('#headIsBill').prop('checked', d.is_bill == 1);
+                $('#headIsJob').prop('checked', d.is_job == 1);
+                applyCategoryApplicability(true);
+                $('#headApplicabilityError').addClass('d-none').text('');
                 $('#headType').val(d.type).trigger('change').removeClass('is-invalid');
                 $('#headAmount').val(d.amount).removeClass('is-invalid');
                 $('#headEmployees').val(null).trigger('change');
                 $('#headActive').prop('checked', d.is_active == 1);
-                $('.invalid-feedback').remove();
+                $('.invalid-feedback').not('#headApplicabilityError').remove();
                 $('#expenseHeadModal').modal('show');
 
                 $('#headEmployeesLoading').show();
@@ -555,7 +617,8 @@
             $('#expenseHeadForm').on('submit', function(e) {
                 e.preventDefault();
                 $('.is-invalid').removeClass('is-invalid');
-                $('.invalid-feedback').remove();
+                $('.invalid-feedback').not('#headApplicabilityError').remove();
+                $('#headApplicabilityError').addClass('d-none').text('');
 
                 let valid = true;
                 if (!$('#headName').val().trim()) {
@@ -568,6 +631,17 @@
                 }
                 if (!$('#headType').val()) {
                     showFieldError($('#headType'), 'Type is required.');
+                    valid = false;
+                }
+
+                const $catOpt = $('#headCategory option:selected');
+                const catIsBill = $catOpt.data('is-bill') == 1;
+                const catIsJob = $catOpt.data('is-job') == 1;
+                const isBill = $('#headIsBill').is(':checked');
+                const isJob = $('#headIsJob').is(':checked');
+
+                if (catIsBill && catIsJob && !isBill && !isJob) {
+                    $('#headApplicabilityError').text('Select at least one: Bill or Job (or both).').removeClass('d-none');
                     valid = false;
                 }
                 if (!valid) return;
@@ -587,6 +661,8 @@
                             _token: $('meta[name="csrf-token"]').attr('content'),
                             name: $('#headName').val(),
                             expense_category_id: $('#headCategory').val(),
+                            is_bill: isBill ? 1 : 0,
+                            is_job: isJob ? 1 : 0,
                             type: $('#headType').val(),
                             amount: $('#headAmount').val(),
                             is_active: $('#headActive').is(':checked') ? 1 : 0,
@@ -617,6 +693,9 @@
                             }
                             if (errors.amount) {
                                 showFieldError($('#headAmount'), errors.amount[0]);
+                            }
+                            if (errors.applicability) {
+                                $('#headApplicabilityError').text(errors.applicability[0]).removeClass('d-none');
                             }
                         } else {
                             Swal.fire({
@@ -692,6 +771,19 @@
                     });
             });
 
+            function applicabilityBadge(row) {
+                if (row.is_bill && row.is_job) {
+                    return '<span class="badge bg-info text-white">Bill & Job</span>';
+                }
+                if (row.is_bill) {
+                    return '<span class="badge text-white" style="background-color:#0891b2">Bill</span>';
+                }
+                if (row.is_job) {
+                    return '<span class="badge bg-primary">Job</span>';
+                }
+                return '<span class="badge bg-secondary">None</span>';
+            }
+
             function renderPreview(rows) {
                 let html = '',
                     newCnt = 0,
@@ -710,6 +802,7 @@
                     <td class="text-center">${h(row.type)}</td>
                     <td class="text-end">${row.amount ?? ''}</td>
                     <td class="text-center"><span class="badge bg-secondary">${h(row.status)}</span></td>
+                    <td class="text-center">${applicabilityBadge(row)}</td>
                     <td class="text-center"><span class="badge bg-warning text-dark"><i class="fa fa-clock me-1"></i>Exists</span></td>
                 </tr>`;
                     } else {
@@ -729,6 +822,7 @@
                     <td class="text-center">${h(row.type)}${!row.type_valid ? ' <span class="text-danger small">(?)</span>' : ''}</td>
                     <td class="text-end">${row.amount ?? ''}</td>
                     <td class="text-center"><span class="badge ${row.status==='Active'?'bg-success':'bg-danger'}">${h(row.status)}</span></td>
+                    <td class="text-center">${applicabilityBadge(row)}</td>
                     <td class="text-center">
                         <span class="badge bg-success"><i class="fa fa-plus me-1"></i>New</span>${warnBadge}
                     </td>
@@ -738,7 +832,7 @@
 
                 if (rows.length === 0) {
                     html =
-                        '<tr><td colspan="7" class="text-center text-muted py-3">No valid rows found in file.</td></tr>';
+                        '<tr><td colspan="8" class="text-center text-muted py-3">No valid rows found in file.</td></tr>';
                 }
 
                 $('#previewBody').html(html);

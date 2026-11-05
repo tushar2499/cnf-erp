@@ -18,6 +18,8 @@ class UpdateExpenseHeadRequest extends FormRequest
         return [
             'name'                => ['required', 'string', 'max:255'],
             'expense_category_id' => ['required', 'exists:chevron_expense_categories,id'],
+            'is_bill'             => ['sometimes', 'boolean'],
+            'is_job'              => ['sometimes', 'boolean'],
             'type'                => ['required', 'in:External,Internal'],
             'amount'              => ['nullable', 'numeric', 'min:0'],
             'employee_ids'        => ['array'],

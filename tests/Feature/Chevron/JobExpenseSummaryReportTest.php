@@ -211,6 +211,8 @@ class JobExpenseSummaryReportTest extends TestCase
             $table->id();
             $table->string('name');
             $table->unsignedBigInteger('expense_category_id')->nullable();
+            $table->boolean('is_bill')->default(true);
+            $table->boolean('is_job')->default(true);
             $table->string('type')->nullable();
             $table->decimal('amount', 15, 2)->nullable();
             $table->boolean('is_active')->default(true);

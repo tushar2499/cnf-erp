@@ -27,6 +27,8 @@ class ExpenseHeadEmployeesRelationshipTest extends TestCase
         Schema::create('chevron_expense_categories', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->boolean('is_bill')->default(true);
+            $table->boolean('is_job')->default(false);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
@@ -35,6 +37,8 @@ class ExpenseHeadEmployeesRelationshipTest extends TestCase
             $table->id();
             $table->string('name');
             $table->foreignId('expense_category_id')->constrained('chevron_expense_categories')->onDelete('restrict');
+            $table->boolean('is_bill')->default(true);
+            $table->boolean('is_job')->default(false);
             $table->string('type');
             $table->decimal('amount', 12, 2)->nullable();
             $table->boolean('is_active')->default(true);

@@ -59,7 +59,7 @@ class JobExpenseController extends Controller
     public function create(CreateJobExpenseRequest $request)
     {
         $heads = ChevronExpenseHead::where('is_active', true)
-            ->whereHas('expenseCategory', fn ($q) => $q->where('is_job', true))
+            ->where('is_job', true)
             ->orderBy('name')
             ->get();
 
@@ -129,7 +129,7 @@ class JobExpenseController extends Controller
         $jobExpense->load('items');
 
         $heads = ChevronExpenseHead::where('is_active', true)
-            ->whereHas('expenseCategory', fn ($q) => $q->where('is_job', true))
+            ->where('is_job', true)
             ->orderBy('name')
             ->get();
 

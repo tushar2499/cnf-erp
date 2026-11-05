@@ -15,6 +15,8 @@ use App\Http\Requests\Chevron\ExpenseHead\UpdateExpenseHeadRequest;
 use App\Models\Chevron\ChevronExpenseCategory;
 use App\Models\Chevron\ChevronExpenseHead;
 use App\Models\Employee;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
@@ -34,20 +36,16 @@ class ExpenseHeadController extends Controller
             return DataTables::of($query)
                 ->addIndexColumn()
                 ->addColumn('category_name', fn ($row) => $row->expenseCategory?->name ?? '-')
-                ->addColumn('category_type_badge', fn ($row) => $row->expenseCategory
-                    ? $row->expenseCategory->typeBadge()
-                    : '-')
-                ->filterColumn('category_type_badge', function ($query, $keyword) {
+                ->addColumn('applicable_badge', fn ($row) => $row->applicabilityBadge())
+                ->filterColumn('applicable_badge', function ($query, $keyword) {
                     $keyword = strtolower(trim($keyword));
-                    $query->whereHas('expenseCategory', function ($q) use ($keyword) {
-                        if (str_contains($keyword, 'bill') && str_contains($keyword, 'job')) {
-                            $q->where('is_bill', true)->where('is_job', true);
-                        } elseif (str_contains($keyword, 'bill')) {
-                            $q->where('is_bill', true);
-                        } elseif (str_contains($keyword, 'job')) {
-                            $q->where('is_job', true);
-                        }
-                    });
+                    if (str_contains($keyword, 'bill') && str_contains($keyword, 'job')) {
+                        $query->where('is_bill', true)->where('is_job', true);
+                    } elseif (str_contains($keyword, 'bill')) {
+                        $query->where('is_bill', true);
+                    } elseif (str_contains($keyword, 'job')) {
+                        $query->where('is_job', true);
+                    }
                 })
                 ->editColumn('amount', fn ($row) => $row->amount !== null && $row->amount !== '' ? number_format((float) $row->amount, 2) : '—')
                 ->addColumn('employees_list', function ($row) {
@@ -91,6 +89,8 @@ class ExpenseHeadController extends Controller
                             data-id="'.$row->id.'"
                             data-name="'.e($row->name).'"
                             data-expense_category_id="'.$row->expense_category_id.'"
+                            data-is_bill="'.(int) $row->is_bill.'"
+                            data-is_job="'.(int) $row->is_job.'"
                             data-type="'.$row->type.'"
                             data-amount="'.$row->amount.'"
                             data-is_active="'.(int) $row->is_active.'">
@@ -108,7 +108,7 @@ class ExpenseHeadController extends Controller
 
                     return $html.'</div>';
                 })
-                ->rawColumns(['category_type_badge', 'employees_list', 'status_badge', 'action'])
+                ->rawColumns(['applicable_badge', 'employees_list', 'status_badge', 'action'])
                 ->make(true);
         }
 
@@ -120,9 +120,13 @@ class ExpenseHeadController extends Controller
 
     public function store(StoreExpenseHeadRequest $request)
     {
+        [$isBill, $isJob] = $this->resolveApplicability($request->expense_category_id, $request);
+
         $head = ChevronExpenseHead::create([
             'name'                => $request->name,
             'expense_category_id' => $request->expense_category_id,
+            'is_bill'             => $isBill,
+            'is_job'              => $isJob,
             'type'                => $request->type,
             'amount'              => $request->amount,
             'is_active'           => $request->boolean('is_active', true),
@@ -135,9 +139,13 @@ class ExpenseHeadController extends Controller
 
     public function update(UpdateExpenseHeadRequest $request, ChevronExpenseHead $expenseHead)
     {
+        [$isBill, $isJob] = $this->resolveApplicability($request->expense_category_id, $request);
+
         $expenseHead->update([
             'name'                => $request->name,
             'expense_category_id' => $request->expense_category_id,
+            'is_bill'             => $isBill,
+            'is_job'              => $isJob,
             'type'                => $request->type,
             'amount'              => $request->amount,
             'is_active'           => $request->boolean('is_active', true),
@@ -200,28 +208,58 @@ class ExpenseHeadController extends Controller
             ->all();
     }
 
+    /**
+     * A head can only be as broad as its category. When the category covers
+     * both bill and job, the user may narrow the head to one or both.
+     *
+     * @return array{0: bool, 1: bool}
+     */
+    protected function resolveApplicability(int $categoryId, Request $request): array
+    {
+        $category = ChevronExpenseCategory::findOrFail($categoryId);
+
+        if ($category->is_bill && $category->is_job) {
+            $isBill = $request->boolean('is_bill');
+            $isJob = $request->boolean('is_job');
+
+            if (! $isBill && ! $isJob) {
+                throw ValidationException::withMessages([
+                    'applicability' => 'Select at least one: Bill or Job (or both).',
+                ]);
+            }
+
+            return [$isBill, $isJob];
+        }
+
+        return [$category->is_bill, $category->is_job];
+    }
+
     public function sampleDownload(StoreExpenseHeadRequest $request)
     {
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Expense Heads');
 
-        $sheet->fromArray(['Name', 'Category', 'Type', 'Amount', 'Status'], null, 'A1');
-        $sheet->getStyle('A1:E1')->getFont()->setBold(true);
-        $sheet->getStyle('A1:E1')->getFill()
+        $sheet->fromArray(['Name', 'Category', 'Type', 'Amount', 'Status', 'Applicable To'], null, 'A1');
+        $sheet->getStyle('A1:F1')->getFont()->setBold(true);
+        $sheet->getStyle('A1:F1')->getFill()
             ->setFillType(Fill::FILL_SOLID)
             ->getStartColor()->setARGB('FF1A4A6B');
-        $sheet->getStyle('A1:E1')->getFont()->getColor()->setARGB('FFFFFFFF');
+        $sheet->getStyle('A1:F1')->getFont()->getColor()->setARGB('FFFFFFFF');
 
         // Sample rows — pull first 3 categories from DB
-        $cats = ChevronExpenseCategory::limit(3)->pluck('name')->all();
+        $cats = ChevronExpenseCategory::limit(3)->get();
+        $applicable = fn (?ChevronExpenseCategory $cat) => $cat
+            ? ($cat->is_bill && $cat->is_job ? 'Both' : ($cat->is_bill ? 'Bill' : 'Job'))
+            : 'Both';
+
         $sheet->fromArray([
-            ['PORT HANDLING FEE',   $cats[0] ?? 'CUSTOMS',      'External', '',       'Active'],
-            ['DOCUMENTATION CHARGE', $cats[1] ?? 'TRANSPORTATION', 'Internal', '500.00', 'Active'],
-            ['CUSTOMS DUTY',        $cats[2] ?? 'PORT & JETTY',  'External', '',       'Active'],
+            ['PORT HANDLING FEE',   $cats[0]?->name ?? 'CUSTOMS',      'External', '',       'Active', $applicable($cats[0] ?? null)],
+            ['DOCUMENTATION CHARGE', $cats[1]?->name ?? 'TRANSPORTATION', 'Internal', '500.00', 'Active', $applicable($cats[1] ?? null)],
+            ['CUSTOMS DUTY',        $cats[2]?->name ?? 'PORT & JETTY',  'External', '',       'Active', $applicable($cats[2] ?? null)],
         ], null, 'A2');
 
-        foreach (['A' => 36, 'B' => 28, 'C' => 12, 'D' => 12, 'E' => 10] as $col => $w) {
+        foreach (['A' => 36, 'B' => 28, 'C' => 12, 'D' => 12, 'E' => 10, 'F' => 16] as $col => $w) {
             $sheet->getColumnDimension($col)->setWidth($w);
         }
 
@@ -244,9 +282,9 @@ class ExpenseHeadController extends Controller
             ->map(fn ($n) => strtolower(trim($n)))
             ->flip()->all();
 
-        // Category name → id map (lowercase keys)
-        $catMap = ChevronExpenseCategory::pluck('id', 'name')
-            ->mapWithKeys(fn ($id, $name) => [strtolower(trim($name)) => $id])
+        // Category name → model map (lowercase keys)
+        $catMap = ChevronExpenseCategory::get(['id', 'name', 'is_bill', 'is_job'])
+            ->mapWithKeys(fn ($cat) => [strtolower(trim($cat->name)) => $cat])
             ->all();
 
         $preview = [];
@@ -264,10 +302,14 @@ class ExpenseHeadController extends Controller
             $type = trim($row[2] ?? '');
             $amount = trim($row[3] ?? '');
             $status = trim($row[4] ?? 'Active') ?: 'Active';
+            $applicable = trim($row[5] ?? '');
 
-            // Resolve category id
-            $catId = $catMap[strtolower($catName)] ?? null;
+            // Resolve category
+            $category = $catMap[strtolower($catName)] ?? null;
+            $catId = $category?->id;
             $catFound = $catId !== null;
+
+            [$isBill, $isJob] = $this->parseApplicability($applicable, $category);
 
             // Normalise type
             $typeNorm = match (strtolower($type)) {
@@ -281,6 +323,8 @@ class ExpenseHeadController extends Controller
                 'category_name'       => $catName,
                 'expense_category_id' => $catId,
                 'category_found'      => $catFound,
+                'is_bill'             => $isBill,
+                'is_job'              => $isJob,
                 'type'                => $typeNorm ?? $type,
                 'type_valid'          => $typeNorm !== null,
                 'amount'              => is_numeric($amount) ? $amount : null,
@@ -308,6 +352,8 @@ class ExpenseHeadController extends Controller
             ChevronExpenseHead::create([
                 'name'                => $name,
                 'expense_category_id' => $row['expense_category_id'] ?? null,
+                'is_bill'             => (bool) ($row['is_bill'] ?? true),
+                'is_job'              => (bool) ($row['is_job'] ?? false),
                 'type'                => in_array($row['type'] ?? '', ['Internal', 'External']) ? $row['type'] : 'External',
                 'amount'              => is_numeric($row['amount'] ?? '') ? $row['amount'] : null,
                 'is_active'           => strtolower($row['status'] ?? 'active') === 'active',
@@ -319,5 +365,33 @@ class ExpenseHeadController extends Controller
             'message'  => "{$inserted} expense head(s) imported successfully.",
             'inserted' => $inserted,
         ]);
+    }
+
+    /**
+     * @return array{0: bool, 1: bool}
+     */
+    private function parseApplicability(string $value, ?ChevronExpenseCategory $category): array
+    {
+        [$isBill, $isJob] = match (strtolower($value)) {
+            'bill'  => [true, false],
+            'job'   => [false, true],
+            'both'  => [true, true],
+            default => $category
+                ? [$category->is_bill, $category->is_job]
+                : [true, false],
+        };
+
+        if (! $category) {
+            return [$isBill, $isJob];
+        }
+
+        $isBill = $isBill && $category->is_bill;
+        $isJob = $isJob && $category->is_job;
+
+        if (! $isBill && ! $isJob) {
+            return [$category->is_bill, $category->is_job];
+        }
+
+        return [$isBill, $isJob];
     }
 }
