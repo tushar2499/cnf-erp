@@ -4,13 +4,13 @@ namespace App\Http\Requests\Chevron\Report;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class JobExpenseVsBillRequest extends FormRequest
+class JobExpenseRequest extends FormRequest
 {
     public function authorize(): bool
     {
         $user = $this->user();
 
-        return $user && $user->hasPermission('cnf.report.job-expense-vs-bill');
+        return $user && $user->hasPermission('cnf.report.job-expense');
     }
 
     public function rules(): array
@@ -20,6 +20,6 @@ class JobExpenseVsBillRequest extends FormRequest
 
     protected function failedAuthorization(): void
     {
-        abort(403, 'You do not have permission to view the job expense vs bill report.');
+        abort(403, 'You do not have permission to view the job expense report.');
     }
 }

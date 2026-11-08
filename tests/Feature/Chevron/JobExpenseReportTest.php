@@ -3,7 +3,7 @@
 namespace Tests\Feature\Chevron;
 
 use App\Http\Controllers\Chevron\ReportController;
-use App\Http\Requests\Chevron\Report\JobExpenseVsBillRequest;
+use App\Http\Requests\Chevron\Report\JobExpenseRequest;
 use App\Models\Chevron\ChevronBill;
 use App\Models\Chevron\ChevronExpenseCategory;
 use App\Models\Chevron\ChevronExpenseHead;
@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
-class JobExpenseVsBillReportTest extends TestCase
+class JobExpenseReportTest extends TestCase
 {
     private Employee $employee;
 
@@ -28,12 +28,17 @@ class JobExpenseVsBillReportTest extends TestCase
         parent::setUp();
 
         $this->createSchema();
-        $this->createVsBillView();
+        $this->createExpenseReportView();
 
         $this->employee = Employee::create([
-            'name'      => 'Mr. Vs Bill Employee',
-            'code'      => 'EMP-VS',
+            'name'      => 'Mr. Expense Employee',
+            'code'      => 'EMP-EXP',
             'is_active' => true,
+        ]);
+
+        DB::table('chevron_branches')->insert([
+            ['id' => 5, 'name' => 'Dhaka Branch'],
+            ['id' => 6, 'name' => 'Chattogram Branch'],
         ]);
 
         $this->employee->branchAccess()->create(['branch_id' => 5]);
@@ -49,7 +54,7 @@ class JobExpenseVsBillReportTest extends TestCase
 
     protected function tearDown(): void
     {
-        DB::statement('DROP VIEW IF EXISTS chevron_job_expense_vs_bill_view');
+        DB::statement('DROP VIEW IF EXISTS chevron_job_expense_view');
         Schema::dropIfExists('chevron_job_expense_items');
         Schema::dropIfExists('chevron_job_expenses');
         Schema::dropIfExists('chevron_bills');
@@ -58,12 +63,13 @@ class JobExpenseVsBillReportTest extends TestCase
         Schema::dropIfExists('chevron_expense_categories');
         Schema::dropIfExists('employee_branch_access');
         Schema::dropIfExists('employees');
+        Schema::dropIfExists('chevron_branches');
 
         parent::tearDown();
     }
 
     #[Test]
-    public function flat_rows_show_expense_details_and_the_job_bill_amount(): void
+    public function flat_rows_show_expense_details(): void
     {
         $job = $this->createJob('JOB-001', 'ACME TRADING');
         $this->createExpense($job, [
@@ -78,23 +84,21 @@ class JobExpenseVsBillReportTest extends TestCase
 
         $row = $json['data'][0];
 
+        $this->assertSame('Dhaka Branch', $row['branch_name']);
         $this->assertSame('JOB-001', $row['job_no']);
         $this->assertSame('ACME TRADING', $row['party_name']);
         $this->assertSame('01 Oct 2026', $row['expense_date']);
         $this->assertSame('EXP000001', $row['expense_no']);
-        $this->assertSame('Mr. Vs Bill Employee', $row['expense_by']);
+        $this->assertSame('Mr. Expense Employee', $row['expense_by']);
         $this->assertSame('Job Cost', $row['expense_category']);
         $this->assertSame('Port Handling', $row['expense_head']);
         $this->assertStringContainsString('Yes', $row['receiptable_badge']);
         $this->assertSame('150.00', $row['expense_amount']);
-        $this->assertSame('500.00', $row['bill_total']);
         $this->assertSame('150.00', $json['total_expense']);
-        $this->assertSame('500.00', $json['total_bill']);
-        $this->assertSame('-350.00', $json['difference']);
     }
 
     #[Test]
-    public function bill_total_is_summed_per_job_not_per_expense_row(): void
+    public function report_ignores_bills_and_exposes_no_bill_fields(): void
     {
         $job = $this->createJob('JOB-002', 'ACME TRADING');
         $this->createExpense($job, [
@@ -109,11 +113,12 @@ class JobExpenseVsBillReportTest extends TestCase
         $this->assertCount(2, $json['data']);
 
         foreach ($json['data'] as $row) {
-            $this->assertSame('500.00', $row['bill_total']);
+            $this->assertArrayNotHasKey('bill_total', $row);
         }
 
         $this->assertSame('150.00', $json['total_expense']);
-        $this->assertSame('500.00', $json['total_bill']);
+        $this->assertArrayNotHasKey('total_bill', $json);
+        $this->assertArrayNotHasKey('difference', $json);
         $this->assertSame(1, $json['total_jobs']);
         $this->assertSame(2, $json['total_rows']);
     }
@@ -164,7 +169,7 @@ class JobExpenseVsBillReportTest extends TestCase
     }
 
     #[Test]
-    public function print_view_renders_expense_and_bill_totals(): void
+    public function print_view_renders_expense_totals_without_bill_data(): void
     {
         $job = $this->createJob('JOB-PRINT', 'ACME PRINT');
         $this->createExpense($job, [
@@ -172,17 +177,20 @@ class JobExpenseVsBillReportTest extends TestCase
         ]);
         $this->createBill($job, 500);
 
-        $html = $this->renderController('jobExpenseVsBillPrint', ['job_no' => 'JOB-PRINT'])->render();
+        $html = $this->renderController('jobExpensePrint', ['job_no' => 'JOB-PRINT'])->render();
 
-        $this->assertStringContainsString('Job Expense Vs Bill Report', $html);
+        $this->assertStringContainsString('Job Expense Report', $html);
+        $this->assertStringNotContainsString('Vs Bill', $html);
+        $this->assertStringContainsString('Branch', $html);
+        $this->assertStringContainsString('Dhaka Branch', $html);
         $this->assertStringContainsString('ACME PRINT', $html);
         $this->assertStringContainsString('Expense No', $html);
         $this->assertStringContainsString('EXP000001', $html);
-        $this->assertStringContainsString('Bill Amount', $html);
+        $this->assertStringContainsString('Total Job Expense Amount', $html);
         $this->assertStringContainsString('150.00', $html);
-        $this->assertStringContainsString('500.00', $html);
-        $this->assertStringContainsString('Difference (Expense - Bill)', $html);
-        $this->assertStringContainsString('-350.00', $html);
+        $this->assertStringNotContainsString('Bill Amount', $html);
+        $this->assertStringNotContainsString('Difference', $html);
+        $this->assertStringNotContainsString('500.00', $html);
     }
 
     #[Test]
@@ -191,8 +199,8 @@ class JobExpenseVsBillReportTest extends TestCase
         $this->createJob('JOB-SEARCH-001', 'SEARCHABLE PARTY');
         $this->createJob('JOB-OTHER-002', 'ANOTHER PARTY');
 
-        $request = JobExpenseVsBillRequest::create(
-            route('chevron.reports.job-expense-vs-bill.search-jobs'),
+        $request = JobExpenseRequest::create(
+            route('chevron.reports.job-expense.search-jobs'),
             'GET',
             ['q' => 'SEARCHABLE']
         );
@@ -211,7 +219,6 @@ class JobExpenseVsBillReportTest extends TestCase
         $this->createExpense($job, [
             ['receiptable' => 'Yes', 'expense_amount' => 100],
         ]);
-        $this->createBill($job, 500);
 
         $otherJob = $this->createJob('JOB-008', 'OTHER PARTY', 6);
         $this->createExpense($otherJob, [
@@ -222,7 +229,6 @@ class JobExpenseVsBillReportTest extends TestCase
 
         $this->assertCount(0, $json['data']);
         $this->assertSame('0.00', $json['total_expense']);
-        $this->assertSame('0.00', $json['total_bill']);
         $this->assertSame(0, $json['total_rows']);
         $this->assertSame(0, $json['total_jobs']);
     }
@@ -234,30 +240,49 @@ class JobExpenseVsBillReportTest extends TestCase
         $this->createExpense($jobA, [
             ['receiptable' => 'Yes', 'expense_amount' => 100],
         ]);
-        $this->createBill($jobA, 500);
 
         $jobB = $this->createJob('JOB-C2', 'PARTY TWO');
         $this->createExpense($jobB, [
             ['receiptable' => 'No', 'expense_amount' => 200],
         ]);
-        $this->createBill($jobB, 900);
 
         $byParty = $this->dataTable(['from_date' => '2026-01-01'], ['party_name' => 'PARTY TWO']);
         $this->assertCount(1, $byParty['data']);
         $this->assertSame('JOB-C2', $byParty['data'][0]['job_no']);
         $this->assertSame('200.00', $byParty['total_expense']);
-        $this->assertSame('900.00', $byParty['total_bill']);
         $this->assertSame(1, $byParty['total_rows']);
         $this->assertSame(1, $byParty['total_jobs']);
 
-        $byBill = $this->dataTable(['from_date' => '2026-01-01'], ['bill_total' => '500']);
-        $this->assertCount(1, $byBill['data']);
-        $this->assertSame('JOB-C1', $byBill['data'][0]['job_no']);
-        $this->assertSame('500.00', $byBill['total_bill']);
+        $byAmount = $this->dataTable(['from_date' => '2026-01-01'], ['expense_amount' => '100']);
+        $this->assertCount(1, $byAmount['data']);
+        $this->assertSame('JOB-C1', $byAmount['data'][0]['job_no']);
+        $this->assertSame('100.00', $byAmount['total_expense']);
 
         $byReceiptable = $this->dataTable(['from_date' => '2026-01-01'], ['receiptable_badge' => 'No']);
         $this->assertCount(1, $byReceiptable['data']);
         $this->assertSame('JOB-C2', $byReceiptable['data'][0]['job_no']);
+    }
+
+    #[Test]
+    public function branch_name_is_searchable_by_column_and_globally(): void
+    {
+        $job = $this->createJob('JOB-B1', 'PARTY BRANCH');
+        $this->createExpense($job, [
+            ['receiptable' => 'Yes', 'expense_amount' => 100],
+        ]);
+
+        $byColumn = $this->dataTable(['from_date' => '2026-01-01'], ['branch_name' => 'Dhaka']);
+        $this->assertCount(1, $byColumn['data']);
+        $this->assertSame('Dhaka Branch', $byColumn['data'][0]['branch_name']);
+
+        $noMatch = $this->dataTable(['from_date' => '2026-01-01'], ['branch_name' => 'Chattogram']);
+        $this->assertCount(0, $noMatch['data']);
+        $this->assertSame('0.00', $noMatch['total_expense']);
+
+        $global = $this->dataTable(
+            ['from_date' => '2026-01-01', 'search' => ['value' => 'Dhaka Branch', 'regex' => 'false']]
+        );
+        $this->assertCount(1, $global['data']);
     }
 
     #[Test]
@@ -267,13 +292,11 @@ class JobExpenseVsBillReportTest extends TestCase
         $this->createExpense($jobA, [
             ['receiptable' => 'Yes', 'expense_amount' => 100],
         ]);
-        $this->createBill($jobA, 500);
 
         $jobB = $this->createJob('JOB-G2', 'PARTY TWO');
         $this->createExpense($jobB, [
             ['receiptable' => 'No', 'expense_amount' => 200],
         ]);
-        $this->createBill($jobB, 900);
 
         $byParty = $this->dataTable(
             ['from_date' => '2026-01-01', 'search' => ['value' => 'PARTY TWO', 'regex' => 'false']]
@@ -282,12 +305,11 @@ class JobExpenseVsBillReportTest extends TestCase
         $this->assertCount(1, $byParty['data']);
         $this->assertSame('JOB-G2', $byParty['data'][0]['job_no']);
         $this->assertSame('200.00', $byParty['total_expense']);
-        $this->assertSame('900.00', $byParty['total_bill']);
         $this->assertSame(1, $byParty['total_jobs']);
     }
 
     #[Test]
-    public function expense_rows_without_a_job_still_show_with_a_zero_bill(): void
+    public function expense_rows_without_a_job_still_show(): void
     {
         $expense = ChevronJobExpense::create([
             'expense_no'  => 'EXP-NOJOB',
@@ -311,22 +333,21 @@ class JobExpenseVsBillReportTest extends TestCase
 
         $this->assertCount(1, $json['data']);
         $this->assertSame('—', $json['data'][0]['party_name']);
-        $this->assertSame('0.00', $json['data'][0]['bill_total']);
         $this->assertSame('75.00', $json['total_expense']);
         $this->assertSame(0, $json['total_jobs']);
     }
 
-    private function createVsBillView(): void
+    private function createExpenseReportView(): void
     {
-        $migration = require glob(database_path('migrations/*_create_chevron_job_expense_vs_bill_view.php'))[0];
+        $migration = require glob(database_path('migrations/*_create_chevron_job_expense_view.php'))[0];
 
         $migration->up();
     }
 
     private function dataTable(array $filters = [], array $columnSearches = []): array
     {
-        $request = JobExpenseVsBillRequest::create(
-            route('chevron.reports.job-expense-vs-bill'),
+        $request = JobExpenseRequest::create(
+            route('chevron.reports.job-expense'),
             'GET',
             array_merge([
                 'draw'    => 1,
@@ -334,7 +355,7 @@ class JobExpenseVsBillReportTest extends TestCase
                 'length'  => 100,
                 'search'  => ['value' => '', 'regex' => 'false'],
                 'columns' => $this->dataTableColumns($columnSearches),
-                'order'   => [['column' => 1, 'dir' => 'asc']],
+                'order'   => [['column' => 2, 'dir' => 'asc']],
             ], $filters)
         );
 
@@ -343,7 +364,7 @@ class JobExpenseVsBillReportTest extends TestCase
         $this->app->instance('request', $request);
 
         return app(ReportController::class)
-            ->jobExpenseVsBill($request)
+            ->jobExpense($request)
             ->getData(true);
     }
 
@@ -354,6 +375,7 @@ class JobExpenseVsBillReportTest extends TestCase
     {
         $columns = [
             ['data' => 'DT_RowIndex', 'name' => 'DT_RowIndex', 'searchable' => false, 'orderable' => false],
+            ['data' => 'branch_name', 'name' => 'branch_name'],
             ['data' => 'job_no', 'name' => 'job_no'],
             ['data' => 'party_name', 'name' => 'party_name'],
             ['data' => 'expense_date', 'name' => 'expense_date'],
@@ -363,7 +385,6 @@ class JobExpenseVsBillReportTest extends TestCase
             ['data' => 'expense_head', 'name' => 'expense_head'],
             ['data' => 'receiptable_badge', 'name' => 'receiptable_badge'],
             ['data' => 'expense_amount', 'name' => 'expense_amount'],
-            ['data' => 'bill_total', 'name' => 'bill_total'],
         ];
 
         return array_map(function (array $column) use ($columnSearches) {
@@ -381,8 +402,8 @@ class JobExpenseVsBillReportTest extends TestCase
 
     private function renderController(string $method, array $filters = [])
     {
-        $request = JobExpenseVsBillRequest::create(
-            route('chevron.reports.job-expense-vs-bill'),
+        $request = JobExpenseRequest::create(
+            route('chevron.reports.job-expense'),
             'GET',
             $filters
         );
@@ -449,6 +470,14 @@ class JobExpenseVsBillReportTest extends TestCase
 
     private function createSchema(): void
     {
+        Schema::create('chevron_branches', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('code')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+
         Schema::create('employees', function (Blueprint $table) {
             $table->id();
             $table->string('name');

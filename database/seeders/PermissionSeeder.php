@@ -130,7 +130,8 @@ class PermissionSeeder extends Seeder
 
             // Reports
             ['company_id' => 1, 'module' => 'Reports', 'name' => 'cnf.report.job-expense-summary', 'sorting_order' => 140],
-            ['company_id' => 1, 'module' => 'Reports', 'name' => 'cnf.report.job-expense-vs-bill', 'sorting_order' => 141],
+            ['company_id' => 1, 'module' => 'Reports', 'name' => 'cnf.report.job-expense', 'sorting_order' => 141],
+            ['company_id' => 1, 'module' => 'Reports', 'name' => 'cnf.report.job-bill', 'sorting_order' => 142],
 
             // ── NAS Freights — company_id = 2 ─────────────────────────────
 

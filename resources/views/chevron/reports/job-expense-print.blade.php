@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Job Expense Vs Bill</title>
+<title>Job Expense</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family: Arial, sans-serif; font-size:9px; color:#000; background:#fff; }
@@ -20,12 +20,12 @@ body { font-family: Arial, sans-serif; font-size:9px; color:#000; background:#ff
 .divider { border:none; border-top:1.5px solid #000; margin:4px 0; }
 .date-bar { text-align:center; font-size:9px; margin-bottom:6px; color:#333; }
 
-table.vs-table { width:100%; border-collapse:collapse; font-size:7.5px; }
-table.vs-table thead th { background:#dce8f5; color:#1a4a6b; padding:3px 4px; border:1px solid #aac5e0; text-align:center; }
-table.vs-table tbody td { padding:3px 4px; border:1px solid #ccd9e8; vertical-align:middle; }
-table.vs-table tbody tr:nth-child(even) { background:#f4f8ff; }
-table.vs-table tfoot td { background:#c5d9f0; font-weight:700; padding:3px 4px; border:1px solid #aac5e0; }
-table.vs-table tfoot td.r { text-align:right; }
+table.expense-table { width:100%; border-collapse:collapse; font-size:7.5px; }
+table.expense-table thead th { background:#dce8f5; color:#1a4a6b; padding:3px 4px; border:1px solid #aac5e0; text-align:center; }
+table.expense-table tbody td { padding:3px 4px; border:1px solid #ccd9e8; vertical-align:middle; }
+table.expense-table tbody tr:nth-child(even) { background:#f4f8ff; }
+table.expense-table tfoot td { background:#c5d9f0; font-weight:700; padding:3px 4px; border:1px solid #aac5e0; }
+table.expense-table tfoot td.r { text-align:right; }
 .r { text-align:right; }
 .c { text-align:center; }
 .head-total { display:block; margin-top:2px; padding-top:2px; border-top:1px dashed #7fa3c7; font-size:7px; font-weight:700; }
@@ -57,7 +57,7 @@ table.summary-tbl .total-row td { background:#1a4a6b; color:#fff; font-size:9.5p
 <div class="page">
 
     <div class="co-name">Chevron Lines Ltd.</div>
-    <div class="co-address">Job Expense Vs Bill Report</div>
+    <div class="co-address">Job Expense Report</div>
     <div class="divider"></div>
 
     @if(request('from_date') || request('to_date') || request('job_no'))
@@ -68,10 +68,11 @@ table.summary-tbl .total-row td { background:#1a4a6b; color:#fff; font-size:9.5p
     </div>
     @endif
 
-    <table class="vs-table">
+    <table class="expense-table">
         <thead>
             <tr>
                 <th style="width:4%">SL</th>
+                <th>Branch</th>
                 <th>Job No</th>
                 <th>Party Name</th>
                 <th style="width:10%">Expense Date</th>
@@ -81,27 +82,22 @@ table.summary-tbl .total-row td { background:#1a4a6b; color:#fff; font-size:9.5p
                 <th>Expense Head</th>
                 <th style="width:9%">Receiptable</th>
                 <th style="width:11%">Amount<span class="head-total">Total {{ number_format($totalExpense, 2) }}</span></th>
-                <th style="width:11%">Bill Amount<span class="head-total">Total {{ number_format($totalBill, 2) }}</span></th>
             </tr>
         </thead>
         <tbody>
             @forelse($rows as $index => $row)
-            @php
-                $jobId = $row->jobExpense?->job_id;
-                $billAmount = $jobId ? ($billTotals[$jobId] ?? 0) : 0;
-            @endphp
             <tr>
                 <td class="c">{{ $index + 1 }}</td>
-                <td>{{ $row->jobExpense?->job_no ?? '—' }}</td>
-                <td>{{ $row->jobExpense?->job?->party_name ?? '—' }}</td>
-                <td class="c">{{ ($row->expense_date ?? $row->jobExpense?->date)?->format('d M Y') ?? '—' }}</td>
-                <td>{{ $row->jobExpense?->expense_no ?? '—' }}</td>
-                <td>{{ $row->jobExpense?->employee?->name ?? '—' }}</td>
-                <td>{{ $row->expenseHead?->expenseCategory?->name ?? '—' }}</td>
-                <td>{{ $row->expenseHead?->name ?? '—' }}</td>
+                <td>{{ $row->branch_name ?? '—' }}</td>
+                <td>{{ $row->job_no ?? '—' }}</td>
+                <td>{{ $row->party_name ?? '—' }}</td>
+                <td class="c">{{ $row->expense_date ? \Carbon\Carbon::parse($row->expense_date)->format('d M Y') : '—' }}</td>
+                <td>{{ $row->expense_no ?? '—' }}</td>
+                <td>{{ $row->expense_by ?? '—' }}</td>
+                <td>{{ $row->expense_category ?? '—' }}</td>
+                <td>{{ $row->expense_head ?? '—' }}</td>
                 <td class="c">{{ $row->receiptable === 'Yes' ? 'Yes' : 'No' }}</td>
                 <td class="r">{{ number_format($row->expense_amount, 2) }}</td>
-                <td class="r">{{ number_format($billAmount, 2) }}</td>
             </tr>
             @empty
             <tr><td colspan="11" class="c" style="color:#999">No expense records found.</td></tr>
@@ -110,9 +106,8 @@ table.summary-tbl .total-row td { background:#1a4a6b; color:#fff; font-size:9.5p
         @if($rows->isNotEmpty())
         <tfoot>
             <tr>
-                <td colspan="9" class="r">Total</td>
+                <td colspan="10" class="r">Total</td>
                 <td class="r">{{ number_format($totalExpense, 2) }}</td>
-                <td class="r">{{ number_format($totalBill, 2) }}</td>
             </tr>
         </tfoot>
         @endif
@@ -121,17 +116,9 @@ table.summary-tbl .total-row td { background:#1a4a6b; color:#fff; font-size:9.5p
     @if($rows->isNotEmpty())
     <div class="summary-section">
         <table class="summary-tbl" style="max-width:380px">
-            <tr>
+            <tr class="total-row">
                 <td class="lbl">Total Job Expense Amount</td>
                 <td class="val">{{ number_format($totalExpense, 2) }}</td>
-            </tr>
-            <tr>
-                <td class="lbl">Total Bill Amount</td>
-                <td class="val">{{ number_format($totalBill, 2) }}</td>
-            </tr>
-            <tr class="total-row">
-                <td class="lbl">Difference (Expense - Bill)</td>
-                <td class="val">{{ number_format($totalExpense - $totalBill, 2) }}</td>
             </tr>
             <tr>
                 <td class="lbl">Total Expense Rows</td>
@@ -139,7 +126,7 @@ table.summary-tbl .total-row td { background:#1a4a6b; color:#fff; font-size:9.5p
             </tr>
             <tr>
                 <td class="lbl">Jobs Covered</td>
-                <td class="val">{{ $rows->pluck('jobExpense.job_id')->filter()->unique()->count() }}</td>
+                <td class="val">{{ $totalJobs }}</td>
             </tr>
         </table>
     </div>

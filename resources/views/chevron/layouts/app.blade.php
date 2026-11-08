@@ -113,8 +113,9 @@
             || $canSeeExpenseHead || $canSeeBranch || $canSeeItem || $canSeeAccount;
 
         $canSeeJobExpenseSummary = $user->hasPermission('cnf.report.job-expense-summary');
-        $canSeeJobExpenseVsBill  = $user->hasPermission('cnf.report.job-expense-vs-bill');
-        $canSeeReports           = $canSeeJobExpenseSummary || $canSeeJobExpenseVsBill;
+        $canSeeJobExpenseReport  = $user->hasPermission('cnf.report.job-expense');
+        $canSeeJobBillReport     = $user->hasPermission('cnf.report.job-bill');
+        $canSeeReports           = $canSeeJobExpenseSummary || $canSeeJobExpenseReport || $canSeeJobBillReport;
     @endphp
 
     <div class="nav-item-group">
@@ -174,10 +175,16 @@
             <i class="fa fa-chart-line"></i> Expense Summary
         </a>
         @endif
-        @if($canSeeJobExpenseVsBill)
-        <a href="{{ route('chevron.reports.job-expense-vs-bill') }}"
-           class="nav-link {{ request()->routeIs('chevron.reports.job-expense-vs-bill*') ? 'active' : '' }}">
-            <i class="fa fa-scale-balanced"></i> Expense Vs Bill
+        @if($canSeeJobExpenseReport)
+        <a href="{{ route('chevron.reports.job-expense') }}"
+           class="nav-link {{ request()->routeIs('chevron.reports.job-expense', 'chevron.reports.job-expense.*') ? 'active' : '' }}">
+            <i class="fa fa-money-check-alt"></i> Job Expense
+        </a>
+        @endif
+        @if($canSeeJobBillReport)
+        <a href="{{ route('chevron.reports.job-bill') }}"
+           class="nav-link {{ request()->routeIs('chevron.reports.job-bill', 'chevron.reports.job-bill.*') ? 'active' : '' }}">
+            <i class="fa fa-file-invoice"></i> Job Bill
         </a>
         @endif
     </div>
@@ -287,8 +294,11 @@
         @if($canSeeJobExpenseSummary)
         { label: 'Expense Summary',    section: 'Reports',          url: '{{ route("chevron.reports.job-expense-summary") }}',           icon: 'fa-chart-line' },
         @endif
-        @if($canSeeJobExpenseVsBill)
-        { label: 'Expense Vs Bill',    section: 'Reports',          url: '{{ route("chevron.reports.job-expense-vs-bill") }}',           icon: 'fa-scale-balanced' },
+        @if($canSeeJobExpenseReport)
+        { label: 'Job Expense',        section: 'Reports',          url: '{{ route("chevron.reports.job-expense") }}',                   icon: 'fa-money-check-alt' },
+        @endif
+        @if($canSeeJobBillReport)
+        { label: 'Job Bill',           section: 'Reports',          url: '{{ route("chevron.reports.job-bill") }}',                      icon: 'fa-file-invoice' },
         @endif
         @if($canSeeCustomer)
         { label: 'Customers',          section: 'Stakeholders',     url: '{{ route("chevron.stakeholders.customers.index") }}',          icon: 'fa-users' },

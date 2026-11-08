@@ -1,6 +1,6 @@
 @extends('chevron.layouts.app')
 
-@section('title', 'Job Expense Vs Bill')
+@section('title', 'Job Bill')
 
 @push('styles')
     <style>
@@ -31,14 +31,14 @@
             border-radius: 3px;
         }
 
-        #expenseVsBillTable th,
-        #expenseVsBillTable td {
+        #jobBillTable th,
+        #jobBillTable td {
             white-space: nowrap;
             font-size: .73rem;
             padding: .3rem .5rem;
         }
 
-        #expenseVsBillTable thead th {
+        #jobBillTable thead th {
             background: #e9ecef;
             font-weight: 600;
             position: sticky;
@@ -46,12 +46,12 @@
             top: 0;
         }
 
-        #expenseVsBillTable thead tr:last-child th {
+        #jobBillTable thead tr:last-child th {
             background: #f8f9fa;
         }
 
-        #expenseVsBillTable thead tr:last-child th input,
-        #expenseVsBillTable thead tr:last-child th select {
+        #jobBillTable thead tr:last-child th input,
+        #jobBillTable thead tr:last-child th select {
             min-width: 72px;
             width: 100%;
             box-sizing: border-box;
@@ -59,7 +59,7 @@
             padding: .15rem .3rem;
         }
 
-        #expenseVsBillTable tfoot td {
+        #jobBillTable tfoot td {
             background: #d4e8ff;
             font-weight: 700;
             position: sticky;
@@ -75,24 +75,6 @@
             font-size: 11px;
             font-weight: 700;
             color: #12405f;
-        }
-
-        .badge-yes {
-            background: #d1fae5;
-            color: #065f46;
-            border: 1px solid #6ee7b7;
-            padding: 1px 7px;
-            border-radius: 20px;
-            font-size: 11px;
-        }
-
-        .badge-no {
-            background: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #fca5a5;
-            padding: 1px 7px;
-            border-radius: 20px;
-            font-size: 11px;
         }
 
         .summary-box {
@@ -122,7 +104,7 @@
             text-align: right;
         }
 
-        #expenseVsBillTable_wrapper>.row:last-child {
+        #jobBillTable_wrapper>.row:last-child {
             position: sticky;
             bottom: 0;
             background: #fff;
@@ -136,7 +118,7 @@
 
 @section('content')
     <div class="d-flex align-items-center justify-content-between mb-3">
-        <h5 class="mb-0 fw-bold"><i class="fa fa-scale-balanced me-2" style="color:#1a4a6b"></i>Job Expense Vs Bill</h5>
+        <h5 class="mb-0 fw-bold"><i class="fa fa-file-invoice me-2" style="color:#1a4a6b"></i>Job Bill</h5>
     </div>
 
     <div class="filter-card">
@@ -210,21 +192,19 @@
     <div id="reportCard" class="card {{ $hasFilters ? '' : 'd-none' }}">
         <div class="card-body p-0">
             <div class="report-table-wrapper">
-                <table id="expenseVsBillTable" class="table table-hover table-striped table-bordered mb-0">
+                <table id="jobBillTable" class="table table-hover table-striped table-bordered mb-0">
                     <thead>
                         <tr>
                             <th style="width:4%">SL</th>
+                            <th>Branch</th>
                             <th>Job No</th>
                             <th>Party Name</th>
-                            <th style="width:10%">Expense Date</th>
-                            <th style="width:10%">Expense No</th>
-                            <th>Expense By</th>
+                            <th style="width:10%">Bill Date</th>
+                            <th style="width:10%">Bill No</th>
+                            <th style="width:9%">Bill Type</th>
                             <th>Expense Category</th>
                             <th>Expense Head</th>
-                            <th style="width:9%">Receiptable</th>
                             <th style="width:11%;text-align:right">Amount<span class="head-total">Total <span
-                                        id="headTotalExpense">0.00</span></span></th>
-                            <th style="width:11%;text-align:right">Bill Amount<span class="head-total">Total <span
                                         id="headTotalBill">0.00</span></span></th>
                         </tr>
                         <tr>
@@ -236,13 +216,6 @@
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th>
-                                <select class="form-select form-select-sm">
-                                    <option value="">All</option>
-                                    <option value="Yes">Yes</option>
-                                    <option value="No">No</option>
-                                </select>
-                            </th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                         </tr>
@@ -251,7 +224,6 @@
                     <tfoot>
                         <tr>
                             <td colspan="9" class="text-end">Total</td>
-                            <td class="text-end"><span id="footTotalExpense">0.00</span></td>
                             <td class="text-end"><span id="footTotalBill">0.00</span></td>
                         </tr>
                     </tfoot>
@@ -265,23 +237,15 @@
             <div class="col-md-6">
                 <table>
                     <tr>
-                        <td class="lbl">Total Job Expense Amount</td>
-                        <td class="val" id="sumTotalExpense">0.00</td>
-                    </tr>
-                    <tr>
-                        <td class="lbl">Total Bill Amount</td>
+                        <td class="lbl">Total Job Bill Amount</td>
                         <td class="val" id="sumTotalBill">0.00</td>
-                    </tr>
-                    <tr style="border-top:2px solid #1a4a6b">
-                        <td class="lbl fw-bold" style="color:#1a4a6b">Difference (Expense - Bill)</td>
-                        <td class="val" style="color:#1a4a6b;font-size:15px" id="sumDifference">0.00</td>
                     </tr>
                 </table>
             </div>
             <div class="col-md-6">
                 <table>
                     <tr>
-                        <td class="lbl">Total Expense Rows</td>
+                        <td class="lbl">Total Bill Rows</td>
                         <td class="val" id="sumRows">0</td>
                     </tr>
                     <tr>
@@ -304,7 +268,7 @@
                 allowClear: true,
                 minimumInputLength: 1,
                 ajax: {
-                    url: '{{ route('chevron.reports.job-expense-vs-bill.search-jobs') }}',
+                    url: '{{ route('chevron.reports.job-bill.search-jobs') }}',
                     dataType: 'json',
                     delay: 250,
                     data: p => ({
@@ -336,9 +300,7 @@
             }
 
             function resetTotals() {
-                $('#headTotalExpense, #footTotalExpense, #sumTotalExpense').text('0.00');
                 $('#headTotalBill, #footTotalBill, #sumTotalBill').text('0.00');
-                $('#sumDifference').text('0.00');
                 $('#sumRows, #sumJobs').text('0');
             }
 
@@ -351,15 +313,15 @@
                     return;
                 }
 
-                table = $('#expenseVsBillTable').DataTable({
+                table = $('#jobBillTable').DataTable({
                     processing: true,
                     serverSide: true,
                     autoWidth: false,
                     pageLength: 100,
                     orderCellsTop: true,
                     order: [
-                        [1, 'asc'],
-                        [3, 'asc']
+                        [2, 'asc'],
+                        [4, 'asc']
                     ],
                     lengthMenu: [
                         [25, 50, 100, 200, 500, 1000, -1],
@@ -372,7 +334,7 @@
                         { extend: 'print' },
                     ],
                     ajax: {
-                        url: '{{ route('chevron.reports.job-expense-vs-bill') }}',
+                        url: '{{ route('chevron.reports.job-bill') }}',
                         data: function(d) {
                             Object.assign(d, currentFilters());
                         }
@@ -386,6 +348,10 @@
                             className: 'text-center'
                         },
                         {
+                            data: 'branch_name',
+                            name: 'branch_name'
+                        },
+                        {
                             data: 'job_no',
                             name: 'job_no'
                         },
@@ -394,17 +360,17 @@
                             name: 'party_name'
                         },
                         {
-                            data: 'expense_date',
-                            name: 'expense_date',
+                            data: 'bill_date',
+                            name: 'bill_date',
                             className: 'text-center'
                         },
                         {
-                            data: 'expense_no',
-                            name: 'expense_no'
+                            data: 'bill_no',
+                            name: 'bill_no'
                         },
                         {
-                            data: 'expense_by',
-                            name: 'expense_by'
+                            data: 'bill_type',
+                            name: 'bill_type'
                         },
                         {
                             data: 'expense_category',
@@ -415,18 +381,8 @@
                             name: 'expense_head'
                         },
                         {
-                            data: 'receiptable_badge',
-                            name: 'receiptable_badge',
-                            className: 'text-center'
-                        },
-                        {
-                            data: 'expense_amount',
-                            name: 'expense_amount',
-                            className: 'text-end'
-                        },
-                        {
-                            data: 'bill_total',
-                            name: 'bill_total',
+                            data: 'bill_amount',
+                            name: 'bill_amount',
                             className: 'text-end'
                         },
                     ],
@@ -434,11 +390,11 @@
                         "<'row'<'col-12'tr>>" +
                         "<'row mt-2'<'col-sm-5'i><'col-sm-7'p>>",
                     language: {
-                        emptyTable: '<div class="text-center py-3 text-muted"><i class="fa fa-inbox fa-2x mb-2 d-block"></i>No expense records found for the selected filters.</div>'
+                        emptyTable: '<div class="text-center py-3 text-muted"><i class="fa fa-inbox fa-2x mb-2 d-block"></i>No bill records found for the selected filters.</div>'
                     },
                     initComplete: function() {
-                        const firstRowH = $('#expenseVsBillTable thead tr:first-child').outerHeight();
-                        $('#expenseVsBillTable thead tr:last-child th').css('top', firstRowH + 'px');
+                        const firstRowH = $('#jobBillTable thead tr:first-child').outerHeight();
+                        $('#jobBillTable thead tr:last-child th').css('top', firstRowH + 'px');
 
                         var self = this.api();
 
@@ -477,9 +433,7 @@
                         return;
                     }
 
-                    $('#headTotalExpense, #footTotalExpense, #sumTotalExpense').text(json.total_expense);
                     $('#headTotalBill, #footTotalBill, #sumTotalBill').text(json.total_bill);
-                    $('#sumDifference').text(json.difference);
                     $('#sumRows').text(json.total_rows);
                     $('#sumJobs').text(json.total_jobs);
                 });
@@ -558,7 +512,7 @@
                     return;
                 }
 
-                window.open('{{ route('chevron.reports.job-expense-vs-bill.print') }}?' + $.param(currentFilters()), '_blank');
+                window.open('{{ route('chevron.reports.job-bill.print') }}?' + $.param(currentFilters()), '_blank');
             });
 
             $(document).on('click', '.export-btn', function() {

@@ -3,25 +3,28 @@
 namespace App\Http\Controllers\Chevron;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Chevron\Report\JobBillRequest;
+use App\Http\Requests\Chevron\Report\JobExpenseRequest;
 use App\Http\Requests\Chevron\Report\JobExpenseSummaryRequest;
-use App\Http\Requests\Chevron\Report\JobExpenseVsBillRequest;
-use App\Models\Chevron\ChevronBill;
 use App\Models\Chevron\ChevronJob;
 use App\Models\Chevron\ChevronJobExpense;
-use App\Models\Chevron\ChevronJobExpenseItem;
 use App\Models\Employee;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
 class ReportController extends Controller
 {
-    private const VS_BILL_VIEW = 'chevron_job_expense_vs_bill_view';
+    private const EXPENSE_VIEW = 'chevron_job_expense_view';
+
+    private const BILL_VIEW = 'chevron_job_bill_view';
 
     /**
-     * DataTable column name => column on the vs-bill view.
+     * DataTable column name => column on the job expense view.
      */
-    private const VS_BILL_SEARCH_COLUMNS = [
+    private const EXPENSE_SEARCH_COLUMNS = [
+        'branch_name'       => 'branch_name',
         'job_no'            => 'job_no',
         'party_name'        => 'party_name',
         'expense_date'      => 'expense_date',
@@ -31,7 +34,21 @@ class ReportController extends Controller
         'expense_head'      => 'expense_head',
         'receiptable_badge' => 'receiptable',
         'expense_amount'    => 'expense_amount',
-        'bill_total'        => 'bill_total',
+    ];
+
+    /**
+     * DataTable column name => column on the job bill view.
+     */
+    private const BILL_SEARCH_COLUMNS = [
+        'branch_name'      => 'branch_name',
+        'job_no'           => 'job_no',
+        'party_name'       => 'party_name',
+        'bill_date'        => 'bill_date',
+        'bill_no'          => 'bill_no',
+        'bill_type'        => 'bill_type',
+        'expense_category' => 'expense_category',
+        'expense_head'     => 'expense_head',
+        'bill_amount'      => 'bill_amount',
     ];
 
     public function jobExpenseSummary(JobExpenseSummaryRequest $request)
@@ -55,32 +72,69 @@ class ReportController extends Controller
         return view('chevron.reports.job-expense-summary-print', compact('expenses'));
     }
 
-    public function jobExpenseVsBill(JobExpenseVsBillRequest $request)
+    public function jobExpense(JobExpenseRequest $request)
     {
         if ($request->ajax()) {
-            return $this->jobExpenseVsBillDataTable($request);
+            return $this->jobExpenseDataTable($request);
         }
 
-        return view('chevron.reports.job-expense-vs-bill', [
-            'hasFilters' => $this->hasVsBillFilters($request),
+        return view('chevron.reports.job-expense', [
+            'hasFilters' => $this->hasReportFilters($request),
         ]);
     }
 
-    public function jobExpenseVsBillPrint(JobExpenseVsBillRequest $request)
+    public function jobExpensePrint(JobExpenseRequest $request)
     {
-        $rows = $this->filteredExpenseRows($request);
+        $rows = $this->jobExpenseViewQuery($request)
+            ->orderBy('job_no')
+            ->orderBy('expense_date')
+            ->orderBy('id')
+            ->get();
 
-        $billTotals = $this->billTotals($rows);
-
-        return view('chevron.reports.job-expense-vs-bill-print', [
+        return view('chevron.reports.job-expense-print', [
             'rows'         => $rows,
-            'billTotals'   => $billTotals,
             'totalExpense' => $rows->sum('expense_amount'),
-            'totalBill'    => $billTotals->sum(),
+            'totalJobs'    => $rows->pluck('job_id')->filter()->unique()->count(),
         ]);
     }
 
-    public function searchJobs(JobExpenseVsBillRequest $request)
+    public function jobBill(JobBillRequest $request)
+    {
+        if ($request->ajax()) {
+            return $this->jobBillDataTable($request);
+        }
+
+        return view('chevron.reports.job-bill', [
+            'hasFilters' => $this->hasReportFilters($request),
+        ]);
+    }
+
+    public function jobBillPrint(JobBillRequest $request)
+    {
+        $rows = $this->jobBillViewQuery($request)
+            ->orderBy('job_no')
+            ->orderBy('bill_date')
+            ->orderBy('id')
+            ->get();
+
+        return view('chevron.reports.job-bill-print', [
+            'rows'      => $rows,
+            'totalBill' => $rows->sum('bill_amount'),
+            'totalJobs' => $rows->pluck('job_id')->filter()->unique()->count(),
+        ]);
+    }
+
+    public function searchJobs(JobExpenseRequest $request)
+    {
+        return $this->searchActiveJobs($request);
+    }
+
+    public function searchBillJobs(JobBillRequest $request)
+    {
+        return $this->searchActiveJobs($request);
+    }
+
+    private function searchActiveJobs(Request $request)
     {
         $q = $request->get('q', '');
 
@@ -118,32 +172,27 @@ class ReportController extends Controller
             ->get();
     }
 
-    private function hasVsBillFilters(JobExpenseVsBillRequest $request): bool
+    private function hasReportFilters(Request $request): bool
     {
         return $request->filled('from_date')
             || $request->filled('to_date')
             || $request->filled('job_no');
     }
 
-    private function jobExpenseVsBillDataTable(JobExpenseVsBillRequest $request)
+    private function jobExpenseDataTable(JobExpenseRequest $request)
     {
-        $base = $this->vsBillViewQuery($request)
-            ->when(! $this->hasVsBillFilters($request), fn ($q) => $q->whereRaw('1 = 0'));
+        $base = $this->jobExpenseViewQuery($request)
+            ->when(! $this->hasReportFilters($request), fn ($q) => $q->whereRaw('1 = 0'));
 
-        $totalsQuery = $this->applyDataTableSearch(clone $base, $request);
+        $totalsQuery = $this->applyDataTableSearch(clone $base, $request, self::EXPENSE_SEARCH_COLUMNS);
 
         $totalExpense = (clone $totalsQuery)->sum('expense_amount');
         $totalRows = (clone $totalsQuery)->count();
-
-        $jobBills = (clone $totalsQuery)
-            ->whereNotNull('job_id')
-            ->distinct()
-            ->get(['job_id', 'bill_total']);
-
-        $totalBill = $jobBills->sum('bill_total');
+        $totalJobs = (clone $totalsQuery)->whereNotNull('job_id')->distinct()->count('job_id');
 
         return DataTables::query($base)
             ->addIndexColumn()
+            ->editColumn('branch_name', fn ($r) => $r->branch_name ?? '—')
             ->editColumn('job_no', fn ($r) => $r->job_no ?? '—')
             ->editColumn('party_name', fn ($r) => $r->party_name ?? '—')
             ->editColumn('expense_date', fn ($r) => $r->expense_date ? Carbon::parse($r->expense_date)->format('d M Y') : '—')
@@ -155,38 +204,74 @@ class ReportController extends Controller
                 ? '<span class="badge-yes">Yes</span>'
                 : '<span class="badge-no">No</span>')
             ->editColumn('expense_amount', fn ($r) => number_format((float) $r->expense_amount, 2))
-            ->editColumn('bill_total', fn ($r) => number_format((float) $r->bill_total, 2))
             ->rawColumns(['receiptable_badge'])
             ->filterColumn('receiptable_badge', fn ($q, $k) => $q->where('receiptable', 'like', "%{$k}%"))
             ->orderColumn('receiptable_badge', fn ($q, $dir) => $q->orderBy('receiptable', $dir))
             ->with([
                 'total_expense' => number_format((float) $totalExpense, 2),
-                'total_bill'    => number_format((float) $totalBill, 2),
-                'difference'    => number_format((float) $totalExpense - (float) $totalBill, 2),
                 'total_rows'    => $totalRows,
-                'total_jobs'    => $jobBills->count(),
+                'total_jobs'    => $totalJobs,
             ])
             ->make(true);
     }
 
-    private function vsBillViewQuery(JobExpenseVsBillRequest $request)
+    private function jobExpenseViewQuery(JobExpenseRequest $request)
     {
-        return DB::table(self::VS_BILL_VIEW)
+        return DB::table(self::EXPENSE_VIEW)
             ->where('branch_id', session('active_branch_id'))
             ->when($request->filled('from_date'), fn ($q) => $q->whereDate('expense_date', '>=', $request->from_date))
             ->when($request->filled('to_date'), fn ($q) => $q->whereDate('expense_date', '<=', $request->to_date))
             ->when($request->filled('job_no'), fn ($q) => $q->where('job_no', 'like', '%'.$request->job_no.'%'));
     }
 
-    private function applyDataTableSearch($query, JobExpenseVsBillRequest $request)
+    private function jobBillDataTable(JobBillRequest $request)
+    {
+        $base = $this->jobBillViewQuery($request)
+            ->when(! $this->hasReportFilters($request), fn ($q) => $q->whereRaw('1 = 0'));
+
+        $totalsQuery = $this->applyDataTableSearch(clone $base, $request, self::BILL_SEARCH_COLUMNS);
+
+        $totalBill = (clone $totalsQuery)->sum('bill_amount');
+        $totalRows = (clone $totalsQuery)->count();
+        $totalJobs = (clone $totalsQuery)->whereNotNull('job_id')->distinct()->count('job_id');
+
+        return DataTables::query($base)
+            ->addIndexColumn()
+            ->editColumn('branch_name', fn ($r) => $r->branch_name ?? '—')
+            ->editColumn('job_no', fn ($r) => $r->job_no ?? '—')
+            ->editColumn('party_name', fn ($r) => $r->party_name ?? '—')
+            ->editColumn('bill_date', fn ($r) => $r->bill_date ? Carbon::parse($r->bill_date)->format('d M Y') : '—')
+            ->editColumn('bill_no', fn ($r) => $r->bill_no ?? '—')
+            ->editColumn('bill_type', fn ($r) => $r->bill_type ?? '—')
+            ->editColumn('expense_category', fn ($r) => $r->expense_category ?? '—')
+            ->editColumn('expense_head', fn ($r) => $r->expense_head ?? '—')
+            ->editColumn('bill_amount', fn ($r) => number_format((float) $r->bill_amount, 2))
+            ->with([
+                'total_bill' => number_format((float) $totalBill, 2),
+                'total_rows' => $totalRows,
+                'total_jobs' => $totalJobs,
+            ])
+            ->make(true);
+    }
+
+    private function jobBillViewQuery(JobBillRequest $request)
+    {
+        return DB::table(self::BILL_VIEW)
+            ->where('branch_id', session('active_branch_id'))
+            ->when($request->filled('from_date'), fn ($q) => $q->whereDate('bill_date', '>=', $request->from_date))
+            ->when($request->filled('to_date'), fn ($q) => $q->whereDate('bill_date', '<=', $request->to_date))
+            ->when($request->filled('job_no'), fn ($q) => $q->where('job_no', 'like', '%'.$request->job_no.'%'));
+    }
+
+    private function applyDataTableSearch($query, Request $request, array $searchColumns)
     {
         $globalSearch = trim((string) $request->input('search.value', ''));
 
         if ($globalSearch !== '') {
             $like = '%'.$globalSearch.'%';
 
-            $query->where(function ($q) use ($like) {
-                foreach (self::VS_BILL_SEARCH_COLUMNS as $dbColumn) {
+            $query->where(function ($q) use ($like, $searchColumns) {
+                foreach ($searchColumns as $dbColumn) {
                     $q->orWhere($dbColumn, 'like', $like);
                 }
             });
@@ -195,7 +280,7 @@ class ReportController extends Controller
         foreach ((array) $request->input('columns', []) as $column) {
             $name = $column['name'] ?? $column['data'] ?? null;
             $keyword = trim((string) ($column['search']['value'] ?? ''));
-            $dbColumn = self::VS_BILL_SEARCH_COLUMNS[$name] ?? null;
+            $dbColumn = $searchColumns[$name] ?? null;
 
             if ($dbColumn === null || $keyword === '') {
                 continue;
@@ -205,44 +290,5 @@ class ReportController extends Controller
         }
 
         return $query;
-    }
-
-    private function expenseRowsQuery(JobExpenseVsBillRequest $request)
-    {
-        return ChevronJobExpenseItem::query()
-            ->select('chevron_job_expense_items.*')
-            ->join('chevron_job_expenses', 'chevron_job_expenses.id', '=', 'chevron_job_expense_items.job_expense_id')
-            ->with([
-                'expenseHead:id,name,expense_category_id',
-                'expenseHead.expenseCategory:id,name',
-                'jobExpense:id,expense_no,job_id,job_no,employee_id,date',
-                'jobExpense.employee:id,name,code',
-                'jobExpense.job:id,job_no,party_name',
-            ])
-            ->where('chevron_job_expenses.branch_id', session('active_branch_id'))
-            ->when($request->filled('from_date'), fn ($q) => $q->whereDate('chevron_job_expense_items.expense_date', '>=', $request->from_date))
-            ->when($request->filled('to_date'), fn ($q) => $q->whereDate('chevron_job_expense_items.expense_date', '<=', $request->to_date))
-            ->when($request->filled('job_no'), fn ($q) => $q->where('chevron_job_expenses.job_no', 'like', '%'.$request->job_no.'%'));
-    }
-
-    private function filteredExpenseRows(JobExpenseVsBillRequest $request)
-    {
-        return $this->expenseRowsQuery($request)
-            ->orderBy('chevron_job_expenses.job_no')
-            ->orderBy('chevron_job_expense_items.expense_date')
-            ->orderBy('chevron_job_expense_items.id')
-            ->get();
-    }
-
-    private function billTotals($rows)
-    {
-        $jobIds = $rows->pluck('jobExpense.job_id')->filter()->unique()->values();
-
-        return ChevronBill::query()
-            ->where('branch_id', session('active_branch_id'))
-            ->whereIn('job_id', $jobIds)
-            ->selectRaw('job_id, SUM(net_payable) as total_bill')
-            ->groupBy('job_id')
-            ->pluck('total_bill', 'job_id');
     }
 }
