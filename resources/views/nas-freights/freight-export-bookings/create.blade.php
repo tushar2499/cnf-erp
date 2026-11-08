@@ -58,6 +58,23 @@
             }
         }
 
+        .party-invoice-head,
+        .party-invoice-item {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 34px;
+            gap: .5rem;
+        }
+
+        .party-invoice-list {
+            display: grid;
+            gap: .4rem;
+        }
+
+        .party-invoice-item .pi-action {
+            height: 28px;
+            font-size: .75rem;
+        }
+
         .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
             padding-right: 2rem;
             overflow: hidden;
@@ -235,26 +252,32 @@
                 {{-- Group 3: Party bill & invoice --}}
                 <div class="row g-2 mb-2">
                     <div class="col-12 col-sm-6 col-lg-3">
-                        <label class="fb-label" for="fbPartyBillRefNo">Party Bill Ref No</label>
-                        <input type="text" id="fbPartyBillRefNo" name="party_bill_ref_no" class="form-control fb-input"
+                        <label class="fb-label" for="fbPartyBillRefNo">Party Bill Ref No <span class="text-danger">*</span></label>
+                        <input type="text" id="fbPartyBillRefNo" name="party_bill_ref_no"
+                            class="form-control fb-input @error('party_bill_ref_no') is-invalid @enderror"
                             value="{{ old('party_bill_ref_no', $exportBooking?->party_bill_ref_no) }}"
-                            placeholder="e.g. PB-2024-0001">
+                            maxlength="255" placeholder="e.g. PB-2024-0001" required>
+                        @error('party_bill_ref_no')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-12 col-sm-6 col-lg-3">
-                        <label class="fb-label" for="fbPartyBillRefDate">Party Bill Ref Date</label>
-                        <input type="date" id="fbPartyBillRefDate" name="party_bill_date" class="form-control fb-input"
-                            value="{{ old('party_bill_date', $exportBooking?->party_bill_date?->format('Y-m-d')) }}">
+                        <label class="fb-label" for="fbPartyBillRefDate">Party Bill Ref Date <span class="text-danger">*</span></label>
+                        <input type="date" id="fbPartyBillRefDate" name="party_bill_date"
+                            class="form-control fb-input @error('party_bill_date') is-invalid @enderror"
+                            value="{{ old('party_bill_date', $exportBooking?->party_bill_date?->format('Y-m-d')) }}"
+                            required>
+                        @error('party_bill_date')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
-                    <div class="col-12 col-sm-6 col-lg-3">
-                        <label class="fb-label" for="fbPartyInvoiceNo">Party Invoice No</label>
-                        <input type="text" id="fbPartyInvoiceNo" name="party_invoice_no" class="form-control fb-input"
-                            value="{{ old('party_invoice_no', $exportBooking?->party_invoice_no) }}"
-                            placeholder="e.g. PI-2024-0001">
-                    </div>
-                    <div class="col-12 col-sm-6 col-lg-3">
-                        <label class="fb-label" for="fbPartyInvoiceDate">Party Invoice Date</label>
-                        <input type="date" id="fbPartyInvoiceDate" name="party_invoice_date" class="form-control fb-input"
-                            value="{{ old('party_invoice_date', $exportBooking?->party_invoice_date?->format('Y-m-d')) }}">
+                    <div class="col-12 col-lg-6">
+                        <div class="party-invoice-head" aria-hidden="true">
+                            <span class="fb-label">Party Invoice No</span>
+                            <span class="fb-label">Party Invoice Date</span>
+                            <span></span>
+                        </div>
+                        <div id="partyInvoiceList" class="party-invoice-list" role="group" aria-label="Party invoices"></div>
                     </div>
                 </div>
 
@@ -363,13 +386,13 @@
                             value="{{ old('exp_date', $exportBooking?->exp_date?->format('Y-m-d')) }}">
                     </div>
                     <div class="col-12 col-sm-6 col-lg-3">
-                        <label class="fb-label" for="fbInvoiceNo">Invoice No</label>
+                        <label class="fb-label" for="fbInvoiceNo">S.B. No</label>
                         <input type="text" id="fbInvoiceNo" name="invoice_no" class="form-control fb-input"
                             value="{{ old('invoice_no', $exportBooking?->invoice_no) }}"
-                            placeholder="e.g. INV-2024-0001">
+                            placeholder="e.g. SB-2024-0001">
                     </div>
                     <div class="col-12 col-sm-6 col-lg-3">
-                        <label class="fb-label" for="fbInvoiceDate">Invoice Date</label>
+                        <label class="fb-label" for="fbInvoiceDate">S.B. Date</label>
                         <input type="date" id="fbInvoiceDate" name="invoice_date" class="form-control fb-input"
                             value="{{ old('invoice_date', $exportBooking?->invoice_date?->format('Y-m-d')) }}">
                     </div>
@@ -444,6 +467,15 @@
 
     @endif
     {{-- /edit-mode sections --}}
+
+    <template id="partyInvoiceTemplate">
+        <div class="party-invoice-item">
+            <input type="text" name="party_invoices[0][no]" class="form-control fb-input pi-no" maxlength="255"
+                placeholder="e.g. PI-2024-0001">
+            <input type="date" name="party_invoices[0][date]" class="form-control fb-input pi-date">
+            <button type="button" class="btn py-0 px-2 pi-action"></button>
+        </div>
+    </template>
 
     <template id="hsCodeTemplate">
         <div class="input-group hs-code-item">
@@ -565,9 +597,17 @@
 @endsection
 
 @push('scripts')
+    @php
+        $existingPartyInvoices = old('party_invoices', $exportBooking?->partyInvoices->map(fn ($invoice) => [
+            'no'   => $invoice->invoice_no,
+            'date' => $invoice->invoice_date?->format('Y-m-d'),
+        ])->all() ?? []);
+    @endphp
     <script>
         var existingItems = @json($existingItems);
         var existingHsCodes = @json(old('hs_codes', $exportBooking?->hs_codes ?? []));
+        var existingPartyInvoices = @json($existingPartyInvoices);
+        var partyInvoiceErrorKeys = @json($errors->keys());
         var QUICK_STORE_CUSTOMER = '{{ route('nas-freights.freight-export-bookings.quick-store-customer') }}';
 
         $(function() {
@@ -641,6 +681,23 @@
                         results: d
                     })
                 },
+            });
+
+            if (existingPartyInvoices.length > 0) {
+                existingPartyInvoices.forEach(function(invoice) {
+                    addPartyInvoiceRow(invoice);
+                });
+            } else {
+                addPartyInvoiceRow();
+            }
+
+            $(document).on('click', '.add-party-invoice', function() {
+                addPartyInvoiceRow().find('.pi-no').trigger('focus');
+            });
+
+            $(document).on('click', '.remove-party-invoice', function() {
+                $(this).closest('.party-invoice-item').remove();
+                reindexPartyInvoices();
             });
 
             if (existingHsCodes.length > 0) {
@@ -752,6 +809,43 @@
                 $row.find('[name$="[special_handling]"]').val(data.special_handling || '');
             }
             reindexItems();
+        }
+
+        function addPartyInvoiceRow(data) {
+            var $item = $(document.getElementById('partyInvoiceTemplate').content.cloneNode(true).querySelector('.party-invoice-item'));
+            $item.find('.pi-no').val(data?.no || '');
+            $item.find('.pi-date').val(data?.date || '');
+            $('#partyInvoiceList').append($item);
+            reindexPartyInvoices();
+            return $item;
+        }
+
+        function reindexPartyInvoices() {
+            $('#partyInvoiceList .party-invoice-item').each(function(i) {
+                var $item = $(this);
+                var $action = $item.find('.pi-action');
+                var $no = $item.find('.pi-no').attr({
+                    name: 'party_invoices[' + i + '][no]',
+                    'aria-label': 'Party Invoice No ' + (i + 1)
+                });
+                var $date = $item.find('.pi-date').attr({
+                    name: 'party_invoices[' + i + '][date]',
+                    'aria-label': 'Party Invoice Date ' + (i + 1)
+                });
+
+                $no.toggleClass('is-invalid', partyInvoiceErrorKeys.indexOf('party_invoices.' + i + '.no') !== -1);
+                $date.toggleClass('is-invalid', partyInvoiceErrorKeys.indexOf('party_invoices.' + i + '.date') !== -1);
+
+                if (i === 0) {
+                    $action.removeClass('btn-outline-danger remove-party-invoice').addClass('btn-success add-party-invoice')
+                        .attr({ title: 'Add another party invoice', 'aria-label': 'Add another party invoice' })
+                        .html('<i class="fa fa-plus"></i>');
+                } else {
+                    $action.removeClass('btn-success add-party-invoice').addClass('btn-outline-danger remove-party-invoice')
+                        .attr({ title: 'Remove party invoice', 'aria-label': 'Remove party invoice ' + (i + 1) })
+                        .html('<i class="fa fa-times"></i>');
+                }
+            });
         }
 
         function addHsCodeRow(value) {

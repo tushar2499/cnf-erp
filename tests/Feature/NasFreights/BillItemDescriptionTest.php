@@ -118,6 +118,8 @@ class BillItemDescriptionTest extends TestCase
             $table->unsignedBigInteger('export_booking_id');
             $table->unsignedBigInteger('branch_id')->nullable();
             $table->string('bill_type');
+            $table->string('bill_prefix_ref', 100)->nullable();
+            $table->string('bill_prefix_job', 100)->nullable();
             $table->date('bill_date')->nullable();
             $table->string('currency')->nullable();
             $table->decimal('exchange_rate', 14, 4)->default(1);
@@ -146,6 +148,33 @@ class BillItemDescriptionTest extends TestCase
             $table->string('name')->unique();
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+
+        Schema::create('nas_freights_freight_booking_expenses', function (Blueprint $table) {
+            $table->id();
+            $table->string('booking_type')->nullable();
+            $table->unsignedBigInteger('booking_id')->nullable();
+            $table->decimal('total_expense_amount', 14, 2)->default(0);
+            $table->decimal('total_approved_amount', 14, 2)->default(0);
+            $table->timestamps();
+        });
+
+        Schema::create('nas_freights_freight_booking_expense_items', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('freight_booking_expense_id');
+            $table->unsignedBigInteger('expense_head_id')->nullable();
+            $table->string('receiptable')->nullable();
+            $table->decimal('expense_amount', 14, 2)->default(0);
+            $table->decimal('approved_amount', 14, 2)->default(0);
+            $table->date('expense_date')->nullable();
+            $table->string('note')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('nas_freights_expense_heads', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
             $table->timestamps();
         });
     }
@@ -462,17 +491,21 @@ class BillItemDescriptionTest extends TestCase
         $this->assertSame(1, NasFreightsFreightExportBookingBill::count());
     }
 
-    public function test_second_customer_bill_with_typed_job_no_prefix(): void
+    public function test_second_customer_bill_stores_job_no_separately_from_the_bill_number(): void
     {
         $booking = $this->createBooking();
         $this->storeBill($booking->id);
 
         $this->storeBill($booking->id, ['bill_prefix_job' => 'JOB-5'])->assertSessionHasNoErrors();
 
-        $this->assertDatabaseHas('nas_freights_freight_export_booking_bills', ['bill_no' => 'JOB-5-2', 'bill_type' => 'Customer']);
+        $second = NasFreightsFreightExportBookingBill::where('bill_prefix_job', 'JOB-5')->firstOrFail();
+        $this->assertStringStartsWith('FEB-BILL-', $second->bill_no);
+        $this->assertStringNotContainsString('JOB-5', $second->bill_no);
+        $this->assertNull($second->bill_prefix_ref);
+        $this->assertSame('Customer', $second->bill_type);
     }
 
-    public function test_third_customer_bill_with_typed_bill_ref_prefix_continues_the_running_number(): void
+    public function test_follow_up_customer_bills_use_the_next_standard_number(): void
     {
         $booking = $this->createBooking();
         $this->storeBill($booking->id);
@@ -480,17 +513,26 @@ class BillItemDescriptionTest extends TestCase
 
         $this->storeBill($booking->id, ['bill_prefix_ref' => '  PB-77  '])->assertSessionHasNoErrors();
 
-        $this->assertDatabaseHas('nas_freights_freight_export_booking_bills', ['bill_no' => 'PB-77-3']);
+        $year = now()->format('Y');
+        $this->assertSame(
+            ["FEB-BILL-{$year}-0001", "FEB-BILL-{$year}-0002", "FEB-BILL-{$year}-0003"],
+            NasFreightsFreightExportBookingBill::orderBy('id')->pluck('bill_no')->all()
+        );
+        $this->assertSame('PB-77', NasFreightsFreightExportBookingBill::orderByDesc('id')->firstOrFail()->bill_prefix_ref);
     }
 
-    public function test_typed_bill_ref_and_job_no_are_combined(): void
+    public function test_typed_bill_ref_and_job_no_are_stored_in_their_own_columns(): void
     {
         $booking = $this->createBooking();
         $this->storeBill($booking->id);
 
         $this->storeBill($booking->id, ['bill_prefix_ref' => 'PB-77', 'bill_prefix_job' => 'JOB-5'])->assertSessionHasNoErrors();
 
-        $this->assertDatabaseHas('nas_freights_freight_export_booking_bills', ['bill_no' => 'PB-77-JOB-5-2']);
+        $this->assertDatabaseHas('nas_freights_freight_export_booking_bills', [
+            'bill_prefix_ref' => 'PB-77',
+            'bill_prefix_job' => 'JOB-5',
+        ]);
+        $this->assertSame(0, NasFreightsFreightExportBookingBill::where('bill_no', 'like', '%PB-77%')->count());
     }
 
     public function test_booking_values_are_never_used_automatically_as_prefix(): void
@@ -523,20 +565,6 @@ class BillItemDescriptionTest extends TestCase
         $this->assertSame(1, NasFreightsFreightExportBookingBill::count());
     }
 
-    public function test_prefixed_number_skips_a_number_that_is_already_taken(): void
-    {
-        $booking = $this->createBooking();
-        $this->storeBill($booking->id);
-        DB::table('nas_freights_freight_export_booking_bills')->insert([
-            'bill_no'    => 'JOB-5-2', 'export_booking_id' => 99, 'bill_type' => 'Overseas Agent',
-            'created_at' => now(), 'updated_at' => now(),
-        ]);
-
-        $this->storeBill($booking->id, ['bill_prefix_job' => 'JOB-5'])->assertSessionHasNoErrors();
-
-        $this->assertDatabaseHas('nas_freights_freight_export_booking_bills', ['bill_no' => 'JOB-5-3']);
-    }
-
     public function test_overseas_agent_bill_stays_limited_to_one_per_booking_and_ignores_prefix(): void
     {
         $booking = $this->createBooking();
@@ -546,6 +574,7 @@ class BillItemDescriptionTest extends TestCase
             ->assertSessionHasNoErrors();
         $agentBill = NasFreightsFreightExportBookingBill::where('bill_type', 'Overseas Agent')->firstOrFail();
         $this->assertStringStartsWith('FEB-BILL-', $agentBill->bill_no);
+        $this->assertNull($agentBill->bill_prefix_job);
 
         $this->storeBill($booking->id, ['bill_type' => 'Overseas Agent', 'currency' => 'USD', 'exchange_rate' => 120])
             ->assertSessionHasErrors('bill_type');
@@ -575,15 +604,83 @@ class BillItemDescriptionTest extends TestCase
         $booking = $this->createBooking();
         $this->storeBill($booking->id);
         $this->storeBill($booking->id, ['bill_prefix_job' => 'JOB-5']);
-        $second = NasFreightsFreightExportBookingBill::where('bill_no', 'JOB-5-2')->firstOrFail();
+        $second = NasFreightsFreightExportBookingBill::where('bill_prefix_job', 'JOB-5')->firstOrFail();
+        $billNo = $second->bill_no;
 
         $this->put(
             route('nas-freights.freight-export-booking-bills.update', $second->id),
             $this->billPayload($booking->id, ['Handling'])
         )->assertSessionHasNoErrors();
 
-        $this->assertSame('JOB-5-2', $second->fresh()->bill_no);
+        $this->assertSame($billNo, $second->fresh()->bill_no);
         $this->assertSame(['Handling'], $second->fresh()->items->pluck('name')->all());
+    }
+
+    public function test_edit_page_shows_saved_bill_ref_and_job_no_when_booking_has_several_customer_bills(): void
+    {
+        $booking = $this->createBooking();
+        $this->storeBill($booking->id);
+        $this->storeBill($booking->id, ['bill_prefix_ref' => 'PB-77', 'bill_prefix_job' => 'JOB-5']);
+        $second = NasFreightsFreightExportBookingBill::where('bill_prefix_job', 'JOB-5')->firstOrFail();
+
+        $this->get(route('nas-freights.freight-export-booking-bills.edit', $second->id))
+            ->assertOk()
+            ->assertSee('data-customer-bills="2"', false)
+            ->assertSee('id="prefixPanel"', false)
+            ->assertSee('name="bill_prefix_ref"', false)
+            ->assertSee('value="PB-77"', false)
+            ->assertSee('name="bill_prefix_job"', false)
+            ->assertSee('value="JOB-5"', false);
+    }
+
+    public function test_update_changes_and_clears_bill_ref_and_job_no(): void
+    {
+        $booking = $this->createBooking();
+        $this->storeBill($booking->id);
+        $this->storeBill($booking->id, ['bill_prefix_ref' => 'PB-77', 'bill_prefix_job' => 'JOB-5']);
+        $second = NasFreightsFreightExportBookingBill::where('bill_prefix_job', 'JOB-5')->firstOrFail();
+        $url = route('nas-freights.freight-export-booking-bills.update', $second->id);
+
+        $this->put($url, $this->billPayload($booking->id, ['Handling'], ['bill_prefix_ref' => ' PB-99 ', 'bill_prefix_job' => '']))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('PB-99', $second->fresh()->bill_prefix_ref);
+        $this->assertNull($second->fresh()->bill_prefix_job);
+
+        $this->put($url, $this->billPayload($booking->id, ['Handling'], ['bill_prefix_ref' => str_repeat('A', 101)]))
+            ->assertSessionHasErrors('bill_prefix_ref');
+    }
+
+    public function test_update_keeps_saved_bill_ref_and_job_no_when_inputs_are_not_submitted(): void
+    {
+        $booking = $this->createBooking();
+        $this->storeBill($booking->id);
+        $this->storeBill($booking->id, ['bill_prefix_ref' => 'PB-77', 'bill_prefix_job' => 'JOB-5']);
+        $second = NasFreightsFreightExportBookingBill::where('bill_prefix_job', 'JOB-5')->firstOrFail();
+
+        $this->put(
+            route('nas-freights.freight-export-booking-bills.update', $second->id),
+            $this->billPayload($booking->id, ['Handling'])
+        )->assertSessionHasNoErrors();
+
+        $this->assertSame('PB-77', $second->fresh()->bill_prefix_ref);
+        $this->assertSame('JOB-5', $second->fresh()->bill_prefix_job);
+    }
+
+    public function test_switching_a_bill_to_overseas_agent_clears_bill_ref_and_job_no(): void
+    {
+        $booking = $this->createBooking();
+        $this->storeBill($booking->id);
+        $this->storeBill($booking->id, ['bill_prefix_ref' => 'PB-77', 'bill_prefix_job' => 'JOB-5']);
+        $second = NasFreightsFreightExportBookingBill::where('bill_prefix_job', 'JOB-5')->firstOrFail();
+
+        $this->put(
+            route('nas-freights.freight-export-booking-bills.update', $second->id),
+            $this->billPayload($booking->id, ['Handling'], ['bill_type' => 'Overseas Agent', 'currency' => 'USD', 'exchange_rate' => 120])
+        )->assertSessionHasNoErrors();
+
+        $this->assertNull($second->fresh()->bill_prefix_ref);
+        $this->assertNull($second->fresh()->bill_prefix_job);
     }
 
     public function test_bill_edit_keeps_saved_name_that_is_no_longer_in_settings(): void

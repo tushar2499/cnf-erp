@@ -18,6 +18,23 @@
 .info-value { font-size: .8rem; color: #1e293b; }
 .booking-search-panel .panel-header { background: #0a4f3c; }
 .booking-info-panel .panel-header  { background: #155e75; }
+.booking-expense-panel .panel-header { background: #047857; }
+
+/* ── Job expense (read-only reference beside the bill form) ── */
+.expense-toggle {
+    display: inline-flex; align-items: center; gap: .45rem; min-height: 32px;
+    padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer;
+}
+.expense-toggle:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: .2rem; }
+.expense-toggle .expense-chevron { font-size: .65rem; transition: transform .15s; }
+.expense-toggle.collapsed .expense-chevron { transform: rotate(-90deg); }
+.expense-table { font-size: .76rem; }
+.expense-table th { background: #ecfdf5; color: #14532d; font-size: .7rem; font-weight: 700; white-space: nowrap; }
+.expense-table td { vertical-align: top; overflow-wrap: anywhere; }
+.expense-table td.text-end { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.expense-meta { font-size: .68rem; color: #6b7280; }
+.expense-total-row td { font-weight: 700; background: #f0fdf4; border-top: 2px solid #14532d; }
+@media (prefers-reduced-motion: reduce) { .expense-toggle .expense-chevron { transition: none; } }
 
 /* ── Bill form ── */
 .bill-type-btn {
@@ -51,7 +68,6 @@
 
 /* ── Bill number prefix (typed by the user) ── */
 .prefix-note { font-size: .76rem; color: #6b7280; }
-.prefix-preview-line { font-size: .76rem; font-weight: 600; color: #166534; word-break: break-all; }
 
 /* Duplicate description: red border + inline message (icon + text, not colour alone) */
 #itemsTable tr.desc-duplicate .form-control,
@@ -140,6 +156,13 @@
                 </div>
             </div>
 
+            {{-- Job Expense (read-only reference; shown after selection, same permission as the booking/job expense) --}}
+            <div id="bookingExpenseWrap">
+                @if($booking)
+                    @include('nas-freights.freight-export-booking-bills._booking-expense', ['booking' => $booking])
+                @endif
+            </div>
+
         </div>
 
         {{-- ══════════════════════════ RIGHT — Bill Form ══════════════════════════ --}}
@@ -172,36 +195,33 @@
                         <div id="billTypeError" class="text-danger small mt-1" style="display:none">Please select a bill type.</div>
                     </div>
 
-                    {{-- Bill number prefix: only for the 2nd+ Customer bill of a booking/job (create mode) --}}
-                    @unless(isset($bill))
+                    {{-- Bill Ref / Job No: shown when the booking/job has more than one Customer bill. Stored separately, never part of the bill number. --}}
                     <div class="mb-3" id="prefixPanel" style="display:none">
-                        <label class="form-label d-block">Bill Number Prefix <span class="req">*</span></label>
+                        <label class="form-label d-block">Bill Ref / Job No @unless(isset($bill))<span class="req">*</span>@endunless</label>
                         <div class="prefix-note mb-2" id="prefixNote"></div>
                         <div class="row g-2">
                             <div class="col-sm-6">
                                 <label class="form-label" for="prefixBillRef"><i class="fa fa-receipt me-1"></i> Bill Ref</label>
                                 <input type="text" id="prefixBillRef" name="bill_prefix_ref" maxlength="100" autocomplete="off"
                                     class="form-control form-control-sm prefix-input @error('bill_prefix_ref') is-invalid @enderror"
-                                    placeholder="Type Bill Ref prefix" value="{{ old('bill_prefix_ref') }}">
+                                    placeholder="Type Bill Ref" value="{{ old('bill_prefix_ref', $bill->bill_prefix_ref ?? '') }}">
                                 @error('bill_prefix_ref')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-sm-6">
                                 <label class="form-label" for="prefixJobNo"><i class="fa fa-hashtag me-1"></i> Job No</label>
                                 <input type="text" id="prefixJobNo" name="bill_prefix_job" maxlength="100" autocomplete="off"
                                     class="form-control form-control-sm prefix-input @error('bill_prefix_job') is-invalid @enderror"
-                                    placeholder="Type Job No prefix" value="{{ old('bill_prefix_job') }}">
+                                    placeholder="Type Job No" value="{{ old('bill_prefix_job', $bill->bill_prefix_job ?? '') }}">
                                 @error('bill_prefix_job')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         </div>
-                        <div class="prefix-preview-line mt-2" id="prefixPreview" aria-live="polite"></div>
                         <div id="prefixError" class="text-danger small mt-1" style="display:none">
-                            <i class="fa fa-circle-exclamation me-1"></i> Enter a Bill Ref and/or Job No prefix.
+                            <i class="fa fa-circle-exclamation me-1"></i> Enter a Bill Ref and/or Job No.
                         </div>
                         @error('bill_prefix')
                             <div class="text-danger small mt-1"><i class="fa fa-circle-exclamation me-1"></i> {{ $message }}</div>
                         @enderror
                     </div>
-                    @endunless
 
                     {{-- Bill Date --}}
                     <div class="row g-2 mb-3">
@@ -376,15 +396,17 @@ $(function () {
         updatePrefixPanel();
     }
 
-    // ── Bill number prefix (2nd+ Customer bill of a booking/job, create mode only) ──
-    function updatePrefixPanel() {
-        if (isEditMode) return; // bill number is fixed once the bill exists
+    // ── Bill Ref / Job No (shown when the booking/job has more than one Customer bill) ──
+    var originalBookingId  = @json($bill->export_booking_id ?? null);
+    var hasSavedPrefix     = @json(isset($bill) && ($bill->bill_prefix_ref || $bill->bill_prefix_job));
 
-        var customers = customerBillCount();
-        var show      = $('#hidBillType').val() === 'Customer' && customers > 0;
+    function updatePrefixPanel() {
+        var customers = customerBillsAfterSave();
+        var show      = $('#hidBillType').val() === 'Customer' && (customers > 1 || (isEditMode && hasSavedPrefix));
 
         $('#prefixPanel').toggle(show);
-        $('.prefix-input').prop('disabled', !show); // hidden inputs are never submitted
+        // hidden inputs are never submitted, so edit keeps the saved values untouched
+        $('.prefix-input').prop('disabled', !show);
 
         if (!show) {
             $('#prefixError').hide();
@@ -392,33 +414,29 @@ $(function () {
             return;
         }
 
-        $('#prefixNote').text('This job already has ' + customers + ' Customer bill' + (customers > 1 ? 's' : '') +
-            '. Type a Bill Ref and/or Job No prefix for this bill\'s number.');
-        updatePrefixPreview();
+        $('#prefixNote').text('This job has ' + customers + ' Customer bills. Type a Bill Ref and/or Job No for this bill.');
     }
 
-    function customerBillCount() {
-        return parseInt($('#bookingPrefixData').attr('data-customer-bills'), 10) || 0;
+    // Customer bills on the selected booking/job once this form is saved.
+    function customerBillsAfterSave() {
+        var count = parseInt($('#bookingPrefixData').attr('data-customer-bills'), 10) || 0;
+
+        if (!isEditMode) return count + 1; // the bill being created
+        // edit: the page already counts this bill, unless it is moved to another booking/job
+        var moved = String($('#hidBookingId').val()) !== String(originalBookingId);
+        return moved ? count + 1 : count;
     }
 
-    // Typed prefix parts (Bill Ref, then Job No), trimmed, joined with "-".
+    // Typed Bill Ref and Job No, trimmed; '' when both are blank.
     function typedPrefix() {
         return $.grep([$.trim($('#prefixBillRef').val()), $.trim($('#prefixJobNo').val())], function (part) {
             return part !== '';
-        }).join('-');
-    }
-
-    function updatePrefixPreview() {
-        var prefix = typedPrefix();
-        $('#prefixPreview').text(prefix
-            ? 'Bill No: ' + prefix + '-' + (customerBillCount() + 1)
-            : 'The bill number preview appears as you type.');
+        }).join('');
     }
 
     $(document).on('input', '.prefix-input', function () {
         $('#prefixError').hide();
         $('.prefix-input').removeClass('is-invalid');
-        updatePrefixPreview();
     });
 
     // init from hidden field (edit mode)
@@ -785,8 +803,9 @@ $(function () {
 
             $('#bookingInfoBody').html(infoHtml);
             $('#bookingInfoPanel').show();
+            $('#bookingExpenseWrap').html($doc.find('#bookingExpenseWrap').html());
 
-            // a different booking/job has its own running number: start the prefix fresh
+            // a different booking/job has its own bills: start Bill Ref / Job No fresh
             $('.prefix-input').val('');
             updatePrefixPanel();
 
@@ -825,7 +844,7 @@ $(function () {
             Swal.fire({ icon: 'warning', title: 'Please select a booking/job first.' });
             return;
         }
-        if ($('#prefixPanel').is(':visible') && typedPrefix() === '') {
+        if (!isEditMode && $('#prefixPanel').is(':visible') && typedPrefix() === '') {
             e.preventDefault();
             $('#prefixError').show();
             $('.prefix-input').addClass('is-invalid');

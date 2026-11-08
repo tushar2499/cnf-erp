@@ -13,6 +13,7 @@ class NasFreightsFreightExportBookingBill extends Model
 
     protected $fillable = [
         'bill_no', 'export_booking_id', 'branch_id', 'bill_type',
+        'bill_prefix_ref', 'bill_prefix_job',
         'bill_date', 'currency', 'exchange_rate',
         'total_amount', 'total_bdt_amount', 'status', 'remarks',
         'vat_title', 'vat_amount', 'vat_amount_bdt',
@@ -40,6 +41,21 @@ class NasFreightsFreightExportBookingBill extends Model
         return $this->hasMany(NasFreightsFreightExportBookingBillItem::class, 'bill_id')->orderBy('sort_order');
     }
 
+    /**
+     * Booking/Job No with this bill's own Job prefix appended (just the Job No when the bill has none).
+     * Null when the bill has no booking.
+     */
+    public function jobRefNo(): ?string
+    {
+        $jobNo = $this->exportBooking?->export_booking_no;
+
+        if ($jobNo === null) {
+            return null;
+        }
+
+        return $this->bill_prefix_job ? $jobNo.$this->bill_prefix_job : $jobNo;
+    }
+
     public static function billTypes(): array
     {
         return ['Customer', 'Overseas Agent'];
@@ -48,33 +64,6 @@ class NasFreightsFreightExportBookingBill extends Model
     public static function statuses(): array
     {
         return ['Draft', 'Confirmed'];
-    }
-
-    /**
-     * Prefix typed by the user for a follow-up Customer bill: Bill Ref and/or Job No, joined with "-".
-     * Blank parts are dropped; returns '' when both are blank.
-     */
-    public static function buildPrefix(?string $billRef, ?string $jobNo): string
-    {
-        return collect([$billRef, $jobNo])
-            ->map(fn ($part) => trim((string) $part))
-            ->filter(fn ($part) => $part !== '')
-            ->implode('-');
-    }
-
-    /**
-     * Bill number for a follow-up Customer bill, e.g. "PB-77-2" or "PB-77-EXP-0005-3".
-     * The running number continues from the booking's Customer bill count and skips taken numbers.
-     */
-    public static function generatePrefixedBillNo(NasFreightsFreightExportBooking $booking, string $prefix): string
-    {
-        $sequence = $booking->bills()->where('bill_type', 'Customer')->count() + 1;
-
-        do {
-            $billNo = $prefix.'-'.$sequence++;
-        } while (static::where('bill_no', $billNo)->exists());
-
-        return $billNo;
     }
 
     public static function generateBillNo(): string

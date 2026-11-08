@@ -10,10 +10,30 @@ use App\Models\Chevron\ChevronJob;
 use App\Models\Chevron\ChevronJobExpense;
 use App\Models\Chevron\ChevronJobExpenseItem;
 use App\Models\Employee;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
 class ReportController extends Controller
 {
+    private const VS_BILL_VIEW = 'chevron_job_expense_vs_bill_view';
+
+    /**
+     * DataTable column name => column on the vs-bill view.
+     */
+    private const VS_BILL_SEARCH_COLUMNS = [
+        'job_no'            => 'job_no',
+        'party_name'        => 'party_name',
+        'expense_date'      => 'expense_date',
+        'expense_no'        => 'expense_no',
+        'expense_by'        => 'expense_by',
+        'expense_category'  => 'expense_category',
+        'expense_head'      => 'expense_head',
+        'receiptable_badge' => 'receiptable',
+        'expense_amount'    => 'expense_amount',
+        'bill_total'        => 'bill_total',
+    ];
+
     public function jobExpenseSummary(JobExpenseSummaryRequest $request)
     {
         $employees = Employee::whereHas('branchAccess', fn ($q) => $q->where('branch_id', session('active_branch_id')))
@@ -107,135 +127,84 @@ class ReportController extends Controller
 
     private function jobExpenseVsBillDataTable(JobExpenseVsBillRequest $request)
     {
-        $joined = $this->expenseRowsQuery($request)
-            ->when(! $this->hasVsBillFilters($request), fn ($q) => $q->whereRaw('1 = 0'))
-            ->leftJoin('chevron_jobs', 'chevron_jobs.id', '=', 'chevron_job_expenses.job_id')
-            ->leftJoin('employees', 'employees.id', '=', 'chevron_job_expenses.employee_id')
-            ->leftJoin('chevron_expense_heads', 'chevron_expense_heads.id', '=', 'chevron_job_expense_items.expense_head_id')
-            ->leftJoin('chevron_expense_categories', 'chevron_expense_categories.id', '=', 'chevron_expense_heads.expense_category_id');
+        $base = $this->vsBillViewQuery($request)
+            ->when(! $this->hasVsBillFilters($request), fn ($q) => $q->whereRaw('1 = 0'));
 
-        $totalsQuery = $this->applyDataTableSearch(clone $joined, $request);
+        $totalsQuery = $this->applyDataTableSearch(clone $base, $request);
 
-        $totalExpense = (clone $totalsQuery)->reorder()->sum('chevron_job_expense_items.expense_amount');
+        $totalExpense = (clone $totalsQuery)->sum('expense_amount');
         $totalRows = (clone $totalsQuery)->count();
 
-        $jobIds = (clone $totalsQuery)->reorder()
-            ->select('chevron_job_expenses.job_id')
+        $jobBills = (clone $totalsQuery)
+            ->whereNotNull('job_id')
             ->distinct()
-            ->pluck('chevron_job_expenses.job_id')
-            ->filter();
+            ->get(['job_id', 'bill_total']);
 
-        $totalBill = ChevronBill::query()
-            ->where('branch_id', session('active_branch_id'))
-            ->whereIn('job_id', $jobIds)
-            ->sum('net_payable');
+        $totalBill = $jobBills->sum('bill_total');
 
-        $query = (clone $joined)->addSelect([
-            'bill_total' => ChevronBill::query()
-                ->selectRaw('COALESCE(SUM(chevron_bills.net_payable), 0)')
-                ->whereColumn('chevron_bills.job_id', 'chevron_job_expenses.job_id')
-                ->where('chevron_bills.branch_id', session('active_branch_id')),
-        ]);
-
-        return DataTables::eloquent($query)
+        return DataTables::query($base)
             ->addIndexColumn()
-            ->addColumn('job_no', fn ($r) => $r->jobExpense?->job_no ?? '—')
-            ->addColumn('party_name', fn ($r) => $r->jobExpense?->job?->party_name ?? '—')
-            ->editColumn('expense_date', fn ($r) => ($r->expense_date ?? $r->jobExpense?->date)?->format('d M Y') ?? '—')
-            ->addColumn('expense_no', fn ($r) => $r->jobExpense?->expense_no ?? '—')
-            ->addColumn('expense_by', fn ($r) => $r->jobExpense?->employee?->name ?? '—')
-            ->addColumn('expense_category', fn ($r) => $r->expenseHead?->expenseCategory?->name ?? '—')
-            ->addColumn('expense_head', fn ($r) => $r->expenseHead?->name ?? '—')
+            ->editColumn('job_no', fn ($r) => $r->job_no ?? '—')
+            ->editColumn('party_name', fn ($r) => $r->party_name ?? '—')
+            ->editColumn('expense_date', fn ($r) => $r->expense_date ? Carbon::parse($r->expense_date)->format('d M Y') : '—')
+            ->editColumn('expense_no', fn ($r) => $r->expense_no ?? '—')
+            ->editColumn('expense_by', fn ($r) => $r->expense_by ?? '—')
+            ->editColumn('expense_category', fn ($r) => $r->expense_category ?? '—')
+            ->editColumn('expense_head', fn ($r) => $r->expense_head ?? '—')
             ->addColumn('receiptable_badge', fn ($r) => $r->receiptable === 'Yes'
                 ? '<span class="badge-yes">Yes</span>'
                 : '<span class="badge-no">No</span>')
             ->editColumn('expense_amount', fn ($r) => number_format((float) $r->expense_amount, 2))
             ->editColumn('bill_total', fn ($r) => number_format((float) $r->bill_total, 2))
             ->rawColumns(['receiptable_badge'])
-            ->filterColumn('job_no', fn ($q, $k) => $q->where('chevron_job_expenses.job_no', 'like', "%{$k}%"))
-            ->filterColumn('party_name', fn ($q, $k) => $q->where('chevron_jobs.party_name', 'like', "%{$k}%"))
-            ->filterColumn('expense_date', fn ($q, $k) => $q->where('chevron_job_expense_items.expense_date', 'like', "%{$k}%"))
-            ->filterColumn('expense_no', fn ($q, $k) => $q->where('chevron_job_expenses.expense_no', 'like', "%{$k}%"))
-            ->filterColumn('expense_by', fn ($q, $k) => $q->where('employees.name', 'like', "%{$k}%"))
-            ->filterColumn('expense_category', fn ($q, $k) => $q->where('chevron_expense_categories.name', 'like', "%{$k}%"))
-            ->filterColumn('expense_head', fn ($q, $k) => $q->where('chevron_expense_heads.name', 'like', "%{$k}%"))
-            ->filterColumn('receiptable_badge', fn ($q, $k) => $q->where('chevron_job_expense_items.receiptable', 'like', "%{$k}%"))
-            ->filterColumn('expense_amount', fn ($q, $k) => $q->where('chevron_job_expense_items.expense_amount', 'like', "%{$k}%"))
-            ->filterColumn('bill_total', fn ($q, $k) => $q->whereRaw(
-                $this->billTotalSubquery().' LIKE ?',
-                [session('active_branch_id'), "%{$k}%"]
-            ))
-            ->orderColumn('job_no', fn ($q, $dir) => $q->orderBy('chevron_job_expenses.job_no', $dir))
-            ->orderColumn('party_name', fn ($q, $dir) => $q->orderBy('chevron_jobs.party_name', $dir))
-            ->orderColumn('expense_no', fn ($q, $dir) => $q->orderBy('chevron_job_expenses.expense_no', $dir))
-            ->orderColumn('expense_by', fn ($q, $dir) => $q->orderBy('employees.name', $dir))
-            ->orderColumn('expense_category', fn ($q, $dir) => $q->orderBy('chevron_expense_categories.name', $dir))
-            ->orderColumn('expense_head', fn ($q, $dir) => $q->orderBy('chevron_expense_heads.name', $dir))
-            ->orderColumn('receiptable_badge', fn ($q, $dir) => $q->orderBy('chevron_job_expense_items.receiptable', $dir))
-            ->orderColumn('bill_total', fn ($q, $dir) => $q->orderBy('bill_total', $dir))
+            ->filterColumn('receiptable_badge', fn ($q, $k) => $q->where('receiptable', 'like', "%{$k}%"))
+            ->orderColumn('receiptable_badge', fn ($q, $dir) => $q->orderBy('receiptable', $dir))
             ->with([
                 'total_expense' => number_format((float) $totalExpense, 2),
                 'total_bill'    => number_format((float) $totalBill, 2),
                 'difference'    => number_format((float) $totalExpense - (float) $totalBill, 2),
                 'total_rows'    => $totalRows,
-                'total_jobs'    => $jobIds->count(),
+                'total_jobs'    => $jobBills->count(),
             ])
             ->make(true);
     }
 
+    private function vsBillViewQuery(JobExpenseVsBillRequest $request)
+    {
+        return DB::table(self::VS_BILL_VIEW)
+            ->where('branch_id', session('active_branch_id'))
+            ->when($request->filled('from_date'), fn ($q) => $q->whereDate('expense_date', '>=', $request->from_date))
+            ->when($request->filled('to_date'), fn ($q) => $q->whereDate('expense_date', '<=', $request->to_date))
+            ->when($request->filled('job_no'), fn ($q) => $q->where('job_no', 'like', '%'.$request->job_no.'%'));
+    }
+
     private function applyDataTableSearch($query, JobExpenseVsBillRequest $request)
     {
-        $branchId = session('active_branch_id');
         $globalSearch = trim((string) $request->input('search.value', ''));
 
         if ($globalSearch !== '') {
             $like = '%'.$globalSearch.'%';
 
-            $query->where(function ($q) use ($like, $branchId) {
-                $q->where('chevron_job_expenses.job_no', 'like', $like)
-                    ->orWhere('chevron_jobs.party_name', 'like', $like)
-                    ->orWhere('chevron_job_expense_items.expense_date', 'like', $like)
-                    ->orWhere('chevron_job_expenses.expense_no', 'like', $like)
-                    ->orWhere('employees.name', 'like', $like)
-                    ->orWhere('chevron_expense_categories.name', 'like', $like)
-                    ->orWhere('chevron_expense_heads.name', 'like', $like)
-                    ->orWhere('chevron_job_expense_items.receiptable', 'like', $like)
-                    ->orWhere('chevron_job_expense_items.expense_amount', 'like', $like)
-                    ->orWhereRaw($this->billTotalSubquery().' LIKE ?', [$branchId, $like]);
+            $query->where(function ($q) use ($like) {
+                foreach (self::VS_BILL_SEARCH_COLUMNS as $dbColumn) {
+                    $q->orWhere($dbColumn, 'like', $like);
+                }
             });
         }
 
         foreach ((array) $request->input('columns', []) as $column) {
             $name = $column['name'] ?? $column['data'] ?? null;
             $keyword = trim((string) ($column['search']['value'] ?? ''));
+            $dbColumn = self::VS_BILL_SEARCH_COLUMNS[$name] ?? null;
 
-            if (! $name || $keyword === '') {
+            if ($dbColumn === null || $keyword === '') {
                 continue;
             }
 
-            $like = '%'.$keyword.'%';
-
-            match ($name) {
-                'job_no'            => $query->where('chevron_job_expenses.job_no', 'like', $like),
-                'party_name'        => $query->where('chevron_jobs.party_name', 'like', $like),
-                'expense_date'      => $query->where('chevron_job_expense_items.expense_date', 'like', $like),
-                'expense_no'        => $query->where('chevron_job_expenses.expense_no', 'like', $like),
-                'expense_by'        => $query->where('employees.name', 'like', $like),
-                'expense_category'  => $query->where('chevron_expense_categories.name', 'like', $like),
-                'expense_head'      => $query->where('chevron_expense_heads.name', 'like', $like),
-                'receiptable_badge' => $query->where('chevron_job_expense_items.receiptable', 'like', $like),
-                'expense_amount'    => $query->where('chevron_job_expense_items.expense_amount', 'like', $like),
-                'bill_total'        => $query->whereRaw($this->billTotalSubquery().' LIKE ?', [$branchId, $like]),
-                default             => null,
-            };
+            $query->where($dbColumn, 'like', '%'.$keyword.'%');
         }
 
         return $query;
-    }
-
-    private function billTotalSubquery(): string
-    {
-        return '(SELECT COALESCE(SUM(chevron_bills.net_payable), 0) FROM chevron_bills WHERE chevron_bills.job_id = chevron_job_expenses.job_id AND chevron_bills.branch_id = ?)';
     }
 
     private function expenseRowsQuery(JobExpenseVsBillRequest $request)

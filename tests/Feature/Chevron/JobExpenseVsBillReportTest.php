@@ -12,6 +12,7 @@ use App\Models\Chevron\ChevronJobExpense;
 use App\Models\Chevron\ChevronJobExpenseItem;
 use App\Models\Employee;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -27,6 +28,7 @@ class JobExpenseVsBillReportTest extends TestCase
         parent::setUp();
 
         $this->createSchema();
+        $this->createVsBillView();
 
         $this->employee = Employee::create([
             'name'      => 'Mr. Vs Bill Employee',
@@ -47,6 +49,7 @@ class JobExpenseVsBillReportTest extends TestCase
 
     protected function tearDown(): void
     {
+        DB::statement('DROP VIEW IF EXISTS chevron_job_expense_vs_bill_view');
         Schema::dropIfExists('chevron_job_expense_items');
         Schema::dropIfExists('chevron_job_expenses');
         Schema::dropIfExists('chevron_bills');
@@ -255,6 +258,69 @@ class JobExpenseVsBillReportTest extends TestCase
         $byReceiptable = $this->dataTable(['from_date' => '2026-01-01'], ['receiptable_badge' => 'No']);
         $this->assertCount(1, $byReceiptable['data']);
         $this->assertSame('JOB-C2', $byReceiptable['data'][0]['job_no']);
+    }
+
+    #[Test]
+    public function global_search_narrows_the_rows_and_totals(): void
+    {
+        $jobA = $this->createJob('JOB-G1', 'PARTY ONE');
+        $this->createExpense($jobA, [
+            ['receiptable' => 'Yes', 'expense_amount' => 100],
+        ]);
+        $this->createBill($jobA, 500);
+
+        $jobB = $this->createJob('JOB-G2', 'PARTY TWO');
+        $this->createExpense($jobB, [
+            ['receiptable' => 'No', 'expense_amount' => 200],
+        ]);
+        $this->createBill($jobB, 900);
+
+        $byParty = $this->dataTable(
+            ['from_date' => '2026-01-01', 'search' => ['value' => 'PARTY TWO', 'regex' => 'false']]
+        );
+
+        $this->assertCount(1, $byParty['data']);
+        $this->assertSame('JOB-G2', $byParty['data'][0]['job_no']);
+        $this->assertSame('200.00', $byParty['total_expense']);
+        $this->assertSame('900.00', $byParty['total_bill']);
+        $this->assertSame(1, $byParty['total_jobs']);
+    }
+
+    #[Test]
+    public function expense_rows_without_a_job_still_show_with_a_zero_bill(): void
+    {
+        $expense = ChevronJobExpense::create([
+            'expense_no'  => 'EXP-NOJOB',
+            'branch_id'   => 5,
+            'job_id'      => null,
+            'job_no'      => 'JOB-ORPHAN',
+            'employee_id' => $this->employee->id,
+            'date'        => '2026-10-01',
+            'status'      => 'Draft',
+        ]);
+
+        ChevronJobExpenseItem::create([
+            'job_expense_id'  => $expense->id,
+            'expense_head_id' => $this->expenseHead()->id,
+            'receiptable'     => 'No',
+            'expense_amount'  => 75,
+            'expense_date'    => '2026-10-01',
+        ]);
+
+        $json = $this->dataTable(['job_no' => 'JOB-ORPHAN']);
+
+        $this->assertCount(1, $json['data']);
+        $this->assertSame('—', $json['data'][0]['party_name']);
+        $this->assertSame('0.00', $json['data'][0]['bill_total']);
+        $this->assertSame('75.00', $json['total_expense']);
+        $this->assertSame(0, $json['total_jobs']);
+    }
+
+    private function createVsBillView(): void
+    {
+        $migration = require glob(database_path('migrations/*_create_chevron_job_expense_vs_bill_view.php'))[0];
+
+        $migration->up();
     }
 
     private function dataTable(array $filters = [], array $columnSearches = []): array

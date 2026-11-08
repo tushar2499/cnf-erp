@@ -34,8 +34,8 @@ class StoreFreightExportBookingBillRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'bill_prefix_ref.max'   => 'The Bill Ref prefix may not be longer than :max characters.',
-            'bill_prefix_job.max'   => 'The Job No prefix may not be longer than :max characters.',
+            'bill_prefix_ref.max'   => 'The Bill Ref may not be longer than :max characters.',
+            'bill_prefix_job.max'   => 'The Job No may not be longer than :max characters.',
             'items.*.name.distinct' => 'The bill item description ":input" is used more than once. Each description can be used only once in a bill.',
         ];
     }

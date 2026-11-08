@@ -15,10 +15,12 @@
                 @endif
             @endif
         </span>
+        @unless($hideExpenseAction ?? false)
         <a href="{{ route('nas-freights.freight-export-bookings.expense.edit', $exportBooking->id) }}"
            class="btn btn-sm btn-light py-0 px-2 section-action">
             <i class="fa fa-edit me-1"></i>{{ $exportBooking->expense ? 'Edit Expense' : 'Add Expense' }}
         </a>
+        @endunless
     </div>
     @if(!$exportBooking->expense || $exportBooking->expense->items->isEmpty())
         <div class="section-body text-center text-muted py-3" style="font-size:.8rem;">

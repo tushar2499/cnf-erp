@@ -24,6 +24,7 @@ class FreightExportBookingBillController extends Controller
 {
     public function index(IndexFreightExportBookingBillRequest $request)
     {
+
         if ($request->ajax()) {
             $canView = $request->user()->hasPermission('freight.export-booking-bill.view');
             $canPrint = $request->user()->hasPermission('freight.export-booking-bill.print');
@@ -42,22 +43,26 @@ class FreightExportBookingBillController extends Controller
                 ->editColumn('bill_date', fn ($r) => $r->bill_date?->format('d M Y') ?? '—')
                 ->editColumn('total_amount', fn ($r) => number_format($r->total_amount, 2).' '.$r->currency)
                 ->editColumn('total_bdt_amount', fn ($r) => number_format($r->total_bdt_amount, 2))
-                ->addColumn('booking_no', fn ($r) => $r->exportBooking?->export_booking_no ?? '—')
+                ->addColumn('booking_no', fn ($r) => $r->jobRefNo() ?? '—')
                 ->addColumn('customer_name', fn ($r) => $r->exportBooking?->customer?->name ?? '—')
                 ->addColumn('status_badge', fn ($r) => $r->status === 'Confirmed'
                     ? '<span class="badge bg-success">CONFIRMED</span>'
                     : '<span class="badge bg-secondary">DRAFT</span>')
                 ->addColumn('action', function ($r) use ($canView, $canPrint, $canEdit, $canDelete) {
                     $actions = '';
+
                     if ($canView) {
                         $actions .= '<a href="'.route('nas-freights.freight-export-booking-bills.show', $r->id).'" class="btn btn-sm btn-outline-info" title="View"><i class="fa fa-eye"></i></a> ';
                     }
+
                     if ($canPrint) {
                         $actions .= '<a href="'.route('nas-freights.freight-export-booking-bills.print', $r->id).'" target="_blank" class="btn btn-sm btn-outline-success" title="Print"><i class="fa fa-print"></i></a> ';
                     }
+
                     if ($canEdit) {
                         $actions .= '<a href="'.route('nas-freights.freight-export-booking-bills.edit', $r->id).'" class="btn btn-sm btn-outline-primary" title="Edit"><i class="fa fa-edit"></i></a> ';
                     }
+
                     if ($canDelete) {
                         $actions .= '<button class="btn btn-sm btn-outline-danger btn-delete" data-url="'.route('nas-freights.freight-export-booking-bills.destroy', $r->id).'" data-name="'.e($r->bill_no).'"><i class="fa fa-trash"></i></button>';
                     }
@@ -77,7 +82,7 @@ class FreightExportBookingBillController extends Controller
         $existingBillTypes = [];
 
         if ($request->booking_id) {
-            $booking = NasFreightsFreightExportBooking::with(['customer', 'overseasAgent', 'shippingCarrier', 'items', 'bills'])
+            $booking = NasFreightsFreightExportBooking::with(['customer', 'overseasAgent', 'shippingCarrier', 'items', 'bills', 'expense.items.expenseHead'])
                 ->where('branch_id', session('nas_freights_branch_id'))
                 ->findOrFail($request->booking_id);
 
@@ -97,27 +102,27 @@ class FreightExportBookingBillController extends Controller
             ->findOrFail($request->export_booking_id);
 
         $alreadyExists = $request->bill_type === 'Overseas Agent'
-            && $booking->bills()->where('bill_type', 'Overseas Agent')->exists();
+        && $booking->bills()->where('bill_type', 'Overseas Agent')->exists();
+
         if ($alreadyExists) {
             return back()->withErrors(['bill_type' => 'A '.$request->bill_type.' bill already exists for this booking/job.'])->withInput();
         }
 
+        $prefixValues = $this->resolvePrefixValues($booking, $request->bill_type, $request->bill_prefix_ref, $request->bill_prefix_job);
+
         $exchangeRate = (float) $request->exchange_rate;
 
-        DB::transaction(function () use ($request, $booking, $exchangeRate) {
-            // Serialise bill numbering per booking so two follow-up Customer bills never share a number.
-            NasFreightsFreightExportBooking::whereKey($booking->id)->lockForUpdate()->first();
-
-            $billNo = $this->resolveBillNo($booking, $request->bill_type, $request->bill_prefix_ref, $request->bill_prefix_job);
-
+        DB::transaction(function () use ($request, $booking, $exchangeRate, $prefixValues) {
             $vatAmount = round((float) ($request->vat_amount ?? 0), 2);
             $vatAmountBdt = round($vatAmount * $exchangeRate, 2);
 
             $bill = NasFreightsFreightExportBookingBill::create([
-                'bill_no'           => $billNo,
+                'bill_no'           => NasFreightsFreightExportBookingBill::generateBillNo(),
                 'export_booking_id' => $booking->id,
                 'branch_id'         => session('nas_freights_branch_id'),
                 'bill_type'         => $request->bill_type,
+                'bill_prefix_ref'   => $prefixValues['bill_prefix_ref'],
+                'bill_prefix_job'   => $prefixValues['bill_prefix_job'],
                 'bill_date'         => $request->bill_date,
                 'currency'          => $request->currency,
                 'exchange_rate'     => $exchangeRate,
@@ -160,14 +165,14 @@ class FreightExportBookingBillController extends Controller
 
     public function show(ShowFreightExportBookingBillRequest $request, NasFreightsFreightExportBookingBill $freightExportBookingBill)
     {
-        $bill = $freightExportBookingBill->load(['exportBooking.customer', 'exportBooking.overseasAgent', 'exportBooking.shippingCarrier', 'items']);
+        $bill = $freightExportBookingBill->load(['exportBooking.customer', 'exportBooking.overseasAgent', 'exportBooking.shippingCarrier', 'exportBooking.expense.items.expenseHead', 'items']);
 
         return view('nas-freights.freight-export-booking-bills.show', compact('bill'));
     }
 
     public function edit(EditFreightExportBookingBillRequest $request, NasFreightsFreightExportBookingBill $freightExportBookingBill)
     {
-        $bill = $freightExportBookingBill->load(['exportBooking.customer', 'exportBooking.overseasAgent', 'exportBooking.shippingCarrier', 'exportBooking.items', 'items']);
+        $bill = $freightExportBookingBill->load(['exportBooking.customer', 'exportBooking.overseasAgent', 'exportBooking.shippingCarrier', 'exportBooking.items', 'exportBooking.expense.items.expenseHead', 'items']);
         $booking = $bill->exportBooking;
         $existingBillTypes = $booking->bills()
             ->where('id', '!=', $bill->id)
@@ -189,21 +194,24 @@ class FreightExportBookingBillController extends Controller
         $bookingChanged = $newBookingId !== (int) $bill->export_booking_id;
 
         $targetBooking = $bookingChanged
-            ? NasFreightsFreightExportBooking::where('branch_id', session('nas_freights_branch_id'))->findOrFail($newBookingId)
-            : $bill->exportBooking;
+        ? NasFreightsFreightExportBooking::where('branch_id', session('nas_freights_branch_id'))->findOrFail($newBookingId)
+        : $bill->exportBooking;
 
         $alreadyExists = $request->bill_type === 'Overseas Agent'
-            && $targetBooking->bills()
-                ->where('bill_type', 'Overseas Agent')
-                ->where('id', '!=', $bill->id)
-                ->exists();
+        && $targetBooking->bills()
+            ->where('bill_type', 'Overseas Agent')
+            ->where('id', '!=', $bill->id)
+            ->exists();
+
         if ($alreadyExists) {
             return back()->withErrors(['bill_type' => 'A '.$request->bill_type.' bill already exists for this booking/job.'])->withInput();
         }
 
         $exchangeRate = (float) $request->exchange_rate;
 
-        DB::transaction(function () use ($request, $bill, $exchangeRate, $newBookingId) {
+        $prefixValues = $this->resolvePrefixValuesForUpdate($request);
+
+        DB::transaction(function () use ($request, $bill, $exchangeRate, $newBookingId, $prefixValues) {
             $vatAmount = round((float) ($request->vat_amount ?? 0), 2);
             $vatAmountBdt = round($vatAmount * $exchangeRate, 2);
 
@@ -239,6 +247,7 @@ class FreightExportBookingBillController extends Controller
                 'vat_amount_bdt'    => $vatAmountBdt,
                 'total_amount'      => round($totalAmount, 2),
                 'total_bdt_amount'  => round($totalBdt, 2),
+                ...$prefixValues,
             ]);
         });
 
@@ -248,7 +257,7 @@ class FreightExportBookingBillController extends Controller
 
     public function printView(PrintFreightExportBookingBillRequest $request, NasFreightsFreightExportBookingBill $freightExportBookingBill)
     {
-        $bill = $freightExportBookingBill->load(['exportBooking.customer', 'exportBooking.overseasAgent', 'items']);
+        $bill = $freightExportBookingBill->load(['exportBooking.customer', 'exportBooking.overseasAgent', 'exportBooking.items', 'exportBooking.partyInvoices', 'items']);
 
         return view('nas-freights.freight-export-booking-bills.print', compact('bill'));
     }
@@ -261,33 +270,72 @@ class FreightExportBookingBillController extends Controller
     }
 
     /**
-     * First Customer bill (and every Overseas Agent bill) keeps the standard FEB-BILL number.
-     * 2nd and later Customer bills of a booking must carry a typed Bill Ref and/or Job No prefix.
+     * Bill Ref / Job No typed for a Customer bill are stored as-is; they are never merged into bill_no.
+     * 2nd and later Customer bills of a booking must carry at least one of them.
+     *
+     * @return array{bill_prefix_ref: ?string, bill_prefix_job: ?string}
      *
      * @throws ValidationException
      */
-    private function resolveBillNo(NasFreightsFreightExportBooking $booking, string $billType, ?string $billRefPrefix, ?string $jobNoPrefix): string
+    private function resolvePrefixValues(NasFreightsFreightExportBooking $booking, string $billType, ?string $billRef, ?string $jobNo): array
     {
-        $isFollowUpCustomerBill = $billType === 'Customer'
-            && $booking->bills()->where('bill_type', 'Customer')->exists();
 
-        if (! $isFollowUpCustomerBill) {
-            return NasFreightsFreightExportBookingBill::generateBillNo();
+        if ($billType !== 'Customer') {
+            return ['bill_prefix_ref' => null, 'bill_prefix_job' => null];
         }
 
-        $prefix = NasFreightsFreightExportBookingBill::buildPrefix($billRefPrefix, $jobNoPrefix);
+        $values = [
+            'bill_prefix_ref' => $this->cleanPrefix($billRef),
+            'bill_prefix_job' => $this->cleanPrefix($jobNo),
+        ];
 
-        if ($prefix === '') {
+        $isFollowUpCustomerBill = $booking->bills()->where('bill_type', 'Customer')->exists();
+
+        if ($isFollowUpCustomerBill && $values['bill_prefix_ref'] === null && $values['bill_prefix_job'] === null) {
             throw ValidationException::withMessages([
-                'bill_prefix' => 'This job already has a Customer bill. Enter a Bill Ref and/or Job No prefix for this bill.',
+                'bill_prefix' => 'This job already has a Customer bill. Enter a Bill Ref and/or Job No for this bill.',
             ]);
         }
 
-        return NasFreightsFreightExportBookingBill::generatePrefixedBillNo($booking, $prefix);
+        return $values;
+    }
+
+    /**
+     * Edit keeps a value untouched when its input was not submitted (the form disables the inputs
+     * while the panel is hidden); Overseas Agent bills never carry them.
+     *
+     * @return array<string, ?string>
+     */
+    private function resolvePrefixValuesForUpdate(UpdateFreightExportBookingBillRequest $request): array
+    {
+
+        if ($request->bill_type !== 'Customer') {
+            return ['bill_prefix_ref' => null, 'bill_prefix_job' => null];
+        }
+
+        $values = [];
+
+        foreach (['bill_prefix_ref', 'bill_prefix_job'] as $field) {
+
+            if ($request->exists($field)) {
+                $values[$field] = $this->cleanPrefix($request->input($field));
+            }
+
+        }
+
+        return $values;
+    }
+
+    private function cleanPrefix(?string $value): ?string
+    {
+        $value = trim((string) $value);
+
+        return $value === '' ? null : $value;
     }
 
     public function searchBookings(Request $request)
     {
+
         if (! $request->user()->hasPermission('freight.export-booking-bill.list') &&
             ! $request->user()->hasPermission('freight.export-booking-bill.create')) {
             abort(403);

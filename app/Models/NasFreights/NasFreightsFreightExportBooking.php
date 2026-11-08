@@ -15,7 +15,7 @@ class NasFreightsFreightExportBooking extends Model
 
     protected $fillable = [
         'export_booking_no', 'branch_id',
-        'customer_id', 'party_bill_ref_no', 'party_bill_date', 'party_invoice_no', 'party_invoice_date',
+        'customer_id', 'party_bill_ref_no', 'party_bill_date',
         'salesperson_id', 'overseas_agent_id', 'shipping_carrier_id',
         'booking_date', 'service_type', 'incoterms', 'currency',
         'pol', 'pod', 'place_of_receipt', 'place_of_delivery',
@@ -30,7 +30,6 @@ class NasFreightsFreightExportBooking extends Model
         return [
             'booking_date'       => 'date',
             'party_bill_date'    => 'date',
-            'party_invoice_date' => 'date',
             'hs_codes'           => 'array',
             'etd'                => 'date',
             'eta'                => 'date',
@@ -64,6 +63,13 @@ class NasFreightsFreightExportBooking extends Model
     public function items(): HasMany
     {
         return $this->hasMany(NasFreightsFreightExportBookingItem::class, 'export_booking_id');
+    }
+
+    public function partyInvoices(): HasMany
+    {
+        return $this->hasMany(NasFreightsFreightExportBookingPartyInvoice::class, 'export_booking_id')
+            ->orderBy('sort_order')
+            ->orderBy('id');
     }
 
     public function transportItems(): HasMany

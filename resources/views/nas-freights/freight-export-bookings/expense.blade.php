@@ -172,7 +172,7 @@
                 @endif
                 @if($exportBooking->invoice_no)
                     <div class="col-6 col-md-2">
-                        <div class="info-label">Invoice No</div>
+                        <div class="info-label">S.B. No</div>
                         <div class="info-value">{{ $exportBooking->invoice_no }}</div>
                     </div>
                 @endif

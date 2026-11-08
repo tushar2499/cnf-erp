@@ -48,7 +48,7 @@ class FreightExportBookingController extends Controller
             $canManageExpense = $request->user()->hasPermission('freight.export-booking.expense-manage');
             $canManageTransport = $request->user()->hasPermission('freight.export-booking.transport-manage');
 
-            $query = NasFreightsFreightExportBooking::with(['customer', 'shippingCarrier'])
+            $query = NasFreightsFreightExportBooking::with(['customer', 'shippingCarrier', 'partyInvoices'])
                 ->where('branch_id', session('nas_freights_branch_id'))
                 ->when($request->status_filter, fn ($q, $s) => $q->where('status', $s))
                 ->when($fromDate, fn ($q) => $q->whereDate('booking_date', '>=', $fromDate))
@@ -60,7 +60,12 @@ class FreightExportBookingController extends Controller
                 ->editColumn('booking_date', fn ($r) => $r->booking_date?->format('d M Y') ?? '—')
                 ->addColumn('customer_name', fn ($r) => $r->customer?->name ?? '—')
                 ->addColumn('party_bill_ref_no', fn ($r) => $r->party_bill_ref_no ?? '—')
-                ->addColumn('party_invoice_no', fn ($r) => $r->party_invoice_no ?? '—')
+                ->addColumn('party_invoice_no', fn ($r) => $r->partyInvoices->pluck('invoice_no')->implode(', ') ?: '—')
+                ->addColumn('party_invoice_date', function ($r) {
+                    $dates = $r->partyInvoices->map(fn ($invoice) => $invoice->invoice_date?->format('d M Y'));
+
+                    return $dates->filter()->isEmpty() ? '—' : $dates->map(fn ($date) => $date ?? '—')->implode(', ');
+                })
                 ->addColumn('export_bl_no', fn ($r) => $r->export_bl_no ?? '—')
                 ->addColumn('route', fn ($r) => ($r->pol ?? '—').' → '.($r->pod ?? '—'))
                 ->addColumn('carrier', fn ($r) => $r->shippingCarrier?->name ?? '—')
@@ -103,7 +108,8 @@ class FreightExportBookingController extends Controller
                 })
                 ->filterColumn('customer_name', fn ($q, $k) => $q->whereHas('customer', fn ($s) => $s->where('name', 'like', "%{$k}%")))
                 ->filterColumn('party_bill_ref_no', fn ($q, $k) => $q->where('party_bill_ref_no', 'like', "%{$k}%"))
-                ->filterColumn('party_invoice_no', fn ($q, $k) => $q->where('party_invoice_no', 'like', "%{$k}%"))
+                ->filterColumn('party_invoice_no', fn ($q, $k) => $q->whereHas('partyInvoices', fn ($s) => $s->where('invoice_no', 'like', "%{$k}%")))
+                ->filterColumn('party_invoice_date', fn ($q, $k) => $q->whereHas('partyInvoices', fn ($s) => $s->where('invoice_date', 'like', "%{$k}%")))
                 ->filterColumn('export_bl_no', fn ($q, $k) => $q->where('export_bl_no', 'like', "%{$k}%"))
                 ->rawColumns(['status_badge', 'action'])
                 ->make(true);
@@ -130,6 +136,7 @@ class FreightExportBookingController extends Controller
                     : NasFreightsFreightExportBooking::generateExportBookingNo(),
             ]));
             $this->saveItems($exportBooking, $request->input('items', []));
+            $this->savePartyInvoices($exportBooking, $request->input('party_invoices', []));
         });
 
         return redirect()->route('nas-freights.freight-export-bookings.index')
@@ -138,14 +145,14 @@ class FreightExportBookingController extends Controller
 
     public function show(ShowFreightExportBookingRequest $request, NasFreightsFreightExportBooking $exportBooking)
     {
-        $exportBooking->load(['customer', 'salesperson', 'overseasAgent', 'shippingCarrier', 'items', 'transportItems', 'bills', 'expense.items.expenseHead']);
+        $exportBooking->load(['customer', 'salesperson', 'overseasAgent', 'shippingCarrier', 'items', 'partyInvoices', 'transportItems', 'bills', 'expense.items.expenseHead']);
 
         return view('nas-freights.freight-export-bookings.show', compact('exportBooking'));
     }
 
     public function edit(EditFreightExportBookingRequest $request, NasFreightsFreightExportBooking $exportBooking)
     {
-        $exportBooking->load(['items', 'overseasAgent', 'shippingCarrier', 'transportItems', 'bills', 'expense.items.expenseHead']);
+        $exportBooking->load(['items', 'partyInvoices', 'overseasAgent', 'shippingCarrier', 'transportItems', 'bills', 'expense.items.expenseHead']);
         $existingItems = $exportBooking->items->map(fn ($i) => [
             'item_type'          => $i->item_type,
             'container_size'     => $i->container_size,
@@ -176,6 +183,8 @@ class FreightExportBookingController extends Controller
             $exportBooking->update($this->prepareData($request));
             $exportBooking->items()->delete();
             $this->saveItems($exportBooking, $request->input('items', []));
+            $exportBooking->partyInvoices()->delete();
+            $this->savePartyInvoices($exportBooking, $request->input('party_invoices', []));
         });
 
         return redirect()->route('nas-freights.freight-export-bookings.index')->with('success', 'Freight Export Booking/Job '.$exportBooking->export_booking_no.' updated.');
@@ -282,8 +291,6 @@ class FreightExportBookingController extends Controller
             'customer_id'           => $request->customer_id ?: null,
             'party_bill_ref_no'     => $request->party_bill_ref_no ?: null,
             'party_bill_date'       => $request->party_bill_date ?: null,
-            'party_invoice_no'      => $request->party_invoice_no ?: null,
-            'party_invoice_date'    => $request->party_invoice_date ?: null,
             'salesperson_id'        => $request->salesperson_id ?: null,
             'overseas_agent_id'     => $request->overseas_agent_id ?: null,
             'shipping_carrier_id'   => $request->shipping_carrier_id ?: null,
@@ -327,6 +334,25 @@ class FreightExportBookingController extends Controller
             ->all();
 
         return $clean ?: null;
+    }
+
+    /**
+     * Replace-all semantics: callers delete existing rows first on update.
+     * Rows without an invoice no are skipped; exact duplicates are collapsed.
+     *
+     * @param  array<int, array{no?: mixed, date?: mixed}>  $rows
+     */
+    private function savePartyInvoices(NasFreightsFreightExportBooking $exportBooking, array $rows): void
+    {
+        collect($rows)
+            ->map(fn ($row) => [
+                'invoice_no'   => trim((string) ($row['no'] ?? '')),
+                'invoice_date' => ($row['date'] ?? null) ?: null,
+            ])
+            ->filter(fn ($row) => $row['invoice_no'] !== '')
+            ->unique(fn ($row) => $row['invoice_no'].'|'.$row['invoice_date'])
+            ->values()
+            ->each(fn ($row, $index) => $exportBooking->partyInvoices()->create($row + ['sort_order' => $index]));
     }
 
     private function saveItems(NasFreightsFreightExportBooking $exportBooking, array $items): void

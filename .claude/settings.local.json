@@ -87,7 +87,11 @@
       "Bash(./vendor/bin/pint resources/views/admin/layouts/app.blade.php --format agent)",
       "Bash(./vendor/bin/pint app/Http/Controllers/Chevron/DashboardController.php --format agent)",
       "Bash(./vendor/bin/pint app/Models/NasFreights/NasFreightsFreightExportBooking.php --format agent)",
-      "Bash(vendor/bin/pint --dirty --format agent app/Http/Controllers/NasTrading/LcController.php app/Models/NasTrading/NasTradingLc.php)"
+      "Bash(vendor/bin/pint --dirty --format agent app/Http/Controllers/NasTrading/LcController.php app/Models/NasTrading/NasTradingLc.php)",
+      "Bash(php artisan *)",
+      "Bash(vendor/bin/pint --dirty --format agent)",
+      "Bash(grep -n '$this->\\\\\\(post\\\\|put\\\\|patch\\\\\\)' tests/Feature/NasFreights/FreightExportBookingTest.php)",
+      "Bash(python -I -)"
     ]
   },
   "enableAllProjectMcpServers": true,
