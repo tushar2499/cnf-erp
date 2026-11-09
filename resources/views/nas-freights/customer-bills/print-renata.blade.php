@@ -422,7 +422,7 @@
             </tr>
             <tr>
                 <td class="lbl">Contact No:</td>
-                <td>{{ $branch?->phone }}</td>
+                <td>+8801829-696474</td>
                 <td class="lbl r">Client Name:</td>
                 <td class="val-strong">{{ $customerBill->customer_name }}</td>
             </tr>

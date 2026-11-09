@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Chevron\DhkJobExpenseImportController;
 use App\Http\Controllers\Api\Chevron\DhkJobImportController;
 use App\Http\Controllers\Api\Chevron\JobExpenseImportController;
 use App\Http\Controllers\Api\Chevron\JobImportController;
+use App\Http\Controllers\Api\NasFreights\FreightExportBookingExpenseImportController;
 use App\Http\Controllers\Api\NasFreights\FreightExportBookingImportController;
 use Illuminate\Support\Facades\Route;
 
@@ -40,6 +41,9 @@ Route::prefix('chevron')->group(function () {
 Route::prefix('nas-freights')->group(function () {
     Route::post('/freight-export-bookings/import/preview', [FreightExportBookingImportController::class, 'preview']);
     Route::post('/freight-export-bookings/import', [FreightExportBookingImportController::class, 'import']);
+
+    Route::post('/freight-export-booking-expenses/import/preview', [FreightExportBookingExpenseImportController::class, 'preview']);
+    Route::post('/freight-export-booking-expenses/import', [FreightExportBookingExpenseImportController::class, 'import']);
 });
 
 Route::prefix('admin')->group(function () {
