@@ -13,7 +13,9 @@ class NasFreightsCustomerBillItem extends Model
         'booking_date', 'delivery_date',
         'item_code', 'item_name', 'location',
         'b_qty', 'd_qty', 'due_qty', 'demurrage_day', 'demurrage_amount',
-        'price', 'disc_percent', 'discount', 'ait_percent', 'line_amount',
+        'price', 'disc_percent', 'discount',
+        'ait_percent', 'ait_amount', 'vat_amount', 'tds_amount',
+        'line_amount',
     ];
 
     public function bill()

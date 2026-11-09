@@ -14,8 +14,9 @@ class NasFreightsCustomerBill extends Model
         'customer_id', 'customer_name', 'customer_address',
         'bill_date', 'delivery_no', 'delivery_type',
         'tds_percent', 'tds_amount',
+        'ait_percent', 'ait_amount',
         'vat_percent', 'vat_amount',
-        'bill_type', 'bill_by', 'note',
+        'bill_type', 'bill_by', 'print_format', 'note',
         'branch_id', 'sub_total', 'total_amount', 'status', 'entry_by',
     ];
 
@@ -72,5 +73,39 @@ class NasFreightsCustomerBill extends Model
     public static function billTypes(): array
     {
         return ['COVER VAN', 'PICKUP', 'SE COVERED VAN', 'TRUCK'];
+    }
+
+    public const DEFAULT_PRINT_FORMAT = 'general';
+
+    /**
+     * Print formats a bill can be issued in, keyed by slug
+     *
+     * Each slug maps to the Blade view `nas-freights.customer-bills.print-{slug}`.
+     * To add a format: add it here and create that view.
+     *
+     * @return array<string, string>
+     */
+    public static function printFormats(): array
+    {
+        return [
+            'general' => 'General',
+            'renata'  => 'Renata',
+        ];
+    }
+
+    /**
+     * Blade view that prints this bill
+     *
+     * Falls back to the default format when the stored slug is unknown or its view is missing.
+     */
+    public function printViewName(): string
+    {
+        $view = 'nas-freights.customer-bills.print-'.$this->print_format;
+
+        if (array_key_exists((string) $this->print_format, static::printFormats()) && view()->exists($view)) {
+            return $view;
+        }
+
+        return 'nas-freights.customer-bills.print-'.static::DEFAULT_PRINT_FORMAT;
     }
 }

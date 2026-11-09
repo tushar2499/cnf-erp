@@ -91,7 +91,9 @@
       "Bash(php artisan *)",
       "Bash(vendor/bin/pint --dirty --format agent)",
       "Bash(grep -n '$this->\\\\\\(post\\\\|put\\\\|patch\\\\\\)' tests/Feature/NasFreights/FreightExportBookingTest.php)",
-      "Bash(python -I -)"
+      "Bash(python -I -)",
+      "Bash(mv print.blade.php print-general.blade.php)",
+      "Bash(cp print-general.blade.php print-renata.blade.php)"
     ]
   },
   "enableAllProjectMcpServers": true,
