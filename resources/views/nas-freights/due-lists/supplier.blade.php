@@ -140,6 +140,7 @@
                     <thead>
                         <tr>
                             <th>#</th>
+                            <th>Action</th>
                             <th>Pay Order No</th>
                             <th>Bill Date</th>
                             <th>From Date</th>
@@ -148,17 +149,16 @@
                             <th>Bill By</th>
                             <th>Total Amount</th>
                             <th>Overdue Days</th>
-                            <th>Action</th>
                         </tr>
                         <tr>
                             <th></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                            <th></th>
                             <th></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th></th>
+                            <th></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th></th>
                             <th></th>
                         </tr>
@@ -224,6 +224,13 @@
                     width: '45px'
                 },
                 {
+                    data: 'action',
+                    name: 'action',
+                    orderable: false,
+                    searchable: false,
+                    className: 'text-center'
+                },
+                {
                     data: 'pay_order_no',
                     name: 'pay_order_no'
                 },
@@ -265,13 +272,6 @@
                     render: v => v > 0 ?
                         '<span class="badge bg-danger">' + v + 'd</span>' :
                         '<span class="badge bg-secondary">Today</span>'
-                },
-                {
-                    data: 'action',
-                    name: 'action',
-                    orderable: false,
-                    searchable: false,
-                    className: 'text-center'
                 },
             ],
             dom: "<'row mb-1'<'col-sm-6'l><'col-sm-6'f>>" +

@@ -34,6 +34,7 @@
                 <thead>
                     <tr>
                         <th>#</th>
+                        <th>Action</th>
                         <th>Code</th>
                         <th>Name</th>
                         <th>Type</th>
@@ -41,18 +42,17 @@
                         <th>Designation</th>
                         <th>Joining Date</th>
                         <th>Status</th>
-                        <th>Action</th>
                     </tr>
                     <tr>
                         <th></th>
-                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                         <th></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -375,6 +375,7 @@ $(function () {
         lengthMenu: [[15, 25, 50, 100, 200, 500], [15, 25, 50, 100, 200, 500]],
         columns: [
             { data: 'DT_RowIndex',      name: 'DT_RowIndex',      orderable: false, searchable: false, width: '50px', className: 'text-center' },
+            { data: 'action',           name: 'action',            orderable: false, searchable: false, width: '120px', className: 'text-center' },
             { data: 'code',             name: 'code' },
             { data: 'name',             name: 'name' },
             { data: 'type_badge',       name: 'type_badge',       orderable: false, className: 'text-center' },
@@ -382,7 +383,6 @@ $(function () {
             { data: 'designation_name', name: 'designation.name',  defaultContent: '—' },
             { data: 'joining_date',     name: 'joining_date',      defaultContent: '—' },
             { data: 'status_badge',     name: 'status_badge',      orderable: false, className: 'text-center' },
-            { data: 'action',           name: 'action',            orderable: false, searchable: false, width: '120px', className: 'text-center' },
         ],
         dom: "<'row mb-0'<'col-sm-6'l><'col-sm-6'f>><'row'<'col-12'tr>><'row mt-2'<'col-sm-5'i><'col-sm-7'p>>",
         buttons: [{ extend: 'csv' }, { extend: 'excel' }, { extend: 'pdf' }, { extend: 'print' }],

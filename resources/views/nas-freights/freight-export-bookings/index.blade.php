@@ -137,6 +137,7 @@
                             <th>Customer</th>
                             <th>Party Bill Ref No</th>
                             <th>Party Invoice No</th>
+                            <th>Party Invoice Date</th>
                             <th>Export B/L No</th>
                             <th>Service</th>
                             <th>POL → POD</th>
@@ -148,6 +149,7 @@
                         <tr>
                             <th></th>
                             <th></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
@@ -180,7 +182,9 @@
                 autoWidth: false,
                 orderCellsTop: true,
                 pageLength: 15,
-                order: [],
+                order: [
+                    [2, 'desc']
+                ],
                 lengthMenu: [
                     [15, 25, 50, 100, 200, 500, 1000],
                     [15, 25, 50, 100, 200, 500, 1000]
@@ -227,7 +231,13 @@
                     },
                     {
                         data: 'party_invoice_no',
-                        name: 'party_invoice_no'
+                        name: 'party_invoice_no',
+                        orderable: false
+                    },
+                    {
+                        data: 'party_invoice_date',
+                        name: 'party_invoice_date',
+                        orderable: false
                     },
                     {
                         data: 'export_bl_no',

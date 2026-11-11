@@ -60,16 +60,36 @@
                 <div class="info-val">{{ $customerBill->bill_type ?: '—' }}</div>
             </div>
             <div class="col-md-3">
+                <div class="info-label">Print Format</div>
+                <div class="info-val">{{ \App\Models\NasFreights\NasFreightsCustomerBill::printFormats()[$customerBill->print_format] ?? '—' }}</div>
+            </div>
+            <div class="col-md-3">
                 <div class="info-label">Bill By</div>
                 <div class="info-val">{{ $customerBill->bill_by ?: '—' }}</div>
             </div>
             <div class="col-md-3">
                 <div class="info-label">TDS %</div>
-                <div class="info-val">{{ $customerBill->tds_percent }}</div>
+                <div class="info-val">{{ number_format($customerBill->tds_percent, 2) }}</div>
             </div>
             <div class="col-md-3">
                 <div class="info-label">TDS Amount</div>
                 <div class="info-val">{{ number_format($customerBill->tds_amount, 2) }}</div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-label">AIT %</div>
+                <div class="info-val">{{ number_format($customerBill->ait_percent, 2) }}</div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-label">AIT Amount</div>
+                <div class="info-val">{{ number_format($customerBill->ait_amount, 2) }}</div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-label">VAT %</div>
+                <div class="info-val">{{ number_format($customerBill->vat_percent, 2) }}</div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-label">VAT Amount</div>
+                <div class="info-val">{{ number_format($customerBill->vat_amount, 2) }}</div>
             </div>
             <div class="col-md-3">
                 <div class="info-label">Sub Total</div>
@@ -131,7 +151,9 @@
                         <th class="text-end">Dem. Amount</th>
                         <th class="text-end">Disc%</th>
                         <th class="text-end">Discount</th>
-                        <th class="text-end">AIT%</th>
+                        <th class="text-end">AIT Amt</th>
+                        <th class="text-end">VAT Amt</th>
+                        <th class="text-end">TDS Amt</th>
                         <th class="text-end">Line Amount</th>
                     </tr>
                 </thead>
@@ -153,14 +175,16 @@
                         <td class="text-end">{{ number_format((float)($item->demurrage_amount ?? 0), 2) }}</td>
                         <td class="text-end">{{ number_format($item->disc_percent, 2) }}</td>
                         <td class="text-end">{{ number_format($item->discount, 2) }}</td>
-                        <td class="text-end">{{ number_format($item->ait_percent, 2) }}</td>
+                        <td class="text-end">{{ number_format($item->ait_amount, 2) }}</td>
+                        <td class="text-end">{{ number_format($item->vat_amount, 2) }}</td>
+                        <td class="text-end">{{ number_format($item->tds_amount, 2) }}</td>
                         <td class="text-end fw-bold">{{ number_format($item->line_amount, 2) }}</td>
                     </tr>
                     @endforeach
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="16" class="text-end">Total Amount:</td>
+                        <td colspan="18" class="text-end">Total Amount:</td>
                         <td class="text-end text-success">{{ number_format($customerBill->total_amount, 2) }}</td>
                     </tr>
                 </tfoot>

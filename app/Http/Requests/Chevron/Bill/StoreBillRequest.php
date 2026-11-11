@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Chevron\Bill;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreBillRequest extends FormRequest
 {
@@ -20,6 +21,7 @@ class StoreBillRequest extends FormRequest
             'job_no'                     => ['required', 'string'],
             'rows'                       => ['required', 'array', 'min:1'],
             'rows.*.expense_category_id' => ['required'],
+            'rows.*.expense_head_id'     => ['nullable', Rule::exists('chevron_expense_heads', 'id')->where('is_bill', true)],
         ];
     }
 

@@ -13,6 +13,7 @@ class NasFreightsFreightExportBookingBill extends Model
 
     protected $fillable = [
         'bill_no', 'export_booking_id', 'branch_id', 'bill_type',
+        'bill_prefix_ref', 'bill_prefix_job',
         'bill_date', 'currency', 'exchange_rate',
         'total_amount', 'total_bdt_amount', 'status', 'remarks',
         'vat_title', 'vat_amount', 'vat_amount_bdt',
@@ -38,6 +39,21 @@ class NasFreightsFreightExportBookingBill extends Model
     public function items(): HasMany
     {
         return $this->hasMany(NasFreightsFreightExportBookingBillItem::class, 'bill_id')->orderBy('sort_order');
+    }
+
+    /**
+     * Booking/Job No with this bill's own Job prefix appended (just the Job No when the bill has none).
+     * Null when the bill has no booking.
+     */
+    public function jobRefNo(): ?string
+    {
+        $jobNo = $this->exportBooking?->export_booking_no;
+
+        if ($jobNo === null) {
+            return null;
+        }
+
+        return $this->bill_prefix_job ? $jobNo.$this->bill_prefix_job : $jobNo;
     }
 
     public static function billTypes(): array

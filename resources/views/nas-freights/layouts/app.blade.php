@@ -135,11 +135,12 @@
             $canSeeBranch          = $user->hasPermission('freight.branch.list');
             $canSeeContainerType   = $user->hasPermission('freight.container-type.list');
             $canSeePackageType     = $user->hasPermission('freight.package-type.list');
+            $canSeeBillItemDescription = $user->hasPermission('freight.bill-item-description.list');
             $canSeeOverseasAgent   = $user->hasPermission('freight.overseas-agent.list');
             $canSeeShippingCarrier   = $user->hasPermission('freight.shipping-carrier.list');
             $canSeeExpenseCategory   = $user->hasPermission('freight.expense-category.list');
             $canSeeExpenseHead       = $user->hasPermission('freight.expense-head.list');
-            $canSeeSettings          = $canSeeBranch || $canSeeContainerType || $canSeePackageType
+            $canSeeSettings          = $canSeeBranch || $canSeeContainerType || $canSeePackageType || $canSeeBillItemDescription
                 || $canSeeOverseasAgent || $canSeeShippingCarrier || $canSeeExpenseCategory || $canSeeExpenseHead;
 
             // (import/export expense vars set above with freight import/export sections)
@@ -404,6 +405,12 @@
                     <i class="fa fa-cube"></i> Package Types
                 </a>
                 @endif
+                @if($canSeeBillItemDescription)
+                <a href="{{ route('nas-freights.settings.bill-item-descriptions.index') }}"
+                    class="nav-link ps-4 {{ request()->routeIs('nas-freights.settings.bill-item-descriptions.*') ? 'active' : '' }}">
+                    <i class="fa fa-list-ul"></i> Bill Item Descriptions
+                </a>
+                @endif
                 @if($canSeeOverseasAgent)
                 <a href="{{ route('nas-freights.settings.overseas-agents.index') }}"
                     class="nav-link ps-4 {{ request()->routeIs('nas-freights.settings.overseas-agents.*') ? 'active' : '' }}">
@@ -496,6 +503,9 @@
         @endif
         @if($canSeePackageType)
         { label: 'Package Types',       section: 'Settings',         url: '{{ route("nas-freights.settings.package-types.index") }}',       icon: 'fa-cube' },
+        @endif
+        @if($canSeeBillItemDescription)
+        { label: 'Bill Item Descriptions', section: 'Settings',      url: '{{ route("nas-freights.settings.bill-item-descriptions.index") }}', icon: 'fa-list-ul' },
         @endif
         @if($canSeeOverseasAgent)
         { label: 'Overseas Agents',     section: 'Settings',         url: '{{ route("nas-freights.settings.overseas-agents.index") }}',     icon: 'fa-globe' },

@@ -83,13 +83,13 @@ $countNo             = 0;
     @php
         $items             = $expense->items;
         $subTotal          = $items->sum('expense_amount');
-        $subReceiptable    = $items->where('receiptable', true)->sum('expense_amount');
-        $subNonReceiptable = $items->where('receiptable', false)->sum('expense_amount');
+        $subReceiptable    = $items->where('receiptable', 'Yes')->sum('expense_amount');
+        $subNonReceiptable = $items->where('receiptable', 'No')->sum('expense_amount');
         $grandReceiptable    += $subReceiptable;
         $grandNonReceiptable += $subNonReceiptable;
         $grandTotal          += $subTotal;
-        $countYes += $items->where('receiptable', true)->count();
-        $countNo  += $items->where('receiptable', false)->count();
+        $countYes += $items->where('receiptable', 'Yes')->count();
+        $countNo  += $items->where('receiptable', 'No')->count();
         $empName  = $expense->employee?->name ?? '—';
     @endphp
     <div class="expense-group">
@@ -118,7 +118,7 @@ $countNo             = 0;
                     <td style="text-align:center">{{ $si + 1 }}</td>
                     <td>{{ $item->expenseHead?->name ?? '—' }}</td>
                     <td style="text-align:center">{{ $item->expense_date?->format('d M Y') }}</td>
-                    <td style="text-align:center">{{ $item->receiptable ? 'Yes' : 'No' }}</td>
+                    <td style="text-align:center">{{ $item->receiptable === 'Yes' ? 'Yes' : 'No' }}</td>
                     <td>—</td>
                     <td>{{ $item->note ?? '' }}</td>
                     <td style="text-align:right">{{ number_format($item->expense_amount, 2) }}</td>

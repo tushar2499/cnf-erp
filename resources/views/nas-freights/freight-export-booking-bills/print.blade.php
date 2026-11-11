@@ -44,6 +44,10 @@
             margin-bottom: 10px;
         }
 
+        /* Long addresses wrap at commas, not mid-word */
+        .to-address { max-width: 60mm; }
+        .to-address .addr-part { display: inline-block; max-width: 100%; }
+
         .bill-title {
             text-align: center;
             font-size: 16px;
@@ -208,6 +212,37 @@
         $booking = $bill->exportBooking;
         $items   = $bill->items;
 
+        /* Cargo totals (weights normalised to KGS) */
+        $weightToKgs = ['KG' => 1, 'MT' => 1000, 'LB' => 0.45359237];
+        /* Quantity = packages (package_qty, else quantity), totalled per package type (BAG, CARTON, CRATE …) */
+        $quantityByType = $booking->items
+            ->map(fn ($cargo) => [
+                'type'  => strtoupper(trim((string) $cargo->package_type)),
+                'count' => (int) ($cargo->package_qty ?: $cargo->quantity),
+            ])
+            ->groupBy('type')
+            ->map(fn ($rows) => $rows->sum('count'))
+            ->filter(fn ($count) => $count > 0);
+        $totalKgs      = (float) $booking->items->sum(
+            fn ($cargo) => (float) $cargo->gross_weight * ($weightToKgs[strtoupper((string) $cargo->weight_unit)] ?? 1)
+        );
+        $totalCbm      = (float) $booking->items->sum('volume_cbm');
+
+        /* Address → HTML: each saved line break stays a separate line; comma-separated parts wrap as whole units */
+        $formatAddress = fn (?string $address): string => collect(preg_split('/\R/', (string) $address))
+            ->map(fn ($line) => collect(explode(',', $line))
+                ->map(fn ($part) => trim($part))
+                ->filter()
+                ->map(fn ($part) => '<span class="addr-part">'.e($part).'</span>')
+                ->implode(', '))
+            ->filter()
+            ->implode('<br>');
+
+        /* Bill Ref / Job Ref: base value, with the bill's own prefix text appended when it has one */
+        $billRefBase = $booking->party_bill_ref_no ?: $bill->bill_no;
+        $billRefNo   = $bill->bill_prefix_ref ? $billRefBase.$bill->bill_prefix_ref : $billRefBase;
+        $jobRefNo    = $bill->jobRefNo();
+
         $isOverseas  = $bill->bill_type === 'Overseas Agent';
         $isForeign   = $bill->currency !== 'BDT';
         $showForeign = $isForeign;       // customer+foreign or overseas
@@ -252,12 +287,12 @@
             @if($isOverseas)
                 <strong>{{ $booking->overseasAgent?->name ?? '—' }}</strong><br>
                 @if(!empty($booking->overseasAgent?->address))
-                    {!! nl2br(e($booking->overseasAgent->address)) !!}
+                    <div class="to-address">{!! $formatAddress($booking->overseasAgent->address) !!}</div>
                 @endif
             @else
                 <strong>{{ $booking->customer?->name ?? '—' }}</strong><br>
                 @if(!empty($booking->customer?->address))
-                    {!! nl2br(e($booking->customer->address)) !!}
+                    <div class="to-address">{!! $formatAddress($booking->customer->address) !!}</div>
                 @endif
             @endif
         </div>
@@ -267,8 +302,8 @@
 
         {{-- Bill Ref / Date --}}
         <div class="ref-date-line">
-            <span>BILL REF NO: {{ $bill->bill_no }}</span>
-            <span>DATE: {{ $bill->bill_date?->format('d.m.Y') }}</span>
+            <span>BILL REF NO: {{ $billRefNo }}</span>
+            <span>DATE: {{ ($booking->party_bill_date ?? $bill->bill_date)?->format('d.m.Y') }}</span>
         </div>
 
         {{-- Main invoice table --}}
@@ -291,6 +326,13 @@
                 <tr>
                     <td rowspan="{{ $totalRightRows }}" style="vertical-align:top">
                         <table class="ship">
+                            @if($booking->invoice_no)
+                            <tr>
+                                <td class="k">S.B. NO</td>
+                                <td class="sep">:</td>
+                                <td>{{ $booking->invoice_no }}</td>
+                            </tr>
+                            @endif
                             @if($booking->export_bl_no)
                             <tr>
                                 <td class="k">MAWB / B/L NO.</td>
@@ -324,11 +366,29 @@
                                 <td>{{ $booking->commodity_description }}</td>
                             </tr>
                             @endif
-                            @if($booking->invoice_no)
+                            @if($quantityByType->isNotEmpty())
                             <tr>
-                                <td class="k">INV NO</td>
+                                <td class="k">QUANTITY</td>
                                 <td class="sep">:</td>
-                                <td>{{ $booking->invoice_no }}</td>
+                                <td>
+                                    @foreach($quantityByType as $type => $count)
+                                        {{ number_format($count) }}{{ $type !== '' ? ' '.$type : '' }}@if(! $loop->last)<br>@endif
+                                    @endforeach
+                                </td>
+                            </tr>
+                            @endif
+                            @if($totalKgs > 0)
+                            <tr>
+                                <td class="k">GROSS WEIGHT</td>
+                                <td class="sep">:</td>
+                                <td>{{ number_format($totalKgs) }} KGS</td>
+                            </tr>
+                            @endif
+                            @if($totalCbm > 0)
+                            <tr>
+                                <td class="k">CBM</td>
+                                <td class="sep">:</td>
+                                <td>{{ number_format($totalCbm) }}</td>
                             </tr>
                             @endif
                             @if($booking->exp_no)
@@ -338,32 +398,18 @@
                                 <td>{{ $booking->exp_no }}</td>
                             </tr>
                             @endif
-                            @if($booking->party_bill_ref_no)
-                            <tr>
-                                <td class="k">PARTY BILL REF NO</td>
-                                <td class="sep">:</td>
-                                <td>{{ $booking->party_bill_ref_no }}</td>
-                            </tr>
-                            @endif
-                            @if($booking->party_bill_date)
-                            <tr>
-                                <td class="k">PARTY BILL DATE</td>
-                                <td class="sep">:</td>
-                                <td>{{ $booking->party_bill_date->format('d.m.Y') }}</td>
-                            </tr>
-                            @endif
-                            @if($booking->party_invoice_no)
+                            @if($booking->partyInvoices->isNotEmpty())
                             <tr>
                                 <td class="k">PARTY INVOICE NO</td>
                                 <td class="sep">:</td>
-                                <td>{{ $booking->party_invoice_no }}</td>
+                                <td>{{ $booking->partyInvoices->pluck('invoice_no')->implode(', ') }}</td>
                             </tr>
                             @endif
-                            @if($booking->party_invoice_date)
+                            @if($booking->partyInvoices->whereNotNull('invoice_date')->isNotEmpty())
                             <tr>
                                 <td class="k">PARTY INVOICE DATE</td>
                                 <td class="sep">:</td>
-                                <td>{{ $booking->party_invoice_date->format('d.m.Y') }}</td>
+                                <td>{{ $booking->partyInvoices->whereNotNull('invoice_date')->map(fn ($invoice) => $invoice->invoice_date->format('d.m.Y'))->implode(', ') }}</td>
                             </tr>
                             @endif
                             @if(! $isOverseas && $booking->overseasAgent)
@@ -459,7 +505,7 @@
 
         {{-- Footer ref line --}}
         <div class="footer-ref" style="margin-top:5px;">
-            <span>REF NO: {{ $booking->export_booking_no }}</span>
+            <span>JOB REF NO: {{ $jobRefNo }}</span>
         </div>
 
         {{-- Company --}}

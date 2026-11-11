@@ -15,7 +15,7 @@ class NasFreightsFreightExportBooking extends Model
 
     protected $fillable = [
         'export_booking_no', 'branch_id',
-        'customer_id', 'party_bill_ref_no', 'party_bill_date', 'party_invoice_no', 'party_invoice_date',
+        'customer_id', 'party_bill_ref_no', 'party_bill_date',
         'salesperson_id', 'overseas_agent_id', 'shipping_carrier_id',
         'booking_date', 'service_type', 'incoterms', 'currency',
         'pol', 'pod', 'place_of_receipt', 'place_of_delivery',
@@ -30,7 +30,6 @@ class NasFreightsFreightExportBooking extends Model
         return [
             'booking_date'       => 'date',
             'party_bill_date'    => 'date',
-            'party_invoice_date' => 'date',
             'hs_codes'           => 'array',
             'etd'                => 'date',
             'eta'                => 'date',
@@ -66,6 +65,13 @@ class NasFreightsFreightExportBooking extends Model
         return $this->hasMany(NasFreightsFreightExportBookingItem::class, 'export_booking_id');
     }
 
+    public function partyInvoices(): HasMany
+    {
+        return $this->hasMany(NasFreightsFreightExportBookingPartyInvoice::class, 'export_booking_id')
+            ->orderBy('sort_order')
+            ->orderBy('id');
+    }
+
     public function transportItems(): HasMany
     {
         return $this->hasMany(NasFreightsFreightExportBookingTransportItem::class, 'export_booking_id');
@@ -90,6 +96,19 @@ class NasFreightsFreightExportBooking extends Model
             ->max(DB::raw('CAST(SUBSTRING(export_booking_no, '.$serialOffset.') AS UNSIGNED)'));
 
         return 'NASEXP'.now()->format('y').str_pad(($last ?? 0) + 1, 3, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Raw ORDER BY for Yajra `orderColumn()`; `$1` is replaced by the requested direction.
+     *
+     * Sorts by the number after "NASEXP" (spaces ignored), then by full text.
+     * Job numbers in any other format get number 0.
+     */
+    public static function jobNumberOrderSql(): string
+    {
+        return 'CASE WHEN REPLACE(export_booking_no, \' \', \'\') LIKE \'NASEXP%\''
+            .' THEN CAST(SUBSTR(REPLACE(export_booking_no, \' \', \'\'), 7) AS UNSIGNED)'
+            .' ELSE 0 END $1, export_booking_no $1';
     }
 
     public static function statuses(): array

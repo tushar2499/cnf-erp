@@ -109,6 +109,14 @@
                             </select>
                             <input type="hidden" id="fldBillByName" name="bill_by">
                         </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="fldPrintFormat">Print Format</label>
+                            <select id="fldPrintFormat" name="print_format" class="form-select form-select-sm">
+                                @foreach($printFormats as $slug => $label)
+                                    <option value="{{ $slug }}" {{ $loop->first ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                         <div class="col-12">
                             <label class="form-label">Bill Address</label>
                             <textarea id="fldBillAddress" name="customer_address" class="form-control form-control-sm" rows="2"></textarea>
@@ -126,16 +134,25 @@
                             <td class="text-end pe-2 py-1"><label class="form-label mb-0">TDS (%)</label></td>
                             <td class="py-1">
                                 <div class="input-group input-group-sm">
-                                    <input type="number" id="fldTdsPct" name="tds_percent" class="form-control form-control-sm" value="0" min="0" step="0.01" oninput="recalcBill()">
+                                    <input type="number" id="fldTdsPct" name="tds_percent" class="form-control form-control-sm" value="0" min="0" step="0.01" oninput="applyMasterRates()">
                                     <input type="text" id="fldTdsAmt" name="tds_amount" class="form-control form-control-sm bg-light fw-bold" readonly placeholder="Amt">
                                 </div>
                             </td>
                         </tr>
                         <tr>
-                            <td class="text-end pe-2 py-1"><label class="form-label mb-0">VAT (%)</label></td>
+                            <td class="text-end pe-2 py-1"><label class="form-label mb-0" for="fldAitPct">AIT (%)</label></td>
                             <td class="py-1">
                                 <div class="input-group input-group-sm">
-                                    <input type="number" id="fldVatPct" name="vat_percent" class="form-control form-control-sm" value="0" min="0" step="0.01" oninput="recalcBill()">
+                                    <input type="number" id="fldAitPct" name="ait_percent" class="form-control form-control-sm" value="0" min="0" step="0.01" oninput="applyMasterRates()">
+                                    <input type="text" id="fldAitAmt" name="ait_amount" class="form-control form-control-sm bg-light fw-bold" readonly placeholder="Amt">
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-end pe-2 py-1"><label class="form-label mb-0" for="fldVatPct">VAT (%)</label></td>
+                            <td class="py-1">
+                                <div class="input-group input-group-sm">
+                                    <input type="number" id="fldVatPct" name="vat_percent" class="form-control form-control-sm" value="0" min="0" step="0.01" oninput="applyMasterRates()">
                                     <input type="text" id="fldVatAmt" name="vat_amount" class="form-control form-control-sm bg-light fw-bold" readonly placeholder="Amt">
                                 </div>
                             </td>
@@ -194,7 +211,9 @@
                     <th>Dem. Amount</th>
                     <th>Disc%</th>
                     <th>Discount</th>
-                    <th>AIT (%)</th>
+                    <th>AIT Amt</th>
+                    <th>VAT Amt</th>
+                    <th>TDS Amt</th>
                     <th>Line Amount</th>
                 </tr>
             </thead>
@@ -266,8 +285,6 @@ function addRow(item) {
     var demAmt  = parseFloat(item.demurrage_amount != null ? item.demurrage_amount : (demDay * demRate));
     var discPct= parseFloat(item.disc_percent || 0);
     var disc   = parseFloat(item.discount || 0);
-    var aitPct = parseFloat(item.ait_percent || 0);
-    var lineAmt= parseFloat(item.line_amount || (dQty * price));
 
     var tr = `<tr data-idx="${i}">
         <td class="text-center row-sl">${i}</td>
@@ -288,34 +305,62 @@ function addRow(item) {
         <td><input type="number" class="form-control form-control-sm row-demamt text-end" value="${demAmt.toFixed(2)}" min="0" step="0.01" style="width:85px" oninput="recalcBill()"></td>
         <td><input type="number" class="form-control form-control-sm row-discpct text-end" value="${discPct}" min="0" step="0.01" style="width:65px" oninput="rowRecalc(this)"></td>
         <td><input type="number" class="form-control form-control-sm row-disc text-end bg-light" value="${disc.toFixed(2)}" readonly style="width:80px"></td>
-        <td><input type="number" class="form-control form-control-sm row-aitpct text-end" value="${aitPct}" min="0" step="0.01" style="width:65px" oninput="rowRecalc(this)"></td>
-        <td><input type="number" class="form-control form-control-sm row-lineamt text-end bg-light fw-bold" value="${lineAmt.toFixed(2)}" readonly style="width:90px"></td>
+        <td><input type="number" class="form-control form-control-sm row-aitamt text-end" value="0.00" readonly tabindex="-1" style="width:80px"></td>
+        <td><input type="number" class="form-control form-control-sm row-vatamt text-end" value="0.00" readonly tabindex="-1" style="width:80px"></td>
+        <td><input type="number" class="form-control form-control-sm row-tdsamt text-end" value="0.00" readonly tabindex="-1" style="width:80px"></td>
+        <td><input type="number" class="form-control form-control-sm row-lineamt text-end fw-bold" value="0.00" readonly tabindex="-1" style="width:90px"></td>
         <td style="display:none">
             <input class="row-booking-id"      type="hidden" value="${item.booking_id||''}">
             <input class="row-booking-item-id" type="hidden" value="${item.booking_item_id||''}">
         </td>
     </tr>`;
-    $('#rowsBody').append(tr);
+    var $tr = $(tr).appendTo('#rowsBody');
+    calcRow($tr);
     reindex();
     recalcBill();
+}
+
+function round2(n) {
+    return Math.round((n + Number.EPSILON) * 100) / 100;
+}
+
+/* TDS, AIT and VAT come from the master and apply to the price only (qty x price less
+   discount), not demurrage. Line Amount = price base + AIT + VAT; TDS is shown per row and
+   added once in the bill total. Mirrors CustomerBillController::calculateBill(). */
+function calcRow($tr) {
+    var dQty    = parseFloat($tr.find('.row-dqty').val()) || 0;
+    var price   = parseFloat($tr.find('.row-price').val()) || 0;
+    var discPct = parseFloat($tr.find('.row-discpct').val()) || 0;
+    var aitPct  = parseFloat($('#fldAitPct').val()) || 0;
+    var vatPct  = parseFloat($('#fldVatPct').val()) || 0;
+    var tdsPct  = parseFloat($('#fldTdsPct').val()) || 0;
+    var gross   = round2(dQty * price);
+    var disc    = round2(gross * discPct / 100);
+    var base    = round2(gross - disc);
+    var ait     = round2(base * aitPct / 100);
+    var vat     = round2(base * vatPct / 100);
+    var tds     = round2(base * tdsPct / 100);
+    $tr.find('.row-disc').val(disc.toFixed(2));
+    $tr.find('.row-aitamt').val(ait.toFixed(2));
+    $tr.find('.row-vatamt').val(vat.toFixed(2));
+    $tr.find('.row-tdsamt').val(tds.toFixed(2));
+    $tr.find('.row-lineamt').val(round2(base + ait + vat).toFixed(2));
 }
 
 function rowRecalc(el) {
     var $tr   = $(el).closest('tr');
     var dQty  = parseFloat($tr.find('.row-dqty').val()) || 0;
     var bQty  = parseFloat($tr.find('.row-bqty').val()) || 0;
-    var dueQty = Math.max(0, bQty - dQty);
-    $tr.find('.row-dueqty').val(dueQty.toFixed(2));
+    $tr.find('.row-dueqty').val(Math.max(0, bQty - dQty).toFixed(2));
+    calcRow($tr);
+    recalcBill();
+}
 
-    var price   = parseFloat($tr.find('.row-price').val()) || 0;
-    var discPct = parseFloat($tr.find('.row-discpct').val()) || 0;
-    var aitPct  = parseFloat($tr.find('.row-aitpct').val()) || 0;
-    var base    = dQty * price;
-    var disc    = base * discPct / 100;
-    var ait     = (base - disc) * aitPct / 100;
-    var lineAmt = base - disc + ait;
-    $tr.find('.row-disc').val(disc.toFixed(2));
-    $tr.find('.row-lineamt').val(lineAmt.toFixed(2));
+/* Master TDS %, AIT % and VAT % drive every bill item row */
+function applyMasterRates() {
+    $('#rowsBody tr').each(function () {
+        calcRow($(this));
+    });
     recalcBill();
 }
 
@@ -328,19 +373,20 @@ function rowDemRecalc(el) {
 }
 
 function recalcBill() {
-    var subTotal = 0, totalDem = 0;
+    var tdsAmt = 0, aitAmt = 0, vatAmt = 0, subTotal = 0, totalDem = 0;
     $('#rowsBody tr').each(function () {
-        subTotal += parseFloat($(this).find('.row-lineamt').val()) || 0;
-        totalDem += parseFloat($(this).find('.row-demamt').val()) || 0;
+        var $tr = $(this);
+        tdsAmt   += parseFloat($tr.find('.row-tdsamt').val()) || 0;
+        aitAmt   += parseFloat($tr.find('.row-aitamt').val()) || 0;
+        vatAmt   += parseFloat($tr.find('.row-vatamt').val()) || 0;
+        subTotal += parseFloat($tr.find('.row-lineamt').val()) || 0;
+        totalDem += parseFloat($tr.find('.row-demamt').val()) || 0;
     });
-    var tdsPct   = parseFloat($('#fldTdsPct').val()) || 0;
-    var vatPct   = parseFloat($('#fldVatPct').val()) || 0;
-    var tdsAmt   = subTotal * tdsPct / 100;
-    var vatAmt   = subTotal * vatPct / 100;
-    var totalAmt = subTotal + totalDem + tdsAmt + vatAmt;
-    $('#fldSubTotal').val(subTotal.toFixed(2));
-    $('#fldTdsAmt').val(tdsAmt.toFixed(2));
-    $('#fldVatAmt').val(vatAmt.toFixed(2));
+    var totalAmt = round2(subTotal + totalDem + tdsAmt);
+    $('#fldSubTotal').val(round2(subTotal).toFixed(2));
+    $('#fldTdsAmt').val(round2(tdsAmt).toFixed(2));
+    $('#fldAitAmt').val(round2(aitAmt).toFixed(2));
+    $('#fldVatAmt').val(round2(vatAmt).toFixed(2));
     $('#fldTotalAmt').val(totalAmt.toFixed(2));
     $('#rowCount').text($('#rowsBody tr').length);
 }
@@ -388,9 +434,6 @@ $('#btnLoadData').on('click', function () {
     .done(function (r) {
         $('#rowsBody').empty();
         rowIdx = 0;
-        if (r.items && r.items.length) {
-            r.items.forEach(item => addRow(item));
-        }
         if (r.customer_address && !$('#fldBillAddress').val()) {
             $('#fldBillAddress').val(r.customer_address);
         }
@@ -400,10 +443,16 @@ $('#btnLoadData').on('click', function () {
         if (r.tds_percent !== undefined) {
             $('#fldTdsPct').val(r.tds_percent);
         }
+        if (r.ait_percent !== undefined) {
+            $('#fldAitPct').val(r.ait_percent);
+        }
         if (r.vat_percent !== undefined) {
             $('#fldVatPct').val(r.vat_percent);
         }
-        recalcBill();
+        if (r.items && r.items.length) {
+            r.items.forEach(item => addRow(item));
+        }
+        applyMasterRates();
         $('#billHeaderSection').show();
         if (!r.items || !r.items.length) {
             Swal.fire({ icon: 'info', title: 'No booking items found for selected criteria.' });
@@ -431,7 +480,7 @@ $('#btnClearData').on('click', function () {
 
 /* ── Add Empty Row ── */
 $('#btnAddRow').on('click', function () {
-    addRow({ booking_date:'', delivery_date:'', item_code:'', item_name:'', location:'', b_qty:1, d_qty:0, due_qty:1, price:0, demurrage_day:0, demurrage_rate:0, demurrage_amount:0, disc_percent:0, discount:0, ait_percent:0, line_amount:0 });
+    addRow({ booking_date:'', delivery_date:'', item_code:'', item_name:'', location:'', b_qty:1, d_qty:0, due_qty:1, price:0, demurrage_day:0, demurrage_rate:0, demurrage_amount:0, disc_percent:0, discount:0, line_amount:0 });
 });
 
 /* ── Submit ── */
@@ -462,7 +511,9 @@ $('#billForm').on('submit', function (e) {
             demurrage_amount: $tr.find('.row-demamt').val(),
             disc_percent:     $tr.find('.row-discpct').val(),
             discount:         $tr.find('.row-disc').val(),
-            ait_percent:      $tr.find('.row-aitpct').val(),
+            ait_amount:       $tr.find('.row-aitamt').val(),
+            vat_amount:       $tr.find('.row-vatamt').val(),
+            tds_amount:       $tr.find('.row-tdsamt').val(),
             line_amount:      $tr.find('.row-lineamt').val(),
         });
     });
@@ -483,12 +534,15 @@ $('#billForm').on('submit', function (e) {
             delivery_type:    $('#fldDeliveryType').val(),
             tds_percent:      $('#fldTdsPct').val(),
             tds_amount:       $('#fldTdsAmt').val(),
+            ait_percent:      $('#fldAitPct').val(),
+            ait_amount:       $('#fldAitAmt').val(),
             vat_percent:      $('#fldVatPct').val(),
             vat_amount:       $('#fldVatAmt').val(),
             total_amount:     $('#fldTotalAmt').val(),
             bill_type:        $('#fldBillType').val(),
             bill_by:          $('#fldBillByName').val(),
-            note:             $('#fldNote').val(),
+            print_format:     $('#fldPrintFormat').val(),
+            note:            $('#fldNote').val(),
             sub_total:        $('#fldSubTotal').val(),
             items:            JSON.stringify(items),
         },

@@ -369,7 +369,8 @@
                         <div class="bill-form-label">Assessable Value</div>
                         <input type="number" name="assessable_value" id="assessableValue"
                             class="form-control bill-input text-end job-locked" step="0.01"
-                            value="{{ old('assessable_value', $bill?->assessable_value) }}" placeholder="0.00" readonly>
+                            value="{{ old('assessable_value', $assessableValue ?? $bill?->assessable_value) }}"
+                            placeholder="0.00" readonly>
                     </div>
                 </div>
 
@@ -405,11 +406,11 @@
                         <div class="input-group">
                             <input type="text" name="currency_type" id="currencyType"
                                 class="form-control bill-input text-center job-locked" style="max-width:65px;"
-                                value="{{ old('currency_type', $bill?->currency_type) }}" placeholder="USD" readonly>
+                                value="{{ old('currency_type', $bill?->job?->currency_type ?? $bill?->currency_type) }}" placeholder="USD" readonly>
                             <span class="input-group-text px-2" style="font-size:.72rem;">@</span>
                             <input type="number" name="currency_rate" id="currencyRate"
                                 class="form-control bill-input text-end job-locked" step="0.0001"
-                                value="{{ old('currency_rate', $bill?->currency_rate) }}" placeholder="Rate" readonly>
+                                value="{{ old('currency_rate', $bill?->job?->currency_rate ?? $bill?->currency_rate) }}" placeholder="Rate" readonly>
                         </div>
                     </div>
                     <div class="col-md-4">

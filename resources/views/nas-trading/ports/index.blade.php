@@ -54,13 +54,13 @@
         <table id="portTable" class="table table-hover table-striped table-bordered dt-table mb-0 w-100">
             <thead>
             <tr>
-                <th>#</th><th>Name</th><th>Country</th><th>Type</th><th>Status</th><th>Action</th>
+                <th>#</th><th>Action</th><th>Name</th><th>Country</th><th>Type</th><th>Status</th>
             </tr>
             <tr>
                 <th></th>
+                <th></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Name"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Country"></th>
-                <th></th>
                 <th></th>
                 <th></th>
             </tr>
@@ -135,11 +135,11 @@ $(function () {
         ajax: '{{ route('nas-trading.ports.index') }}',
         columns: [
             { data: 'DT_RowIndex',  name: 'DT_RowIndex',  orderable: false, searchable: false, width: '40px', className: 'text-center' },
+            { data: 'action',       name: 'action',       orderable: false, searchable: false, width: '90px', className: 'text-center' },
             { data: 'name',         name: 'name' },
             { data: 'country',      name: 'country' },
             { data: 'type_badge',   name: 'type_badge',   orderable: false, searchable: false, width: '90px', className: 'text-center' },
             { data: 'status_badge', name: 'status_badge', orderable: false, searchable: false, width: '90px', className: 'text-center' },
-            { data: 'action',       name: 'action',       orderable: false, searchable: false, width: '90px', className: 'text-center' },
         ],
         dom: "<'row px-2 pt-2'<'col-sm-6'l><'col-sm-6'>>" +
             "<'row'<'col-12'tr>>" +

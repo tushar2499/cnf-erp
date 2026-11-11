@@ -26,15 +26,15 @@
                 <thead>
                     <tr>
                         <th>#</th>
+                        <th>Action</th>
                         <th>Designation</th>
                         <th>Status</th>
-                        <th>Action</th>
                     </tr>
                     <tr>
                         <th></th>
-                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                         <th></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -92,9 +92,9 @@ $(function () {
         ajax: '{{ route('chevron.stakeholders.designations.index') }}',
         columns: [
             { data: 'DT_RowIndex',  name: 'DT_RowIndex', orderable: false, searchable: false, width: '50px' },
+            { data: 'action',       name: 'action', orderable: false, searchable: false, width: '90px' },
             { data: 'name',         name: 'name' },
             { data: 'status_badge', name: 'is_active', searchable: false },
-            { data: 'action',       name: 'action', orderable: false, searchable: false, width: '90px' },
         ],
         dom: "<'row mb-0'<'col-sm-6'><'col-sm-6'f>>" +
              "<'row'<'col-12'tr>>" +

@@ -54,16 +54,16 @@
         <table id="itemTable" class="table table-hover table-striped table-bordered dt-table mb-0 w-100">
             <thead>
             <tr>
-                <th>#</th><th>Code</th><th>Name</th><th>HS Code</th><th>Unit</th><th>Category</th><th>Status</th><th>Action</th>
+                <th>#</th><th>Action</th><th>Code</th><th>Name</th><th>HS Code</th><th>Unit</th><th>Category</th><th>Status</th>
             </tr>
             <tr>
+                <th></th>
                 <th></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Code"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Name"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search HS Code"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Unit"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Category"></th>
-                <th></th>
                 <th></th>
             </tr>
             </thead>
@@ -141,13 +141,13 @@ $(function () {
         ajax: '{{ route('nas-trading.items.index') }}',
         columns: [
             { data: 'DT_RowIndex',  name: 'DT_RowIndex',  orderable: false, searchable: false, width: '40px', className: 'text-center' },
+            { data: 'action',       name: 'action',       orderable: false, searchable: false, width: '90px', className: 'text-center' },
             { data: 'code',         name: 'code',         width: '110px' },
             { data: 'name',         name: 'name' },
             { data: 'hs_code',      name: 'hs_code',      width: '110px' },
             { data: 'unit',         name: 'unit',         width: '80px', className: 'text-center' },
             { data: 'category',     name: 'category' },
             { data: 'status_badge', name: 'status_badge', orderable: false, searchable: false, width: '90px', className: 'text-center' },
-            { data: 'action',       name: 'action',       orderable: false, searchable: false, width: '90px', className: 'text-center' },
         ],
         dom: "<'row px-2 pt-2'<'col-sm-6'l><'col-sm-6'>>" +
             "<'row'<'col-12'tr>>" +

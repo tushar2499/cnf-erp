@@ -161,4 +161,10 @@ Route::prefix('settings')->name('settings.')->group(function () {
 Route::prefix('reports')->name('reports.')->group(function () {
     Route::get('/job-expense-summary', [ReportController::class, 'jobExpenseSummary'])->name('job-expense-summary');
     Route::get('/job-expense-summary/print', [ReportController::class, 'jobExpenseSummaryPrint'])->name('job-expense-summary.print');
+    Route::get('/job-expense', [ReportController::class, 'jobExpense'])->name('job-expense');
+    Route::get('/job-expense/search-jobs', [ReportController::class, 'searchJobs'])->name('job-expense.search-jobs');
+    Route::get('/job-expense/print', [ReportController::class, 'jobExpensePrint'])->name('job-expense.print');
+    Route::get('/job-bill', [ReportController::class, 'jobBill'])->name('job-bill');
+    Route::get('/job-bill/search-jobs', [ReportController::class, 'searchBillJobs'])->name('job-bill.search-jobs');
+    Route::get('/job-bill/print', [ReportController::class, 'jobBillPrint'])->name('job-bill.print');
 });

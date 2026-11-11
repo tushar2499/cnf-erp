@@ -43,22 +43,22 @@
                 <thead>
                     <tr>
                         <th style="width:50px">#</th>
+                        <th style="width:90px">Action</th>
                         <th style="width:70px">Logo</th>
                         <th>Company Name</th>
                         <th>Type</th>
                         <th>Email</th>
                         <th>Phone</th>
                         <th style="width:90px">Status</th>
-                        <th style="width:90px">Action</th>
                     </tr>
                     <tr>
                         <th></th>
                         <th></th>
-                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                         <th></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                         <th></th>
                     </tr>
                 </thead>
@@ -83,6 +83,7 @@ $(function () {
         ajax: '{{ route('admin.companies.index') }}',
         columns: [
             { data: 'DT_RowIndex',      name: 'DT_RowIndex', orderable: false, searchable: false, width: '50px', className: 'text-center' },
+            { data: 'action',           name: 'action',       orderable: false, searchable: false, width: '90px', className: 'text-center' },
             { data: 'logo',             name: 'logo',          orderable: false, searchable: false, width: '70px', className: 'text-center', render: function (data) {
                 return data
                     ? '<img src="{{ asset('assets/logos') }}/' + data + '" alt="logo" style="height:36px; width:36px; object-fit:contain; border-radius:4px;">'
@@ -93,7 +94,6 @@ $(function () {
             { data: 'email',            name: 'email', defaultContent: '—' },
             { data: 'phone',            name: 'phone', defaultContent: '—' },
             { data: 'status_badge',     name: 'status_badge', orderable: false, className: 'text-center' },
-            { data: 'action',           name: 'action',       orderable: false, searchable: false, width: '90px', className: 'text-center' },
         ],
         dom: "<'row px-2 pt-2'<'col-sm-6'l><'col-sm-6'f>><'row'<'col-12'tr>><'row px-2 pt-1 pb-2'<'col-sm-5'i><'col-sm-7'p>>",
         buttons: [{ extend: 'csv' }, { extend: 'excel' }, { extend: 'pdf' }, { extend: 'print' }],

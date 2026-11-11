@@ -82,6 +82,8 @@ class DhkJobExpenseImportTest extends TestCase
             $table->id();
             $table->string('name');
             $table->unsignedBigInteger('expense_category_id')->nullable();
+            $table->boolean('is_bill')->default(true);
+            $table->boolean('is_job')->default(false);
             $table->enum('type', ['External', 'Internal'])->default('External');
             $table->boolean('is_active')->default(true);
             $table->timestamps();

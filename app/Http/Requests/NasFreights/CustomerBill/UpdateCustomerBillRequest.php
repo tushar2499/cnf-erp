@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\NasFreights\CustomerBill;
 
+use App\Models\NasFreights\NasFreightsCustomerBill;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateCustomerBillRequest extends FormRequest
 {
@@ -21,6 +23,10 @@ class UpdateCustomerBillRequest extends FormRequest
             'bill_date'     => ['required', 'date'],
             'delivery_type' => ['required'],
             'bill_type'     => ['required'],
+            'print_format'  => ['nullable', Rule::in(array_keys(NasFreightsCustomerBill::printFormats()))],
+            'tds_percent'   => ['nullable', 'numeric', 'min:0'],
+            'ait_percent'   => ['nullable', 'numeric', 'min:0'],
+            'vat_percent'   => ['nullable', 'numeric', 'min:0'],
         ];
     }
 

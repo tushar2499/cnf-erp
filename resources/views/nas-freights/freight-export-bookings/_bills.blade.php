@@ -1,4 +1,4 @@
-{{-- Read-only bill status for an export booking/job (one bill allowed per bill type) --}}
+{{-- Read-only bill list for an export booking/job: every Customer bill (a job can have several) plus the single Overseas Agent bill --}}
 @php
     $billUser = auth()->user();
     $canViewBill   = $billUser->hasPermission('freight.export-booking-bill.view');
@@ -7,8 +7,8 @@
     $canCreateBill = $billUser->hasPermission('freight.export-booking-bill.create');
     $canListBill   = $billUser->hasPermission('freight.export-booking-bill.list');
     $billTypes     = \App\Models\NasFreights\NasFreightsFreightExportBookingBill::billTypes();
-    $billsByType   = $exportBooking->bills->keyBy('bill_type');
-    $billsCreated  = $billsByType->count();
+    $billsByType   = $exportBooking->bills->sortBy('id')->groupBy('bill_type');
+    $billsCreated  = $exportBooking->bills->count();
 @endphp
 
 @if($canViewBill || $canPrintBill || $canEditBill || $canCreateBill || $canListBill)
@@ -22,11 +22,11 @@
                 </span>
             @else
                 <span class="ms-2 badge bg-light text-dark fw-bold" style="font-size:.74rem;">
-                    <i class="fa fa-check-circle me-1 text-success"></i>{{ $billsCreated }} of {{ count($billTypes) }} bills created
+                    <i class="fa fa-check-circle me-1 text-success"></i>{{ $billsCreated }} {{ \Illuminate\Support\Str::plural('bill', $billsCreated) }} created
                 </span>
             @endif
         </span>
-        @if($canCreateBill && $billsCreated < count($billTypes))
+        @if($canCreateBill)
         <a href="{{ route('nas-freights.freight-export-booking-bills.create', ['booking_id' => $exportBooking->id]) }}"
            class="btn btn-sm btn-light py-0 px-2 section-action">
             <i class="fa fa-plus me-1"></i>Create Bill
@@ -47,13 +47,22 @@
             </thead>
             <tbody>
                 @foreach($billTypes as $billType)
-                @php $bill = $billsByType->get($billType); @endphp
+                @php $typeBills = $billsByType->get($billType, collect()); @endphp
+                @forelse($typeBills as $bill)
                 <tr>
                     <td data-label="Bill Type">
                         <span class="cell-value"><span class="badge {{ $billType === 'Customer' ? 'bg-primary' : 'bg-warning text-dark' }}">{{ $billType }}</span></span>
                     </td>
-                    @if($bill)
-                    <td class="fw-semibold text-nowrap" data-label="Bill No"><span class="cell-value">{{ $bill->bill_no }}</span></td>
+                    <td class="fw-semibold text-nowrap" data-label="Bill No">
+                        <span class="cell-value">
+                            {{ $bill->bill_no }}
+                            @if($bill->bill_prefix_ref || $bill->bill_prefix_job)
+                                <span class="d-block text-muted fw-normal" style="font-size:.66rem;">
+                                    {{ collect([$bill->bill_prefix_ref ? 'Bill Ref: '.$bill->bill_prefix_ref : null, $bill->bill_prefix_job ? 'Job No: '.$bill->bill_prefix_job : null])->filter()->implode(' · ') }}
+                                </span>
+                            @endif
+                        </span>
+                    </td>
                     <td class="text-nowrap" data-label="Bill Date"><span class="cell-value">{{ $bill->bill_date?->format('d M Y') ?? '—' }}</span></td>
                     <td class="text-end" data-label="Total (BDT)">
                         <span class="cell-value">
@@ -82,7 +91,12 @@
                             @endif
                         </div>
                     </td>
-                    @else
+                </tr>
+                @empty
+                <tr>
+                    <td data-label="Bill Type">
+                        <span class="cell-value"><span class="badge {{ $billType === 'Customer' ? 'bg-primary' : 'bg-warning text-dark' }}">{{ $billType }}</span></span>
+                    </td>
                     <td class="text-muted stack-hide">—</td>
                     <td class="text-muted stack-hide">—</td>
                     <td class="text-muted text-end stack-hide">—</td>
@@ -97,8 +111,8 @@
                         </a>
                         @endif
                     </td>
-                    @endif
                 </tr>
+                @endforelse
                 @endforeach
             </tbody>
         </table>

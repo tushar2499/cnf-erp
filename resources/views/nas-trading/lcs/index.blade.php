@@ -53,9 +53,10 @@
         <table id="lcTable" class="table table-hover table-striped table-bordered dt-table mb-0 w-100">
             <thead>
             <tr>
-                <th>#</th><th>LC No (System)</th><th>LC No (Bank)</th><th>PFI No</th><th>Customer</th><th>Type</th><th>LC Date</th><th>PFI Value</th><th>Status</th><th>Action</th>
+                <th>#</th><th>Action</th><th>LC No (System)</th><th>LC No (Bank)</th><th>PFI No</th><th>Customer</th><th>Type</th><th>LC Date</th><th>PFI Value</th><th>Status</th>
             </tr>
             <tr>
+                <th></th>
                 <th></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search LC No"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search LC No"></th>
@@ -64,7 +65,6 @@
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Type"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Date"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Value"></th>
-                <th></th>
                 <th></th>
             </tr>
             </thead>
@@ -90,6 +90,7 @@ $(function () {
         ajax: '{{ route('nas-trading.lcs.index') }}',
         columns: [
             { data: 'DT_RowIndex',  name: 'DT_RowIndex',  orderable: false, searchable: false, width: '40px', className: 'text-center' },
+            { data: 'action',       name: 'action',       orderable: false, searchable: false, width: '130px', className: 'text-center' },
             { data: 'lc_no_system', name: 'lc_no_system' },
             { data: 'lc_no',        name: 'lc_no' },
             { data: 'pfi_no',       name: 'pfi_no' },
@@ -98,7 +99,6 @@ $(function () {
             { data: 'lc_open_date', name: 'lc_open_date' },
             { data: 'pfi_value',    name: 'pfi_value' },
             { data: 'status_badge', name: 'status_badge', orderable: false, searchable: false },
-            { data: 'action',       name: 'action',       orderable: false, searchable: false, width: '130px', className: 'text-center' },
         ],
         dom: "<'row px-2 pt-2'<'col-sm-6'l><'col-sm-6'>>" +
             "<'row'<'col-12'tr>>" +

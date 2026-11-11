@@ -7,6 +7,9 @@
 .panel { border: 1px solid #dee2e6; border-radius: .4rem; overflow: hidden; margin-bottom: 1rem; }
 .panel-header { display: flex; align-items: center; gap: .45rem; padding: .45rem .85rem; font-size: .8rem; font-weight: 700; color: #fff; background: #1e293b; }
 .panel-body { padding: .75rem .85rem; }
+.section-card { border: 1px solid #dee2e6; border-radius: .35rem; margin-bottom: .9rem; }
+.form-header { background: linear-gradient(135deg, #0a4f3c, #14b8a6); color: #fff; padding: .45rem .9rem; border-radius: .35rem .35rem 0 0; font-weight: 600; font-size: .78rem; }
+.section-body { padding: .65rem .85rem; }
 .info-label { font-size: .67rem; font-weight: 700; color: #6b7a99; text-transform: uppercase; letter-spacing: .04em; margin-bottom: .1rem; }
 .info-value { font-size: .82rem; color: #1e293b; }
 #itemsTable th { background: #1e293b; color: #e2e8f0; font-size: .76rem; padding: .4rem .6rem; }
@@ -161,6 +164,11 @@
                 </table>
             </div>
         </div>
+    </div>
+
+    <div class="col-12">
+        {{-- Job expense: read-only (no Edit/Add action), same partial and permission gate as the booking/job page --}}
+        @include('nas-freights.freight-export-bookings._expense', ['exportBooking' => $bill->exportBooking, 'hideExpenseAction' => true])
     </div>
 </div>
 @endsection

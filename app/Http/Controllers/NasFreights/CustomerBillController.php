@@ -95,6 +95,7 @@ class CustomerBillController extends Controller
         return view('nas-freights.customer-bills.create', [
             'deliveryTypes' => NasFreightsCustomerBill::deliveryTypes(),
             'billTypes'     => NasFreightsCustomerBill::billTypes(),
+            'printFormats'  => NasFreightsCustomerBill::printFormats(),
             'capacities'    => $this->capacityOptions(),
         ]);
     }
@@ -169,6 +170,7 @@ class CustomerBillController extends Controller
             'customer_address' => $customerAddress,
             'delivery_type'    => $firstBooking?->sales_type ?? '',
             'tds_percent'      => (float) ($firstBooking?->tds_percent ?? 0),
+            'ait_percent'      => (float) ($firstBooking?->ait_percent ?? 0),
             'vat_percent'      => (float) ($firstBooking?->vat_percent ?? 0),
         ]);
     }
@@ -185,12 +187,15 @@ class CustomerBillController extends Controller
             return response()->json(['message' => 'Add at least one item row.'], 422);
         }
 
-        DB::transaction(function () use ($request, $items) {
+        $calc = $this->calculateBill(
+            $items,
+            (float) ($request->tds_percent ?? 0),
+            (float) ($request->ait_percent ?? 0),
+            (float) ($request->vat_percent ?? 0),
+        );
+
+        DB::transaction(function () use ($request, $calc) {
             $billNo = NasFreightsCustomerBill::generateBillNo(session('nas_freights_branch_id'), $request->delivery_type);
-            $subTotal = collect($items)->sum('line_amount');
-            $totalDem = collect($items)->sum('demurrage_amount');
-            $tdsAmt = round($subTotal * ($request->tds_percent ?? 0) / 100, 2);
-            $vatAmt = round($subTotal * ($request->vat_percent ?? 0) / 100, 2);
 
             $bill = NasFreightsCustomerBill::create([
                 'bill_no'          => $billNo,
@@ -202,42 +207,24 @@ class CustomerBillController extends Controller
                 'bill_date'        => $request->bill_date,
                 'delivery_no'      => $billNo,
                 'delivery_type'    => $request->delivery_type,
-                'tds_percent'      => $request->tds_percent ?? 0,
-                'tds_amount'       => $tdsAmt,
-                'vat_percent'      => $request->vat_percent ?? 0,
-                'vat_amount'       => $vatAmt,
+                'tds_percent'      => $calc['tds_percent'],
+                'tds_amount'       => $calc['tds_amount'],
+                'ait_percent'      => $calc['ait_percent'],
+                'ait_amount'       => $calc['ait_amount'],
+                'vat_percent'      => $calc['vat_percent'],
+                'vat_amount'       => $calc['vat_amount'],
                 'bill_type'        => $request->bill_type,
                 'bill_by'          => $request->bill_by,
+                'print_format'     => $request->input('print_format') ?: NasFreightsCustomerBill::DEFAULT_PRINT_FORMAT,
                 'note'             => $request->note,
-                'sub_total'        => $subTotal,
-                'total_amount'     => $subTotal + $totalDem + $tdsAmt + $vatAmt,
+                'sub_total'        => $calc['sub_total'],
+                'total_amount'     => $calc['total_amount'],
                 'branch_id'        => session('nas_freights_branch_id'),
                 'status'           => 'Draft',
                 'entry_by'         => Auth::user()?->name ?? 'System',
             ]);
 
-            foreach ($items as $item) {
-                NasFreightsCustomerBillItem::create([
-                    'bill_id'          => $bill->id,
-                    'booking_id'       => $item['booking_id'] ?: null,
-                    'booking_item_id'  => $item['booking_item_id'] ?: null,
-                    'booking_date'     => $item['booking_date'] ? Carbon::parse($item['booking_date'])->format('Y-m-d') : null,
-                    'delivery_date'    => $item['delivery_date'] ? Carbon::parse($item['delivery_date'])->format('Y-m-d') : null,
-                    'item_code'        => $item['item_code'] ?? null,
-                    'item_name'        => $item['item_name'] ?? null,
-                    'location'         => $item['location'] ?? null,
-                    'b_qty'            => $item['b_qty'] ?? 0,
-                    'd_qty'            => $item['d_qty'] ?? 0,
-                    'due_qty'          => $item['due_qty'] ?? 0,
-                    'price'            => $item['price'] ?? 0,
-                    'disc_percent'     => $item['disc_percent'] ?? 0,
-                    'discount'         => $item['discount'] ?? 0,
-                    'ait_percent'      => $item['ait_percent'] ?? 0,
-                    'demurrage_day'    => $item['demurrage_day'] ?? 0,
-                    'demurrage_amount' => $item['demurrage_amount'] ?? 0,
-                    'line_amount'      => $item['line_amount'] ?? 0,
-                ]);
-            }
+            $this->saveItems($bill, $calc['rows']);
         });
 
         return response()->json(['message' => 'Customer bill created successfully.', 'redirect' => route('nas-freights.customer-bills.index')]);
@@ -258,6 +245,7 @@ class CustomerBillController extends Controller
             'customerBill'  => $customerBill,
             'deliveryTypes' => NasFreightsCustomerBill::deliveryTypes(),
             'billTypes'     => NasFreightsCustomerBill::billTypes(),
+            'printFormats'  => NasFreightsCustomerBill::printFormats(),
             'capacities'    => $this->capacityOptions(),
         ]);
     }
@@ -271,12 +259,14 @@ class CustomerBillController extends Controller
             return response()->json(['message' => 'Add at least one item row.'], 422);
         }
 
-        DB::transaction(function () use ($request, $customerBill, $items) {
-            $subTotal = collect($items)->sum('line_amount');
-            $totalDem = collect($items)->sum('demurrage_amount');
-            $tdsAmt = round($subTotal * ($request->tds_percent ?? 0) / 100, 2);
-            $vatAmt = round($subTotal * ($request->vat_percent ?? 0) / 100, 2);
+        $calc = $this->calculateBill(
+            $items,
+            (float) ($request->tds_percent ?? 0),
+            (float) ($request->ait_percent ?? 0),
+            (float) ($request->vat_percent ?? 0),
+        );
 
+        DB::transaction(function () use ($request, $customerBill, $calc) {
             $customerBill->update([
                 'from_date'        => $request->from_date,
                 'to_date'          => $request->to_date,
@@ -285,40 +275,22 @@ class CustomerBillController extends Controller
                 'customer_address' => $request->customer_address,
                 'bill_date'        => $request->bill_date,
                 'delivery_type'    => $request->delivery_type,
-                'tds_percent'      => $request->tds_percent ?? 0,
-                'tds_amount'       => $tdsAmt,
-                'vat_percent'      => $request->vat_percent ?? 0,
-                'vat_amount'       => $vatAmt,
+                'tds_percent'      => $calc['tds_percent'],
+                'tds_amount'       => $calc['tds_amount'],
+                'ait_percent'      => $calc['ait_percent'],
+                'ait_amount'       => $calc['ait_amount'],
+                'vat_percent'      => $calc['vat_percent'],
+                'vat_amount'       => $calc['vat_amount'],
                 'bill_type'        => $request->bill_type,
                 'bill_by'          => $request->bill_by,
+                'print_format'     => $request->input('print_format') ?: NasFreightsCustomerBill::DEFAULT_PRINT_FORMAT,
                 'note'             => $request->note,
-                'sub_total'        => $subTotal,
-                'total_amount'     => $subTotal + $totalDem + $tdsAmt + $vatAmt,
+                'sub_total'        => $calc['sub_total'],
+                'total_amount'     => $calc['total_amount'],
             ]);
 
             $customerBill->items()->delete();
-            foreach ($items as $item) {
-                NasFreightsCustomerBillItem::create([
-                    'bill_id'          => $customerBill->id,
-                    'booking_id'       => $item['booking_id'] ?: null,
-                    'booking_item_id'  => $item['booking_item_id'] ?: null,
-                    'booking_date'     => $item['booking_date'] ? Carbon::parse($item['booking_date'])->format('Y-m-d') : null,
-                    'delivery_date'    => $item['delivery_date'] ? Carbon::parse($item['delivery_date'])->format('Y-m-d') : null,
-                    'item_code'        => $item['item_code'] ?? null,
-                    'item_name'        => $item['item_name'] ?? null,
-                    'location'         => $item['location'] ?? null,
-                    'b_qty'            => $item['b_qty'] ?? 0,
-                    'd_qty'            => $item['d_qty'] ?? 0,
-                    'due_qty'          => $item['due_qty'] ?? 0,
-                    'price'            => $item['price'] ?? 0,
-                    'disc_percent'     => $item['disc_percent'] ?? 0,
-                    'discount'         => $item['discount'] ?? 0,
-                    'ait_percent'      => $item['ait_percent'] ?? 0,
-                    'demurrage_day'    => $item['demurrage_day'] ?? 0,
-                    'demurrage_amount' => $item['demurrage_amount'] ?? 0,
-                    'line_amount'      => $item['line_amount'] ?? 0,
-                ]);
-            }
+            $this->saveItems($customerBill, $calc['rows']);
         });
 
         return response()->json(['message' => 'Customer bill updated successfully.', 'redirect' => route('nas-freights.customer-bills.index')]);
@@ -328,7 +300,7 @@ class CustomerBillController extends Controller
     {
         $customerBill->load(['items.booking.products', 'items.bookingItem']);
 
-        return view('nas-freights.customer-bills.print', compact('customerBill'));
+        return view($customerBill->printViewName(), compact('customerBill'));
     }
 
     public function billExcel(PrintCustomerBillRequest $request, NasFreightsCustomerBill $customerBill)
@@ -521,6 +493,106 @@ class CustomerBillController extends Controller
                     'address' => $c->address,
                 ])
         );
+    }
+
+    /**
+     * Recalculate item rows and bill totals from quantity, price and the master rates
+     *
+     * The master AIT %, VAT % and TDS % apply to every row. They apply to the price only
+     * (qty x price less discount), never to demurrage. A row's line amount is price base
+     * + AIT + VAT; its TDS amount is shown beside it and added once at bill level.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     * @return array{
+     *     rows: array<int, array<string, mixed>>,
+     *     tds_percent: float, tds_amount: float,
+     *     ait_percent: float, ait_amount: float,
+     *     vat_percent: float, vat_amount: float,
+     *     sub_total: float, total_amount: float
+     * }
+     */
+    private function calculateBill(array $items, float $tdsPercent, float $aitPercent, float $vatPercent): array
+    {
+        $tdsPercent = max(0.0, $tdsPercent);
+        $aitPercent = max(0.0, $aitPercent);
+        $vatPercent = max(0.0, $vatPercent);
+
+        $rows = [];
+        $aitAmount = $vatAmount = $tdsAmount = $subTotal = $demurrage = 0.0;
+
+        foreach ($items as $item) {
+            $gross = round((float) ($item['d_qty'] ?? 0) * (float) ($item['price'] ?? 0), 2);
+            $discPercent = max(0.0, (float) ($item['disc_percent'] ?? 0));
+            $discount = round($gross * $discPercent / 100, 2);
+            $base = round($gross - $discount, 2);
+
+            $rowAit = round($base * $aitPercent / 100, 2);
+            $rowVat = round($base * $vatPercent / 100, 2);
+            $rowTds = round($base * $tdsPercent / 100, 2);
+            $lineAmount = round($base + $rowAit + $rowVat, 2);
+
+            $rows[] = array_merge($item, [
+                'disc_percent' => $discPercent,
+                'discount'     => $discount,
+                'ait_percent'  => $aitPercent,
+                'ait_amount'   => $rowAit,
+                'vat_amount'   => $rowVat,
+                'tds_amount'   => $rowTds,
+                'line_amount'  => $lineAmount,
+            ]);
+
+            $aitAmount += $rowAit;
+            $vatAmount += $rowVat;
+            $tdsAmount += $rowTds;
+            $subTotal += $lineAmount;
+            $demurrage += (float) ($item['demurrage_amount'] ?? 0);
+        }
+
+        return [
+            'rows'         => $rows,
+            'tds_percent'  => $tdsPercent,
+            'tds_amount'   => round($tdsAmount, 2),
+            'ait_percent'  => $aitPercent,
+            'ait_amount'   => round($aitAmount, 2),
+            'vat_percent'  => $vatPercent,
+            'vat_amount'   => round($vatAmount, 2),
+            'sub_total'    => round($subTotal, 2),
+            'total_amount' => round($subTotal + $demurrage + $tdsAmount, 2),
+        ];
+    }
+
+    /**
+     * Persist calculated item rows against a bill
+     *
+     * @param  array<int, array<string, mixed>>  $rows  Rows returned by calculateBill()
+     */
+    private function saveItems(NasFreightsCustomerBill $bill, array $rows): void
+    {
+        foreach ($rows as $item) {
+            NasFreightsCustomerBillItem::create([
+                'bill_id'          => $bill->id,
+                'booking_id'       => $item['booking_id'] ?: null,
+                'booking_item_id'  => $item['booking_item_id'] ?: null,
+                'booking_date'     => $item['booking_date'] ? Carbon::parse($item['booking_date'])->format('Y-m-d') : null,
+                'delivery_date'    => $item['delivery_date'] ? Carbon::parse($item['delivery_date'])->format('Y-m-d') : null,
+                'item_code'        => $item['item_code'] ?? null,
+                'item_name'        => $item['item_name'] ?? null,
+                'location'         => $item['location'] ?? null,
+                'b_qty'            => $item['b_qty'] ?? 0,
+                'd_qty'            => $item['d_qty'] ?? 0,
+                'due_qty'          => $item['due_qty'] ?? 0,
+                'price'            => $item['price'] ?? 0,
+                'disc_percent'     => $item['disc_percent'],
+                'discount'         => $item['discount'],
+                'ait_percent'      => $item['ait_percent'],
+                'ait_amount'       => $item['ait_amount'],
+                'vat_amount'       => $item['vat_amount'],
+                'tds_amount'       => $item['tds_amount'],
+                'demurrage_day'    => $item['demurrage_day'] ?? 0,
+                'demurrage_amount' => $item['demurrage_amount'] ?? 0,
+                'line_amount'      => $item['line_amount'],
+            ]);
+        }
     }
 
     /**

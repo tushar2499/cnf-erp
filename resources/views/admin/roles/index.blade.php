@@ -41,17 +41,17 @@
                 <thead>
                     <tr>
                         <th style="width:50px">#</th>
+                        <th style="width:100px">Action</th>
                         <th>Role Name</th>
                         <th>Companies</th>
                         <th style="width:100px">Permissions</th>
-                        <th style="width:100px">Action</th>
                     </tr>
                     <tr>
                         <th></th>
-                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
-                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                         <th></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -89,10 +89,10 @@ $(function () {
         ajax: '{{ route('admin.roles.index') }}',
         columns: [
             { data: 'DT_RowIndex',       name: 'DT_RowIndex',      orderable: false, searchable: false, className: 'text-center' },
+            { data: 'action',            name: 'action',            orderable: false, searchable: false, className: 'text-center' },
             { data: 'name',              name: 'name' },
             { data: 'companies_badges',  name: 'companies_badges', orderable: false },
             { data: 'permissions_count', name: 'permissions_count', searchable: false, className: 'text-center' },
-            { data: 'action',            name: 'action',            orderable: false, searchable: false, className: 'text-center' },
         ],
         dom: "<'row mb-2'<'col-sm-6'l><'col-sm-6'f>><'row'<'col-12'tr>><'row mt-2'<'col-sm-5'i><'col-sm-7'p>>",
         buttons: [{ extend: 'csv' }, { extend: 'excel' }, { extend: 'pdf' }, { extend: 'print' }],

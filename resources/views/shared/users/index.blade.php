@@ -30,13 +30,13 @@
             <thead>
                 <tr>
                     <th>#</th>
+                    <th>Action</th>
                     <th>Name</th>
                     <th>Username</th>
                     <th>Email</th>
                     <th>Employee</th>
                     <th>Role</th>
                     <th>Status</th>
-                    <th>Action</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -58,13 +58,13 @@ $(function () {
         ajax: indexRoute,
         columns: [
             { data: 'DT_RowIndex',  name: 'DT_RowIndex', orderable: false, searchable: false, width: '40px' },
+            { data: 'action',       name: 'action', orderable: false, searchable: false, width: '80px' },
             { data: 'name',         name: 'name' },
             { data: 'username',     name: 'username' },
             { data: 'email',        name: 'email', defaultContent: '—' },
             { data: 'employee_name',name: 'employee_name', orderable: false, searchable: false },
             { data: 'role_badge',   name: 'role', orderable: false, searchable: false },
             { data: 'status_badge', name: 'status', orderable: false, searchable: false },
-            { data: 'action',       name: 'action', orderable: false, searchable: false, width: '80px' },
         ],
         dom: "<'row px-2 pt-2 mb-0'<'col-sm-6'><'col-sm-6'f>><'row'<'col-12'tr>><'row px-2 pt-1 pb-2'<'col-sm-5'i><'col-sm-7'p>>",
         pageLength: 15,

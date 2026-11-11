@@ -7,6 +7,7 @@
 .info-label  { font-size:.68rem; font-weight:700; color:#5b6785; text-transform:uppercase; letter-spacing:.04em; margin-bottom:.1rem; }
 .info-value  { font-size:.82rem; color:#1e293b; overflow-wrap:anywhere; }
 .info-sub    { font-size:.7rem; color:#5b6785; }
+.party-invoice-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); column-gap:1rem; row-gap:.2rem; }
 .section-card { border:1px solid #dee2e6; border-radius:.35rem; margin-bottom:.9rem; }
 .form-header  { background:linear-gradient(135deg,#0a4f3c,#14b8a6); color:#fff; padding:.45rem .9rem; border-radius:.35rem .35rem 0 0; font-weight:600; font-size:.78rem; }
 .section-body { padding:.65rem .85rem; }
@@ -111,13 +112,18 @@
                 <div class="info-label">Party Bill Ref Date</div>
                 <div class="info-value">{{ $exportBooking->party_bill_date?->format('d M Y') ?? '—' }}</div>
             </div>
-            <div class="col-6 col-lg-3">
-                <div class="info-label">Party Invoice No</div>
-                <div class="info-value">{{ $exportBooking->party_invoice_no ?? '—' }}</div>
-            </div>
-            <div class="col-6 col-lg-3">
-                <div class="info-label">Party Invoice Date</div>
-                <div class="info-value">{{ $exportBooking->party_invoice_date?->format('d M Y') ?? '—' }}</div>
+            <div class="col-12 col-lg-6">
+                <div class="party-invoice-grid">
+                    <div class="info-label">Party Invoice No</div>
+                    <div class="info-label">Party Invoice Date</div>
+                    @forelse($exportBooking->partyInvoices as $partyInvoice)
+                    <div class="info-value">{{ $partyInvoice->invoice_no }}</div>
+                    <div class="info-value">{{ $partyInvoice->invoice_date?->format('d M Y') ?? '—' }}</div>
+                    @empty
+                    <div class="info-value">—</div>
+                    <div class="info-value">—</div>
+                    @endforelse
+                </div>
             </div>
         </div>
 
@@ -213,11 +219,11 @@
                 <div class="info-value">{{ $exportBooking->exp_date?->format('d M Y') ?? '—' }}</div>
             </div>
             <div class="col-6 col-lg-3">
-                <div class="info-label">Invoice No</div>
+                <div class="info-label">S.B. No</div>
                 <div class="info-value">{{ $exportBooking->invoice_no ?? '—' }}</div>
             </div>
             <div class="col-6 col-lg-3">
-                <div class="info-label">Invoice Date</div>
+                <div class="info-label">S.B. Date</div>
                 <div class="info-value">{{ $exportBooking->invoice_date?->format('d M Y') ?? '—' }}</div>
             </div>
         </div>

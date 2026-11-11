@@ -54,14 +54,14 @@
         <table id="importerTable" class="table table-hover table-striped table-bordered dt-table mb-0 w-100">
             <thead>
             <tr>
-                <th>#</th><th>Name</th><th>BIN No</th><th>Address</th><th>Status</th><th>Action</th>
+                <th>#</th><th>Action</th><th>Name</th><th>BIN No</th><th>Address</th><th>Status</th>
             </tr>
             <tr>
+                <th></th>
                 <th></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Name"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search BIN No"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Address"></th>
-                <th></th>
                 <th></th>
             </tr>
             </thead>
@@ -131,11 +131,11 @@ $(function () {
         ajax: '{{ route('nas-trading.importers.index') }}',
         columns: [
             { data: 'DT_RowIndex',  name: 'DT_RowIndex',  orderable: false, searchable: false, width: '40px', className: 'text-center' },
+            { data: 'action',       name: 'action',       orderable: false, searchable: false, width: '90px', className: 'text-center' },
             { data: 'name',         name: 'name' },
             { data: 'bin_no',       name: 'bin_no',       width: '120px' },
             { data: 'address',      name: 'address' },
             { data: 'status_badge', name: 'status_badge', orderable: false, searchable: false, width: '90px', className: 'text-center' },
-            { data: 'action',       name: 'action',       orderable: false, searchable: false, width: '90px', className: 'text-center' },
         ],
         dom: "<'row px-2 pt-2'<'col-sm-6'l><'col-sm-6'>>" +
             "<'row'<'col-12'tr>>" +

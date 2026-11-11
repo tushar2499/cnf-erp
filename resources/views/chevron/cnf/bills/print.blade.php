@@ -182,11 +182,19 @@ body {
         <td class="lbl">Invoice Value</td>
         <td>{{ $bill->invoice_value ? number_format($bill->invoice_value, 2) : '' }}</td>
     </tr>
+    @php
+        $currencyName = $bill->job?->currency_type;
+        $currencyRate = $bill->job?->currency_rate;
+    @endphp
     <tr>
         <td class="lbl">B.E Date</td>
+        @if($currencyRate)
         <td>{{ $bill->be_date?->format('d M Y') }}</td>
-        <td class="lbl">{{ $bill->currency_type ? $bill->currency_type.' Rate' : 'Currency Rate' }}</td>
-        <td>{{ $bill->currency_rate ? number_format($bill->currency_rate, 2) : '' }}</td>
+        <td class="lbl">{{ $currencyName ? $currencyName.' Rate' : 'Currency Rate' }}</td>
+        <td>{{ number_format($currencyRate, 2) }}</td>
+        @else
+        <td colspan="3">{{ $bill->be_date?->format('d M Y') }}</td>
+        @endif
     </tr>
     <tr>
         <td class="lbl">Assessable Value</td>
@@ -227,8 +235,11 @@ body {
         @endforeach
         @endforeach
 
-        {{-- Sub-total if commission exists --}}
+        {{-- Commission under Miscellaneous --}}
         @if($bill->commission_amount > 0)
+        <tr class="cat-row">
+            <td colspan="2">MISCELLANEOUS</td>
+        </tr>
         <tr>
             <td style="padding-left:16px;">
                 @if($bill->commission_on === 'ASSESSABLE')
@@ -244,14 +255,19 @@ body {
         </tr>
         @endif
 
+        @php $showTotal = round((float) $bill->total_payable, 2) !== round((float) $bill->due_amount, 2); @endphp
+        @if($showTotal)
         <tr class="total-row">
             <td class="text-right" style="text-align:right;"><strong>TOTAL</strong></td>
             <td class="amount"><strong>{{ number_format($bill->total_payable, 2) }}</strong></td>
         </tr>
+        @endif
+        @if($bill->less_customs_duty_tax > 0)
         <tr class="less-row">
             <td><strong>LESS CUSTOMS DUTY &amp; TAX</strong></td>
             <td class="amount"><strong>{{ number_format($bill->less_customs_duty_tax, 2) }}</strong></td>
         </tr>
+        @endif
         @if($bill->income_tax_cnf_com > 0)
         <tr class="less-row">
             <td><strong>LESS INCOME TAX C&amp;F</strong></td>

@@ -90,7 +90,6 @@
     @php
         $user               = auth()->user();
         $cnfOpsActive       = request()->routeIs('chevron.cnf.jobs.*', 'chevron.cnf.job-expenses.*', 'chevron.cnf.bills.*', 'chevron.cnf.money-receipts.*');
-        $reportsActive      = request()->routeIs('chevron.reports.*');
         $stakeholdersActive = request()->routeIs('chevron.stakeholders.*');
         $settingsActive     = request()->routeIs('chevron.settings.*');
 
@@ -114,6 +113,9 @@
             || $canSeeExpenseHead || $canSeeBranch || $canSeeItem || $canSeeAccount;
 
         $canSeeJobExpenseSummary = $user->hasPermission('cnf.report.job-expense-summary');
+        $canSeeJobExpenseReport  = $user->hasPermission('cnf.report.job-expense');
+        $canSeeJobBillReport     = $user->hasPermission('cnf.report.job-bill');
+        $canSeeReports           = $canSeeJobExpenseSummary || $canSeeJobExpenseReport || $canSeeJobBillReport;
     @endphp
 
     <div class="nav-item-group">
@@ -163,14 +165,28 @@
     </div>
     @endif
 
-    {{-- Reports (single item — flat) --}}
-    @if($canSeeJobExpenseSummary)
+    {{-- Reports (flat) --}}
+    @if($canSeeReports)
     <div class="nav-item-group">
         <div class="nav-section">Reports</div>
+        @if($canSeeJobExpenseSummary)
         <a href="{{ route('chevron.reports.job-expense-summary') }}"
-           class="nav-link {{ $reportsActive ? 'active' : '' }}">
+           class="nav-link {{ request()->routeIs('chevron.reports.job-expense-summary*') ? 'active' : '' }}">
             <i class="fa fa-chart-line"></i> Expense Summary
         </a>
+        @endif
+        @if($canSeeJobExpenseReport)
+        <a href="{{ route('chevron.reports.job-expense') }}"
+           class="nav-link {{ request()->routeIs('chevron.reports.job-expense', 'chevron.reports.job-expense.*') ? 'active' : '' }}">
+            <i class="fa fa-money-check-alt"></i> Job Expense
+        </a>
+        @endif
+        @if($canSeeJobBillReport)
+        <a href="{{ route('chevron.reports.job-bill') }}"
+           class="nav-link {{ request()->routeIs('chevron.reports.job-bill', 'chevron.reports.job-bill.*') ? 'active' : '' }}">
+            <i class="fa fa-file-invoice"></i> Job Bill
+        </a>
+        @endif
     </div>
     @endif
 
@@ -277,6 +293,12 @@
         @endif
         @if($canSeeJobExpenseSummary)
         { label: 'Expense Summary',    section: 'Reports',          url: '{{ route("chevron.reports.job-expense-summary") }}',           icon: 'fa-chart-line' },
+        @endif
+        @if($canSeeJobExpenseReport)
+        { label: 'Job Expense',        section: 'Reports',          url: '{{ route("chevron.reports.job-expense") }}',                   icon: 'fa-money-check-alt' },
+        @endif
+        @if($canSeeJobBillReport)
+        { label: 'Job Bill',           section: 'Reports',          url: '{{ route("chevron.reports.job-bill") }}',                      icon: 'fa-file-invoice' },
         @endif
         @if($canSeeCustomer)
         { label: 'Customers',          section: 'Stakeholders',     url: '{{ route("chevron.stakeholders.customers.index") }}',          icon: 'fa-users' },

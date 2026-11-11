@@ -51,9 +51,10 @@
         <table id="mrTable" class="table table-hover table-striped table-bordered dt-table mb-0 w-100">
             <thead>
             <tr>
-                <th>#</th><th>Receipt No</th><th>Receipt Date</th><th>Customer</th><th>Bill No</th><th>Bill Amount</th><th>Amount Received</th><th>Payment Mode</th><th>Action</th>
+                <th>#</th><th>Action</th><th>Receipt No</th><th>Receipt Date</th><th>Customer</th><th>Bill No</th><th>Bill Amount</th><th>Amount Received</th><th>Payment Mode</th>
             </tr>
             <tr>
+                <th></th>
                 <th></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Receipt No"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Date"></th>
@@ -62,7 +63,6 @@
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Amount"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Amount"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Mode"></th>
-                <th></th>
             </tr>
             </thead>
             <tbody></tbody>
@@ -87,6 +87,7 @@ $(function () {
         ajax: '{{ route('nas-trading.money-receipts.index') }}',
         columns: [
             { data: 'DT_RowIndex',     name: 'DT_RowIndex',     orderable: false, searchable: false, width: '40px', className: 'text-center' },
+            { data: 'action',          name: 'action',          orderable: false, searchable: false, width: '60px', className: 'text-center' },
             { data: 'receipt_no',      name: 'receipt_no' },
             { data: 'receipt_date',    name: 'receipt_date' },
             { data: 'customer_name',   name: 'customer_name' },
@@ -94,7 +95,6 @@ $(function () {
             { data: 'bill_amount',     name: 'bill_amount', className: 'text-end' },
             { data: 'amount_received', name: 'amount_received', className: 'text-end fw-bold' },
             { data: 'payment_mode',    name: 'payment_mode' },
-            { data: 'action',          name: 'action',          orderable: false, searchable: false, width: '60px', className: 'text-center' },
         ],
         dom: "<'row px-2 pt-2'<'col-sm-6'l><'col-sm-6'>>" +
             "<'row'<'col-12'tr>>" +

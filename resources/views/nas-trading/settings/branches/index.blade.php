@@ -54,15 +54,15 @@
         <table id="branchesTable" class="table table-hover table-striped table-bordered dt-table mb-0 w-100">
             <thead>
             <tr>
-                <th>#</th><th>Name</th><th>Code</th><th>Address</th><th>Phone</th><th>Status</th><th>Action</th>
+                <th>#</th><th>Action</th><th>Name</th><th>Code</th><th>Address</th><th>Phone</th><th>Status</th>
             </tr>
             <tr>
+                <th></th>
                 <th></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Name"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Code"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Address"></th>
                 <th><input type="text" class="form-control form-control-sm" placeholder="Search Phone"></th>
-                <th></th>
                 <th></th>
             </tr>
             </thead>
@@ -135,12 +135,12 @@ $(function () {
         ajax: '{{ route('nas-trading.settings.branches.index') }}',
         columns: [
             { data: 'DT_RowIndex',  name: 'DT_RowIndex',  orderable: false, searchable: false, width: '40px', className: 'text-center' },
+            { data: 'action',       name: 'action',       orderable: false, searchable: false, width: '90px', className: 'text-center' },
             { data: 'name',         name: 'name' },
             { data: 'code',         name: 'code',         width: '90px', className: 'text-center' },
             { data: 'address',      name: 'address' },
             { data: 'phone',        name: 'phone',        width: '120px' },
             { data: 'status_badge', name: 'status_badge', orderable: false, searchable: false, width: '90px', className: 'text-center' },
-            { data: 'action',       name: 'action',       orderable: false, searchable: false, width: '90px', className: 'text-center' },
         ],
         dom: "<'row px-2 pt-2'<'col-sm-6'l><'col-sm-6'>>" +
             "<'row'<'col-12'tr>>" +

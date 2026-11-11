@@ -24,7 +24,7 @@ class BillController extends Controller
     private function formData(): array
     {
         $heads = ChevronExpenseHead::where('is_active', true)
-            ->whereHas('expenseCategory', fn ($q) => $q->where('is_bill', true))
+            ->where('is_bill', true)
             ->orderBy('name')
             ->get();
 
@@ -41,7 +41,8 @@ class BillController extends Controller
     public function index(IndexBillRequest $request)
     {
         if ($request->ajax()) {
-            $query = ChevronBill::where('branch_id', session('active_branch_id'));
+            $query = ChevronBill::where('branch_id', session('active_branch_id'))
+                ->orderByDesc('id');
 
             return DataTables::of($query)
                 ->addIndexColumn()
@@ -79,8 +80,9 @@ class BillController extends Controller
     public function create(CreateBillRequest $request)
     {
         return view('chevron.cnf.bills.create', array_merge($this->formData(), [
-            'bill'         => null,
-            'existingRows' => [],
+            'bill'             => null,
+            'assessableValue'  => null,
+            'existingRows'     => [],
         ]));
     }
 
@@ -100,7 +102,7 @@ class BillController extends Controller
 
     public function edit(EditBillRequest $request, ChevronBill $bill)
     {
-        $bill->load('items');
+        $bill->load(['items', 'job']);
         $existingRows = $bill->items->map(fn ($i) => [
             'expense_category_id' => $i->expense_category_id,
             'expense_head_id'     => $i->expense_head_id,
@@ -111,8 +113,9 @@ class BillController extends Controller
         ])->values();
 
         return view('chevron.cnf.bills.create', array_merge($this->formData(), [
-            'bill'         => $bill,
-            'existingRows' => $existingRows,
+            'bill'             => $bill,
+            'assessableValue'  => $bill->job?->assessable_value ?? $bill->assessable_value,
+            'existingRows'     => $existingRows,
         ]));
     }
 
@@ -125,7 +128,8 @@ class BillController extends Controller
             $this->saveItems($bill, $request->rows);
         });
 
-        return back()->with('success', 'Bill '.$bill->bill_no.' updated successfully.');
+        return redirect()->route('chevron.cnf.bills.index')
+            ->with('success', 'Bill '.$bill->bill_no.' updated successfully.');
     }
 
     public function destroy(DestroyBillRequest $request, ChevronBill $bill)
@@ -159,7 +163,7 @@ class BillController extends Controller
                 'be_no', 'be_date',
                 'hbi_hawb_no', 'invoice_no', 'invoice_date',
                 'mbl_mawb_no', 'bl_no', 'bl_date',
-                'assessable_value_bdt', 'invoice_value_1', 'invoice_value_2',
+                'assessable_value', 'invoice_value_1', 'invoice_value_2',
                 'currency_type', 'currency_rate', 'delivery_date',
             ]);
 
@@ -187,7 +191,7 @@ class BillController extends Controller
             'bl_ref'            => $j->mbl_mawb_no,
             'bl_date'           => $j->bl_date?->format('Y-m-d'),
             'delivery_date'     => $j->delivery_date?->format('Y-m-d'),
-            'assessable_value'  => $j->assessable_value_bdt,
+            'assessable_value'  => $j->assessable_value,
             'invoice_value'     => $j->invoice_value_1,
             'invoice_value_bdt' => $j->invoice_value_2,
             'currency_type'     => $j->currency_type,

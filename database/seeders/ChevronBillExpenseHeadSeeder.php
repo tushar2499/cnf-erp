@@ -38,7 +38,8 @@ class ChevronBillExpenseHeadSeeder extends Seeder
         foreach ($data as $catName => $heads) {
             DB::table('chevron_expense_categories')->insertOrIgnore([
                 'name'        => $catName,
-                'type'        => 'bill',
+                'is_bill'     => true,
+                'is_job'      => false,
                 'is_active'   => true,
                 'created_at'  => $now,
                 'updated_at'  => $now,
@@ -46,13 +47,14 @@ class ChevronBillExpenseHeadSeeder extends Seeder
 
             $catId = DB::table('chevron_expense_categories')
                 ->where('name', $catName)
-                ->where('type', 'bill')
                 ->value('id');
 
             foreach ($heads as $headName) {
                 DB::table('chevron_expense_heads')->insertOrIgnore([
                     'name'                => $headName,
                     'expense_category_id' => $catId,
+                    'is_bill'             => true,
+                    'is_job'              => false,
                     'type'                => 'External',
                     'amount'              => 0,
                     'is_active'           => true,
