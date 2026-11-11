@@ -226,7 +226,17 @@
         $totalKgs      = (float) $booking->items->sum(
             fn ($cargo) => (float) $cargo->gross_weight * ($weightToKgs[strtoupper((string) $cargo->weight_unit)] ?? 1)
         );
+        $totalChargeableKgs = (float) $booking->items->sum(
+            fn ($cargo) => (float) $cargo->chargeable_weight * ($weightToKgs[strtoupper((string) $cargo->weight_unit)] ?? 1)
+        );
         $totalCbm      = (float) $booking->items->sum('volume_cbm');
+
+        /* Containers: "CONTAINER NO/SIZE" per container row (e.g. 112233/40GP), comma-separated; rows without a container no. are skipped */
+        $containerLabels = $booking->items
+            ->filter(fn ($cargo) => $cargo->item_type === 'container' && trim((string) $cargo->container_no) !== '')
+            ->map(fn ($cargo) => trim((string) $cargo->container_no).(trim((string) $cargo->container_size) !== '' ? '/'.trim((string) $cargo->container_size) : ''))
+            ->unique()
+            ->values();
 
         /* Address → HTML: each saved line break stays a separate line; comma-separated parts wrap as whole units */
         $formatAddress = fn (?string $address): string => collect(preg_split('/\R/', (string) $address))
@@ -252,6 +262,14 @@
         $grandTotalBdt     = (float) ($bill->total_bdt_amount + $bill->vat_amount_bdt);
         $grandTotalForeign = (float) ($bill->total_amount + $bill->vat_amount);
         $hasVat            = $bill->vat_amount > 0 || $bill->vat_title;
+
+        /* Exchange rate line: bill's own rate when the bill is foreign; else the booking/job rate when the booking/job currency is not BDT */
+        $bookingIsForeign = $booking->currency && $booking->currency !== 'BDT' && $booking->exchange_rate !== null;
+        $exchangeRateLine = match (true) {
+            $isForeign        => ['currency' => $bill->currency, 'rate' => $bill->exchange_rate],
+            $bookingIsForeign => ['currency' => $booking->currency, 'rate' => $booking->exchange_rate],
+            default           => null,
+        };
 
         /* Amount in words (BDT — only used for customer bills) */
         $ones   = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
@@ -295,6 +313,11 @@
                     <div class="to-address">{!! $formatAddress($booking->customer->address) !!}</div>
                 @endif
             @endif
+            @if($bill->attention || $bill->designation)
+                <div>
+                    <strong>@if($bill->attention)ATTN: {{ $bill->attention }}@endif{{ $bill->attention && $bill->designation ? ', ' : '' }}{{ $bill->designation }}</strong>
+                </div>
+            @endif
         </div>
 
         {{-- Title --}}
@@ -331,6 +354,13 @@
                                 <td class="k">S.B. NO</td>
                                 <td class="sep">:</td>
                                 <td>{{ $booking->invoice_no }}</td>
+                            </tr>
+                            @endif
+                            @if($booking->invoice_date)
+                            <tr>
+                                <td class="k">S.B. DATE</td>
+                                <td class="sep">:</td>
+                                <td>{{ $booking->invoice_date->format('d.m.Y') }}</td>
                             </tr>
                             @endif
                             @if($booking->export_bl_no)
@@ -384,11 +414,25 @@
                                 <td>{{ number_format($totalKgs) }} KGS</td>
                             </tr>
                             @endif
+                            @if($totalChargeableKgs > 0)
+                            <tr>
+                                <td class="k">CHARGEABLE WEIGHT</td>
+                                <td class="sep">:</td>
+                                <td>{{ \App\Helpers\NumberHelper::trimDecimals($totalChargeableKgs, 3, true) }} KGS</td>
+                            </tr>
+                            @endif
                             @if($totalCbm > 0)
                             <tr>
                                 <td class="k">CBM</td>
                                 <td class="sep">:</td>
                                 <td>{{ number_format($totalCbm) }}</td>
+                            </tr>
+                            @endif
+                            @if($containerLabels->isNotEmpty())
+                            <tr>
+                                <td class="k">CONTAINER</td>
+                                <td class="sep">:</td>
+                                <td>{{ $containerLabels->implode(', ') }}</td>
                             </tr>
                             @endif
                             @if($booking->exp_no)
@@ -398,16 +442,23 @@
                                 <td>{{ $booking->exp_no }}</td>
                             </tr>
                             @endif
+                            @if($booking->exp_date)
+                            <tr>
+                                <td class="k">EXP DATE</td>
+                                <td class="sep">:</td>
+                                <td>{{ $booking->exp_date->format('d.m.Y') }}</td>
+                            </tr>
+                            @endif
                             @if($booking->partyInvoices->isNotEmpty())
                             <tr>
-                                <td class="k">PARTY INVOICE NO</td>
+                                <td class="k">INVOICE NO</td>
                                 <td class="sep">:</td>
                                 <td>{{ $booking->partyInvoices->pluck('invoice_no')->implode(', ') }}</td>
                             </tr>
                             @endif
                             @if($booking->partyInvoices->whereNotNull('invoice_date')->isNotEmpty())
                             <tr>
-                                <td class="k">PARTY INVOICE DATE</td>
+                                <td class="k">INVOICE DATE</td>
                                 <td class="sep">:</td>
                                 <td>{{ $booking->partyInvoices->whereNotNull('invoice_date')->map(fn ($invoice) => $invoice->invoice_date->format('d.m.Y'))->implode(', ') }}</td>
                             </tr>
@@ -493,9 +544,15 @@
                     <td colspan="{{ $dualCols ? 3 : 2 }}" style="padding:5px 6px;font-weight:700;font-size:10.5px;border-top:2px solid #000;line-height:1.6;">
                         Total Receivable Taka {{ number_format($grandTotalBdt, 2) }}<br>
                         <span style="font-weight:400">({{ $amountInWords }})</span>
-                        @if($dualCols)
-                            <br><span style="font-weight:700;">Exchange Rate: 1 {{ $bill->currency }} = BDT {{ number_format($bill->exchange_rate, 2) }}</span>
+                        @if($exchangeRateLine)
+                            <br><span style="font-weight:700;">Exchange Rate: 1 {{ $exchangeRateLine['currency'] }} = BDT {{ number_format((float) $exchangeRateLine['rate'], 2) }}</span>
                         @endif
+                    </td>
+                </tr>
+                @elseif($exchangeRateLine)
+                <tr>
+                    <td colspan="2" style="padding:5px 6px;font-weight:700;font-size:10.5px;border-top:2px solid #000;">
+                        Exchange Rate: 1 {{ $exchangeRateLine['currency'] }} = BDT {{ number_format((float) $exchangeRateLine['rate'], 2) }}
                     </td>
                 </tr>
                 @endif

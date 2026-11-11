@@ -48,7 +48,7 @@
                         <td class="text-nowrap" data-label="Challan No"><span class="cell-value">{{ $ti->challan_no ?? '—' }}</span></td>
                         <td class="text-nowrap" data-label="Capacity"><span class="cell-value">{{ $ti->capacity ?? '—' }}</span></td>
                         <td data-label="Supplier"><span class="cell-value">{{ $ti->supplier_name ?? '—' }}</span></td>
-                        <td class="text-end" data-label="Qty"><span class="cell-value">{{ number_format($ti->qty, 2) }}</span></td>
+                        <td class="text-end" data-label="Qty"><span class="cell-value">{{ \App\Helpers\NumberHelper::trimDecimals($ti->qty, 2, true) ?? '0' }}</span></td>
                         <td class="text-end" data-label="Sup. Rate"><span class="cell-value">{{ number_format($ti->supplier_rate, 2) }}</span></td>
                         <td class="text-end" data-label="Cus. Rate"><span class="cell-value">{{ number_format($ti->customer_rate, 2) }}</span></td>
                         <td class="text-end" data-label="Demrr. Days"><span class="cell-value">{{ $ti->demurrage_days }}</span></td>

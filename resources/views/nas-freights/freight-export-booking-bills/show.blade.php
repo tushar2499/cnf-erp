@@ -46,7 +46,7 @@
         <div class="panel">
             <div class="panel-header" style="background:#155e75;"><i class="fa fa-ship"></i> Booking/Job Details</div>
             <div class="panel-body">
-                @include('nas-freights.freight-export-booking-bills._booking-info', ['booking' => $bill->exportBooking])
+                @include('nas-freights.freight-export-booking-bills._booking-info', ['booking' => $bill->exportBooking, 'openInNewTab' => false])
             </div>
         </div>
     </div>
@@ -86,6 +86,18 @@
                     <div class="col-6 col-md-2">
                         <div class="info-label">Exchange Rate</div>
                         <div class="info-value">{{ number_format($bill->exchange_rate, 4) }}</div>
+                    </div>
+                    @endif
+                    @if($bill->attention)
+                    <div class="col-6">
+                        <div class="info-label">Attention</div>
+                        <div class="info-value">{{ $bill->attention }}</div>
+                    </div>
+                    @endif
+                    @if($bill->designation)
+                    <div class="col-6">
+                        <div class="info-label">Designation</div>
+                        <div class="info-value">{{ $bill->designation }}</div>
                     </div>
                     @endif
                     @if($bill->remarks)

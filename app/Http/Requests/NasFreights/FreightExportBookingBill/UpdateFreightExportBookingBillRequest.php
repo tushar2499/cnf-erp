@@ -21,6 +21,8 @@ class UpdateFreightExportBookingBillRequest extends FormRequest
             'bill_prefix_ref'   => ['nullable', 'string', 'max:100'],
             'bill_prefix_job'   => ['nullable', 'string', 'max:100'],
             'bill_date'         => ['required', 'date'],
+            'attention'         => ['nullable', 'string', 'max:150'],
+            'designation'       => ['nullable', 'string', 'max:150'],
             'currency'          => ['required', 'string', 'max:10'],
             'exchange_rate'     => ['required', 'numeric', 'min:0.0001'],
             'items'             => ['required', 'array', 'min:1'],

@@ -103,7 +103,19 @@
             New Export Booking/Job Bill
         @endif
     </div>
-    <div>
+    <div class="d-flex flex-wrap justify-content-end gap-2">
+        @if(isset($bill))
+            @if(auth()->user()->hasPermission('freight.export-booking-bill.view'))
+                <a href="{{ route('nas-freights.freight-export-booking-bills.show', $bill->id) }}" class="btn btn-sm btn-outline-info">
+                    <i class="fa fa-eye me-1"></i> View
+                </a>
+            @endif
+            @if(auth()->user()->hasPermission('freight.export-booking-bill.print'))
+                <a href="{{ route('nas-freights.freight-export-booking-bills.print', $bill->id) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success">
+                    <i class="fa fa-print me-1"></i> Print
+                </a>
+            @endif
+        @endif
         <a href="{{ route('nas-freights.freight-export-booking-bills.index') }}" class="btn btn-sm btn-outline-secondary">
             <i class="fa fa-arrow-left me-1"></i> Back To List
         </a>
@@ -267,6 +279,24 @@
                                 value="{{ old('exchange_rate', isset($bill) && $bill->currency !== 'BDT' ? $bill->exchange_rate : '') }}"
                                 step="0.0001" min="0.0001" placeholder="e.g. 123.33">
                             @error('exchange_rate')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                    </div>
+
+                    {{-- Attention / Designation (printed under the addressee) --}}
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="attention"><i class="fa fa-user-tie me-1"></i> Attention</label>
+                            <input type="text" id="attention" name="attention" maxlength="150" autocomplete="off"
+                                class="form-control form-control-sm @error('attention') is-invalid @enderror"
+                                placeholder="e.g. Mr. Rahman" value="{{ old('attention', $bill->attention ?? '') }}">
+                            @error('attention')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="designation"><i class="fa fa-id-badge me-1"></i> Designation</label>
+                            <input type="text" id="designation" name="designation" maxlength="150" autocomplete="off"
+                                class="form-control form-control-sm @error('designation') is-invalid @enderror"
+                                placeholder="e.g. Manager, Logistics" value="{{ old('designation', $bill->designation ?? '') }}">
+                            @error('designation')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                     </div>
 

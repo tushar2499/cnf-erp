@@ -74,6 +74,7 @@ Route::prefix('freight-export-bookings')->name('freight-export-bookings.')->grou
     Route::post('/quick-store-customer', [FreightExportBookingController::class, 'quickStoreCustomer'])->name('quick-store-customer');
     Route::get('/search-employees', [FreightExportBookingController::class, 'searchEmployees'])->name('search-employees');
     Route::get('/search-overseas-agents', [FreightExportBookingController::class, 'searchOverseasAgents'])->name('search-overseas-agents');
+    Route::post('/quick-store-overseas-agent', [FreightExportBookingController::class, 'quickStoreOverseasAgent'])->name('quick-store-overseas-agent');
     Route::get('/search-shipping-carriers', [FreightExportBookingController::class, 'searchShippingCarriers'])->name('search-shipping-carriers');
     Route::get('/transport/search-vehicles', [FreightExportBookingTransportController::class, 'searchVehicles'])->name('transport.search-vehicles');
     Route::get('/transport/search-suppliers', [FreightExportBookingTransportController::class, 'searchSuppliers'])->name('transport.search-suppliers');

@@ -11,7 +11,7 @@ class NasFreightsFreightExportBookingItem extends Model
 
     protected $fillable = [
         'export_booking_id', 'item_type', 'container_size', 'container_no', 'seal_no', 'package_type', 'package_qty',
-        'hs_code', 'commodity', 'quantity', 'gross_weight', 'weight_unit',
+        'hs_code', 'commodity', 'quantity', 'gross_weight', 'chargeable_weight', 'weight_unit',
         'volume_cbm', 'country_of_origin', 'is_dangerous_goods', 'special_handling',
     ];
 

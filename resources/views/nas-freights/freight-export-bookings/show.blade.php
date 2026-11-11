@@ -39,12 +39,6 @@
     </div>
 </div>
 
-@if(session('success'))
-<div class="alert alert-success alert-dismissible fade show py-2 mb-2">
-    {{ session('success') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-</div>
-@endif
-
 {{-- ═══ BOOKING/JOB INFORMATION — same groups and order as the create/edit form ═══ --}}
 <div class="section-card">
     <div class="form-header"><i class="fa fa-ship me-1"></i> Booking/Job Information</div>
@@ -52,27 +46,40 @@
 
         {{-- Group 1: Booking/Job details --}}
         <div class="row g-3 mb-3">
-            <div class="col-6 col-md-4 col-xl-2">
+            <div class="col-6 col-md-3 col-xl">
                 <div class="info-label">Booking/Job No</div>
                 <div class="info-value fw-bold">{{ $exportBooking->export_booking_no }}</div>
             </div>
-            <div class="col-6 col-md-4 col-xl-2">
+            <div class="col-6 col-md-3 col-xl">
                 <div class="info-label">Booking/Job Date</div>
                 <div class="info-value">{{ $exportBooking->booking_date?->format('d M Y') ?? '—' }}</div>
             </div>
-            <div class="col-6 col-md-4 col-xl-2">
+            <div class="col-6 col-md-3 col-xl">
                 <div class="info-label">Service Type/Mode</div>
                 <div class="info-value">{{ $exportBooking->service_type ?? '—' }}</div>
             </div>
-            <div class="col-6 col-md-4 col-xl-2">
+            <div class="col-6 col-md-3 col-xl">
                 <div class="info-label">Currency</div>
                 <div class="info-value">{{ $exportBooking->currency ?? '—' }}</div>
             </div>
-            <div class="col-6 col-md-4 col-xl-2">
+            <div class="col-6 col-md-3 col-xl">
+                <div class="info-label">Exchange Rate</div>
+                @php $rateText = is_numeric($exportBooking->exchange_rate) ? number_format((float) $exportBooking->exchange_rate, 3) : null; @endphp
+                <div class="info-value">
+                    @if ($rateText === null)
+                        —
+                    @elseif ($exportBooking->currency && $exportBooking->currency !== 'BDT')
+                        1 {{ $exportBooking->currency }} = {{ $rateText }} BDT
+                    @else
+                        {{ $rateText }}
+                    @endif
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-xl">
                 <div class="info-label">Incoterms</div>
                 <div class="info-value">{{ $exportBooking->incoterms ?? '—' }}</div>
             </div>
-            <div class="col-6 col-md-4 col-xl-2">
+            <div class="col-6 col-md-3 col-xl">
                 <div class="info-label">Status</div>
                 <div class="info-value"><span class="status-pill status-{{ str_replace(' ', '-', $exportBooking->status) }}">{{ $exportBooking->status }}</span></div>
             </div>
@@ -197,9 +204,19 @@
                 <div class="info-value fw-semibold">{{ $exportBooking->export_bl_no ?? '—' }}</div>
             </div>
             <div class="col-6 col-lg-3">
-                <div class="info-label">B/L Date</div>
+                <div class="info-label">Export B/L Date</div>
                 <div class="info-value">{{ $exportBooking->bl_date?->format('d M Y') ?? '—' }}</div>
             </div>
+            <div class="col-6 col-lg-3">
+                <div class="info-label">HAWB/HBL No</div>
+                <div class="info-value fw-semibold">{{ $exportBooking->hawb_hbl_no ?? '—' }}</div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="info-label">HAWB/HBL Date</div>
+                <div class="info-value">{{ $exportBooking->hawb_hbl_date?->format('d M Y') ?? '—' }}</div>
+            </div>
+        </div>
+        <div class="row g-3 mb-3">
             <div class="col-6 col-lg-3">
                 <div class="info-label">Booking Note No</div>
                 <div class="info-value fw-semibold">{{ $exportBooking->booking_note_no ?? '—' }}</div>
@@ -208,8 +225,6 @@
                 <div class="info-label">LC No</div>
                 <div class="info-value">{{ $exportBooking->lc_no ?? '—' }}</div>
             </div>
-        </div>
-        <div class="row g-3 mb-3">
             <div class="col-6 col-lg-3">
                 <div class="info-label">EXP No</div>
                 <div class="info-value">{{ $exportBooking->exp_no ?? '—' }}</div>
@@ -218,6 +233,8 @@
                 <div class="info-label">EXP Date</div>
                 <div class="info-value">{{ $exportBooking->exp_date?->format('d M Y') ?? '—' }}</div>
             </div>
+        </div>
+        <div class="row g-3">
             <div class="col-6 col-lg-3">
                 <div class="info-label">S.B. No</div>
                 <div class="info-value">{{ $exportBooking->invoice_no ?? '—' }}</div>
@@ -226,9 +243,7 @@
                 <div class="info-label">S.B. Date</div>
                 <div class="info-value">{{ $exportBooking->invoice_date?->format('d M Y') ?? '—' }}</div>
             </div>
-        </div>
-        <div class="row g-3">
-            <div class="col-12">
+            <div class="col-12 col-lg-6">
                 <div class="info-label">Remarks</div>
                 <div class="info-value">{{ $exportBooking->remarks ?? '—' }}</div>
             </div>
@@ -245,7 +260,7 @@
         <div class="text-center text-muted py-3" style="font-size:.8rem;"><i class="fa fa-inbox me-1"></i> No cargo items.</div>
         @else
         <div style="overflow-x:auto;">
-            <table class="table table-bordered table-hover mb-0 cargo-table" style="min-width:1300px;">
+            <table class="table table-bordered table-hover mb-0 cargo-table" style="min-width:1440px;">
                 <thead>
                     <tr>
                         <th class="text-center">#</th>
@@ -256,7 +271,8 @@
                         <th>Pkg Unit</th>
                         <th>Container No</th>
                         <th>Seal No</th>
-                        <th class="text-end">Weight</th>
+                        <th class="text-end">Gross Weight</th>
+                        <th class="text-end">Chargeable Weight</th>
                         <th>Unit</th>
                         <th class="text-end">CBM</th>
                         <th>Country of Origin</th>
@@ -282,9 +298,10 @@
                         <td>{{ ($isContainer ? $item->package_type : null) ?? '—' }}</td>
                         <td>{{ $item->container_no ?? '—' }}</td>
                         <td>{{ $item->seal_no ?? '—' }}</td>
-                        <td class="text-end text-nowrap">{{ $item->gross_weight ? number_format($item->gross_weight, 2) : '—' }}</td>
-                        <td>{{ $item->gross_weight ? $item->weight_unit : '—' }}</td>
-                        <td class="text-end">{{ $item->volume_cbm ? number_format($item->volume_cbm, 3) : '—' }}</td>
+                        <td class="text-end text-nowrap">{{ $item->gross_weight ? \App\Helpers\NumberHelper::trimDecimals($item->gross_weight, 3, true) : '—' }}</td>
+                        <td class="text-end text-nowrap">{{ $item->chargeable_weight ? \App\Helpers\NumberHelper::trimDecimals($item->chargeable_weight, 3, true) : '—' }}</td>
+                        <td>{{ $item->gross_weight || $item->chargeable_weight ? $item->weight_unit : '—' }}</td>
+                        <td class="text-end">{{ $item->volume_cbm ? \App\Helpers\NumberHelper::trimDecimals($item->volume_cbm, 3, true) : '—' }}</td>
                         <td>{{ $item->country_of_origin ?? '—' }}</td>
                         <td class="text-center">
                             @if($item->is_dangerous_goods) <span class="badge bg-danger">DG</span>

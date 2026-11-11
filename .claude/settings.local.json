@@ -93,7 +93,17 @@
       "Bash(grep -n '$this->\\\\\\(post\\\\|put\\\\|patch\\\\\\)' tests/Feature/NasFreights/FreightExportBookingTest.php)",
       "Bash(python -I -)",
       "Bash(mv print.blade.php print-general.blade.php)",
-      "Bash(cp print-general.blade.php print-renata.blade.php)"
+      "Bash(cp print-general.blade.php print-renata.blade.php)",
+      "Bash(git diff *)",
+      "Bash(vendor/bin/pint --format agent tests/Feature/NasFreights/CustomerBillPrintFormatTest.php)",
+      "Bash(vendor/bin/pint --format agent app/Http/Controllers/NasFreights/FreightExportBookingBillController.php tests/Feature/NasFreights/FreightExportBookingBillBookingLinkTest.php)",
+      "Bash(./vendor/bin/pint --format agent tests/Feature/NasFreights/FreightExportBookingTest.php)",
+      "Bash(grep -vE \"^\\\\s*$\")",
+      "Bash(python -I \"C:/Users/User/AppData/Local/Temp/claude/3b32f4720d864242/0900b100-c9e7-4741-95bc-5ee90c841e6b/scratchpad/patch_agent_modal.py\" resources/views/nas-freights/freight-export-bookings/create.blade.php)",
+      "Bash(grep -n '$bill->\\\\|$booking->' resources/views/nas-freights/freight-export-booking-bills/print.blade.php)",
+      "Bash(grep -o '\\\\$\\\\\\(bill\\\\|booking\\\\\\)->[a-zA-Z_]*\\\\\\(\\(\\)\\\\\\)\\\\?')",
+      "Bash(vendor/bin/pint --format agent tests/Feature/NasFreights/FreightExportBookingBillPrintExchangeRateTest.php)",
+      "Bash(vendor/bin/pint --format agent tests/Feature/NasFreights/FreightExportBookingBillPrintExpDateTest.php)"
     ]
   },
   "enableAllProjectMcpServers": true,

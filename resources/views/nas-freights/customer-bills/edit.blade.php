@@ -1,6 +1,6 @@
 @extends('nas-freights.layouts.app')
 
-@section('title', 'Edit Customer Bill — {{ $customerBill->bill_no }}')
+@section('title', 'Edit Customer Bill — '.$customerBill->bill_no)
 
 @push('styles')
 <style>
@@ -128,6 +128,10 @@
                 <div class="col-md-4">
                     <table style="width:100%;border-collapse:collapse">
                         <tr>
+                            <td class="text-end pe-2 py-1"><label class="form-label mb-0" for="fldItemTotal">Item Total</label></td>
+                            <td class="py-1"><input type="text" id="fldItemTotal" class="form-control form-control-sm bg-light fw-bold text-end" readonly tabindex="-1" value="0.00"></td>
+                        </tr>
+                        <tr>
                             <td class="text-end pe-2 py-1"><label class="form-label mb-0">TDS (%)</label></td>
                             <td class="py-1">
                                 <div class="input-group input-group-sm">
@@ -152,6 +156,16 @@
                                     <input type="number" id="fldVatPct" name="vat_percent" class="form-control form-control-sm" value="{{ $customerBill->vat_percent }}" min="0" step="0.01" oninput="applyMasterRates()">
                                     <input type="text" id="fldVatAmt" name="vat_amount" class="form-control form-control-sm bg-light fw-bold" readonly placeholder="Amt">
                                 </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-end pe-2 py-1"><label class="form-label mb-0" for="fldVatOnAit">VAT on AIT</label></td>
+                            <td class="py-1">
+                                <select id="fldVatOnAit" name="vat_on_ait" class="form-select form-select-sm" onchange="applyMasterRates()" aria-describedby="vatOnAitHelp">
+                                    <option value="0" {{ ! $customerBill->vat_on_ait ? 'selected' : '' }}>No</option>
+                                    <option value="1" {{ $customerBill->vat_on_ait ? 'selected' : '' }}>Yes</option>
+                                </select>
+                                <div id="vatOnAitHelp" class="form-text" style="font-size:.7rem; margin-top:.1rem">Yes = VAT charged on Rate + AIT.</div>
                             </td>
                         </tr>
                         <tr>
@@ -323,7 +337,8 @@ function round2(n) {
 
 /* TDS, AIT and VAT come from the master and apply to the price only (qty x price less
    discount), not demurrage. Line Amount = price base + AIT + VAT; TDS is shown per row and
-   added once in the bill total. Mirrors CustomerBillController::calculateBill(). */
+   added once in the bill total. "VAT on AIT" = Yes charges VAT on price base + AIT.
+   Mirrors CustomerBillController::calculateBill(). */
 function calcRow($tr) {
     var dQty    = parseFloat($tr.find('.row-dqty').val()) || 0;
     var price   = parseFloat($tr.find('.row-price').val()) || 0;
@@ -331,12 +346,14 @@ function calcRow($tr) {
     var aitPct  = parseFloat($('#fldAitPct').val()) || 0;
     var vatPct  = parseFloat($('#fldVatPct').val()) || 0;
     var tdsPct  = parseFloat($('#fldTdsPct').val()) || 0;
+    var vatOnAit = $('#fldVatOnAit').val() === '1';
     var gross   = round2(dQty * price);
     var disc    = round2(gross * discPct / 100);
     var base    = round2(gross - disc);
     var ait     = round2(base * aitPct / 100);
-    var vat     = round2(base * vatPct / 100);
+    var vat     = round2((vatOnAit ? base + ait : base) * vatPct / 100);
     var tds     = round2(base * tdsPct / 100);
+    $tr.data('base', base);
     $tr.find('.row-disc').val(disc.toFixed(2));
     $tr.find('.row-aitamt').val(ait.toFixed(2));
     $tr.find('.row-vatamt').val(vat.toFixed(2));
@@ -361,10 +378,20 @@ function applyMasterRates() {
     recalcBill();
 }
 
+/* Item Total = sum of qty x price less discount: the amount TDS, AIT and VAT are charged on.
+   With "VAT on AIT" = Yes the VAT base is Item Total + AIT, shown in the dropdown's hint. */
+function showItemTotal(rateBase, aitAmt) {
+    $('#fldItemTotal').val(round2(rateBase).toFixed(2));
+    $('#vatOnAitHelp').text($('#fldVatOnAit').val() === '1'
+        ? 'VAT charged on Rate + AIT: ' + round2(rateBase + aitAmt).toFixed(2)
+        : 'Yes = VAT charged on Rate + AIT.');
+}
+
 function recalcBill() {
-    var tdsAmt = 0, aitAmt = 0, vatAmt = 0, subTotal = 0, totalDem = 0;
+    var tdsAmt = 0, aitAmt = 0, vatAmt = 0, subTotal = 0, totalDem = 0, rateBase = 0;
     $('#rowsBody tr').each(function () {
         var $tr = $(this);
+        rateBase += parseFloat($tr.data('base')) || 0;
         tdsAmt   += parseFloat($tr.find('.row-tdsamt').val()) || 0;
         aitAmt   += parseFloat($tr.find('.row-aitamt').val()) || 0;
         vatAmt   += parseFloat($tr.find('.row-vatamt').val()) || 0;
@@ -376,6 +403,7 @@ function recalcBill() {
     $('#fldTdsAmt').val(round2(tdsAmt).toFixed(2));
     $('#fldAitAmt').val(round2(aitAmt).toFixed(2));
     $('#fldVatAmt').val(round2(vatAmt).toFixed(2));
+    showItemTotal(rateBase, aitAmt);
     $('#fldTotalAmt').val(totalAmt.toFixed(2));
     $('#rowCount').text($('#rowsBody tr').length);
 }
@@ -519,6 +547,7 @@ $('#billForm').on('submit', function (e) {
             ait_amount:       $('#fldAitAmt').val(),
             vat_percent:      $('#fldVatPct').val(),
             vat_amount:       $('#fldVatAmt').val(),
+            vat_on_ait:       $('#fldVatOnAit').val(),
             total_amount:     $('#fldTotalAmt').val(),
             bill_type:        $('#fldBillType').val(),
             bill_by:          $('#fldBillByName').val(),

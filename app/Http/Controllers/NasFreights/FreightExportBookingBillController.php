@@ -27,6 +27,7 @@ class FreightExportBookingBillController extends Controller
 
         if ($request->ajax()) {
             $canView = $request->user()->hasPermission('freight.export-booking-bill.view');
+            $canViewBooking = $request->user()->hasPermission('freight.export-booking.view');
             $canPrint = $request->user()->hasPermission('freight.export-booking-bill.print');
             $canEdit = $request->user()->hasPermission('freight.export-booking-bill.edit');
             $canDelete = $request->user()->hasPermission('freight.export-booking-bill.delete');
@@ -48,8 +49,12 @@ class FreightExportBookingBillController extends Controller
                 ->addColumn('status_badge', fn ($r) => $r->status === 'Confirmed'
                     ? '<span class="badge bg-success">CONFIRMED</span>'
                     : '<span class="badge bg-secondary">DRAFT</span>')
-                ->addColumn('action', function ($r) use ($canView, $canPrint, $canEdit, $canDelete) {
+                ->addColumn('action', function ($r) use ($canView, $canViewBooking, $canPrint, $canEdit, $canDelete) {
                     $actions = '';
+
+                    if ($canViewBooking) {
+                        $actions .= '<a href="'.route('nas-freights.freight-export-bookings.show', $r->export_booking_id).'" class="btn btn-sm btn-outline-secondary" title="Go to Booking/Job" aria-label="Go to Booking/Job"><i class="fa fa-ship"></i></a> ';
+                    }
 
                     if ($canView) {
                         $actions .= '<a href="'.route('nas-freights.freight-export-booking-bills.show', $r->id).'" class="btn btn-sm btn-outline-info" title="View"><i class="fa fa-eye"></i></a> ';
@@ -124,6 +129,8 @@ class FreightExportBookingBillController extends Controller
                 'bill_prefix_ref'   => $prefixValues['bill_prefix_ref'],
                 'bill_prefix_job'   => $prefixValues['bill_prefix_job'],
                 'bill_date'         => $request->bill_date,
+                'attention'         => $this->nullIfBlank($request->attention),
+                'designation'       => $this->nullIfBlank($request->designation),
                 'currency'          => $request->currency,
                 'exchange_rate'     => $exchangeRate,
                 'remarks'           => $request->remarks,
@@ -239,6 +246,8 @@ class FreightExportBookingBillController extends Controller
                 'export_booking_id' => $newBookingId,
                 'bill_type'         => $request->bill_type,
                 'bill_date'         => $request->bill_date,
+                'attention'         => $this->nullIfBlank($request->attention),
+                'designation'       => $this->nullIfBlank($request->designation),
                 'currency'          => $request->currency,
                 'exchange_rate'     => $exchangeRate,
                 'remarks'           => $request->remarks,
@@ -285,8 +294,8 @@ class FreightExportBookingBillController extends Controller
         }
 
         $values = [
-            'bill_prefix_ref' => $this->cleanPrefix($billRef),
-            'bill_prefix_job' => $this->cleanPrefix($jobNo),
+            'bill_prefix_ref' => $this->nullIfBlank($billRef),
+            'bill_prefix_job' => $this->nullIfBlank($jobNo),
         ];
 
         $isFollowUpCustomerBill = $booking->bills()->where('bill_type', 'Customer')->exists();
@@ -318,7 +327,7 @@ class FreightExportBookingBillController extends Controller
         foreach (['bill_prefix_ref', 'bill_prefix_job'] as $field) {
 
             if ($request->exists($field)) {
-                $values[$field] = $this->cleanPrefix($request->input($field));
+                $values[$field] = $this->nullIfBlank($request->input($field));
             }
 
         }
@@ -326,7 +335,7 @@ class FreightExportBookingBillController extends Controller
         return $values;
     }
 
-    private function cleanPrefix(?string $value): ?string
+    private function nullIfBlank(?string $value): ?string
     {
         $value = trim((string) $value);
 

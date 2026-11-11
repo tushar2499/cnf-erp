@@ -1,5 +1,21 @@
-{{-- Partial: booking/job summary for the export booking bill form --}}
+{{-- Partial: booking/job summary for the export booking bill form.
+     Optional $openInNewTab (default true): form pages keep the unsaved bill intact; the read-only show page navigates in place. --}}
 <div class="row g-2">
+    @if(auth()->user()->hasPermission('freight.export-booking.view'))
+    @php $openInNewTab = $openInNewTab ?? true; @endphp
+    <div class="col-12">
+        <a href="{{ route('nas-freights.freight-export-bookings.show', $booking->id) }}"
+           @if($openInNewTab) target="_blank" rel="noopener" @endif
+           class="btn btn-sm btn-outline-info w-100 d-inline-flex align-items-center justify-content-center gap-2"
+           style="min-height:32px;">
+            <i class="fa fa-ship" aria-hidden="true"></i> Go to Booking/Job Page
+            @if($openInNewTab)
+                <i class="fa fa-arrow-up-right-from-square small" aria-hidden="true"></i>
+                <span class="visually-hidden">(opens in a new tab)</span>
+            @endif
+        </a>
+    </div>
+    @endif
     <div class="col-6">
         <div class="info-label">Booking/Job No</div>
         <div class="info-value fw-bold text-success">{{ $booking->export_booking_no }}</div>
@@ -66,6 +82,12 @@
     <div class="col-6">
         <div class="info-label">Booking/Job Currency</div>
         <div class="info-value">{{ $booking->currency }}</div>
+    </div>
+    @endif
+    @if($booking->exchange_rate !== null && $booking->currency && $booking->currency !== 'BDT')
+    <div class="col-6">
+        <div class="info-label">Booking/Job Exchange Rate</div>
+        <div class="info-value">1 {{ $booking->currency }} = {{ number_format((float) $booking->exchange_rate, 3) }} BDT</div>
     </div>
     @endif
     <div class="col-12">

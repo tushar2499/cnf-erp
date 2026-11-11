@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\NasFreights;
 
+use App\Helpers\NumberHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\NasFreights\FreightExportBooking\CreateFreightExportBookingRequest;
 use App\Http\Requests\NasFreights\FreightExportBooking\DestroyFreightExportBookingRequest;
 use App\Http\Requests\NasFreights\FreightExportBooking\EditFreightExportBookingRequest;
 use App\Http\Requests\NasFreights\FreightExportBooking\IndexFreightExportBookingRequest;
+use App\Http\Requests\NasFreights\FreightExportBooking\QuickStoreOverseasAgentRequest;
 use App\Http\Requests\NasFreights\FreightExportBooking\ShowFreightExportBookingRequest;
 use App\Http\Requests\NasFreights\FreightExportBooking\StoreFreightExportBookingRequest;
 use App\Http\Requests\NasFreights\FreightExportBooking\UpdateFreightExportBookingRequest;
@@ -162,9 +164,10 @@ class FreightExportBookingController extends Controller
             'package_qty'        => $i->item_type === 'container' ? $i->package_qty : null,
             'package_unit'       => $i->item_type === 'container' ? $i->package_type : null,
             'quantity'           => $i->quantity,
-            'gross_weight'       => $i->gross_weight,
+            'gross_weight'       => NumberHelper::trimDecimals($i->gross_weight),
+            'chargeable_weight'  => NumberHelper::trimDecimals($i->chargeable_weight),
             'weight_unit'        => $i->weight_unit,
-            'volume_cbm'         => $i->volume_cbm,
+            'volume_cbm'         => NumberHelper::trimDecimals($i->volume_cbm),
             'country_of_origin'  => $i->country_of_origin,
             'is_dangerous_goods' => $i->is_dangerous_goods ? '1' : '0',
             'special_handling'   => $i->special_handling,
@@ -180,14 +183,21 @@ class FreightExportBookingController extends Controller
     {
 
         DB::transaction(function () use ($request, $exportBooking) {
-            $exportBooking->update($this->prepareData($request));
+            $exportBooking->update(array_merge(
+                $this->prepareData($request),
+                $request->has('export_booking_no') ? ['export_booking_no' => $request->input('export_booking_no')] : [],
+            ));
             $exportBooking->items()->delete();
             $this->saveItems($exportBooking, $request->input('items', []));
             $exportBooking->partyInvoices()->delete();
             $this->savePartyInvoices($exportBooking, $request->input('party_invoices', []));
         });
 
-        return redirect()->route('nas-freights.freight-export-bookings.index')->with('success', 'Freight Export Booking/Job '.$exportBooking->export_booking_no.' updated.');
+        $destination = $request->user()->hasPermission('freight.export-booking.view')
+            ? route('nas-freights.freight-export-bookings.show', $exportBooking)
+            : route('nas-freights.freight-export-bookings.index');
+
+        return redirect($destination)->with('success', 'Freight Export Booking/Job '.$exportBooking->export_booking_no.' updated.');
     }
 
     public function destroy(DestroyFreightExportBookingRequest $request, NasFreightsFreightExportBooking $exportBooking)
@@ -240,6 +250,31 @@ class FreightExportBookingController extends Controller
         ]);
     }
 
+    public function quickStoreOverseasAgent(QuickStoreOverseasAgentRequest $request)
+    {
+        $agent = NasFreightsOverseasAgent::create([
+            'agent_code'     => NasFreightsOverseasAgent::generateCode(),
+            'name'           => $request->name,
+            'country'        => $request->country,
+            'city'           => $request->city,
+            'address'        => $request->address,
+            'contact_person' => $request->contact_person,
+            'designation'    => $request->designation,
+            'email'          => $request->email,
+            'phone'          => $request->phone,
+            'mobile'         => $request->mobile,
+            'payment_terms'  => $request->payment_terms,
+            'remarks'        => $request->remarks,
+            'is_active'      => $request->boolean('is_active', true),
+        ]);
+
+        return response()->json([
+            'id'      => $agent->id,
+            'text'    => $agent->agent_code.' — '.$agent->name.' ('.$agent->country.')',
+            'message' => 'Overseas agent "'.$agent->name.'" created successfully.',
+        ]);
+    }
+
     public function searchEmployees(Request $request)
     {
         $q = $request->get('q', '');
@@ -286,6 +321,8 @@ class FreightExportBookingController extends Controller
 
     private function prepareData(Request $request): array
     {
+        $currency = $request->currency ?: 'BDT';
+
         return [
             'branch_id'             => session('nas_freights_branch_id'),
             'customer_id'           => $request->customer_id ?: null,
@@ -297,7 +334,8 @@ class FreightExportBookingController extends Controller
             'booking_date'          => $request->booking_date,
             'service_type'          => $request->service_type,
             'incoterms'             => $request->incoterms ?: null,
-            'currency'              => $request->currency ?: 'BDT',
+            'currency'              => $currency,
+            'exchange_rate'         => $currency === 'BDT' ? 1 : $request->exchange_rate,
             'pol'                   => $request->pol ?: null,
             'pod'                   => $request->pod ?: null,
             'place_of_receipt'      => $request->place_of_receipt ?: null,
@@ -308,6 +346,8 @@ class FreightExportBookingController extends Controller
             'export_bl_no'          => $request->export_bl_no ?: null,
             'booking_note_no'       => $request->booking_note_no ?: null,
             'bl_date'               => $request->bl_date ?: null,
+            'hawb_hbl_no'           => $request->hawb_hbl_no ?: null,
+            'hawb_hbl_date'         => $request->hawb_hbl_date ?: null,
             'exp_no'                => $request->exp_no ?: null,
             'exp_date'              => $request->exp_date ?: null,
             'invoice_no'            => $request->invoice_no ?: null,
@@ -377,8 +417,9 @@ class FreightExportBookingController extends Controller
                     default     => null,
                 },
                 'package_qty'        => $isContainer && is_numeric($item['package_qty'] ?? '') ? max(1, (int) $item['package_qty']) : null,
-                'quantity'           => max(1, (int) ($item['quantity'] ?? 1)),
+                'quantity'           => $isContainer ? 1 : max(1, (int) ($item['quantity'] ?? 1)),
                 'gross_weight'       => is_numeric($item['gross_weight'] ?? '') ? $item['gross_weight'] : null,
+                'chargeable_weight'  => is_numeric($item['chargeable_weight'] ?? '') ? $item['chargeable_weight'] : null,
                 'weight_unit'        => $item['weight_unit'] ?? 'KG',
                 'volume_cbm'         => is_numeric($item['volume_cbm'] ?? '') ? $item['volume_cbm'] : null,
                 'country_of_origin'  => $item['country_of_origin'] ?? null,

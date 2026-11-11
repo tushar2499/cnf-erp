@@ -27,6 +27,7 @@ class StoreCustomerBillRequest extends FormRequest
             'tds_percent'   => ['nullable', 'numeric', 'min:0'],
             'ait_percent'   => ['nullable', 'numeric', 'min:0'],
             'vat_percent'   => ['nullable', 'numeric', 'min:0'],
+            'vat_on_ait'    => ['nullable', 'boolean'],
         ];
     }
 

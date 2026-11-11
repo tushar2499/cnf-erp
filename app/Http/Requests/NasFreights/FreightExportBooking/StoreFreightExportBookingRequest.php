@@ -3,6 +3,7 @@
 namespace App\Http\Requests\NasFreights\FreightExportBooking;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreFreightExportBookingRequest extends FormRequest
 {
@@ -20,12 +21,19 @@ class StoreFreightExportBookingRequest extends FormRequest
             'customer_id'           => ['required', 'exists:nas_freights_customers,id'],
             'booking_date'          => ['required', 'date'],
             'service_type'          => ['required'],
-            'party_bill_ref_no'     => ['required', 'string', 'max:255'],
-            'party_bill_date'       => ['required', 'date'],
+            'currency'              => ['nullable', 'string', 'max:10'],
+            'exchange_rate'         => [
+                Rule::requiredIf(fn () => ($this->input('currency') ?: 'BDT') !== 'BDT'),
+                'nullable', 'numeric', 'decimal:0,3', 'min:0.001', 'max:9999999999.999',
+            ],
+            'party_bill_ref_no'     => ['nullable', 'string', 'max:255'],
+            'party_bill_date'       => ['nullable', 'date'],
             'party_invoices'        => ['nullable', 'array', 'max:50'],
             'party_invoices.*.no'   => ['nullable', 'string', 'max:255', 'required_with:party_invoices.*.date'],
             'party_invoices.*.date' => ['nullable', 'date'],
             'bl_date'               => ['nullable', 'date'],
+            'hawb_hbl_no'           => ['nullable', 'string', 'max:255'],
+            'hawb_hbl_date'         => ['nullable', 'date'],
             'exp_date'              => ['nullable', 'date'],
             'invoice_date'          => ['nullable', 'date'],
             'exp_no'                => ['nullable', 'string', 'max:255'],
@@ -44,10 +52,15 @@ class StoreFreightExportBookingRequest extends FormRequest
     public function attributes(): array
     {
         return [
+            'export_booking_no'     => 'Booking/Job No',
+            'exchange_rate'         => 'Exchange Rate',
             'party_bill_ref_no'     => 'Party Bill Ref No',
             'party_bill_date'       => 'Party Bill Ref Date',
             'party_invoices.*.no'   => 'Party Invoice No',
             'party_invoices.*.date' => 'Party Invoice Date',
+            'bl_date'               => 'Export B/L Date',
+            'hawb_hbl_no'           => 'HAWB/HBL No',
+            'hawb_hbl_date'         => 'HAWB/HBL Date',
             'invoice_no'            => 'S.B. No',
             'invoice_date'          => 'S.B. Date',
         ];
