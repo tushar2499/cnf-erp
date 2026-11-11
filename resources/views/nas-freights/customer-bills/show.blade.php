@@ -92,6 +92,10 @@
                 <div class="info-val">{{ number_format($customerBill->vat_amount, 2) }}</div>
             </div>
             <div class="col-md-3">
+                <div class="info-label">VAT on AIT</div>
+                <div class="info-val">{{ $customerBill->vat_on_ait ? 'Yes' : 'No' }}</div>
+            </div>
+            <div class="col-md-3">
                 <div class="info-label">Sub Total</div>
                 <div class="info-val">{{ number_format($customerBill->sub_total, 2) }}</div>
             </div>

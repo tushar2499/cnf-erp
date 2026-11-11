@@ -637,6 +637,7 @@ class FreightExportBookingImportController extends Controller
                     'service_type'          => $row['service_type'],
                     'incoterms'             => $row['incoterms'] ?? null,
                     'currency'              => $row['currency'] ?? 'BDT',
+                    'exchange_rate'         => ($row['currency'] ?? 'BDT') === 'BDT' ? 1 : null,
                     'pol'                   => $row['pol'] ?? null,
                     'pod'                   => $row['pod'] ?? null,
                     'place_of_receipt'      => $row['place_of_receipt'] ?? null,

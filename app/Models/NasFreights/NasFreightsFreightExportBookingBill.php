@@ -14,7 +14,7 @@ class NasFreightsFreightExportBookingBill extends Model
     protected $fillable = [
         'bill_no', 'export_booking_id', 'branch_id', 'bill_type',
         'bill_prefix_ref', 'bill_prefix_job',
-        'bill_date', 'currency', 'exchange_rate',
+        'bill_date', 'attention', 'designation', 'currency', 'exchange_rate',
         'total_amount', 'total_bdt_amount', 'status', 'remarks',
         'vat_title', 'vat_amount', 'vat_amount_bdt',
     ];

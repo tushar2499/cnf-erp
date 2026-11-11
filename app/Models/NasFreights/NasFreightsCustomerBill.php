@@ -15,15 +15,16 @@ class NasFreightsCustomerBill extends Model
         'bill_date', 'delivery_no', 'delivery_type',
         'tds_percent', 'tds_amount',
         'ait_percent', 'ait_amount',
-        'vat_percent', 'vat_amount',
+        'vat_percent', 'vat_amount', 'vat_on_ait',
         'bill_type', 'bill_by', 'print_format', 'note',
         'branch_id', 'sub_total', 'total_amount', 'status', 'entry_by',
     ];
 
     protected $casts = [
-        'from_date' => 'date',
-        'to_date'   => 'date',
-        'bill_date' => 'date',
+        'from_date'  => 'date',
+        'to_date'    => 'date',
+        'bill_date'  => 'date',
+        'vat_on_ait' => 'boolean',
     ];
 
     public function items()

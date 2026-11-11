@@ -94,6 +94,7 @@ class FreightExportBookingImportTest extends TestCase
             $table->string('service_type');
             $table->string('incoterms')->nullable();
             $table->string('currency')->default('BDT');
+            $table->decimal('exchange_rate', 14, 4)->nullable();
             $table->string('pol')->nullable();
             $table->string('pod')->nullable();
             $table->string('place_of_receipt')->nullable();
@@ -253,6 +254,8 @@ class FreightExportBookingImportTest extends TestCase
         $this->assertSame(1, $booking->branch_id);
         $this->assertSame('2026-08-12', $booking->booking_date->toDateString());
         $this->assertSame('Draft', $booking->status);
+        $this->assertSame('BDT', $booking->currency);
+        $this->assertSame('1.0000', $booking->exchange_rate);
         $this->assertSame(['3004.90', '3003.20'], $booking->hs_codes);
         $this->assertSame('ZISKA PHARMA', $booking->customer->name);
         $this->assertSame('GHANA', $booking->overseasAgent->country);

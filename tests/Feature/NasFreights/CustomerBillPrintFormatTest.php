@@ -90,6 +90,7 @@ class CustomerBillPrintFormatTest extends TestCase
             $table->decimal('ait_amount', 15, 2)->default(0);
             $table->decimal('vat_percent', 8, 2)->default(0);
             $table->decimal('vat_amount', 15, 2)->default(0);
+            $table->boolean('vat_on_ait')->default(false);
             $table->string('bill_type')->nullable();
             $table->string('bill_by')->nullable();
             $table->string('print_format', 30)->default('general');
@@ -367,21 +368,26 @@ class CustomerBillPrintFormatTest extends TestCase
             'items'         => json_encode([$this->itemRow(['booking_id' => 1, 'booking_item_id' => 1])]),
         ]);
 
-        // price base 100: AIT 5.00, VAT 10.00, line 115.00; TDS 2.00 -> total 117.00
+        // price base 100: AIT 5.00, VAT 10.00, line 115.00; TDS 2.00 -> total 117.00.
+        // Printed Rate = base + AIT = 105.00; no separate AIT column or Total AIT row.
         $this->withFreightSession()
             ->get(route('nas-freights.customer-bills.print', $bill->id))
             ->assertOk()
             ->assertViewIs('nas-freights.customer-bills.print-renata')
             ->assertSee('TRANSPORT INVOICE')
-            ->assertSeeInOrder(['SI', 'Date', 'Challan No', 'Vehicle No', 'Capacity (Ton)', 'From', 'To (Destination)', 'Rate (BDT)', 'AIT 5%', 'VAT 10%', 'Net Payable'])
-            ->assertSeeInOrder(['05/10/2026', 'CH-9', 'VAN1', '5 Ton', 'Dhaka', 'Chattogram', '100.00', '5.00', '10.00', '115.00'])
-            ->assertSeeInOrder(['Billing Summary', 'Total Charge', '100.00', 'Total AIT', '5.00', 'Total VAT', '10.00', 'TDS (2%)', '2.00', 'Grand Payable', '117.00'])
+            ->assertSeeInOrder(['SI', 'Date', 'Challan No', 'Vehicle No', 'Capacity (Ton)', 'From', 'To (Destination)', 'Rate (BDT)', 'VAT 10%', 'Net Payable'])
+            ->assertSeeInOrder(['05/10/2026', 'CH-9', 'VAN1', '5 Ton', 'Dhaka', 'Chattogram', '105.00', '10.00', '115.00'])
+            ->assertSeeInOrder(['Billing Summary', 'Total Charge', '105.00', 'Total VAT', '10.00', 'TDS (2%)', '2.00', 'Grand Payable', '117.00'])
+            ->assertDontSee('AIT 5%')
+            ->assertDontSee('Total AIT')
             ->assertSee('BDT One Hundred Seventeen Taka Only')
             ->assertSee('Renata PLC')
             ->assertSee('PO-77')
             ->assertSee("October'26")
             ->assertSeeInOrder(['Bank Information', 'Account Name:', 'Account Number:', 'Bank Name:', 'Routing Number:', 'Branch Name:'])
-            ->assertSeeInOrder(['Prepared By', 'Checked By', 'Approved By', 'Transport Provider'])
+            ->assertSeeInOrder(['Prepared By', 'Checked By'])
+            ->assertDontSee('Approved By')
+            ->assertDontSee('Transport Provider')
             ->assertDontSee('1F4E78', false);
     }
 
@@ -418,6 +424,22 @@ class CustomerBillPrintFormatTest extends TestCase
         NasFreightsCustomerBill::query()->delete();
 
         return $this->makeBill('general');
+    }
+
+    public function test_renata_print_shows_account_officer_name_over_prepared_and_checked_lines(): void
+    {
+        $bill = $this->storeRenataBill(['bill_by' => 'Rahim Uddin']);
+
+        $this->withFreightSession()
+            ->get(route('nas-freights.customer-bills.print', $bill->id))
+            ->assertOk()
+            ->assertSeeInOrder([
+                '<div class="sig-name">Rahim Uddin</div>',
+                '<div class="sig-line">Prepared By</div>',
+                '<div class="sig-name">Rahim Uddin</div>',
+                '<div class="sig-line">Checked By</div>',
+            ], false)
+            ->assertDontSee('<div class="sig-line">Account Officer</div>', false);
     }
 
     public function test_renata_print_splits_manual_row_location_into_from_and_to(): void

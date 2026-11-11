@@ -220,7 +220,7 @@
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
-            margin-top: 44px;
+            margin-top: 10px;
         }
 
         .sig-table td {
@@ -233,6 +233,17 @@
         .sig-line {
             border-top: 1px solid #000;
             padding-top: 3px;
+        }
+
+        /* Account Officer name sits on the line, centred, with room above for a hand signature. */
+        .sig-name {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            height: 40px;
+            padding-bottom: 3px;
+            font-size: 12px;
+            font-weight: 700;
         }
 
         .page-footer {
@@ -303,7 +314,6 @@
         }
 
         $pct = fn($v) => rtrim(rtrim(number_format((float) $v, 2, '.', ''), '0'), '.');
-        $aitPct = $pct($customerBill->ait_percent);
         $vatPct = $pct($customerBill->vat_percent);
         $tdsPct = $pct($customerBill->tds_percent);
 
@@ -339,15 +349,14 @@
                 'capacity' => $bItem?->capacity ?? '',
                 'from' => $from,
                 'to' => $to,
-                'rate' => round((float) $item->d_qty * (float) $item->price - (float) $item->discount, 2),
-                'ait' => (float) $item->ait_amount,
+                // AIT is folded into the printed Rate (base rate + AIT); no separate AIT column.
+                'rate' => round((float) $item->d_qty * (float) $item->price - (float) $item->discount + (float) $item->ait_amount, 2),
                 'vat' => (float) $item->vat_amount,
                 'net' => (float) $item->line_amount,
             ];
         });
 
         $totalRate = $rows->sum('rate');
-        $totalAit = $rows->sum('ait');
         $totalVat = $rows->sum('vat');
         $totalDem = (float) $items->sum('demurrage_amount');
         $tdsAmt = (float) ($customerBill->tds_amount ?? 0);
@@ -454,14 +463,13 @@
                     <th style="width:3%">SI</th>
                     <th style="width:9%">Date</th>
                     <th style="width:8%">Challan No</th>
-                    <th style="width:10%">Vehicle No</th>
+                    <th style="width:11%">Vehicle No</th>
                     <th style="width:7%">Capacity (Ton)</th>
-                    <th style="width:11%">From</th>
-                    <th style="width:13%">To (Destination)</th>
-                    <th style="width:10%">Rate (BDT)</th>
-                    <th style="width:9%">AIT {{ $aitPct }}%</th>
-                    <th style="width:9%">VAT {{ $vatPct }}%</th>
-                    <th style="width:11%">Net Payable</th>
+                    <th style="width:12%">From</th>
+                    <th style="width:14%">To (Destination)</th>
+                    <th style="width:12%">Rate (BDT)</th>
+                    <th style="width:10%">VAT {{ $vatPct }}%</th>
+                    <th style="width:14%">Net Payable</th>
                 </tr>
             </thead>
             <tbody>
@@ -475,7 +483,6 @@
                         <td>{{ $row['from'] }}</td>
                         <td>{{ $row['to'] }}</td>
                         <td class="r">{{ number_format($row['rate'], 2) }}</td>
-                        <td class="r">{{ number_format($row['ait'], 2) }}</td>
                         <td class="r">{{ number_format($row['vat'], 2) }}</td>
                         <td class="r">{{ number_format($row['net'], 2) }}</td>
                     </tr>
@@ -498,10 +505,6 @@
                         <tr>
                             <td class="lbl">Total Charge</td>
                             <td class="amt">{{ number_format($totalRate, 2) }}</td>
-                        </tr>
-                        <tr>
-                            <td class="lbl">Total AIT</td>
-                            <td class="amt">{{ number_format($totalAit, 2) }}</td>
                         </tr>
                         <tr>
                             <td class="lbl">Total VAT</td>
@@ -567,16 +570,18 @@
             <table class="sig-table">
                 <tr>
                     <td>
+                        <div class="sig-name"></div>
                         <div class="sig-line">Prepared By</div>
                     </td>
                     <td>
+                        <div></div>
+                    </td>
+                    <td>
+                        <div></div>
+                    </td>
+                    <td>
+                        <div class="sig-name"></div>
                         <div class="sig-line">Checked By</div>
-                    </td>
-                    <td>
-                        <div class="sig-line">Approved By</div>
-                    </td>
-                    <td>
-                        <div class="sig-line">Transport Provider</div>
                     </td>
                 </tr>
             </table>
@@ -629,7 +634,7 @@
 
             function buildFooterRow(pageNum, totalPages) {
                 var tr = document.createElement('tr');
-                tr.innerHTML = '<td colspan="11" style="border:none;padding:0">' +
+                tr.innerHTML = '<td colspan="10" style="border:none;padding:0">' +
                     '<div class="page-footer"><table><tr>' +
                     '<td style="width:35%"></td>' +
                     '<td style="width:30%;text-align:center">Page ' + pageNum + ' of ' + totalPages + '</td>' +

@@ -3,9 +3,11 @@
 namespace Tests\Feature\NasFreights;
 
 use App\Models\NasFreights\NasFreightsFreightExportBooking;
+use App\Models\NasFreights\NasFreightsOverseasAgent;
 use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -78,6 +80,13 @@ class FreightExportBookingTest extends TestCase
             $table->string('country')->nullable();
             $table->string('city')->nullable();
             $table->text('address')->nullable();
+            $table->string('contact_person', 150)->nullable();
+            $table->string('designation', 100)->nullable();
+            $table->string('email', 255)->nullable();
+            $table->string('phone', 50)->nullable();
+            $table->string('mobile', 50)->nullable();
+            $table->string('payment_terms', 100)->nullable();
+            $table->text('remarks')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
@@ -166,6 +175,7 @@ class FreightExportBookingTest extends TestCase
             $table->string('service_type');
             $table->string('incoterms')->nullable();
             $table->string('currency')->default('BDT');
+            $table->decimal('exchange_rate', 14, 4)->nullable();
             $table->string('pol')->nullable();
             $table->string('pod')->nullable();
             $table->string('place_of_receipt')->nullable();
@@ -177,6 +187,8 @@ class FreightExportBookingTest extends TestCase
             $table->string('export_bl_no')->nullable();
             $table->string('booking_note_no')->nullable();
             $table->date('bl_date')->nullable();
+            $table->string('hawb_hbl_no')->nullable();
+            $table->date('hawb_hbl_date')->nullable();
             $table->string('exp_no')->nullable();
             $table->date('exp_date')->nullable();
             $table->string('invoice_no')->nullable();
@@ -212,6 +224,7 @@ class FreightExportBookingTest extends TestCase
             $table->string('commodity')->nullable();
             $table->unsignedInteger('quantity')->default(1);
             $table->decimal('gross_weight', 10, 3)->nullable();
+            $table->decimal('chargeable_weight', 10, 3)->nullable();
             $table->string('weight_unit')->default('KG');
             $table->decimal('volume_cbm', 10, 3)->nullable();
             $table->string('country_of_origin')->nullable();
@@ -394,7 +407,7 @@ class FreightExportBookingTest extends TestCase
         ];
     }
 
-    public function test_store_requires_party_bill_ref_no_and_date(): void
+    public function test_store_allows_missing_party_bill_ref_no_and_date(): void
     {
         $this->withSession($this->sessionWithBranch());
 
@@ -402,15 +415,15 @@ class FreightExportBookingTest extends TestCase
             'booking_date' => '2026-08-29',
             'service_type' => 'FCL',
             'customer_id'  => $this->createCustomer(),
-        ])->assertSessionHasErrors([
-            'party_bill_ref_no' => 'The Party Bill Ref No field is required.',
-            'party_bill_date'   => 'The Party Bill Ref Date field is required.',
-        ]);
+        ])->assertSessionHasNoErrors()
+            ->assertRedirect(route('nas-freights.freight-export-bookings.index'));
 
-        $this->assertSame(0, NasFreightsFreightExportBooking::count());
+        $booking = NasFreightsFreightExportBooking::firstOrFail();
+        $this->assertNull($booking->party_bill_ref_no);
+        $this->assertNull($booking->party_bill_date);
     }
 
-    public function test_store_rejects_blank_party_bill_ref_no_and_date(): void
+    public function test_store_treats_blank_party_bill_ref_no_and_date_as_empty(): void
     {
         $this->withSession($this->sessionWithBranch());
 
@@ -420,12 +433,14 @@ class FreightExportBookingTest extends TestCase
             'customer_id'       => $this->createCustomer(),
             'party_bill_ref_no' => '   ',
             'party_bill_date'   => '',
-        ])->assertSessionHasErrors(['party_bill_ref_no', 'party_bill_date']);
+        ])->assertSessionHasNoErrors();
 
-        $this->assertSame(0, NasFreightsFreightExportBooking::count());
+        $booking = NasFreightsFreightExportBooking::firstOrFail();
+        $this->assertNull($booking->party_bill_ref_no);
+        $this->assertNull($booking->party_bill_date);
     }
 
-    public function test_update_requires_party_bill_ref_no_and_date(): void
+    public function test_update_allows_clearing_party_bill_ref_no_and_date(): void
     {
         $this->withSession($this->sessionWithBranch());
 
@@ -435,12 +450,254 @@ class FreightExportBookingTest extends TestCase
         ]);
 
         $this->put(route('nas-freights.freight-export-bookings.update', $booking->id), [
+            'customer_id'       => $this->createCustomer(),
+            'booking_date'      => '2026-08-29',
+            'service_type'      => 'FCL',
+            'party_bill_ref_no' => '',
+            'party_bill_date'   => '',
+        ])->assertSessionHasNoErrors();
+
+        $booking->refresh();
+        $this->assertNull($booking->party_bill_ref_no);
+        $this->assertNull($booking->party_bill_date);
+    }
+
+    public function test_update_can_change_booking_no(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $booking = $this->createBooking(['export_booking_no' => 'OLD-100']);
+
+        $this->put(route('nas-freights.freight-export-bookings.update', $booking->id), [
+            'export_booking_no' => 'NEW-200',
+            'customer_id'       => $this->createCustomer(),
+            'booking_date'      => '2026-08-29',
+            'service_type'      => 'FCL',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame('NEW-200', $booking->fresh()->export_booking_no);
+    }
+
+    public function test_update_allows_keeping_own_booking_no(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $booking = $this->createBooking(['export_booking_no' => 'KEEP-1']);
+
+        $this->put(route('nas-freights.freight-export-bookings.update', $booking->id), [
+            'export_booking_no' => 'KEEP-1',
+            'customer_id'       => $this->createCustomer(),
+            'booking_date'      => '2026-08-29',
+            'service_type'      => 'FCL',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame('KEEP-1', $booking->fresh()->export_booking_no);
+    }
+
+    public function test_update_rejects_booking_no_used_by_another_booking(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $this->createBooking(['export_booking_no' => 'TAKEN-1']);
+        $booking = $this->createBooking(['export_booking_no' => 'MINE-1']);
+
+        $this->put(route('nas-freights.freight-export-bookings.update', $booking->id), [
+            'export_booking_no' => 'TAKEN-1',
+            'customer_id'       => $this->createCustomer(),
+            'booking_date'      => '2026-08-29',
+            'service_type'      => 'FCL',
+        ])->assertSessionHasErrors(['export_booking_no']);
+
+        $this->assertSame('MINE-1', $booking->fresh()->export_booking_no);
+    }
+
+    public function test_update_rejects_blank_booking_no(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $booking = $this->createBooking(['export_booking_no' => 'MINE-2']);
+
+        $this->put(route('nas-freights.freight-export-bookings.update', $booking->id), [
+            'export_booking_no' => '   ',
+            'customer_id'       => $this->createCustomer(),
+            'booking_date'      => '2026-08-29',
+            'service_type'      => 'FCL',
+        ])->assertSessionHasErrors(['export_booking_no']);
+
+        $this->assertSame('MINE-2', $booking->fresh()->export_booking_no);
+    }
+
+    public function test_update_without_booking_no_field_keeps_current_number(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $booking = $this->createBooking(['export_booking_no' => 'STAY-1']);
+
+        $this->put(route('nas-freights.freight-export-bookings.update', $booking->id), [
             'customer_id'  => $this->createCustomer(),
             'booking_date' => '2026-08-29',
             'service_type' => 'FCL',
-        ])->assertSessionHasErrors(['party_bill_ref_no', 'party_bill_date']);
+        ])->assertSessionHasNoErrors();
 
-        $this->assertSame('PB-OLD', $booking->fresh()->party_bill_ref_no);
+        $this->assertSame('STAY-1', $booking->fresh()->export_booking_no);
+    }
+
+    public function test_store_requires_exchange_rate_for_foreign_currency(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $this->post(route('nas-freights.freight-export-bookings.store'), [
+            ...$this->partyBillFields(),
+            'booking_date' => '2026-08-29',
+            'service_type' => 'FCL',
+            'customer_id'  => $this->createCustomer(),
+            'currency'     => 'USD',
+        ])->assertSessionHasErrors(['exchange_rate' => 'The Exchange Rate field is required.']);
+
+        $this->assertSame(0, NasFreightsFreightExportBooking::count());
+    }
+
+    public function test_store_rejects_zero_or_non_numeric_exchange_rate(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $customerId = $this->createCustomer();
+
+        foreach (['0', '-5', 'abc', '1.2345'] as $rate) {
+            $this->post(route('nas-freights.freight-export-bookings.store'), [
+                ...$this->partyBillFields(),
+                'booking_date'  => '2026-08-29',
+                'service_type'  => 'FCL',
+                'customer_id'   => $customerId,
+                'currency'      => 'USD',
+                'exchange_rate' => $rate,
+            ])->assertSessionHasErrors(['exchange_rate']);
+        }
+
+        $this->assertSame(0, NasFreightsFreightExportBooking::count());
+    }
+
+    public function test_store_saves_exchange_rate_for_foreign_currency(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $this->post(route('nas-freights.freight-export-bookings.store'), [
+            ...$this->partyBillFields(),
+            'booking_date'  => '2026-08-29',
+            'service_type'  => 'FCL',
+            'customer_id'   => $this->createCustomer(),
+            'currency'      => 'USD',
+            'exchange_rate' => '122.5',
+        ])->assertRedirect(route('nas-freights.freight-export-bookings.index'));
+
+        $booking = NasFreightsFreightExportBooking::first();
+        $this->assertSame('USD', $booking->currency);
+        $this->assertSame('122.5000', $booking->exchange_rate);
+    }
+
+    public function test_store_forces_exchange_rate_to_one_for_bdt(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $this->post(route('nas-freights.freight-export-bookings.store'), [
+            ...$this->partyBillFields(),
+            'booking_date'  => '2026-08-29',
+            'service_type'  => 'FCL',
+            'customer_id'   => $this->createCustomer(),
+            'currency'      => 'BDT',
+            'exchange_rate' => '99',
+        ])->assertRedirect(route('nas-freights.freight-export-bookings.index'));
+
+        $this->assertSame('1.0000', NasFreightsFreightExportBooking::first()->exchange_rate);
+    }
+
+    public function test_store_without_currency_defaults_to_bdt_with_rate_one(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $this->post(route('nas-freights.freight-export-bookings.store'), [
+            ...$this->partyBillFields(),
+            'booking_date' => '2026-08-29',
+            'service_type' => 'FCL',
+            'customer_id'  => $this->createCustomer(),
+        ])->assertRedirect(route('nas-freights.freight-export-bookings.index'));
+
+        $booking = NasFreightsFreightExportBooking::first();
+        $this->assertSame('BDT', $booking->currency);
+        $this->assertSame('1.0000', $booking->exchange_rate);
+    }
+
+    public function test_update_changes_exchange_rate_and_resets_to_one_when_back_to_bdt(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $booking = $this->createBooking([
+            ...$this->partyBillFields(),
+            'currency'      => 'USD',
+            'exchange_rate' => 120,
+        ]);
+
+        $payload = [
+            ...$this->partyBillFields(),
+            'customer_id'  => $this->createCustomer(),
+            'booking_date' => '2026-08-29',
+            'service_type' => 'FCL',
+        ];
+
+        $this->put(route('nas-freights.freight-export-bookings.update', $booking->id), [
+            ...$payload,
+            'currency'      => 'EUR',
+            'exchange_rate' => '131.25',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame('131.2500', $booking->fresh()->exchange_rate);
+
+        $this->put(route('nas-freights.freight-export-bookings.update', $booking->id), [
+            ...$payload,
+            'currency'      => 'BDT',
+            'exchange_rate' => '131.25',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame('1.0000', $booking->fresh()->exchange_rate);
+    }
+
+    public function test_update_requires_exchange_rate_for_foreign_currency(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $booking = $this->createBooking([...$this->partyBillFields(), 'exchange_rate' => 1]);
+
+        $this->put(route('nas-freights.freight-export-bookings.update', $booking->id), [
+            ...$this->partyBillFields(),
+            'customer_id'  => $this->createCustomer(),
+            'booking_date' => '2026-08-29',
+            'service_type' => 'FCL',
+            'currency'     => 'GBP',
+        ])->assertSessionHasErrors(['exchange_rate']);
+
+        $this->assertSame('BDT', $booking->fresh()->currency);
+    }
+
+    public function test_form_shows_exchange_rate_after_currency_and_show_page_displays_it(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $booking = $this->createBooking([
+            ...$this->partyBillFields(),
+            'currency'      => 'USD',
+            'exchange_rate' => 122.5,
+        ]);
+
+        $html = $this->get(route('nas-freights.freight-export-bookings.edit', $booking->id))->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/id="fbCurrency".*id="fbExchangeRate"[^>]*value="122\.5"[^>]*\srequired/s', $html);
+
+        $createHtml = $this->get(route('nas-freights.freight-export-bookings.create'))->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/id="fbExchangeRate"[^>]*value="1"[^>]*\sreadonly/s', $createHtml);
+
+        $this->get(route('nas-freights.freight-export-bookings.show', $booking->id))
+            ->assertOk()
+            ->assertSee('1 USD = 122.500 BDT')
+            ->assertDontSee('122.5000');
     }
 
     public function test_bill_print_shows_party_bill_ref_and_date_in_header_not_in_shipment_table(): void
@@ -470,8 +727,10 @@ class FreightExportBookingTest extends TestCase
             ->assertDontSee('DATE: 08.11.2026', false)
             ->assertDontSee('PARTY BILL REF NO')
             ->assertDontSee('PARTY BILL DATE')
-            ->assertSee('PARTY INVOICE NO')
-            ->assertSee('PARTY INVOICE DATE');
+            ->assertSee('INVOICE NO')
+            ->assertSee('INVOICE DATE')
+            ->assertDontSee('PARTY INVOICE NO')
+            ->assertDontSee('PARTY INVOICE DATE');
     }
 
     public function test_bill_print_shows_cargo_totals_under_commodity_with_weight_in_kgs(): void
@@ -520,7 +779,70 @@ class FreightExportBookingTest extends TestCase
             ->assertOk()
             ->assertSeeInOrder(['COMMODITY', 'MEDICINE', 'QUANTITY', '22 CARTON', '5 BAG', '2 CRATE', 'GROSS WEIGHT', '11,000 KGS', 'CBM', '36'], false)
             ->assertDontSee('11,000.00')
-            ->assertDontSee('35.750');
+            ->assertDontSee('35.750')
+            ->assertDontSee('CHARGEABLE WEIGHT');
+    }
+
+    public function test_bill_print_shows_total_chargeable_weight_in_kgs_after_gross_weight(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $booking = $this->createBooking();
+        $booking->items()->create([
+            'item_type'         => 'package',
+            'quantity'          => 1,
+            'gross_weight'      => 100,
+            'chargeable_weight' => 120.5,
+            'weight_unit'       => 'KG',
+            'volume_cbm'        => 1,
+        ]);
+        $booking->items()->create([
+            'item_type'         => 'package',
+            'quantity'          => 1,
+            'gross_weight'      => 1,
+            'chargeable_weight' => 1.2,
+            'weight_unit'       => 'MT',
+        ]);
+        $bill = $booking->bills()->create([
+            'bill_no'          => 'FEB-BILL-2026-0008',
+            'bill_type'        => 'Customer',
+            'bill_date'        => '2026-11-08',
+            'currency'         => 'BDT',
+            'total_amount'     => 500,
+            'total_bdt_amount' => 500,
+            'status'           => 'Draft',
+        ]);
+
+        $this->get(route('nas-freights.freight-export-booking-bills.print', $bill->id))
+            ->assertOk()
+            ->assertSeeInOrder(['GROSS WEIGHT', '1,100 KGS', 'CHARGEABLE WEIGHT', '1,320.5 KGS', 'CBM'], false);
+    }
+
+    public function test_bill_print_hides_chargeable_weight_when_no_item_has_it(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $booking = $this->createBooking();
+        $booking->items()->create([
+            'item_type'    => 'package',
+            'quantity'     => 1,
+            'gross_weight' => 100,
+            'weight_unit'  => 'KG',
+        ]);
+        $bill = $booking->bills()->create([
+            'bill_no'          => 'FEB-BILL-2026-0009',
+            'bill_type'        => 'Customer',
+            'bill_date'        => '2026-11-08',
+            'currency'         => 'BDT',
+            'total_amount'     => 500,
+            'total_bdt_amount' => 500,
+            'status'           => 'Draft',
+        ]);
+
+        $this->get(route('nas-freights.freight-export-booking-bills.print', $bill->id))
+            ->assertOk()
+            ->assertSee('GROSS WEIGHT')
+            ->assertDontSee('CHARGEABLE WEIGHT');
     }
 
     public function test_bill_print_quantity_uses_package_qty_else_quantity_per_package_type(): void
@@ -594,6 +916,7 @@ class FreightExportBookingTest extends TestCase
             ->assertSee('COMMODITY')
             ->assertDontSee('QUANTITY')
             ->assertDontSee('GROSS WEIGHT')
+            ->assertDontSee('CHARGEABLE WEIGHT')
             ->assertDontSee('KGS')
             ->assertDontSee('CBM');
     }
@@ -745,6 +1068,51 @@ class FreightExportBookingTest extends TestCase
             ->assertDontSee('INV NO');
     }
 
+    public function test_bill_print_shows_sb_date_between_sb_no_and_mawb_bl_no(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $booking = $this->createBooking([
+            'invoice_no'   => 'SB-2026-0002',
+            'invoice_date' => '2026-11-05',
+            'export_bl_no' => 'BL-556',
+        ]);
+        $bill = $booking->bills()->create([
+            'bill_no'          => 'FEB-BILL-2026-0011',
+            'bill_type'        => 'Customer',
+            'bill_date'        => '2026-11-08',
+            'currency'         => 'BDT',
+            'total_amount'     => 500,
+            'total_bdt_amount' => 500,
+            'status'           => 'Draft',
+        ]);
+
+        $this->get(route('nas-freights.freight-export-booking-bills.print', $bill->id))
+            ->assertOk()
+            ->assertSeeInOrder(['S.B. NO', 'SB-2026-0002', 'S.B. DATE', '05.11.2026', 'MAWB / B/L NO.', 'BL-556'], false);
+    }
+
+    public function test_bill_print_hides_sb_date_row_when_sb_date_missing(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $booking = $this->createBooking(['invoice_no' => 'SB-2026-0003', 'export_bl_no' => 'BL-557']);
+        $bill = $booking->bills()->create([
+            'bill_no'          => 'FEB-BILL-2026-0012',
+            'bill_type'        => 'Customer',
+            'bill_date'        => '2026-11-08',
+            'currency'         => 'BDT',
+            'total_amount'     => 500,
+            'total_bdt_amount' => 500,
+            'status'           => 'Draft',
+        ]);
+
+        $this->get(route('nas-freights.freight-export-booking-bills.print', $bill->id))
+            ->assertOk()
+            ->assertSee('S.B. NO', false)
+            ->assertDontSee('S.B. DATE', false);
+    }
+
     public function test_bill_print_labels_footer_ref_as_job_ref_no_with_booking_job_no(): void
     {
         $this->withSession($this->sessionWithBranch());
@@ -831,10 +1199,11 @@ class FreightExportBookingTest extends TestCase
             ->assertSee('JOB REF NO: NASEXP26007</span>', false);
     }
 
-    public function test_create_and_edit_pages_mark_party_bill_fields_required(): void
+    public function test_create_and_edit_pages_party_bill_fields_are_optional_and_booking_no_is_editable(): void
     {
         $this->withSession($this->sessionWithBranch());
         $booking = $this->createBooking([
+            'export_booking_no' => 'EDIT-ME-1',
             'party_bill_ref_no' => 'PB-OLD',
             'party_bill_date'   => '2026-08-01',
         ]);
@@ -845,11 +1214,19 @@ class FreightExportBookingTest extends TestCase
         ] as $url) {
             $html = $this->get($url)->assertOk()->getContent();
 
-            $this->assertMatchesRegularExpression('/for="fbPartyBillRefNo">Party Bill Ref No <span class="text-danger">\*<\/span>/', $html);
-            $this->assertMatchesRegularExpression('/for="fbPartyBillRefDate">Party Bill Ref Date <span class="text-danger">\*<\/span>/', $html);
-            $this->assertMatchesRegularExpression('/id="fbPartyBillRefNo"[^>]*\srequired/', $html);
-            $this->assertMatchesRegularExpression('/id="fbPartyBillRefDate"[^>]*\srequired/', $html);
+            $this->assertMatchesRegularExpression('/for="fbPartyBillRefNo">Party Bill Ref No<\/label>/', $html);
+            $this->assertMatchesRegularExpression('/for="fbPartyBillRefDate">Party Bill Ref Date<\/label>/', $html);
+            $this->assertDoesNotMatchRegularExpression('/id="fbPartyBillRefNo"[^>]*\srequired/', $html);
+            $this->assertDoesNotMatchRegularExpression('/id="fbPartyBillRefDate"[^>]*\srequired/', $html);
+            $this->assertMatchesRegularExpression('/id="fbBookingNo" name="export_booking_no"/', $html);
+            $this->assertDoesNotMatchRegularExpression('/id="fbBookingNo"[^>]*\sreadonly/', $html);
         }
+
+        $editHtml = $this->get(route('nas-freights.freight-export-bookings.edit', $booking->id))->getContent();
+        $this->assertMatchesRegularExpression('/id="fbBookingNo"[^>]*value="EDIT-ME-1"[^>]*\srequired/s', $editHtml);
+
+        $createHtml = $this->get(route('nas-freights.freight-export-bookings.create'))->getContent();
+        $this->assertDoesNotMatchRegularExpression('/id="fbBookingNo"[^>]*\srequired/s', $createHtml);
     }
 
     public function test_store_creates_export_booking_with_bl_and_booking_note(): void
@@ -1682,6 +2059,94 @@ class FreightExportBookingTest extends TestCase
             ->assertSee('id="fbBookingDate" name="booking_date"', false);
     }
 
+    public function test_store_saves_hawb_hbl_no_and_date(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $this->post(route('nas-freights.freight-export-bookings.store'), [
+            ...$this->partyBillFields(),
+            'booking_date'  => '2026-08-29',
+            'service_type'  => 'FCL',
+            'customer_id'   => $this->createCustomer(),
+            'bl_date'       => '2026-09-01',
+            'hawb_hbl_no'   => 'HBL-2026-0042',
+            'hawb_hbl_date' => '2026-09-04',
+        ])->assertRedirect(route('nas-freights.freight-export-bookings.index'));
+
+        $booking = NasFreightsFreightExportBooking::first();
+        $this->assertSame('HBL-2026-0042', $booking->hawb_hbl_no);
+        $this->assertSame('2026-09-04', $booking->hawb_hbl_date->toDateString());
+        $this->assertSame('2026-09-01', $booking->bl_date->toDateString());
+    }
+
+    public function test_update_changes_and_clears_hawb_hbl_fields(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $booking = $this->createBooking(['hawb_hbl_no' => 'OLD-HBL', 'hawb_hbl_date' => '2026-09-04']);
+
+        $this->put(route('nas-freights.freight-export-bookings.update', $booking->id), [
+            ...$this->partyBillFields(),
+            'customer_id'   => $this->createCustomer(),
+            'booking_date'  => '2026-08-29',
+            'service_type'  => 'FCL',
+            'hawb_hbl_no'   => 'NEW-HBL',
+            'hawb_hbl_date' => '',
+        ])->assertRedirect();
+
+        $booking = $booking->fresh();
+        $this->assertSame('NEW-HBL', $booking->hawb_hbl_no);
+        $this->assertNull($booking->hawb_hbl_date);
+    }
+
+    public function test_store_rejects_invalid_hawb_hbl_date(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $this->post(route('nas-freights.freight-export-bookings.store'), [
+            ...$this->partyBillFields(),
+            'booking_date'  => '2026-08-29',
+            'service_type'  => 'FCL',
+            'customer_id'   => $this->createCustomer(),
+            'hawb_hbl_date' => 'nope',
+        ])->assertSessionHasErrors(['hawb_hbl_date']);
+    }
+
+    public function test_edit_page_shows_export_bl_date_and_hawb_hbl_fields_prefilled(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $booking = $this->createBooking([
+            'export_bl_no'  => 'EXP-BL-1',
+            'bl_date'       => '2026-09-01',
+            'hawb_hbl_no'   => 'HBL-2026-0042',
+            'hawb_hbl_date' => '2026-09-04',
+        ]);
+
+        $this->get(route('nas-freights.freight-export-bookings.edit', $booking->id))
+            ->assertOk()
+            ->assertSeeInOrder(['Export B/L No', 'Export B/L Date', 'HAWB/HBL No', 'HAWB/HBL Date', 'Booking Note No'], false)
+            ->assertSee('name="hawb_hbl_no"', false)
+            ->assertSee('value="HBL-2026-0042"', false)
+            ->assertSee('name="hawb_hbl_date"', false)
+            ->assertSee('value="2026-09-04"', false);
+    }
+
+    public function test_show_page_displays_export_bl_date_and_hawb_hbl_fields(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $booking = $this->createBooking([
+            'bl_date'       => '2026-09-01',
+            'hawb_hbl_no'   => 'HBL-2026-0042',
+            'hawb_hbl_date' => '2026-09-04',
+        ]);
+
+        $this->get(route('nas-freights.freight-export-bookings.show', $booking->id))
+            ->assertOk()
+            ->assertSeeInOrder(['Export B/L Date', '01 Sep 2026', 'HAWB/HBL No', 'HBL-2026-0042', 'HAWB/HBL Date', '04 Sep 2026'], false);
+    }
+
     private function seedExpenseAndTransport(NasFreightsFreightExportBooking $booking): void
     {
         DB::table('nas_freights_freight_export_booking_transport_items')->insert([
@@ -1879,16 +2344,400 @@ class FreightExportBookingTest extends TestCase
         $booking->items()->create([
             'item_type'    => 'container', 'container_size' => '40GP', 'container_no' => 'MSCU1234567',
             'seal_no'      => 'SL1', 'package_qty' => 10, 'package_type' => 'Carton', 'quantity' => 2,
-            'gross_weight' => 1500, 'weight_unit' => 'KG', 'volume_cbm' => 3.5,
+            'gross_weight' => 1500, 'chargeable_weight' => 1750, 'weight_unit' => 'KG', 'volume_cbm' => 3.5,
         ]);
 
         $this->get(route('nas-freights.freight-export-bookings.show', $booking->id))
             ->assertOk()
             ->assertSeeInOrder([
                 'Item Type', 'Qty', 'Container Size / Pkg', 'Pkg Qty', 'Pkg Unit', 'Container No',
-                'Seal No', 'Weight', 'Unit', 'CBM', 'Country of Origin', 'DG', 'Special Handling',
-                '40GP', 'Carton', 'MSCU1234567', 'SL1', '1,500.00', 'KG', '3.500',
-            ]);
+                'Seal No', 'Gross Weight', 'Chargeable Weight', 'Unit', 'CBM', 'Country of Origin', 'DG', 'Special Handling',
+                '40GP', 'Carton', 'MSCU1234567', 'SL1', '1,500', '1,750', 'KG', '3.5',
+            ])
+            ->assertDontSee('1,500.00')
+            ->assertDontSee('3.500');
+    }
+
+    public function test_show_page_keeps_decimals_only_when_needed_for_weights_and_cbm(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $booking = $this->createBooking();
+        $booking->items()->create([
+            'item_type'    => 'package', 'package_type' => 'Carton', 'quantity' => 1,
+            'gross_weight' => 201, 'chargeable_weight' => 250.125, 'weight_unit' => 'KG', 'volume_cbm' => 0.75,
+        ]);
+
+        $this->get(route('nas-freights.freight-export-bookings.show', $booking->id))
+            ->assertOk()
+            ->assertSeeInOrder(['>201<', '>250.125<', 'KG', '>0.75<'], false)
+            ->assertDontSee('201.00')
+            ->assertDontSee('0.750');
+    }
+
+    public function test_update_redirects_to_show_page(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $booking = $this->createBooking();
+
+        $this->put(route('nas-freights.freight-export-bookings.update', $booking->id), [
+            ...$this->partyBillFields(),
+            'customer_id'  => $this->createCustomer(),
+            'booking_date' => '2026-08-29',
+            'service_type' => 'FCL',
+        ])
+            ->assertRedirect(route('nas-freights.freight-export-bookings.show', $booking->id))
+            ->assertSessionHas('success');
+    }
+
+    public function test_store_forces_container_quantity_to_one_but_keeps_package_quantity(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $this->post(route('nas-freights.freight-export-bookings.store'), [
+            ...$this->partyBillFields(),
+            'booking_date' => '2026-08-29',
+            'service_type' => 'FCL',
+            'customer_id'  => $this->createCustomer(),
+            'items'        => [
+                ['item_type' => 'container', 'quantity' => 9, 'container_size' => '20GP'],
+                ['item_type' => 'container', 'container_size' => '40HC'],
+                ['item_type' => 'package', 'quantity' => 12, 'package_type' => 'Carton'],
+            ],
+        ])->assertSessionHasNoErrors();
+
+        $items = NasFreightsFreightExportBooking::firstOrFail()->items()->orderBy('id')->get();
+        $this->assertSame([1, 1, 12], $items->pluck('quantity')->all());
+    }
+
+    public function test_update_resets_existing_container_quantity_to_one(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $booking = $this->createBooking($this->partyBillFields());
+        $booking->items()->create(['item_type' => 'container', 'quantity' => 9]);
+
+        $this->put(route('nas-freights.freight-export-bookings.update', $booking->id), [
+            ...$this->partyBillFields(),
+            'customer_id'  => $this->createCustomer(),
+            'booking_date' => '2026-08-29',
+            'service_type' => 'FCL',
+            'items'        => [
+                ['item_type' => 'container', 'quantity' => 9, 'container_size' => '20GP'],
+                ['item_type' => 'package', 'quantity' => 4, 'package_type' => 'Bag'],
+            ],
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame([1, 4], $booking->items()->orderBy('id')->pluck('quantity')->all());
+    }
+
+    public function test_create_and_edit_page_inline_scripts_are_valid_javascript(): void
+    {
+        if (! Process::run(['node', '-v'])->successful()) {
+            $this->markTestSkipped('node is not available to syntax-check the page scripts.');
+        }
+
+        $this->withSession($this->sessionWithBranch());
+        $booking = $this->createBooking();
+
+        foreach ([
+            route('nas-freights.freight-export-bookings.create'),
+            route('nas-freights.freight-export-bookings.edit', $booking->id),
+        ] as $url) {
+            $html = $this->get($url)->assertOk()->getContent();
+
+            preg_match_all('/<script(?![^>]*\ssrc=)[^>]*>(.*?)<\/script>/s', $html, $matches);
+            $this->assertNotEmpty($matches[1]);
+
+            foreach ($matches[1] as $index => $script) {
+                if (trim($script) === '') {
+                    continue;
+                }
+
+                $file = tempnam(sys_get_temp_dir(), 'fbjs').'.js';
+                file_put_contents($file, $script);
+                $result = Process::run(['node', '--check', $file]);
+                @unlink($file);
+
+                $this->assertTrue($result->successful(), "Inline script #{$index} on {$url} is not valid JavaScript: ".$result->errorOutput());
+            }
+        }
+    }
+
+    public function test_item_form_locks_quantity_for_container_rows(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+        $booking = $this->createBooking();
+
+        foreach ([
+            route('nas-freights.freight-export-bookings.create'),
+            route('nas-freights.freight-export-bookings.edit', $booking->id),
+        ] as $url) {
+            $html = $this->get($url)->assertOk()->getContent();
+
+            $this->assertMatchesRegularExpression('/name="items\[0\]\[quantity\]"[^>]*item-qty-input/s', $html);
+            $this->assertStringContainsString("var \$qty = \$row.find('.item-qty-input');", $html);
+            $this->assertStringContainsString("\$qty.val(1).prop('disabled', true);", $html);
+            $this->assertStringContainsString("\$qty.prop('disabled', false);", $html);
+            $this->assertStringNotContainsString('.item-qty-input[readonly]', $html);
+        }
+    }
+
+    public function test_show_page_flashes_success_only_as_toast_not_inline_alert(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $booking = $this->createBooking(['export_booking_no' => 'TOAST-1']);
+
+        $html = $this->withSession(['success' => 'Freight Export Booking/Job TOAST-1 updated.'])
+            ->get(route('nas-freights.freight-export-bookings.show', $booking->id))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringNotContainsString('alert alert-success', $html);
+        $this->assertSame(1, substr_count($html, 'Freight Export Booking\/Job TOAST-1 updated.'));
+        $this->assertStringContainsString('Swal.fire({ toast: true', $html);
+    }
+
+    public function test_update_redirects_to_list_when_user_cannot_view_booking(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $booking = $this->createBooking();
+
+        $editOnlyUser = new class extends User
+        {
+            public function hasPermission(string $permission): bool
+            {
+                return $permission !== 'freight.export-booking.view' && parent::hasPermission($permission);
+            }
+        };
+        $editOnlyUser->setRawAttributes(User::first()->getAttributes(), true);
+        $editOnlyUser->exists = true;
+        $this->actingAs($editOnlyUser);
+
+        $this->put(route('nas-freights.freight-export-bookings.update', $booking->id), [
+            ...$this->partyBillFields(),
+            'customer_id'  => $this->createCustomer(),
+            'booking_date' => '2026-08-29',
+            'service_type' => 'FCL',
+        ])->assertRedirect(route('nas-freights.freight-export-bookings.index'));
+    }
+
+    public function test_quick_store_overseas_agent_creates_active_agent_and_returns_select_option(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $response = $this->postJson(route('nas-freights.freight-export-bookings.quick-store-overseas-agent'), [
+            'name'           => 'Derek Ofori',
+            'country'        => 'Ghana',
+            'city'           => 'Tema',
+            'address'        => 'Harbour Road, Tema',
+            'contact_person' => 'Derek Ofori',
+            'designation'    => 'Sales Manager',
+            'email'          => 'derek@example.com',
+            'phone'          => '+233200000000',
+            'mobile'         => '+233500000000',
+            'payment_terms'  => '30 days net',
+            'remarks'        => 'Preferred agent',
+            'is_active'      => 1,
+        ])->assertOk();
+
+        $agent = NasFreightsOverseasAgent::firstOrFail();
+        $this->assertSame('OA-000001', $agent->agent_code);
+        $this->assertSame('Tema', $agent->city);
+        $this->assertSame('Harbour Road, Tema', $agent->address);
+        $this->assertSame('Derek Ofori', $agent->contact_person);
+        $this->assertSame('Sales Manager', $agent->designation);
+        $this->assertSame('derek@example.com', $agent->email);
+        $this->assertSame('+233200000000', $agent->phone);
+        $this->assertSame('+233500000000', $agent->mobile);
+        $this->assertSame('30 days net', $agent->payment_terms);
+        $this->assertSame('Preferred agent', $agent->remarks);
+        $this->assertTrue($agent->is_active);
+
+        $response->assertJson([
+            'id'   => $agent->id,
+            'text' => 'OA-000001 — Derek Ofori (Ghana)',
+        ]);
+
+        $this->postJson(route('nas-freights.freight-export-bookings.quick-store-overseas-agent'), [
+            'name'    => 'Second Agent',
+            'country' => 'Kenya',
+        ])->assertOk()->assertJsonPath('text', 'OA-000002 — Second Agent (Kenya)');
+    }
+
+    public function test_quick_store_overseas_agent_requires_name_and_country(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $this->postJson(route('nas-freights.freight-export-bookings.quick-store-overseas-agent'), [
+            'city' => 'Tema',
+        ])->assertUnprocessable()->assertJsonValidationErrors(['name', 'country']);
+
+        $this->assertSame(0, NasFreightsOverseasAgent::count());
+    }
+
+    public function test_quick_store_overseas_agent_validates_email_and_respects_inactive_flag(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $this->postJson(route('nas-freights.freight-export-bookings.quick-store-overseas-agent'), [
+            'name'    => 'Bad Email Agent',
+            'country' => 'Ghana',
+            'email'   => 'not-an-email',
+        ])->assertUnprocessable()->assertJsonValidationErrors(['email']);
+
+        $this->assertSame(0, NasFreightsOverseasAgent::count());
+
+        $this->postJson(route('nas-freights.freight-export-bookings.quick-store-overseas-agent'), [
+            'name'      => 'Dormant Agent',
+            'country'   => 'Kenya',
+            'is_active' => 0,
+        ])->assertOk();
+
+        $this->assertFalse(NasFreightsOverseasAgent::firstOrFail()->is_active);
+    }
+
+    public function test_quick_store_overseas_agent_is_forbidden_without_create_permission(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $noAgentUser = new class extends User
+        {
+            public function hasPermission(string $permission): bool
+            {
+                return $permission !== 'freight.overseas-agent.create' && parent::hasPermission($permission);
+            }
+        };
+        $noAgentUser->setRawAttributes(User::first()->getAttributes(), true);
+        $noAgentUser->exists = true;
+        $this->actingAs($noAgentUser);
+
+        $this->postJson(route('nas-freights.freight-export-bookings.quick-store-overseas-agent'), [
+            'name'    => 'Blocked',
+            'country' => 'Ghana',
+        ])->assertForbidden();
+
+        $this->assertSame(0, NasFreightsOverseasAgent::count());
+
+        $html = $this->get(route('nas-freights.freight-export-bookings.create'))->assertOk()->getContent();
+        $this->assertStringNotContainsString('id="btnQuickAgent"', $html);
+        $this->assertStringNotContainsString('id="quickAgentModal"', $html);
+    }
+
+    public function test_create_and_edit_pages_show_new_overseas_agent_button_beside_agent_label(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+        $booking = $this->createBooking();
+
+        foreach ([
+            route('nas-freights.freight-export-bookings.create'),
+            route('nas-freights.freight-export-bookings.edit', $booking->id),
+        ] as $url) {
+            $html = $this->get($url)->assertOk()->getContent();
+
+            $this->assertMatchesRegularExpression('/for="overseasAgentSelect">.*id="btnQuickAgent".*id="overseasAgentSelect"/s', $html);
+            $this->assertStringContainsString('id="quickAgentModal"', $html);
+
+            foreach ([
+                'qa_name'           => 'Company name',
+                'qa_country'        => 'e.g. Singapore',
+                'qa_city'           => 'e.g. Singapore City',
+                'qa_address'        => 'Full address',
+                'qa_contact_person' => 'Primary contact name',
+                'qa_designation'    => 'e.g. Sales Manager',
+                'qa_email'          => 'agent@email.com',
+                'qa_phone'          => 'Office phone',
+                'qa_mobile'         => 'Mobile number',
+                'qa_payment_terms'  => 'e.g. 30 days net',
+                'qa_remarks'        => 'Any notes',
+            ] as $id => $placeholder) {
+                $this->assertMatchesRegularExpression('/id="'.$id.'"[^>]*placeholder="'.preg_quote($placeholder, '/').'"/', $html);
+            }
+        }
+    }
+
+    public function test_store_saves_gross_and_chargeable_weight(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $this->post(route('nas-freights.freight-export-bookings.store'), [
+            ...$this->partyBillFields(),
+            'booking_date' => '2026-08-29',
+            'service_type' => 'AIR',
+            'customer_id'  => $this->createCustomer(),
+            'items'        => [[
+                'item_type'         => 'package',
+                'package_type'      => 'Carton',
+                'quantity'          => 4,
+                'gross_weight'      => '201.000',
+                'chargeable_weight' => '250.500',
+                'weight_unit'       => 'KG',
+            ]],
+        ])->assertRedirect(route('nas-freights.freight-export-bookings.index'));
+
+        $item = NasFreightsFreightExportBooking::first()->items()->first();
+        $this->assertEquals(201, $item->gross_weight);
+        $this->assertEquals(250.5, $item->chargeable_weight);
+        $this->assertSame('KG', $item->weight_unit);
+    }
+
+    public function test_update_changes_and_clears_chargeable_weight(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $booking = $this->createBooking();
+        $booking->items()->create([
+            'item_type'    => 'package', 'package_type' => 'Carton', 'quantity' => 1,
+            'gross_weight' => 100, 'chargeable_weight' => 120, 'weight_unit' => 'KG',
+        ]);
+
+        $payload = [
+            ...$this->partyBillFields(),
+            'customer_id'  => $this->createCustomer(),
+            'booking_date' => '2026-08-29',
+            'service_type' => 'AIR',
+        ];
+
+        $this->put(route('nas-freights.freight-export-bookings.update', $booking->id), $payload + [
+            'items' => [[
+                'item_type'    => 'package', 'package_type' => 'Carton', 'quantity' => 1,
+                'gross_weight' => 100, 'chargeable_weight' => 135.25, 'weight_unit' => 'KG',
+            ]],
+        ])->assertRedirect();
+        $this->assertEquals(135.25, $booking->items()->first()->chargeable_weight);
+
+        $this->put(route('nas-freights.freight-export-bookings.update', $booking->id), $payload + [
+            'items' => [[
+                'item_type'    => 'package', 'package_type' => 'Carton', 'quantity' => 1,
+                'gross_weight' => 100, 'chargeable_weight' => '', 'weight_unit' => 'KG',
+            ]],
+        ])->assertRedirect();
+        $item = $booking->items()->first();
+        $this->assertNull($item->chargeable_weight);
+        $this->assertEquals(100, $item->gross_weight);
+    }
+
+    public function test_edit_page_labels_gross_weight_and_prefills_chargeable_weight(): void
+    {
+        $this->withSession($this->sessionWithBranch());
+
+        $booking = $this->createBooking();
+        $booking->items()->create([
+            'item_type'    => 'package', 'package_type' => 'Carton', 'quantity' => 1,
+            'gross_weight' => 201, 'chargeable_weight' => 250.5, 'weight_unit' => 'KG',
+        ]);
+
+        $response = $this->get(route('nas-freights.freight-export-bookings.edit', $booking->id))
+            ->assertOk()
+            ->assertSeeInOrder(['Seal No', 'Gross Weight', 'Chargeable Weight', 'Unit', 'CBM'], false)
+            ->assertSee('name="items[0][chargeable_weight]"', false);
+
+        $this->assertMatchesRegularExpression('/"gross_weight":"201"/', $response->getContent());
+        $this->assertMatchesRegularExpression('/"chargeable_weight":"250\.5"/', $response->getContent());
+        $this->assertDoesNotMatchRegularExpression('/"(gross|chargeable)_weight":"?\d+\.\d*0"?/', $response->getContent());
     }
 
     public function test_show_page_says_no_bill_created_when_booking_has_no_bills(): void

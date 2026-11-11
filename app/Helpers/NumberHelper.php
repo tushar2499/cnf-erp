@@ -14,6 +14,21 @@ class NumberHelper
         '', '', 'TWENTY', 'THIRTY', 'FORTY', 'FIFTY', 'SIXTY', 'SEVENTY', 'EIGHTY', 'NINETY',
     ];
 
+    /**
+     * Format a DECIMAL column value without needless trailing zeros (201.000 → 201, 250.500 → 250.5).
+     * Returns null when the value is not numeric so callers can pick their own placeholder.
+     */
+    public static function trimDecimals(mixed $value, int $scale = 3, bool $grouped = false): ?string
+    {
+        if (! is_numeric($value)) {
+            return null;
+        }
+
+        $formatted = number_format((float) $value, $scale, '.', $grouped ? ',' : '');
+
+        return str_contains($formatted, '.') ? rtrim(rtrim($formatted, '0'), '.') : $formatted;
+    }
+
     public static function amountInWords(float $amount): string
     {
         $amount = round(abs($amount), 2);

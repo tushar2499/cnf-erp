@@ -192,6 +192,7 @@ class CustomerBillController extends Controller
             (float) ($request->tds_percent ?? 0),
             (float) ($request->ait_percent ?? 0),
             (float) ($request->vat_percent ?? 0),
+            $request->boolean('vat_on_ait'),
         );
 
         DB::transaction(function () use ($request, $calc) {
@@ -213,6 +214,7 @@ class CustomerBillController extends Controller
                 'ait_amount'       => $calc['ait_amount'],
                 'vat_percent'      => $calc['vat_percent'],
                 'vat_amount'       => $calc['vat_amount'],
+                'vat_on_ait'       => $calc['vat_on_ait'],
                 'bill_type'        => $request->bill_type,
                 'bill_by'          => $request->bill_by,
                 'print_format'     => $request->input('print_format') ?: NasFreightsCustomerBill::DEFAULT_PRINT_FORMAT,
@@ -264,6 +266,7 @@ class CustomerBillController extends Controller
             (float) ($request->tds_percent ?? 0),
             (float) ($request->ait_percent ?? 0),
             (float) ($request->vat_percent ?? 0),
+            $request->boolean('vat_on_ait'),
         );
 
         DB::transaction(function () use ($request, $customerBill, $calc) {
@@ -281,6 +284,7 @@ class CustomerBillController extends Controller
                 'ait_amount'       => $calc['ait_amount'],
                 'vat_percent'      => $calc['vat_percent'],
                 'vat_amount'       => $calc['vat_amount'],
+                'vat_on_ait'       => $calc['vat_on_ait'],
                 'bill_type'        => $request->bill_type,
                 'bill_by'          => $request->bill_by,
                 'print_format'     => $request->input('print_format') ?: NasFreightsCustomerBill::DEFAULT_PRINT_FORMAT,
@@ -502,16 +506,19 @@ class CustomerBillController extends Controller
      * (qty x price less discount), never to demurrage. A row's line amount is price base
      * + AIT + VAT; its TDS amount is shown beside it and added once at bill level.
      *
+     * When $vatOnAit is true the VAT is charged on price base + AIT amount instead of
+     * the price base alone.
+     *
      * @param  array<int, array<string, mixed>>  $items
      * @return array{
      *     rows: array<int, array<string, mixed>>,
      *     tds_percent: float, tds_amount: float,
      *     ait_percent: float, ait_amount: float,
-     *     vat_percent: float, vat_amount: float,
+     *     vat_percent: float, vat_amount: float, vat_on_ait: bool,
      *     sub_total: float, total_amount: float
      * }
      */
-    private function calculateBill(array $items, float $tdsPercent, float $aitPercent, float $vatPercent): array
+    private function calculateBill(array $items, float $tdsPercent, float $aitPercent, float $vatPercent, bool $vatOnAit = false): array
     {
         $tdsPercent = max(0.0, $tdsPercent);
         $aitPercent = max(0.0, $aitPercent);
@@ -527,7 +534,7 @@ class CustomerBillController extends Controller
             $base = round($gross - $discount, 2);
 
             $rowAit = round($base * $aitPercent / 100, 2);
-            $rowVat = round($base * $vatPercent / 100, 2);
+            $rowVat = round(($vatOnAit ? $base + $rowAit : $base) * $vatPercent / 100, 2);
             $rowTds = round($base * $tdsPercent / 100, 2);
             $lineAmount = round($base + $rowAit + $rowVat, 2);
 
@@ -556,6 +563,7 @@ class CustomerBillController extends Controller
             'ait_amount'   => round($aitAmount, 2),
             'vat_percent'  => $vatPercent,
             'vat_amount'   => round($vatAmount, 2),
+            'vat_on_ait'   => $vatOnAit,
             'sub_total'    => round($subTotal, 2),
             'total_amount' => round($subTotal + $demurrage + $tdsAmount, 2),
         ];

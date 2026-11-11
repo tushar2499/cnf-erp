@@ -63,6 +63,7 @@ class CustomerBillTaxCalculationTest extends TestCase
             $table->decimal('ait_amount', 15, 2)->default(0);
             $table->decimal('vat_percent', 8, 2)->default(0);
             $table->decimal('vat_amount', 15, 2)->default(0);
+            $table->boolean('vat_on_ait')->default(false);
             $table->string('bill_type')->nullable();
             $table->string('bill_by')->nullable();
             $table->string('print_format', 30)->default('general');
@@ -325,6 +326,90 @@ class CustomerBillTaxCalculationTest extends TestCase
         $this->assertEquals(27, $bill->vat_amount);
         $this->assertEquals(212.4, $bill->sub_total);
         $this->assertEquals(262.4, $bill->total_amount);
+    }
+
+    public function test_vat_on_ait_defaults_to_no_and_vat_stays_on_price_base(): void
+    {
+        $this->withFreightSession()->postJson(
+            route('nas-freights.customer-bills.store'),
+            $this->billPayload([$this->itemRow()])
+        )->assertOk();
+
+        $bill = NasFreightsCustomerBill::firstOrFail();
+
+        $this->assertFalse($bill->vat_on_ait);
+        $this->assertEquals(18, $bill->vat_amount);
+    }
+
+    public function test_store_with_vat_on_ait_charges_vat_on_price_base_plus_ait(): void
+    {
+        $this->withFreightSession()->postJson(
+            route('nas-freights.customer-bills.store'),
+            $this->billPayload([$this->itemRow()], ['vat_on_ait' => 1])
+        )->assertOk();
+
+        // price base 180, AIT 5% = 9, VAT 10% of (180 + 9) = 18.90, line = 207.90
+        $bill = NasFreightsCustomerBill::with('items')->firstOrFail();
+
+        $this->assertTrue($bill->vat_on_ait);
+        $this->assertEquals(9, $bill->ait_amount);
+        $this->assertEquals(18.9, $bill->items->first()->vat_amount);
+        $this->assertEquals(207.9, $bill->items->first()->line_amount);
+        $this->assertEquals(18.9, $bill->vat_amount);
+        $this->assertEquals(207.9, $bill->sub_total);
+        // + demurrage 50 + TDS 3.60
+        $this->assertEquals(261.5, $bill->total_amount);
+    }
+
+    public function test_vat_on_ait_with_zero_ait_matches_price_base_vat(): void
+    {
+        $this->withFreightSession()->postJson(
+            route('nas-freights.customer-bills.store'),
+            $this->billPayload([$this->itemRow()], ['vat_on_ait' => 1, 'ait_percent' => 0])
+        )->assertOk();
+
+        $bill = NasFreightsCustomerBill::firstOrFail();
+
+        $this->assertTrue($bill->vat_on_ait);
+        $this->assertEquals(18, $bill->vat_amount);
+    }
+
+    public function test_update_can_switch_vat_on_ait_and_recalculates(): void
+    {
+        $this->withFreightSession()->postJson(
+            route('nas-freights.customer-bills.store'),
+            $this->billPayload([$this->itemRow()])
+        )->assertOk();
+
+        $bill = NasFreightsCustomerBill::firstOrFail();
+
+        $this->withFreightSession()->putJson(
+            route('nas-freights.customer-bills.update', $bill->id),
+            $this->billPayload([$this->itemRow()], ['vat_on_ait' => 1])
+        )->assertOk();
+
+        $bill->refresh();
+        $this->assertTrue($bill->vat_on_ait);
+        $this->assertEquals(18.9, $bill->vat_amount);
+
+        $this->withFreightSession()->putJson(
+            route('nas-freights.customer-bills.update', $bill->id),
+            $this->billPayload([$this->itemRow()], ['vat_on_ait' => 0])
+        )->assertOk();
+
+        $bill->refresh();
+        $this->assertFalse($bill->vat_on_ait);
+        $this->assertEquals(18, $bill->vat_amount);
+    }
+
+    public function test_store_rejects_invalid_vat_on_ait(): void
+    {
+        $this->withFreightSession()->postJson(
+            route('nas-freights.customer-bills.store'),
+            $this->billPayload([$this->itemRow()], ['vat_on_ait' => 'maybe'])
+        )->assertStatus(422)->assertJsonValidationErrors('vat_on_ait');
+
+        $this->assertSame(0, NasFreightsCustomerBill::count());
     }
 
     public function test_store_requires_at_least_one_item(): void

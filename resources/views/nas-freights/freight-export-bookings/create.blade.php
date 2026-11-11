@@ -142,28 +142,28 @@
 
                 {{-- Group 1: Booking/Job details --}}
                 <div class="row g-2 mb-2">
-                    <div class="col-6 col-md-4 col-xl-2">
-                        <label class="fb-label" for="fbBookingNo">Booking/Job No</label>
-                        @if ($exportBooking)
-                            <input type="text" id="fbBookingNo" class="form-control fb-input bg-light"
-                                value="{{ $exportBooking->export_booking_no }}" readonly>
-                        @else
-                            <input type="text" id="fbBookingNo" name="export_booking_no"
-                                class="form-control fb-input @error('export_booking_no') is-invalid @enderror"
-                                value="{{ old('export_booking_no') }}" maxlength="255"
-                                placeholder="Leave blank to auto generate">
-                            @error('export_booking_no')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        @endif
+                    <div class="col-6 col-md-3 col-xl">
+                        <label class="fb-label" for="fbBookingNo">Booking/Job No
+                            @if ($exportBooking)
+                                <span class="text-danger">*</span>
+                            @endif
+                        </label>
+                        <input type="text" id="fbBookingNo" name="export_booking_no"
+                            class="form-control fb-input @error('export_booking_no') is-invalid @enderror"
+                            value="{{ old('export_booking_no', $exportBooking?->export_booking_no) }}" maxlength="255"
+                            autocomplete="off" title="Must be unique"
+                            @if ($exportBooking) required @else placeholder="Leave blank to auto generate" @endif>
+                        @error('export_booking_no')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
-                    <div class="col-6 col-md-4 col-xl-2">
+                    <div class="col-6 col-md-3 col-xl">
                         <label class="fb-label" for="fbBookingDate">Booking/Job Date <span class="text-danger">*</span></label>
                         <input type="date" id="fbBookingDate" name="booking_date" class="form-control fb-input"
                             value="{{ old('booking_date', $exportBooking?->booking_date?->format('Y-m-d') ?? $today) }}"
                             required>
                     </div>
-                    <div class="col-6 col-md-4 col-xl-2">
+                    <div class="col-6 col-md-3 col-xl">
                         <label class="fb-label" for="fbServiceType">Service Type/Mode <span class="text-danger">*</span></label>
                         <select id="fbServiceType" name="service_type" class="form-select fb-input" required>
                             @foreach ($serviceTypes as $st)
@@ -173,7 +173,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-6 col-md-4 col-xl-2">
+                    <div class="col-6 col-md-3 col-xl">
                         <label class="fb-label" for="fbCurrency">Currency</label>
                         <select id="fbCurrency" name="currency" class="form-select fb-input">
                             @foreach ($currencies as $cur)
@@ -183,7 +183,26 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-6 col-md-4 col-xl-2">
+                    @php
+                        $fbCurrencyValue   = old('currency', $exportBooking?->currency ?? 'BDT');
+                        $fbIsBdt           = $fbCurrencyValue === 'BDT';
+                        $fbExchangeRate    = $fbIsBdt ? 1 : old('exchange_rate', \App\Helpers\NumberHelper::trimDecimals($exportBooking?->exchange_rate));
+                    @endphp
+                    <div class="col-6 col-md-3 col-xl">
+                        <label class="fb-label" for="fbExchangeRate">Exchange Rate
+                            <span class="text-danger" id="fbExchangeRateReq" @if ($fbIsBdt) style="display:none" @endif>*</span>
+                        </label>
+                        <input type="number" id="fbExchangeRate" name="exchange_rate" step="0.001" min="0.001"
+                            class="form-control fb-input @error('exchange_rate') is-invalid @enderror {{ $fbIsBdt ? 'bg-light' : '' }}"
+                            value="{{ $fbExchangeRate }}"
+                            placeholder="1 {{ $fbCurrencyValue }} = ? BDT"
+                            title="BDT per 1 unit of the selected currency"
+                            @if ($fbIsBdt) readonly @else required @endif>
+                        @error('exchange_rate')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-6 col-md-3 col-xl">
                         <label class="fb-label" for="fbIncoterms">Incoterms</label>
                         <select id="fbIncoterms" name="incoterms" class="form-select fb-input">
                             <option value="">-- Select --</option>
@@ -194,7 +213,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-6 col-md-4 col-xl-2">
+                    <div class="col-6 col-md-3 col-xl">
                         <label class="fb-label" for="fbStatus">Status</label>
                         <select id="fbStatus" name="status" class="form-select fb-input">
                             @foreach ($statuses as $st)
@@ -225,7 +244,15 @@
                         </select>
                     </div>
                     <div class="col-12 col-md-4">
-                        <label class="fb-label" for="overseasAgentSelect">Overseas Agent / Consignee</label>
+                        <label class="fb-label" for="overseasAgentSelect">
+                            <span>Overseas Agent / Consignee</span>
+                            @if (auth()->user()?->hasPermission('freight.overseas-agent.create'))
+                                <button type="button" class="btn btn-success fb-mini-btn ms-auto" id="btnQuickAgent"
+                                    title="Create new overseas agent" aria-label="Create new overseas agent">
+                                    <i class="fa fa-plus"></i> New
+                                </button>
+                            @endif
+                        </label>
                         <select name="overseas_agent_id" id="overseasAgentSelect" class="form-select fb-input"
                             style="width:100%">
                             @if ($exportBooking?->overseas_agent_id)
@@ -252,21 +279,20 @@
                 {{-- Group 3: Party bill & invoice --}}
                 <div class="row g-2 mb-2">
                     <div class="col-12 col-sm-6 col-lg-3">
-                        <label class="fb-label" for="fbPartyBillRefNo">Party Bill Ref No <span class="text-danger">*</span></label>
+                        <label class="fb-label" for="fbPartyBillRefNo">Party Bill Ref No</label>
                         <input type="text" id="fbPartyBillRefNo" name="party_bill_ref_no"
                             class="form-control fb-input @error('party_bill_ref_no') is-invalid @enderror"
                             value="{{ old('party_bill_ref_no', $exportBooking?->party_bill_ref_no) }}"
-                            maxlength="255" placeholder="e.g. PB-2024-0001" required>
+                            maxlength="255" placeholder="e.g. PB-2024-0001">
                         @error('party_bill_ref_no')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
                     <div class="col-12 col-sm-6 col-lg-3">
-                        <label class="fb-label" for="fbPartyBillRefDate">Party Bill Ref Date <span class="text-danger">*</span></label>
+                        <label class="fb-label" for="fbPartyBillRefDate">Party Bill Ref Date</label>
                         <input type="date" id="fbPartyBillRefDate" name="party_bill_date"
                             class="form-control fb-input @error('party_bill_date') is-invalid @enderror"
-                            value="{{ old('party_bill_date', $exportBooking?->party_bill_date?->format('Y-m-d')) }}"
-                            required>
+                            value="{{ old('party_bill_date', $exportBooking?->party_bill_date?->format('Y-m-d')) }}">
                         @error('party_bill_date')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -358,10 +384,23 @@
                             placeholder="e.g. EXP024W-0001">
                     </div>
                     <div class="col-12 col-sm-6 col-lg-3">
-                        <label class="fb-label" for="fbBlDate">B/L Date</label>
+                        <label class="fb-label" for="fbBlDate">Export B/L Date</label>
                         <input type="date" id="fbBlDate" name="bl_date" class="form-control fb-input"
                             value="{{ old('bl_date', $exportBooking?->bl_date?->format('Y-m-d')) }}">
                     </div>
+                    <div class="col-12 col-sm-6 col-lg-3">
+                        <label class="fb-label" for="fbHawbHblNo">HAWB/HBL No</label>
+                        <input type="text" id="fbHawbHblNo" name="hawb_hbl_no" class="form-control fb-input"
+                            value="{{ old('hawb_hbl_no', $exportBooking?->hawb_hbl_no) }}"
+                            placeholder="e.g. HBL-2024-0001">
+                    </div>
+                    <div class="col-12 col-sm-6 col-lg-3">
+                        <label class="fb-label" for="fbHawbHblDate">HAWB/HBL Date</label>
+                        <input type="date" id="fbHawbHblDate" name="hawb_hbl_date" class="form-control fb-input"
+                            value="{{ old('hawb_hbl_date', $exportBooking?->hawb_hbl_date?->format('Y-m-d')) }}">
+                    </div>
+                </div>
+                <div class="row g-2 mb-2">
                     <div class="col-12 col-sm-6 col-lg-3">
                         <label class="fb-label" for="fbBookingNoteNo">Booking Note No</label>
                         <input type="text" id="fbBookingNoteNo" name="booking_note_no" class="form-control fb-input"
@@ -373,8 +412,6 @@
                         <input type="text" id="fbLcNo" name="lc_no" class="form-control fb-input"
                             value="{{ old('lc_no', $exportBooking?->lc_no) }}" placeholder="e.g. LC-2024-0001">
                     </div>
-                </div>
-                <div class="row g-2 mb-2">
                     <div class="col-12 col-sm-6 col-lg-3">
                         <label class="fb-label" for="fbExpNo">EXP No</label>
                         <input type="text" id="fbExpNo" name="exp_no" class="form-control fb-input"
@@ -385,6 +422,8 @@
                         <input type="date" id="fbExpDate" name="exp_date" class="form-control fb-input"
                             value="{{ old('exp_date', $exportBooking?->exp_date?->format('Y-m-d')) }}">
                     </div>
+                </div>
+                <div class="row g-2">
                     <div class="col-12 col-sm-6 col-lg-3">
                         <label class="fb-label" for="fbInvoiceNo">S.B. No</label>
                         <input type="text" id="fbInvoiceNo" name="invoice_no" class="form-control fb-input"
@@ -396,9 +435,7 @@
                         <input type="date" id="fbInvoiceDate" name="invoice_date" class="form-control fb-input"
                             value="{{ old('invoice_date', $exportBooking?->invoice_date?->format('Y-m-d')) }}">
                     </div>
-                </div>
-                <div class="row g-2">
-                    <div class="col-12">
+                    <div class="col-12 col-lg-6">
                         <label class="fb-label" for="fbRemarks">Remarks</label>
                         <input type="text" id="fbRemarks" name="remarks" class="form-control fb-input"
                             value="{{ old('remarks', $exportBooking?->remarks) }}"
@@ -419,7 +456,7 @@
             </div>
             <div class="section-body p-0">
                 <div style="overflow-x:auto;">
-                    <table class="table table-bordered mb-0" id="itemsTable" style="min-width:1500px;">
+                    <table class="table table-bordered mb-0" id="itemsTable" style="min-width:1640px;">
                         <thead>
                             <tr>
                                 <th style="width:35px" class="text-center">#</th>
@@ -431,8 +468,9 @@
                                 <th style="width:130px">Pkg Unit</th>
                                 <th style="width:145px">Container No</th>
                                 <th style="width:130px">Seal No</th>
-                                <th style="width:110px">Weight</th>
-                                <th style="width:80px">Unit</th>
+                                <th style="width:120px">Gross Weight</th>
+                                <th style="width:130px">Chargeable Weight</th>
+                                <th style="width:80px" title="Applies to Gross and Chargeable Weight">Unit</th>
                                 <th style="width:90px">CBM</th>
                                 <th style="width:140px">Country of Origin</th>
                                 <th style="width:90px">DG</th>
@@ -500,7 +538,7 @@
                 </select>
             </td>
             <td>
-                <input type="number" name="items[0][quantity]" class="form-control form-control-sm text-center"
+                <input type="number" name="items[0][quantity]" class="form-control form-control-sm text-center item-qty-input"
                     style="font-size:.72rem;" value="1" min="1" placeholder="1">
             </td>
             <td>
@@ -543,16 +581,19 @@
                     style="font-size:.72rem;" placeholder="e.g. SL1234567">
             </td>
             <td><input type="number" name="items[0][gross_weight]" class="form-control form-control-sm text-end"
-                    style="font-size:.72rem;" step="0.01" placeholder="0.00"></td>
+                    style="font-size:.72rem;" step="0.001" min="0" placeholder="0" aria-label="Gross weight"></td>
+            <td><input type="number" name="items[0][chargeable_weight]" class="form-control form-control-sm text-end"
+                    style="font-size:.72rem;" step="0.001" min="0" placeholder="0" aria-label="Chargeable weight"></td>
             <td>
-                <select name="items[0][weight_unit]" class="form-select form-select-sm" style="font-size:.72rem;">
+                <select name="items[0][weight_unit]" class="form-select form-select-sm" style="font-size:.72rem;"
+                    aria-label="Weight unit for gross and chargeable weight">
                     @foreach ($weightUnits as $wu)
                         <option value="{{ $wu }}">{{ $wu }}</option>
                     @endforeach
                 </select>
             </td>
             <td><input type="number" name="items[0][volume_cbm]" class="form-control form-control-sm text-end"
-                    style="font-size:.72rem;" step="0.001" placeholder="0.000"></td>
+                    style="font-size:.72rem;" step="0.001" min="0" placeholder="0" aria-label="CBM"></td>
             <td><input type="text" name="items[0][country_of_origin]" class="form-control form-control-sm"
                     style="font-size:.72rem;" placeholder="e.g. Bangladesh"></td>
             <td>
@@ -594,6 +635,108 @@
             </div>
         </div>
     </div>
+    {{-- Quick Create Overseas Agent Modal --}}
+    @if (auth()->user()?->hasPermission('freight.overseas-agent.create'))
+        <div class="modal fade" id="quickAgentModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header py-2" style="background:#0a4f3c;">
+                        <h6 class="modal-title text-white mb-0"><i class="fa fa-globe me-2"></i> Add Overseas Agent</h6>
+                        <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold" style="font-size:.78rem;">Agent Code</label>
+                                <input type="text" class="form-control form-control-sm bg-light" readonly tabindex="-1" placeholder="Auto Generated">
+                            </div>
+                            <div class="col-md-9">
+                                <label class="form-label fw-semibold" for="qa_name" style="font-size:.78rem;">Agent Name <span class="text-danger">*</span></label>
+                                <input type="text" id="qa_name" class="form-control form-control-sm" maxlength="255" placeholder="Company name">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="qa_country" style="font-size:.78rem;">Country <span class="text-danger">*</span></label>
+                                <input type="text" id="qa_country" class="form-control form-control-sm" maxlength="100" placeholder="e.g. Singapore">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="qa_city" style="font-size:.78rem;">City</label>
+                                <input type="text" id="qa_city" class="form-control form-control-sm" maxlength="100" placeholder="e.g. Singapore City">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold" for="qa_address" style="font-size:.78rem;">Address</label>
+                                <textarea id="qa_address" class="form-control form-control-sm" rows="2" placeholder="Full address"></textarea>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="qa_contact_person" style="font-size:.78rem;">Contact Person</label>
+                                <input type="text" id="qa_contact_person" class="form-control form-control-sm" maxlength="150" placeholder="Primary contact name">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="qa_designation" style="font-size:.78rem;">Designation</label>
+                                <input type="text" id="qa_designation" class="form-control form-control-sm" maxlength="100" placeholder="e.g. Sales Manager">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold" for="qa_email" style="font-size:.78rem;">Email</label>
+                                <input type="email" id="qa_email" class="form-control form-control-sm" maxlength="255" placeholder="agent@email.com">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold" for="qa_phone" style="font-size:.78rem;">Phone</label>
+                                <input type="text" id="qa_phone" class="form-control form-control-sm" maxlength="50" placeholder="Office phone">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold" for="qa_mobile" style="font-size:.78rem;">Mobile</label>
+                                <input type="text" id="qa_mobile" class="form-control form-control-sm" maxlength="50" placeholder="Mobile number">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold" for="qa_payment_terms" style="font-size:.78rem;">Payment Terms</label>
+                                <input type="text" id="qa_payment_terms" class="form-control form-control-sm" maxlength="100" placeholder="e.g. 30 days net">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label fw-semibold" for="qa_remarks" style="font-size:.78rem;">Remarks</label>
+                                <input type="text" id="qa_remarks" class="form-control form-control-sm" placeholder="Any notes">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-check form-switch mt-1">
+                            <input class="form-check-input" type="checkbox" id="qa_is_active" checked>
+                            <label class="form-check-label" for="qa_is_active" style="font-size:.78rem;">Active</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer py-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-sm btn-success" id="btnSaveQuickAgent">
+                            <i class="fa fa-save me-1"></i> Save &amp; Select
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 @endsection
 
 @push('scripts')
@@ -609,8 +752,33 @@
         var existingPartyInvoices = @json($existingPartyInvoices);
         var partyInvoiceErrorKeys = @json($errors->keys());
         var QUICK_STORE_CUSTOMER = '{{ route('nas-freights.freight-export-bookings.quick-store-customer') }}';
+        var QUICK_STORE_AGENT = '{{ route('nas-freights.freight-export-bookings.quick-store-overseas-agent') }}';
 
         $(function() {
+            function syncExchangeRate() {
+                var currency = $('#fbCurrency').val() || 'BDT';
+                var $rate = $('#fbExchangeRate');
+                var isBdt = currency === 'BDT';
+
+                $rate.attr('placeholder', '1 ' + currency + ' = ? BDT');
+                $('#fbExchangeRateReq').toggle(!isBdt);
+
+                if (isBdt) {
+                    $rate.val(1).prop('readonly', true).prop('required', false).addClass('bg-light');
+                    return;
+                }
+
+                $rate.prop('readonly', false).prop('required', true).removeClass('bg-light');
+            }
+
+            $('#fbCurrency').on('change', function() {
+                syncExchangeRate();
+                if (($(this).val() || 'BDT') !== 'BDT') {
+                    // A rate belongs to one currency: never carry it over to another.
+                    $('#fbExchangeRate').val('').trigger('focus');
+                }
+            });
+
             $('#customerSelect').select2({
                 theme: 'bootstrap-5',
                 placeholder: 'Search customer...',
@@ -783,6 +951,81 @@
                     $('#btnSaveQuickCustomer').prop('disabled', false).html('<i class="fa fa-save me-1"></i> Save &amp; Select');
                 });
             });
+
+            // ── Quick Create Overseas Agent ──
+            var quickAgentFields = ['name', 'country', 'city', 'address', 'contact_person', 'designation',
+                'email', 'phone', 'mobile', 'payment_terms', 'remarks'
+            ];
+            var SAVE_AGENT_LABEL = '<i class="fa fa-save me-1"></i> Save &amp; Select';
+
+            function clearQuickAgentErrors() {
+                $('#quickAgentModal .is-invalid').removeClass('is-invalid');
+                $('#quickAgentModal .invalid-feedback').text('');
+            }
+
+            function showQuickAgentError(field, message) {
+                $('#qa_' + field).addClass('is-invalid').siblings('.invalid-feedback').text(message);
+            }
+
+            $('#btnQuickAgent').on('click', function() {
+                clearQuickAgentErrors();
+                quickAgentFields.forEach(function(f) { $('#qa_' + f).val(''); });
+                $('#qa_is_active').prop('checked', true);
+                $('#quickAgentModal').modal('show');
+            });
+
+            $('#quickAgentModal').on('shown.bs.modal', function() {
+                $('#qa_name').trigger('focus');
+            });
+
+            $('#quickAgentModal input[type="text"], #quickAgentModal input[type="email"]').on('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    $('#btnSaveQuickAgent').trigger('click');
+                }
+            });
+
+            $('#btnSaveQuickAgent').on('click', function() {
+                clearQuickAgentErrors();
+
+                var payload = { _token: $('meta[name="csrf-token"]').attr('content') };
+                quickAgentFields.forEach(function(f) { payload[f] = $('#qa_' + f).val().trim(); });
+                payload.is_active = $('#qa_is_active').is(':checked') ? 1 : 0;
+
+                var missing = false;
+                ['name', 'country'].forEach(function(f) {
+                    if (!payload[f]) {
+                        showQuickAgentError(f, 'Required.');
+                        missing = true;
+                    }
+                });
+                if (missing) {
+                    return;
+                }
+
+                $('#btnSaveQuickAgent').prop('disabled', true).html(
+                    '<span class="spinner-border spinner-border-sm me-1"></span>Saving...');
+
+                $.ajax({
+                    url: QUICK_STORE_AGENT,
+                    method: 'POST',
+                    data: payload,
+                }).done(function(r) {
+                    var opt = new Option(r.text, r.id, true, true);
+                    $('#overseasAgentSelect').append(opt).trigger('change');
+                    $('#quickAgentModal').modal('hide');
+                    Swal.fire({ icon: 'success', title: r.message, timer: 1800, showConfirmButton: false });
+                }).fail(function(xhr) {
+                    var errs = xhr.responseJSON?.errors;
+                    if (errs) {
+                        Object.keys(errs).forEach(function(f) { showQuickAgentError(f, errs[f][0]); });
+                    } else {
+                        Swal.fire({ icon: 'error', title: xhr.responseJSON?.message || 'Save failed.' });
+                    }
+                }).always(function() {
+                    $('#btnSaveQuickAgent').prop('disabled', false).html(SAVE_AGENT_LABEL);
+                });
+            });
         });
 
         function addItemRow(data) {
@@ -802,12 +1045,14 @@
                 $row.find('[name$="[seal_no]"]').val(data.seal_no || '');
                 $row.find('[name$="[quantity]"]').val(data.quantity || 1);
                 $row.find('[name$="[gross_weight]"]').val(data.gross_weight || '');
+                $row.find('[name$="[chargeable_weight]"]').val(data.chargeable_weight || '');
                 $row.find('[name$="[weight_unit]"]').val(data.weight_unit || 'KG');
                 $row.find('[name$="[volume_cbm]"]').val(data.volume_cbm || '');
                 $row.find('[name$="[country_of_origin]"]').val(data.country_of_origin || '');
                 $row.find('[name$="[is_dangerous_goods]"]').val(data.is_dangerous_goods == '1' ? '1' : '0');
                 $row.find('[name$="[special_handling]"]').val(data.special_handling || '');
             }
+            toggleItemTypeFields($row);
             reindexItems();
         }
 
@@ -891,6 +1136,15 @@
             $row.find('.pkg-qty-input, .pkg-unit-sel').prop('disabled', !isContainer);
             $row.find('.container-no-input').prop('disabled', !isContainer);
             $row.find('.seal-no-input').prop('disabled', !isContainer);
+
+            // A container line is always one container: show 1, disabled like Container No / Seal No on package rows.
+            // Not submitted while disabled; the server saves quantity 1 for every container line.
+            var $qty = $row.find('.item-qty-input');
+            if (isContainer) {
+                $qty.val(1).prop('disabled', true);
+            } else {
+                $qty.prop('disabled', false);
+            }
         }
     </script>
 @endpush
