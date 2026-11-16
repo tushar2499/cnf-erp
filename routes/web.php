@@ -1,5 +1,10 @@
 <?php
 
+use App\Http\Controllers\Admin\Accounting\AccountController as AccountingAccountController;
+use App\Http\Controllers\Admin\Accounting\MappingController as AccountingMappingController;
+use App\Http\Controllers\Admin\Accounting\PostingController as AccountingPostingController;
+use App\Http\Controllers\Admin\Accounting\ReportController as AccountingReportController;
+use App\Http\Controllers\Admin\Accounting\VoucherController as AccountingVoucherController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DesignationController as AdminDesignationController;
 use App\Http\Controllers\Admin\EmployeeController as AdminEmployeeController;
@@ -38,7 +43,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/company/select', [CompanyController::class, 'select'])->name('company.select');
     Route::post('/company/switch/{slug}', [CompanyController::class, 'switch'])->name('company.switch');
     // Keep-alive: called every 10 min from long-form pages to prevent session expiry
-    Route::get('/keepalive', fn() => response()->json(['ok' => true]))->name('keepalive');
+    Route::get('/keepalive', fn () => response()->json(['ok' => true]))->name('keepalive');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
@@ -121,6 +126,47 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/roles/{role}/edit', [RoleController::class, 'edit'])->name('roles.edit');
     Route::put('/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
     Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
+
+    // Accounting (shared chart of accounts for all companies)
+    Route::prefix('accounting')->name('accounting.')->group(function () {
+        Route::get('/accounts', [AccountingAccountController::class, 'index'])->name('accounts.index');
+        Route::get('/accounts/parents', [AccountingAccountController::class, 'parents'])->name('accounts.parents');
+        Route::get('/accounts/next-code', [AccountingAccountController::class, 'nextCode'])->name('accounts.next-code');
+        Route::post('/accounts/import/preview', [AccountingAccountController::class, 'importPreview'])->name('accounts.import.preview');
+        Route::post('/accounts/import', [AccountingAccountController::class, 'import'])->name('accounts.import');
+        Route::post('/accounts', [AccountingAccountController::class, 'store'])->name('accounts.store');
+        Route::put('/accounts/{account}', [AccountingAccountController::class, 'update'])->name('accounts.update');
+        Route::delete('/accounts/{account}', [AccountingAccountController::class, 'destroy'])->name('accounts.destroy');
+        Route::get('/ledgers', [AccountingAccountController::class, 'ledgers'])->name('accounts.ledgers');
+
+        Route::get('/mappings', [AccountingMappingController::class, 'index'])->name('mappings.index');
+        Route::post('/mappings', [AccountingMappingController::class, 'store'])->name('mappings.store');
+        Route::put('/mappings/{mapping}', [AccountingMappingController::class, 'update'])->name('mappings.update');
+        Route::delete('/mappings/{mapping}', [AccountingMappingController::class, 'destroy'])->name('mappings.destroy');
+
+        Route::get('/posting', [AccountingPostingController::class, 'index'])->name('posting.index');
+        Route::get('/posting/entries', [AccountingPostingController::class, 'entries'])->name('posting.entries');
+        Route::post('/posting/post', [AccountingPostingController::class, 'post'])->name('posting.post');
+        Route::post('/posting/post-many', [AccountingPostingController::class, 'postMany'])->name('posting.post-many');
+
+        Route::get('/vouchers', [AccountingVoucherController::class, 'index'])->name('vouchers.index');
+        Route::get('/vouchers/create', [AccountingVoucherController::class, 'create'])->name('vouchers.create');
+        Route::get('/vouchers/parties', [AccountingVoucherController::class, 'parties'])->name('vouchers.parties');
+        Route::post('/vouchers', [AccountingVoucherController::class, 'store'])->name('vouchers.store');
+        Route::get('/vouchers/{voucher}', [AccountingVoucherController::class, 'show'])->name('vouchers.show');
+        Route::get('/vouchers/{voucher}/edit', [AccountingVoucherController::class, 'edit'])->name('vouchers.edit');
+        Route::put('/vouchers/{voucher}', [AccountingVoucherController::class, 'update'])->name('vouchers.update');
+        Route::post('/vouchers/{voucher}/cancel', [AccountingVoucherController::class, 'cancel'])->name('vouchers.cancel');
+
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/ledger', [AccountingReportController::class, 'ledger'])->name('ledger');
+            Route::get('/trial-balance', [AccountingReportController::class, 'trialBalance'])->name('trial-balance');
+            Route::get('/profit-loss', [AccountingReportController::class, 'profitLoss'])->name('profit-loss');
+            Route::get('/balance-sheet', [AccountingReportController::class, 'balanceSheet'])->name('balance-sheet');
+            Route::get('/day-book', [AccountingReportController::class, 'dayBook'])->name('day-book');
+            Route::get('/cash-book', [AccountingReportController::class, 'cashBook'])->name('cash-book');
+        });
+    });
 });
 
 // Per-company panels

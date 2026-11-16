@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('nas_freights_freight_export_booking_transport_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('export_booking_id')->constrained('nas_freights_freight_export_bookings')->cascadeOnDelete();
+            $table->foreignId('export_booking_id')->constrained('nas_freights_freight_export_bookings', 'id', 'nf_feb_transport_items_export_booking_id_fk')->cascadeOnDelete();
             $table->string('cover_van_no')->nullable();
             $table->string('challan_no')->nullable();
             $table->string('capacity')->nullable();
-            $table->foreignId('supplier_id')->nullable()->constrained('nas_freights_suppliers')->nullOnDelete();
+            $table->foreignId('supplier_id')->nullable()->constrained('nas_freights_suppliers', 'id', 'nf_feb_transport_items_supplier_id_fk')->nullOnDelete();
             $table->string('supplier_name')->nullable();
             $table->decimal('qty', 12, 2)->default(1);
             $table->decimal('supplier_rate', 15, 2)->default(0);
