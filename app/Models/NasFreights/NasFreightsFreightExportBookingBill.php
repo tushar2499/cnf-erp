@@ -14,7 +14,7 @@ class NasFreightsFreightExportBookingBill extends Model
     protected $fillable = [
         'bill_no', 'export_booking_id', 'branch_id', 'bill_type',
         'bill_prefix_ref', 'bill_prefix_job',
-        'bill_date', 'attention', 'designation', 'currency', 'exchange_rate',
+        'bill_date', 'attention', 'designation', 'bank_id', 'currency', 'exchange_rate',
         'total_amount', 'total_bdt_amount', 'status', 'remarks',
         'vat_title', 'vat_amount', 'vat_amount_bdt',
     ];
@@ -34,6 +34,14 @@ class NasFreightsFreightExportBookingBill extends Model
     public function exportBooking(): BelongsTo
     {
         return $this->belongsTo(NasFreightsFreightExportBooking::class, 'export_booking_id');
+    }
+
+    /**
+     * Optional bank the party is asked to pay into (printed on the bill).
+     */
+    public function bank(): BelongsTo
+    {
+        return $this->belongsTo(NasFreightsBank::class, 'bank_id');
     }
 
     public function items(): HasMany

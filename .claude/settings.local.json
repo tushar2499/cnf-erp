@@ -103,7 +103,8 @@
       "Bash(grep -n '$bill->\\\\|$booking->' resources/views/nas-freights/freight-export-booking-bills/print.blade.php)",
       "Bash(grep -o '\\\\$\\\\\\(bill\\\\|booking\\\\\\)->[a-zA-Z_]*\\\\\\(\\(\\)\\\\\\)\\\\?')",
       "Bash(vendor/bin/pint --format agent tests/Feature/NasFreights/FreightExportBookingBillPrintExchangeRateTest.php)",
-      "Bash(vendor/bin/pint --format agent tests/Feature/NasFreights/FreightExportBookingBillPrintExpDateTest.php)"
+      "Bash(vendor/bin/pint --format agent tests/Feature/NasFreights/FreightExportBookingBillPrintExpDateTest.php)",
+      "PowerShell(Copy-Item -Recurse -Force \"c:\\\\laragon\\\\www\\\\cnf-erp\\\\.agents\\\\skills\\\\ui-ux-pro-max\" \"c:\\\\laragon\\\\www\\\\cnf-erp\\\\.claude\\\\skills\\\\ui-ux-pro-max\"; Get-ChildItem c:\\\\laragon\\\\www\\\\cnf-erp\\\\.claude\\\\skills | Select-Object Name; Test-Path c:\\\\laragon\\\\www\\\\cnf-erp\\\\.claude\\\\skills\\\\ui-ux-pro-max\\\\SKILL.md; \\(Get-ChildItem c:\\\\laragon\\\\www\\\\cnf-erp\\\\.claude\\\\skills\\\\ui-ux-pro-max -Recurse -File\\).Count; python --version; git -C c:\\\\laragon\\\\www\\\\cnf-erp check-ignore -v .claude/skills/ui-ux-pro-max/SKILL.md .agents/skills/ui-ux-pro-max/SKILL.md)"
     ]
   },
   "enableAllProjectMcpServers": true,

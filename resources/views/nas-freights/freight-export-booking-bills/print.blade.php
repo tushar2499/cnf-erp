@@ -10,7 +10,7 @@
 
         body {
             font-family: Arial, sans-serif;
-            font-size: 11px;
+            font-size: 13px;
             color: #000;
             background: #fff;
         }
@@ -39,18 +39,18 @@
         }
 
         .to-section {
-            font-size: 11px;
+            font-size: 13px;
             line-height: 1.7;
             margin-bottom: 10px;
         }
 
         /* Long addresses wrap at commas, not mid-word */
-        .to-address { max-width: 60mm; }
+        .to-address { max-width: 72mm; }
         .to-address .addr-part { display: inline-block; max-width: 100%; }
 
         .bill-title {
             text-align: center;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 700;
             text-decoration: underline;
             letter-spacing: 1px;
@@ -61,7 +61,7 @@
         .ref-date-line {
             display: flex;
             justify-content: space-between;
-            font-size: 11px;
+            font-size: 13px;
             font-weight: 700;
             margin-bottom: 5px;
         }
@@ -75,7 +75,7 @@
         }
 
         table.inv th {
-            font-size: 11px;
+            font-size: 13px;
             font-weight: 700;
             padding: 4px 6px;
             text-align: center;
@@ -98,7 +98,7 @@
             border: none;
             border-bottom: 1px solid #ddd;
             padding: 2.5px 5px;
-            font-size: 10px;
+            font-size: 12px;
             vertical-align: top;
         }
 
@@ -127,7 +127,7 @@
             border: none;
             border-bottom: 1px solid #ddd;
             padding: 2.5px 5px;
-            font-size: 10px;
+            font-size: 12px;
         }
 
         table.items-inner tr:last-child td {
@@ -142,28 +142,47 @@
         table.items-inner tr.sub-row td,
         table.items-inner tr.total-row td {
             font-weight: 700;
-            font-size: 11px;
+            font-size: 13px;
             border-top: 1px solid #000;
         }
 
         table.items-inner tr.words-row td {
             font-weight: 700;
-            font-size: 10.5px;
+            font-size: 12.5px;
             border-top: 1px solid #000;
             padding: 5px;
             line-height: 1.6;
         }
 
+        /* Bank details block below the authorized signature (reuses the nested "ship" row styling) */
+        table.bank-block {
+            width: 84mm;
+            margin-top: 20mm; /* clear gap between "Authorized Signature" and the bank details */
+            border: 1px solid #000;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        table.bank-block td.bank-title {
+            font-weight: 700;
+            font-size: 12px;
+            text-decoration: underline;
+            letter-spacing: .5px;
+        }
+
+        table.bank-block td.k { width: 36%; }
+        table.bank-block tr:last-child td { border-bottom: none; }
+
         .footer-ref {
             display: flex;
             justify-content: space-between;
-            font-size: 11px;
+            font-size: 13px;
             margin-top: 4px;
             margin-bottom: 2px;
         }
 
         .company-name {
-            font-size: 11px;
+            font-size: 13px;
             font-weight: 700;
             text-decoration: underline;
             margin-top: 3px;
@@ -174,7 +193,7 @@
         .sig-block { width: 180px; }
 
         .sig-dots {
-            font-size: 11px;
+            font-size: 13px;
             letter-spacing: 1px;
             color: #333;
         }
@@ -182,7 +201,7 @@
         .page-footer {
             border-top: 1px solid #bbb;
             padding: 4px 0;
-            font-size: 9px;
+            font-size: 11px;
             color: #666;
             margin-top: 10px;
         }
@@ -375,6 +394,20 @@
                                 <td class="sep">:</td>
                                 <td>{{ $booking->booking_date?->format('d.m.Y') ?? '—' }}</td>
                             </tr>
+                            @if($booking->hawb_hbl_no)
+                            <tr>
+                                <td class="k">HAWB/HBL NO</td>
+                                <td class="sep">:</td>
+                                <td>{{ $booking->hawb_hbl_no }}</td>
+                            </tr>
+                            @endif
+                            @if($booking->hawb_hbl_date)
+                            <tr>
+                                <td class="k">HAWB/HBL DATE</td>
+                                <td class="sep">:</td>
+                                <td>{{ $booking->hawb_hbl_date->format('d.m.Y') }}</td>
+                            </tr>
+                            @endif
                             @if($booking->pol)
                             <tr>
                                 <td class="k">PORT OF LOADING</td>
@@ -476,12 +509,12 @@
                     {{-- First item row (or blank placeholder) --}}
                     @if($itemCount > 0)
                         @php $it = $items->first(); @endphp
-                        <td style="padding:2.5px 5px;font-size:10px;">1. {{ $it->name }}</td>
+                        <td style="padding:2.5px 5px;font-size:12px;">1. {{ $it->name }}</td>
                         @if($showForeign)
-                            <td style="padding:2.5px 5px;font-size:10px;text-align:right;white-space:nowrap;">{{ number_format($it->amount, 2) }}</td>
+                            <td style="padding:2.5px 5px;font-size:12px;text-align:right;white-space:nowrap;">{{ number_format($it->amount, 2) }}</td>
                         @endif
                         @if($showBdt)
-                            <td style="padding:2.5px 5px;font-size:10px;text-align:right;white-space:nowrap;">{{ number_format($it->amount_bdt, 2) }}</td>
+                            <td style="padding:2.5px 5px;font-size:12px;text-align:right;white-space:nowrap;">{{ number_format($it->amount_bdt, 2) }}</td>
                         @endif
                     @else
                         <td style="padding:2.5px 5px;">&nbsp;</td>
@@ -493,55 +526,55 @@
                 {{-- Remaining item rows --}}
                 @foreach($items->slice(1) as $i => $item)
                 <tr>
-                    <td style="padding:2.5px 5px;font-size:10px;border-top:1px solid #ddd;">{{ $i + 2 }}. {{ $item->name }}</td>
+                    <td style="padding:2.5px 5px;font-size:12px;border-top:1px solid #ddd;">{{ $i + 2 }}. {{ $item->name }}</td>
                     @if($showForeign)
-                        <td style="padding:2.5px 5px;font-size:10px;text-align:right;white-space:nowrap;border-top:1px solid #ddd;">{{ number_format($item->amount, 2) }}</td>
+                        <td style="padding:2.5px 5px;font-size:12px;text-align:right;white-space:nowrap;border-top:1px solid #ddd;">{{ number_format($item->amount, 2) }}</td>
                     @endif
                     @if($showBdt)
-                        <td style="padding:2.5px 5px;font-size:10px;text-align:right;white-space:nowrap;border-top:1px solid #ddd;">{{ number_format($item->amount_bdt, 2) }}</td>
+                        <td style="padding:2.5px 5px;font-size:12px;text-align:right;white-space:nowrap;border-top:1px solid #ddd;">{{ number_format($item->amount_bdt, 2) }}</td>
                     @endif
                 </tr>
                 @endforeach
 
                 {{-- Sub-Total --}}
                 <tr>
-                    <td style="padding:3px 5px;font-weight:700;font-size:11px;text-align:right;border-top:2px solid #000;">Sub-Total</td>
+                    <td style="padding:3px 5px;font-weight:700;font-size:13px;text-align:right;border-top:2px solid #000;">Sub-Total</td>
                     @if($showForeign)
-                        <td style="padding:3px 5px;font-weight:700;font-size:11px;text-align:right;white-space:nowrap;border-top:2px solid #000;">{{ number_format($bill->total_amount, 2) }}</td>
+                        <td style="padding:3px 5px;font-weight:700;font-size:13px;text-align:right;white-space:nowrap;border-top:2px solid #000;">{{ number_format($bill->total_amount, 2) }}</td>
                     @endif
                     @if($showBdt)
-                        <td style="padding:3px 5px;font-weight:700;font-size:11px;text-align:right;white-space:nowrap;border-top:2px solid #000;">{{ number_format($bill->total_bdt_amount, 2) }}</td>
+                        <td style="padding:3px 5px;font-weight:700;font-size:13px;text-align:right;white-space:nowrap;border-top:2px solid #000;">{{ number_format($bill->total_bdt_amount, 2) }}</td>
                     @endif
                 </tr>
 
                 {{-- VAT row (conditional) --}}
                 @if($hasVat)
                 <tr>
-                    <td style="padding:3px 5px;font-size:10.5px;text-align:right;border-top:1px solid #ddd;">{{ $bill->vat_title ?: 'VAT' }}</td>
+                    <td style="padding:3px 5px;font-size:12.5px;text-align:right;border-top:1px solid #ddd;">{{ $bill->vat_title ?: 'VAT' }}</td>
                     @if($showForeign)
-                        <td style="padding:3px 5px;font-size:10.5px;text-align:right;white-space:nowrap;border-top:1px solid #ddd;">{{ number_format($bill->vat_amount, 2) }}</td>
+                        <td style="padding:3px 5px;font-size:12.5px;text-align:right;white-space:nowrap;border-top:1px solid #ddd;">{{ number_format($bill->vat_amount, 2) }}</td>
                     @endif
                     @if($showBdt)
-                        <td style="padding:3px 5px;font-size:10.5px;text-align:right;white-space:nowrap;border-top:1px solid #ddd;">{{ number_format($bill->vat_amount_bdt, 2) }}</td>
+                        <td style="padding:3px 5px;font-size:12.5px;text-align:right;white-space:nowrap;border-top:1px solid #ddd;">{{ number_format($bill->vat_amount_bdt, 2) }}</td>
                     @endif
                 </tr>
                 @endif
 
                 {{-- Total Amount --}}
                 <tr>
-                    <td style="padding:3px 5px;font-weight:700;font-size:11px;text-align:right;border-top:1px solid #000;"><strong>Total Amount</strong></td>
+                    <td style="padding:3px 5px;font-weight:700;font-size:13px;text-align:right;border-top:1px solid #000;"><strong>Total Amount</strong></td>
                     @if($showForeign)
-                        <td style="padding:3px 5px;font-weight:700;font-size:11px;text-align:right;white-space:nowrap;border-top:1px solid #000;"><strong>{{ number_format($grandTotalForeign, 2) }}</strong></td>
+                        <td style="padding:3px 5px;font-weight:700;font-size:13px;text-align:right;white-space:nowrap;border-top:1px solid #000;"><strong>{{ number_format($grandTotalForeign, 2) }}</strong></td>
                     @endif
                     @if($showBdt)
-                        <td style="padding:3px 5px;font-weight:700;font-size:11px;text-align:right;white-space:nowrap;border-top:1px solid #000;"><strong>{{ number_format($grandTotalBdt, 2) }}</strong></td>
+                        <td style="padding:3px 5px;font-weight:700;font-size:13px;text-align:right;white-space:nowrap;border-top:1px solid #000;"><strong>{{ number_format($grandTotalBdt, 2) }}</strong></td>
                     @endif
                 </tr>
 
                 {{-- Total Receivable in words (customer bills only) --}}
                 @if($showBdt)
                 <tr>
-                    <td colspan="{{ $dualCols ? 3 : 2 }}" style="padding:5px 6px;font-weight:700;font-size:10.5px;border-top:2px solid #000;line-height:1.6;">
+                    <td colspan="{{ $dualCols ? 3 : 2 }}" style="padding:5px 6px;font-weight:700;font-size:12.5px;border-top:2px solid #000;line-height:1.6;">
                         Total Receivable Taka {{ number_format($grandTotalBdt, 2) }}<br>
                         <span style="font-weight:400">({{ $amountInWords }})</span>
                         @if($exchangeRateLine)
@@ -551,7 +584,7 @@
                 </tr>
                 @elseif($exchangeRateLine)
                 <tr>
-                    <td colspan="2" style="padding:5px 6px;font-weight:700;font-size:10.5px;border-top:2px solid #000;">
+                    <td colspan="2" style="padding:5px 6px;font-weight:700;font-size:12.5px;border-top:2px solid #000;">
                         Exchange Rate: 1 {{ $exchangeRateLine['currency'] }} = BDT {{ number_format((float) $exchangeRateLine['rate'], 2) }}
                     </td>
                 </tr>
@@ -572,9 +605,28 @@
         <div class="sig-wrap">
             <div class="sig-block">
                 <div class="sig-dots">.................................</div>
-                <div style="font-size:11px;margin-top:2px;">Authorized Signature</div>
+                <div style="font-size:13px;margin-top:2px;">Authorized Signature</div>
             </div>
         </div>
+
+        {{-- Bank details: below the signature, only when a bank is chosen on the bill --}}
+        @if($bill->bank)
+        <table class="ship bank-block">
+            <tr><td colspan="3" class="bank-title">BANK DETAILS</td></tr>
+            <tr><td class="k">ACCOUNT NAME</td><td class="sep">:</td><td>{{ $bill->bank->account_name }}</td></tr>
+            <tr><td class="k">ACCOUNT NO</td><td class="sep">:</td><td>{{ $bill->bank->account_number }}</td></tr>
+            @if($bill->bank->account_type)
+            <tr><td class="k">ACCOUNT TYPE</td><td class="sep">:</td><td>{{ $bill->bank->account_type }}</td></tr>
+            @endif
+            <tr><td class="k">BANK</td><td class="sep">:</td><td>{{ $bill->bank->bank_name }}</td></tr>
+            @if($bill->bank->bank_branch)
+            <tr><td class="k">BRANCH</td><td class="sep">:</td><td>{{ $bill->bank->bank_branch }}</td></tr>
+            @endif
+            @if($bill->bank->routing_number)
+            <tr><td class="k">ROUTING NO</td><td class="sep">:</td><td>{{ $bill->bank->routing_number }}</td></tr>
+            @endif
+        </table>
+        @endif
 
 
     </div>

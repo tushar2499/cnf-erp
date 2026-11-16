@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\NasFreights\BankController;
 use App\Http\Controllers\NasFreights\BillItemDescriptionController;
 use App\Http\Controllers\NasFreights\BookingController;
 use App\Http\Controllers\NasFreights\BranchController;
@@ -309,6 +310,13 @@ Route::prefix('settings')->name('settings.')->group(function () {
         Route::post('/', [ExpenseHeadController::class, 'store'])->name('store');
         Route::put('/{expenseHead}', [ExpenseHeadController::class, 'update'])->name('update');
         Route::delete('/{expenseHead}', [ExpenseHeadController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('banks')->name('banks.')->group(function () {
+        Route::get('/', [BankController::class, 'index'])->name('index');
+        Route::post('/', [BankController::class, 'store'])->name('store');
+        Route::put('/{bank}', [BankController::class, 'update'])->name('update');
+        Route::delete('/{bank}', [BankController::class, 'destroy'])->name('destroy');
     });
 });
 

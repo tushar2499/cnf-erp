@@ -3,6 +3,7 @@
 namespace App\Http\Requests\NasFreights\FreightExportBookingBill;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateFreightExportBookingBillRequest extends FormRequest
 {
@@ -15,6 +16,9 @@ class UpdateFreightExportBookingBillRequest extends FormRequest
 
     public function rules(): array
     {
+        // An inactive bank already saved on this bill stays selectable; any other bank must be active.
+        $currentBankId = $this->route('freightExportBookingBill')?->bank_id;
+
         return [
             'export_booking_id' => ['required', 'exists:nas_freights_freight_export_bookings,id'],
             'bill_type'         => ['required', 'in:Customer,Overseas Agent'],
@@ -23,6 +27,9 @@ class UpdateFreightExportBookingBillRequest extends FormRequest
             'bill_date'         => ['required', 'date'],
             'attention'         => ['nullable', 'string', 'max:150'],
             'designation'       => ['nullable', 'string', 'max:150'],
+            'bank_id'           => ['nullable', 'integer', Rule::exists('nas_freights_banks', 'id')->where(
+                fn ($query) => $query->where('is_active', true)->when($currentBankId, fn ($q) => $q->orWhere('id', $currentBankId))
+            )],
             'currency'          => ['required', 'string', 'max:10'],
             'exchange_rate'     => ['required', 'numeric', 'min:0.0001'],
             'items'             => ['required', 'array', 'min:1'],
@@ -38,6 +45,7 @@ class UpdateFreightExportBookingBillRequest extends FormRequest
         return [
             'bill_prefix_ref.max'   => 'The Bill Ref may not be longer than :max characters.',
             'bill_prefix_job.max'   => 'The Job No may not be longer than :max characters.',
+            'bank_id.exists'        => 'The selected bank is not available. Choose an active bank or leave it blank.',
             'items.*.name.distinct' => 'The bill item description ":input" is used more than once. Each description can be used only once in a bill.',
         ];
     }

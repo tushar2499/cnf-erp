@@ -88,13 +88,12 @@ class SupplierBillController extends Controller
             ->toArray();
 
         $items = NasFreightsBookingItem::with('booking')
-            ->whereHas('booking', function ($q) use ($request) {
-                $q->whereBetween('job_date', [$request->from_date, $request->to_date]);
-                if ($request->supplier_id) {
-                    $q->whereHas('items', fn ($qi) => $qi->where('supplier_id', $request->supplier_id));
-                }
-            })
-            ->when($request->supplier_id, fn ($q) => $q->where('supplier_id', $request->supplier_id))
+            ->join('nas_freights_bookings as load_booking', 'load_booking.id', '=', 'nas_freights_booking_items.booking_id')
+            ->select('nas_freights_booking_items.*')
+            ->whereBetween('load_booking.job_date', [$request->from_date, $request->to_date])
+            ->when($request->supplier_id, fn ($q) => $q->where('nas_freights_booking_items.supplier_id', $request->supplier_id))
+            ->orderBy('load_booking.job_date')
+            ->orderBy('nas_freights_booking_items.id')
             ->get()
             ->filter(fn ($item) => ! isset($billedPairs[$item->booking_id.'_'.$item->cover_van_no]))
             ->values()
