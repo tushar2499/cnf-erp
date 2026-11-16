@@ -140,8 +140,9 @@
             $canSeeShippingCarrier   = $user->hasPermission('freight.shipping-carrier.list');
             $canSeeExpenseCategory   = $user->hasPermission('freight.expense-category.list');
             $canSeeExpenseHead       = $user->hasPermission('freight.expense-head.list');
+            $canSeeBank              = $user->hasPermission('freight.bank.list');
             $canSeeSettings          = $canSeeBranch || $canSeeContainerType || $canSeePackageType || $canSeeBillItemDescription
-                || $canSeeOverseasAgent || $canSeeShippingCarrier || $canSeeExpenseCategory || $canSeeExpenseHead;
+                || $canSeeOverseasAgent || $canSeeShippingCarrier || $canSeeExpenseCategory || $canSeeExpenseHead || $canSeeBank;
 
             // (import/export expense vars set above with freight import/export sections)
 
@@ -435,6 +436,12 @@
                     <i class="fa fa-list-ul"></i> Expense Heads
                 </a>
                 @endif
+                @if($canSeeBank)
+                <a href="{{ route('nas-freights.settings.banks.index') }}"
+                    class="nav-link ps-4 {{ request()->routeIs('nas-freights.settings.banks.*') ? 'active' : '' }}">
+                    <i class="fa fa-university"></i> Banks
+                </a>
+                @endif
             </div>
         </div>
         @endif
@@ -524,6 +531,9 @@
         @endif
         @if($canSeeExpenseHead)
         { label: 'Expense Heads',       section: 'Settings',         url: '{{ route("nas-freights.settings.expense-heads.index") }}',           icon: 'fa-list-ul' },
+        @endif
+        @if($canSeeBank)
+        { label: 'Banks',               section: 'Settings',         url: '{{ route("nas-freights.settings.banks.index") }}',                   icon: 'fa-university' },
         @endif
     ];
 

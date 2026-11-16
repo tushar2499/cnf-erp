@@ -100,6 +100,19 @@
                         <div class="info-value">{{ $bill->designation }}</div>
                     </div>
                     @endif
+                    @if($bill->bank)
+                    <div class="col-12">
+                        <div class="info-label">Bank</div>
+                        <div class="info-value">
+                            <span class="fw-semibold">{{ $bill->bank->bank_name }}</span>@if($bill->bank->bank_branch), {{ $bill->bank->bank_branch }}@endif
+                            <span class="text-muted">&middot;</span>
+                            A/C {{ $bill->bank->account_number }} ({{ $bill->bank->account_name }})
+                            @if($bill->bank->routing_number)
+                                <span class="text-muted">&middot;</span> Routing {{ $bill->bank->routing_number }}
+                            @endif
+                        </div>
+                    </div>
+                    @endif
                     @if($bill->remarks)
                     <div class="col-12">
                         <div class="info-label">Remarks</div>

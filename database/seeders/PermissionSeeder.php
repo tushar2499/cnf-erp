@@ -288,6 +288,12 @@ class PermissionSeeder extends Seeder
             ['company_id' => 2, 'module' => 'Bill Item Descriptions', 'name' => 'freight.bill-item-description.edit', 'sorting_order' => 242],
             ['company_id' => 2, 'module' => 'Bill Item Descriptions', 'name' => 'freight.bill-item-description.delete', 'sorting_order' => 243],
 
+            // Settings: Banks
+            ['company_id' => 2, 'module' => 'Banks', 'name' => 'freight.bank.list', 'sorting_order' => 250],
+            ['company_id' => 2, 'module' => 'Banks', 'name' => 'freight.bank.create', 'sorting_order' => 251],
+            ['company_id' => 2, 'module' => 'Banks', 'name' => 'freight.bank.edit', 'sorting_order' => 252],
+            ['company_id' => 2, 'module' => 'Banks', 'name' => 'freight.bank.delete', 'sorting_order' => 253],
+
             // ── NAS Trading — company_id = 3 ──────────────────────────────
 
             // LCs

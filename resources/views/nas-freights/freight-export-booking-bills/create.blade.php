@@ -300,6 +300,29 @@
                         </div>
                     </div>
 
+                    {{-- Bank (optional; printed on the bill as the payment account) --}}
+                    @php $selectedBankId = (string) old('bank_id', $bill->bank_id ?? ''); @endphp
+                    <div class="mb-3">
+                        <label class="form-label" for="bankSelect"><i class="fa fa-university me-1"></i> Bank <span class="text-muted fw-normal">(optional)</span></label>
+                        <select id="bankSelect" name="bank_id" class="form-select form-select-sm w-100 @error('bank_id') is-invalid @enderror">
+                            <option value="">No bank</option>
+                            @foreach($banks as $bank)
+                                <option value="{{ $bank->id }}" @selected($selectedBankId === (string) $bank->id)>
+                                    {{ $bank->optionLabel() }}{{ $bank->is_active ? '' : ' [Inactive]' }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('bank_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                        @if($banks->isEmpty())
+                            <div class="form-text">
+                                No banks yet.
+                                @if(auth()->user()->hasPermission('freight.bank.list'))
+                                    <a href="{{ route('nas-freights.settings.banks.index') }}" target="_blank" rel="noopener">Add one in Settings → Banks</a>.
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+
                     {{-- Remarks --}}
                     <div class="mb-3">
                         <label class="form-label">Remarks</label>
@@ -406,6 +429,14 @@ $(function () {
     } else {
         addRow('', ''); // one empty row on create
     }
+
+    // ── Bank (optional, clearable) ──
+    $('#bankSelect').select2({
+        theme: 'bootstrap-5',
+        width: '100%',
+        allowClear: true,
+        placeholder: 'No bank'
+    });
 
     // ── Bill type toggle ──
     function selectBillType(type) {

@@ -233,6 +233,18 @@ class FreightExportBookingTest extends TestCase
             $table->timestamps();
         });
 
+        Schema::create('nas_freights_banks', function (Blueprint $table) {
+            $table->id();
+            $table->string('account_name');
+            $table->string('account_number')->unique();
+            $table->string('account_type', 50);
+            $table->string('bank_name');
+            $table->string('bank_branch')->nullable();
+            $table->string('routing_number', 50)->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+
         Schema::create('nas_freights_freight_export_booking_bills', function (Blueprint $table) {
             $table->id();
             $table->string('bill_no')->unique();

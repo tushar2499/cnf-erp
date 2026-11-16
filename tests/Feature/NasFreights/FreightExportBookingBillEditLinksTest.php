@@ -82,6 +82,7 @@ class FreightExportBookingBillEditLinksTest extends TestCase
             'existingBillTypes' => [],
             'descriptions'      => collect(),
             'canAddDescription' => false,
+            'banks'             => collect(),
         ])->render();
     }
 
@@ -115,6 +116,7 @@ class FreightExportBookingBillEditLinksTest extends TestCase
             'existingBillTypes' => [],
             'descriptions'      => collect(),
             'canAddDescription' => false,
+            'banks'             => collect(),
         ])->render();
 
         $this->assertStringNotContainsString('fa-print', $html);

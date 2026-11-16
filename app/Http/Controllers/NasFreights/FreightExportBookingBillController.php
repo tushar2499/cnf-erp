@@ -11,10 +11,12 @@ use App\Http\Requests\NasFreights\FreightExportBookingBill\PrintFreightExportBoo
 use App\Http\Requests\NasFreights\FreightExportBookingBill\ShowFreightExportBookingBillRequest;
 use App\Http\Requests\NasFreights\FreightExportBookingBill\StoreFreightExportBookingBillRequest;
 use App\Http\Requests\NasFreights\FreightExportBookingBill\UpdateFreightExportBookingBillRequest;
+use App\Models\NasFreights\NasFreightsBank;
 use App\Models\NasFreights\NasFreightsBillItemDescription;
 use App\Models\NasFreights\NasFreightsFreightExportBooking;
 use App\Models\NasFreights\NasFreightsFreightExportBookingBill;
 use App\Models\NasFreights\NasFreightsFreightExportBookingBillItem;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -97,8 +99,9 @@ class FreightExportBookingBillController extends Controller
 
         $descriptions = NasFreightsBillItemDescription::active()->pluck('name');
         $canAddDescription = $request->user()->hasPermission('freight.bill-item-description.create');
+        $banks = $this->bankOptions();
 
-        return view('nas-freights.freight-export-booking-bills.create', compact('booking', 'existingBillTypes', 'descriptions', 'canAddDescription'));
+        return view('nas-freights.freight-export-booking-bills.create', compact('booking', 'existingBillTypes', 'descriptions', 'canAddDescription', 'banks'));
     }
 
     public function store(StoreFreightExportBookingBillRequest $request)
@@ -131,6 +134,7 @@ class FreightExportBookingBillController extends Controller
                 'bill_date'         => $request->bill_date,
                 'attention'         => $this->nullIfBlank($request->attention),
                 'designation'       => $this->nullIfBlank($request->designation),
+                'bank_id'           => $request->filled('bank_id') ? (int) $request->bank_id : null,
                 'currency'          => $request->currency,
                 'exchange_rate'     => $exchangeRate,
                 'remarks'           => $request->remarks,
@@ -172,7 +176,7 @@ class FreightExportBookingBillController extends Controller
 
     public function show(ShowFreightExportBookingBillRequest $request, NasFreightsFreightExportBookingBill $freightExportBookingBill)
     {
-        $bill = $freightExportBookingBill->load(['exportBooking.customer', 'exportBooking.overseasAgent', 'exportBooking.shippingCarrier', 'exportBooking.expense.items.expenseHead', 'items']);
+        $bill = $freightExportBookingBill->load(['exportBooking.customer', 'exportBooking.overseasAgent', 'exportBooking.shippingCarrier', 'exportBooking.expense.items.expenseHead', 'items', 'bank']);
 
         return view('nas-freights.freight-export-booking-bills.show', compact('bill'));
     }
@@ -189,8 +193,9 @@ class FreightExportBookingBillController extends Controller
 
         $descriptions = NasFreightsBillItemDescription::active()->pluck('name');
         $canAddDescription = $request->user()->hasPermission('freight.bill-item-description.create');
+        $banks = $this->bankOptions($bill->bank_id);
 
-        return view('nas-freights.freight-export-booking-bills.create', compact('bill', 'booking', 'existingBillTypes', 'descriptions', 'canAddDescription'));
+        return view('nas-freights.freight-export-booking-bills.create', compact('bill', 'booking', 'existingBillTypes', 'descriptions', 'canAddDescription', 'banks'));
     }
 
     public function update(UpdateFreightExportBookingBillRequest $request, NasFreightsFreightExportBookingBill $freightExportBookingBill)
@@ -248,6 +253,7 @@ class FreightExportBookingBillController extends Controller
                 'bill_date'         => $request->bill_date,
                 'attention'         => $this->nullIfBlank($request->attention),
                 'designation'       => $this->nullIfBlank($request->designation),
+                'bank_id'           => $request->filled('bank_id') ? (int) $request->bank_id : null,
                 'currency'          => $request->currency,
                 'exchange_rate'     => $exchangeRate,
                 'remarks'           => $request->remarks,
@@ -266,7 +272,7 @@ class FreightExportBookingBillController extends Controller
 
     public function printView(PrintFreightExportBookingBillRequest $request, NasFreightsFreightExportBookingBill $freightExportBookingBill)
     {
-        $bill = $freightExportBookingBill->load(['exportBooking.customer', 'exportBooking.overseasAgent', 'exportBooking.items', 'exportBooking.partyInvoices', 'items']);
+        $bill = $freightExportBookingBill->load(['exportBooking.customer', 'exportBooking.overseasAgent', 'exportBooking.items', 'exportBooking.partyInvoices', 'items', 'bank']);
 
         return view('nas-freights.freight-export-booking-bills.print', compact('bill'));
     }
@@ -333,6 +339,24 @@ class FreightExportBookingBillController extends Controller
         }
 
         return $values;
+    }
+
+    /**
+     * Banks offered in the bill form: active ones, plus the bank already saved on the bill (even if it was
+     * deactivated later) so editing never silently drops it.
+     *
+     * @return Collection<int, NasFreightsBank>
+     */
+    private function bankOptions(?int $selectedBankId = null): Collection
+    {
+        return NasFreightsBank::query()
+            ->where(fn ($query) => $query
+                ->where('is_active', true)
+                ->when($selectedBankId, fn ($q) => $q->orWhere('id', $selectedBankId))
+            )
+            ->orderBy('bank_name')
+            ->orderBy('account_name')
+            ->get();
     }
 
     private function nullIfBlank(?string $value): ?string
