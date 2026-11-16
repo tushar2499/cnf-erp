@@ -8,9 +8,11 @@ use App\Http\Requests\NasFreights\Booking\CreateBookingRequest;
 use App\Http\Requests\NasFreights\Booking\DestroyBookingRequest;
 use App\Http\Requests\NasFreights\Booking\EditBookingRequest;
 use App\Http\Requests\NasFreights\Booking\IndexBookingRequest;
+use App\Http\Requests\NasFreights\Booking\PrintBookingRequest;
 use App\Http\Requests\NasFreights\Booking\RejectBookingRequest;
 use App\Http\Requests\NasFreights\Booking\StoreBookingRequest;
 use App\Http\Requests\NasFreights\Booking\UpdateBookingRequest;
+use App\Models\Company;
 use App\Models\NasFreights\NasFreightsBooking;
 use App\Models\NasFreights\NasFreightsBookingItem;
 use App\Models\NasFreights\NasFreightsBookingProduct;
@@ -75,7 +77,7 @@ class BookingController extends Controller
                 ->addColumn('action', function ($r) {
                     $canAct = ! in_array($r->status, ['Approved', 'Rejected']);
                     $html = '<div class="d-flex flex-nowrap gap-1">';
-                    $html .= '<a href="'.route('nas-freights.bookings.edit', $r->id).'" class="btn btn-xs btn-outline-dark" title="Print"><i class="fa fa-print"></i></a>';
+                    $html .= '<a href="'.route('nas-freights.bookings.print', $r->id).'" target="_blank" rel="noopener" class="btn btn-xs btn-outline-dark" title="Print" aria-label="Print booking '.e($r->job_no).'"><i class="fa fa-print"></i></a>';
                     if ($canAct) {
                         $html .= '<a href="'.route('nas-freights.bookings.edit', $r->id).'" class="btn btn-xs btn-outline-primary" title="Edit"><i class="fa fa-edit"></i></a>';
                         $html .= '<button class="btn btn-xs btn-success btn-confirm"
@@ -263,6 +265,16 @@ class BookingController extends Controller
         });
 
         return response()->json(['message' => 'Booking updated successfully.', 'redirect' => route('nas-freights.bookings.index')]);
+    }
+
+    public function printView(PrintBookingRequest $request, NasFreightsBooking $booking)
+    {
+        abort_unless((int) $booking->branch_id === (int) session('nas_freights_branch_id'), 404);
+
+        $booking->load(['items', 'products', 'branch']);
+        $company = Company::where('slug', 'nas-freights')->first();
+
+        return view('nas-freights.bookings.print', compact('booking', 'company'));
     }
 
     public function destroy(DestroyBookingRequest $request, NasFreightsBooking $booking)
