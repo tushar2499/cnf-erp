@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Admin\EmployeeImportController;
 use App\Http\Controllers\Api\Chevron\CtgJobExpenseImportController;
+use App\Http\Controllers\Api\Chevron\CtgJobExpenseStatementImportController;
 use App\Http\Controllers\Api\Chevron\CtgJobImportController;
 use App\Http\Controllers\Api\Chevron\CustomerImportController;
 use App\Http\Controllers\Api\Chevron\DhkJobExpenseImportController;
@@ -36,6 +37,9 @@ Route::prefix('chevron')->group(function () {
 
     Route::post('/job-expenses/ctg/import/preview', [CtgJobExpenseImportController::class, 'preview']);
     Route::post('/job-expenses/ctg/import', [CtgJobExpenseImportController::class, 'import']);
+
+    Route::post('/job-expenses/ctg/statement/import/preview', [CtgJobExpenseStatementImportController::class, 'preview']);
+    Route::post('/job-expenses/ctg/statement/import', [CtgJobExpenseStatementImportController::class, 'import']);
 });
 
 Route::prefix('nas-freights')->group(function () {
