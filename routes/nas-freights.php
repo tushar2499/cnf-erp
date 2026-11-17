@@ -114,6 +114,7 @@ Route::prefix('bookings')->name('bookings.')->group(function () {
     Route::get('/create', [BookingController::class, 'create'])->name('create');
     Route::post('/', [BookingController::class, 'store'])->name('store');
     Route::get('/{booking}/edit', [BookingController::class, 'edit'])->name('edit');
+    Route::get('/{booking}/print', [BookingController::class, 'printView'])->name('print');
     Route::put('/{booking}', [BookingController::class, 'update'])->name('update');
     Route::delete('/{booking}', [BookingController::class, 'destroy'])->name('destroy');
     Route::patch('/{booking}/confirm', [BookingController::class, 'confirm'])->name('confirm');

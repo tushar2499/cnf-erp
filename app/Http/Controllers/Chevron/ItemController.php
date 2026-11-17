@@ -62,12 +62,7 @@ class ItemController extends Controller
 
     public function nextCode(NextCodeItemRequest $request): JsonResponse
     {
-        $last = ChevronItem::max('item_code');
-        $next = $last
-        ? 'ITEM-'.str_pad((intval(substr($last, 5)) + 1), 4, '0', STR_PAD_LEFT)
-        : 'ITEM-1001';
-
-        return response()->json(['next_code' => $next]);
+        return response()->json(['next_code' => ChevronItem::generateItemCode()]);
     }
 
     public function store(StoreItemRequest $request)
@@ -79,13 +74,8 @@ class ItemController extends Controller
         }
 
         DB::transaction(function () use ($request, $imagePath) {
-            $last = ChevronItem::lockForUpdate()->max('item_code');
-            $code = $last
-            ? 'ITEM-'.str_pad((intval(substr($last, 5)) + 1), 4, '0', STR_PAD_LEFT)
-            : 'ITEM-1001';
-
             ChevronItem::create([
-                'item_code'          => $code,
+                'item_code'          => ChevronItem::generateItemCode(),
                 'item_name'          => $request->item_name,
                 'supplier'           => $request->supplier,
                 'purchase_unit'      => $request->purchase_unit,
@@ -147,11 +137,8 @@ class ItemController extends Controller
     public function quickStore(QuickStoreItemRequest $request)
     {
         $item = DB::transaction(function () use ($request) {
-            $last = ChevronItem::lockForUpdate()->max('item_code');
-            $next = $last ? ('ITEM-'.str_pad((intval(substr($last, 5)) + 1), 4, '0', STR_PAD_LEFT)) : 'ITEM-1001';
-
             return ChevronItem::create([
-                'item_code'          => $next,
+                'item_code'          => ChevronItem::generateItemCode(),
                 'item_name'          => $request->item_name,
                 'purchase_unit'      => $request->purchase_unit ?? '',
                 'item_price'         => $request->item_price ?? 0,

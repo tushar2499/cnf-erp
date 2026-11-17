@@ -3,6 +3,7 @@
 namespace App\Models\Chevron;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class ChevronItem extends Model
 {
@@ -19,6 +20,25 @@ class ChevronItem extends Model
             'availability_in_po' => 'boolean',
             'availability_in_so' => 'boolean',
         ];
+    }
+
+    /**
+     * Next sequential item code, e.g. ITEM-0003.
+     *
+     * Compares the numeric suffix: a string MAX() ranks "ITEM-001" above
+     * "ITEM-0002", which regenerated an already used code.
+     */
+    public static function generateItemCode(): string
+    {
+        $last = static::where('item_code', 'like', 'ITEM-%')
+            ->lockForUpdate()
+            ->max(DB::raw('CAST(SUBSTRING(item_code, 6) AS UNSIGNED)'));
+
+        if ($last === null) {
+            return 'ITEM-1001';
+        }
+
+        return 'ITEM-'.str_pad((string) ((int) $last + 1), 4, '0', STR_PAD_LEFT);
     }
 
     public static function units(): array

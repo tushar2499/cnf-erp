@@ -167,6 +167,7 @@ class PermissionSeeder extends Seeder
             ['company_id' => 2, 'module' => 'Transport Bookings', 'name' => 'freight.booking.delete', 'sorting_order' => 43],
             ['company_id' => 2, 'module' => 'Transport Bookings', 'name' => 'freight.booking.confirm', 'sorting_order' => 44],
             ['company_id' => 2, 'module' => 'Transport Bookings', 'name' => 'freight.booking.reject', 'sorting_order' => 45],
+            ['company_id' => 2, 'module' => 'Transport Bookings', 'name' => 'freight.booking.print', 'sorting_order' => 46],
 
             // Customer Bills
             ['company_id' => 2, 'module' => 'Customer Bills', 'name' => 'freight.customer-bill.list', 'sorting_order' => 50],
