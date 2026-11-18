@@ -107,8 +107,15 @@
         <i class="fa fa-file-alt text-primary"></i>
         <h6 class="mb-0 fw-bold">Job Sheet &mdash; <span class="text-primary">{{ $job->job_no }}</span></h6>
         <span class="badge bg-{{ $job->status === 'Active' ? 'success' : 'warning text-dark' }} ms-1">{{ $job->status }}</span>
+        @if ($job->isPartial())
+            <span class="badge bg-warning text-dark text-nowrap">PJ</span>
+            <a href="{{ route('chevron.cnf.jobs.show', $job->parent_job_id) }}" class="small text-nowrap">
+                <i class="fa fa-level-up-alt me-1" aria-hidden="true"></i>Parent {{ $job->parent?->job_no }}
+            </a>
+        @endif
     </div>
     <div class="d-flex gap-2 flex-wrap">
+        @include('chevron.cnf.jobs._partial-job-button', ['job' => $job])
         <a href="{{ route('chevron.cnf.jobs.print', $job->id) }}" target="_blank" class="btn btn-sm btn-outline-dark">
             <i class="fa fa-print me-1"></i> Print
         </a>
@@ -164,6 +171,8 @@
             </div>
         </div>
     </div>
+
+    @include('chevron.cnf.jobs._partial-job-panel', ['job' => $job])
 
     <div class="job-card ac-green">
         <div class="job-card-hdr"><i class="fa fa-user-tie" style="color:#16a34a;"></i> Party &amp; Goods</div>

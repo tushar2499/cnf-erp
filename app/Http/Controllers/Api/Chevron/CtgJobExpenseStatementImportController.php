@@ -12,7 +12,6 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Reader\IReadFilter;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
@@ -26,9 +25,12 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
  * Rules:
  *   - A job missing from chevron_jobs is created with basic data (job no, branch, service, importer),
  *     then all of its expenses are added.
- *   - Expenses are grouped by job + date + employee. A group that already exists is skipped, so
- *     uploading the same file twice never duplicates. Existing rows are matched by employee name
- *     because older rows reference chevron_employees ids and newer rows reference employees ids.
+ *   - Expenses are grouped by job + date + employee. Employees are always the central "employees"
+ *     table; chevron_employees is never read or written.
+ *   - A job + date that already has an expense in this branch is skipped as a whole, whatever the
+ *     employee, so uploading the same file twice never duplicates. The check ignores the employee
+ *     on purpose: older rows hold ids that do not reliably point at "employees". All groups of one
+ *     job + date are saved in the same transaction, so a failed run can be re-uploaded safely.
  *   - Rows that cannot be imported are skipped and reported by reason.
  */
 class CtgJobExpenseStatementImportController extends Controller
@@ -70,7 +72,7 @@ class CtgJobExpenseStatementImportController extends Controller
     {
         $this->validateFile($request);
 
-        if (! extension_loaded('zip')) {
+        if (!extension_loaded('zip')) {
             return $this->zipError();
         }
 
@@ -80,14 +82,14 @@ class CtgJobExpenseStatementImportController extends Controller
         try {
             [$groups, $skipped] = $this->parseWorkbook($request->file('file')->getPathname());
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Could not read the file: '.$e->getMessage()], 422);
+            return response()->json(['message' => 'Could not read the file: ' . $e->getMessage()], 422);
         }
 
         $lookups = $this->buildLookups();
 
         $summary = [
             'total_groups'       => count($groups),
-            'total_items'        => array_sum(array_map(fn ($g) => count($g['items']), $groups)),
+            'total_items'        => array_sum(array_map(fn($g) => count($g['items']), $groups)),
             'existing_expenses'  => 0,
             'expenses_to_insert' => 0,
             'new_jobs'           => 0,
@@ -96,42 +98,49 @@ class CtgJobExpenseStatementImportController extends Controller
             'new_employees'      => 0,
         ];
 
-        $seenJobs = [];
+        $seenJobs      = [];
         $seenCustomers = [];
         $seenEmployees = [];
-        $seenHeads = [];
+        $seenHeads     = [];
         $previewGroups = [];
 
         foreach ($groups as $group) {
-            $exists = isset($lookups['existingExpenses'][$this->groupKey($group)]);
+            $exists = isset($lookups['existingExpenses'][$this->jobDateKey($group)]);
             $summary[$exists ? 'existing_expenses' : 'expenses_to_insert']++;
 
-            $jobKey = strtolower($group['job_no']);
+            $jobKey      = strtolower($group['job_no']);
             $importerKey = strtolower($group['importer_name']);
-            $newJob = ! isset($lookups['jobs'][$jobKey]);
-            $newCustomer = $group['importer_name'] !== '' && ! isset($lookups['customers'][$importerKey]);
-            $newEmployee = $group['employee_key'] !== '' && ! $this->employeeExists($lookups, $group['employee_key']);
+            $newJob      = !isset($lookups['jobs'][$jobKey]);
+            $newCustomer = $group['importer_name'] !== '' && !isset($lookups['customers'][$importerKey]);
+            $newEmployee = $group['employee_key'] !== '' && !isset($lookups['employeesByName'][$group['employee_key']]);
 
-            if (! $exists) {
-                if ($newJob && ! isset($seenJobs[$jobKey])) {
+            if (!$exists) {
+
+                if ($newJob && !isset($seenJobs[$jobKey])) {
                     $seenJobs[$jobKey] = true;
                     $summary['new_jobs']++;
                 }
-                if ($newCustomer && ! isset($seenCustomers[$importerKey])) {
+
+                if ($newCustomer && !isset($seenCustomers[$importerKey])) {
                     $seenCustomers[$importerKey] = true;
                     $summary['new_customers']++;
                 }
-                if ($newEmployee && ! isset($seenEmployees[$group['employee_key']])) {
+
+                if ($newEmployee && !isset($seenEmployees[$group['employee_key']])) {
                     $seenEmployees[$group['employee_key']] = true;
                     $summary['new_employees']++;
                 }
+
                 foreach ($group['items'] as $item) {
                     $headKey = strtolower($item['expense_head']);
-                    if (! isset($lookups['heads'][$headKey]) && ! isset($seenHeads[$headKey])) {
+
+                    if (!isset($lookups['heads'][$headKey]) && !isset($seenHeads[$headKey])) {
                         $seenHeads[$headKey] = true;
                         $summary['new_heads']++;
                     }
+
                 }
+
             }
 
             if (count($previewGroups) < self::PREVIEW_LIMIT) {
@@ -143,6 +152,7 @@ class CtgJobExpenseStatementImportController extends Controller
                     'total_amount' => round(array_sum(array_column($group['items'], 'amount')), 2),
                 ];
             }
+
         }
 
         return response()->json([
@@ -156,7 +166,7 @@ class CtgJobExpenseStatementImportController extends Controller
     {
         $this->validateFile($request);
 
-        if (! extension_loaded('zip')) {
+        if (!extension_loaded('zip')) {
             return $this->zipError();
         }
 
@@ -166,22 +176,22 @@ class CtgJobExpenseStatementImportController extends Controller
         try {
             [$groups, $skipped] = $this->parseWorkbook($request->file('file')->getPathname());
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Could not read the file: '.$e->getMessage()], 422);
+            return response()->json(['message' => 'Could not read the file: ' . $e->getMessage()], 422);
         }
 
         $lookups = $this->buildLookups();
 
         $pending = array_values(array_filter(
             $groups,
-            fn ($group) => ! isset($lookups['existingExpenses'][$this->groupKey($group)])
+            fn($group) => !isset($lookups['existingExpenses'][$this->jobDateKey($group)])
         ));
         $skippedExisting = count($groups) - count($pending);
 
-        $entityStats = $this->resolveEntities($lookups, $pending);
+        $entityStats  = $this->resolveEntities($lookups, $pending);
         $persistStats = $this->persistExpenses($lookups, $pending);
 
         return response()->json([
-            'message'           => "{$persistStats['inserted']} expense(s) imported successfully.",
+            'message' => "{$persistStats['inserted']} expense(s) imported successfully.",
             'inserted_expenses' => $persistStats['inserted'],
             'inserted_items'    => $persistStats['inserted_items'],
             'skipped_existing'  => $skippedExisting,
@@ -194,7 +204,7 @@ class CtgJobExpenseStatementImportController extends Controller
         ]);
     }
 
-    // ─── Spreadsheet loading ─────────────────────────────────────────────────
+// ─── Spreadsheet loading ─────────────────────────────────────────────────
 
     /**
      * @return array{0: array<int, array<string, mixed>>, 1: array<string, array{count: int, rows: array<int, int>}>}
@@ -216,8 +226,8 @@ class CtgJobExpenseStatementImportController extends Controller
     {
         $reader = IOFactory::createReaderForFile($path);
 
-        if (! in_array(self::SHEET_NAME, $reader->listWorksheetNames($path), true)) {
-            throw new \RuntimeException('Sheet "'.self::SHEET_NAME.'" was not found in the workbook.');
+        if (!in_array(self::SHEET_NAME, $reader->listWorksheetNames($path), true)) {
+            throw new \RuntimeException('Sheet "' . self::SHEET_NAME . '" was not found in the workbook.');
         }
 
         $reader->setReadDataOnly(true);
@@ -236,18 +246,21 @@ class CtgJobExpenseStatementImportController extends Controller
             {
                 return in_array($columnAddress, $this->columns, true);
             }
+
         });
 
         $spreadsheet = $reader->load($path);
-        $sheet = $spreadsheet->getSheet(0);
-        $rows = $sheet->rangeToArray('A1:N'.$sheet->getHighestDataRow(), null, false, false, false);
+        $sheet       = $spreadsheet->getSheet(0);
+        $rows        = $sheet->rangeToArray('A1:N' . $sheet->getHighestDataRow(), null, false, false, false);
 
         foreach ($rows as $rowIndex => $row) {
             foreach ($row as $columnIndex => $value) {
                 if (is_string($value) && str_starts_with($value, '=')) {
                     $rows[$rowIndex][$columnIndex] = $sheet->getCell([$columnIndex + 1, $rowIndex + 1])->getOldCalculatedValue();
                 }
+
             }
+
         }
 
         $spreadsheet->disconnectWorksheets();
@@ -255,7 +268,7 @@ class CtgJobExpenseStatementImportController extends Controller
         return $rows;
     }
 
-    // ─── Parsing ─────────────────────────────────────────────────────────────
+// ─── Parsing ─────────────────────────────────────────────────────────────
 
     /**
      * @param  array<int, array<int, mixed>>  $rows
@@ -265,18 +278,18 @@ class CtgJobExpenseStatementImportController extends Controller
     {
         [$headerIndex, $columns] = $this->locateColumns($rows);
 
-        $groups = [];
+        $groups       = [];
         $jobImporters = [];
-        $skipped = [];
+        $skipped      = [];
 
         foreach ($rows as $index => $row) {
             if ($index <= $headerIndex) {
                 continue;
             }
 
-            $sheetRow = $index + 1;
-            $jobNo = $this->cellText($row, $columns['job_no']);
-            $head = $this->cellText($row, $columns['head']);
+            $sheetRow  = $index + 1;
+            $jobNo     = $this->cellText($row, $columns['job_no']);
+            $head      = $this->cellText($row, $columns['head']);
             $rawAmount = $this->cellText($row, $columns['amount']);
 
             if ($jobNo === '' && $head === '' && $rawAmount === '') {
@@ -309,17 +322,17 @@ class CtgJobExpenseStatementImportController extends Controller
                 continue;
             }
 
-            $jobKey = strtolower($jobNo);
+            $jobKey   = strtolower($jobNo);
             $importer = $this->cellText($row, $columns['importer']);
-            if ($importer !== '' && ! str_starts_with($importer, '#') && ! isset($jobImporters[$jobKey])) {
+            if ($importer !== '' && !str_starts_with($importer, '#') && !isset($jobImporters[$jobKey])) {
                 $jobImporters[$jobKey] = $importer;
             }
 
             $employeeName = $this->cleanEmployeeName($this->cellText($row, $columns['employee']));
-            $employeeKey = $employeeName === '' ? '' : $this->normalizeName($employeeName);
-            $groupKey = $jobKey.'|'.$date.'|'.$employeeKey;
+            $employeeKey  = $employeeName === '' ? '' : $this->normalizeName($employeeName);
+            $groupKey     = $jobKey . '|' . $date . '|' . $employeeKey;
 
-            if (! isset($groups[$groupKey])) {
+            if (!isset($groups[$groupKey])) {
                 $groups[$groupKey] = [
                     'job_no'        => $jobNo,
                     'importer_name' => '',
@@ -356,29 +369,29 @@ class CtgJobExpenseStatementImportController extends Controller
     {
         foreach (array_slice($rows, 0, 10, true) as $index => $row) {
             $normalized = array_map(
-                fn ($value) => preg_replace('/[^a-z0-9]/', '', strtolower((string) $value)),
+                fn($value) => preg_replace('/[^a-z0-9]/', '', strtolower((string) $value)),
                 $row
             );
 
-            if (! in_array(self::HEADERS['job_no'], $normalized, true) || ! in_array(self::HEADERS['amount'], $normalized, true)) {
+            if (!in_array(self::HEADERS['job_no'], $normalized, true) || !in_array(self::HEADERS['amount'], $normalized, true)) {
                 continue;
             }
 
             $columns = [];
             foreach (self::HEADERS as $field => $header) {
-                $position = array_search($header, $normalized, true);
+                $position        = array_search($header, $normalized, true);
                 $columns[$field] = $position === false ? null : $position;
             }
 
-            $missing = array_filter(self::REQUIRED_COLUMNS, fn ($field) => $columns[$field] === null);
+            $missing = array_filter(self::REQUIRED_COLUMNS, fn($field) => $columns[$field] === null);
             if ($missing !== []) {
-                throw new \RuntimeException('Missing column(s) in the header row: '.implode(', ', array_map(fn ($field) => self::HEADERS[$field], $missing)).'.');
+                throw new \RuntimeException('Missing column(s) in the header row: ' . implode(', ', array_map(fn($field) => self::HEADERS[$field], $missing)) . '.');
             }
 
             return [$index, $columns];
         }
 
-        throw new \RuntimeException('Header row not found. Expected columns "Job NO:" and "AMOUNT" in the first 10 rows of sheet "'.self::SHEET_NAME.'".');
+        throw new \RuntimeException('Header row not found. Expected columns "Job NO:" and "AMOUNT" in the first 10 rows of sheet "' . self::SHEET_NAME . '".');
     }
 
     /**
@@ -392,6 +405,7 @@ class CtgJobExpenseStatementImportController extends Controller
         if (count($skipped[$reason]['rows']) < self::SKIP_SAMPLE_LIMIT) {
             $skipped[$reason]['rows'][] = $sheetRow;
         }
+
     }
 
     /**
@@ -402,7 +416,7 @@ class CtgJobExpenseStatementImportController extends Controller
         return $column === null ? '' : trim((string) ($row[$column] ?? ''));
     }
 
-    // ─── Lookups ──────────────────────────────────────────────────────────────
+// ─── Lookups ──────────────────────────────────────────────────────────────
 
     /**
      * @return array<string, mixed>
@@ -410,91 +424,48 @@ class CtgJobExpenseStatementImportController extends Controller
     private function buildLookups(): array
     {
         $jobs = ChevronJob::pluck('id', 'job_no')
-            ->mapWithKeys(fn ($id, $no) => [strtolower(trim($no)) => $id])
+            ->mapWithKeys(fn($id, $no) => [strtolower(trim($no)) => $id])
             ->all();
 
         $customers = ChevronCustomer::pluck('id', 'name')
-            ->mapWithKeys(fn ($id, $name) => [strtolower(trim($name)) => $id])
+            ->mapWithKeys(fn($id, $name) => [strtolower(trim($name)) => $id])
             ->all();
 
         $heads = ChevronExpenseHead::pluck('id', 'name')
-            ->mapWithKeys(fn ($id, $name) => [strtolower(trim($name)) => $id])
+            ->mapWithKeys(fn($id, $name) => [strtolower(trim($name)) => $id])
             ->all();
 
         $employeesByName = [];
-        $employeesByCode = [];
-        $employeeNames = [];
-        foreach (Employee::get(['id', 'code', 'name']) as $employee) {
+        foreach (Employee::get(['id', 'name']) as $employee) {
             $nameKey = $this->normalizeName($employee->name);
             if ($nameKey !== '') {
                 $employeesByName[$nameKey] ??= $employee->id;
-                $employeeNames[$employee->id] = $nameKey;
             }
-            $codeKey = strtolower(trim((string) $employee->code));
-            if ($codeKey !== '') {
-                $employeesByCode[$codeKey] = $employee->id;
-            }
-        }
 
-        // Legacy chevron_employees: only used to reuse employee codes and to recognise old expense rows.
-        $legacyCodes = [];
-        $legacyNames = [];
-        if (Schema::hasTable('chevron_employees')) {
-            foreach (DB::table('chevron_employees')->get(['id', 'employee_id', 'name']) as $legacy) {
-                $nameKey = $this->normalizeName((string) $legacy->name);
-                if ($nameKey !== '') {
-                    $legacyCodes[$nameKey] ??= $legacy->employee_id;
-                    $legacyNames[$legacy->id] = $nameKey;
-                }
-            }
         }
 
         $existingExpenses = [];
-        foreach (DB::table('chevron_job_expenses')->where('branch_id', self::BRANCH_ID)->select('job_no', 'date', 'employee_id')->cursor() as $expense) {
-            $prefix = strtolower(trim((string) $expense->job_no)).'|'.$expense->date.'|';
-
-            if ($expense->employee_id === null) {
-                $existingExpenses[$prefix] = true;
-
-                continue;
-            }
-
-            foreach (array_filter([$employeeNames[$expense->employee_id] ?? '', $legacyNames[$expense->employee_id] ?? '']) as $nameKey) {
-                $existingExpenses[$prefix.$nameKey] = true;
-            }
+        foreach (DB::table('chevron_job_expenses')->where('branch_id', self::BRANCH_ID)->select('job_no', 'date')->cursor() as $expense) {
+            $existingExpenses[strtolower(trim((string) $expense->job_no)) . '|' . $expense->date] = true;
         }
 
         $headEmpPairs = DB::table('chevron_expense_head_employees')
             ->get(['expense_head_id', 'employee_id'])
-            ->mapWithKeys(fn ($row) => ["{$row->expense_head_id}:{$row->employee_id}" => true])
+            ->mapWithKeys(fn($row) => ["{$row->expense_head_id}:{$row->employee_id}" => true])
             ->all();
 
-        return compact('jobs', 'customers', 'heads', 'employeesByName', 'employeesByCode', 'legacyCodes', 'existingExpenses', 'headEmpPairs');
-    }
-
-    /**
-     * @param  array<string, mixed>  $lookups
-     */
-    private function employeeExists(array $lookups, string $nameKey): bool
-    {
-        if (isset($lookups['employeesByName'][$nameKey])) {
-            return true;
-        }
-
-        $legacyCode = strtolower((string) ($lookups['legacyCodes'][$nameKey] ?? ''));
-
-        return $legacyCode !== '' && isset($lookups['employeesByCode'][$legacyCode]);
+        return compact('jobs', 'customers', 'heads', 'employeesByName', 'existingExpenses', 'headEmpPairs');
     }
 
     /**
      * @param  array<string, mixed>  $group
      */
-    private function groupKey(array $group): string
+    private function jobDateKey(array $group): string
     {
-        return strtolower($group['job_no']).'|'.$group['date'].'|'.$group['employee_key'];
+        return strtolower($group['job_no']) . '|' . $group['date'];
     }
 
-    // ─── Entity resolution ────────────────────────────────────────────────────
+// ─── Entity resolution ────────────────────────────────────────────────────
 
     /**
      * Create the customers, jobs, employees, heads and categories that the pending groups need.
@@ -508,38 +479,42 @@ class CtgJobExpenseStatementImportController extends Controller
         $stats = ['new_jobs' => 0, 'new_customers' => 0, 'new_categories' => 0, 'new_heads' => 0, 'new_employees' => 0];
 
         $uniqueImporters = [];
-        $uniqueJobs = [];
-        $uniqueHeads = [];
+        $uniqueJobs      = [];
+        $uniqueHeads     = [];
         $uniqueEmployees = [];
 
         foreach ($groups as $group) {
-            $jobKey = strtolower($group['job_no']);
+            $jobKey      = strtolower($group['job_no']);
             $importerKey = strtolower($group['importer_name']);
 
-            if (! isset($lookups['jobs'][$jobKey])) {
+            if (!isset($lookups['jobs'][$jobKey])) {
                 $uniqueJobs[$jobKey] = ['job_no' => $group['job_no'], 'importer' => $group['importer_name']];
             }
-            if ($group['importer_name'] !== '' && ! isset($lookups['customers'][$importerKey])) {
+
+            if ($group['importer_name'] !== '' && !isset($lookups['customers'][$importerKey])) {
                 $uniqueImporters[$importerKey] = $group['importer_name'];
             }
-            if ($group['employee_key'] !== '' && ! isset($uniqueEmployees[$group['employee_key']])) {
+
+            if ($group['employee_key'] !== '' && !isset($uniqueEmployees[$group['employee_key']])) {
                 $uniqueEmployees[$group['employee_key']] = $group['employee_name'];
             }
 
             foreach ($group['items'] as $item) {
                 $headKey = strtolower($item['expense_head']);
-                if (! isset($lookups['heads'][$headKey]) && ! isset($uniqueHeads[$headKey])) {
+                if (!isset($lookups['heads'][$headKey]) && !isset($uniqueHeads[$headKey])) {
                     $uniqueHeads[$headKey] = ['name' => $item['expense_head'], 'category' => $item['category_name']];
                 }
+
             }
+
         }
 
         DB::transaction(function () use (&$lookups, &$stats, $uniqueImporters, $uniqueJobs, $uniqueHeads, $uniqueEmployees, $groups) {
 
-            // 1. Customers
+// 1. Customers
             foreach ($uniqueImporters as $key => $name) {
                 $customer = ChevronCustomer::whereRaw('LOWER(TRIM(name)) = ?', [$key])->first();
-                if (! $customer) {
+                if (!$customer) {
                     $customer = ChevronCustomer::create([
                         'id_prefix'   => 'CUS-',
                         'customer_id' => ChevronCustomer::generateCustomerId('CUS-'),
@@ -548,13 +523,14 @@ class CtgJobExpenseStatementImportController extends Controller
                     ]);
                     $stats['new_customers']++;
                 }
+
                 $lookups['customers'][$key] = $customer->id;
             }
 
-            // 2. Jobs missing from chevron_jobs — created with basic data only
+// 2. Jobs missing from chevron_jobs — created with basic data only
             foreach ($uniqueJobs as $key => $data) {
                 $job = ChevronJob::whereRaw('LOWER(TRIM(job_no)) = ?', [$key])->first();
-                if (! $job) {
+                if (!$job) {
                     $job = ChevronJob::create([
                         'job_no'      => $data['job_no'],
                         'branch_id'   => self::BRANCH_ID,
@@ -565,21 +541,18 @@ class CtgJobExpenseStatementImportController extends Controller
                     ]);
                     $stats['new_jobs']++;
                 }
+
                 $lookups['jobs'][$key] = $job->id;
             }
 
-            // 3. Employees — reuse by name, then by legacy code, otherwise create
+// 3. Employees (central "employees" table) — reuse by name, otherwise create
             foreach ($uniqueEmployees as $nameKey => $displayName) {
-                if ($this->employeeExists($lookups, $nameKey)) {
-                    $lookups['employeesByName'][$nameKey] ??= $lookups['employeesByCode'][strtolower((string) $lookups['legacyCodes'][$nameKey])];
-
+                if (isset($lookups['employeesByName'][$nameKey])) {
                     continue;
                 }
 
-                $legacyCode = $lookups['legacyCodes'][$nameKey] ?? null;
                 $employee = Employee::create([
                     'name'           => $displayName,
-                    'code'           => $legacyCode,
                     'type'           => 'prepare',
                     'current_status' => 'Active',
                     'is_active'      => true,
@@ -590,23 +563,26 @@ class CtgJobExpenseStatementImportController extends Controller
 
             // 4. Expense heads (category from the sheet, "General" when blank)
             $categoryIds = [];
+
             foreach ($uniqueHeads as $key => $data) {
                 $head = ChevronExpenseHead::whereRaw('LOWER(TRIM(name)) = ?', [$key])->first();
-                if (! $head) {
-                    $categoryName = $data['category'] !== '' ? $data['category'] : self::FALLBACK_CATEGORY;
-                    $categoryKey = strtolower($categoryName);
 
-                    if (! isset($categoryIds[$categoryKey])) {
-                        $category = ChevronExpenseCategory::whereRaw('LOWER(TRIM(name)) = ?', [$categoryKey])->first()
-                            ?? ChevronExpenseCategory::create([
-                                'name'      => $categoryName,
-                                'is_bill'   => false,
-                                'is_job'    => true,
-                                'is_active' => true,
-                            ]);
+                if (!$head) {
+                    $categoryName = $data['category'] !== '' ? $data['category'] : self::FALLBACK_CATEGORY;
+                    $categoryKey  = strtolower($categoryName);
+
+                    if (!isset($categoryIds[$categoryKey])) {
+                        $category = ChevronExpenseCategory::whereRaw('LOWER(TRIM(name)) = ?', [$categoryKey])->first() ?? ChevronExpenseCategory::create([
+                            'name'      => $categoryName,
+                            'is_bill'   => false,
+                            'is_job'    => true,
+                            'is_active' => true,
+                        ]);
+
                         if ($category->wasRecentlyCreated) {
                             $stats['new_categories']++;
                         }
+
                         $categoryIds[$categoryKey] = $category->id;
                     }
 
@@ -618,30 +594,37 @@ class CtgJobExpenseStatementImportController extends Controller
                     ]);
                     $stats['new_heads']++;
                 }
+
                 $lookups['heads'][$key] = $head->id;
             }
 
             // 5. Head ↔ employee pivot
             $pivotRows = [];
+
             foreach ($groups as $group) {
                 $employeeId = $lookups['employeesByName'][$group['employee_key']] ?? null;
+
                 if ($employeeId === null) {
                     continue;
                 }
 
                 foreach ($group['items'] as $item) {
-                    $headId = $lookups['heads'][strtolower($item['expense_head'])] ?? null;
+                    $headId  = $lookups['heads'][strtolower($item['expense_head'])] ?? null;
                     $pairKey = "{$headId}:{$employeeId}";
-                    if ($headId !== null && ! isset($lookups['headEmpPairs'][$pairKey])) {
-                        $pivotRows[$pairKey] = ['expense_head_id' => $headId, 'employee_id' => $employeeId];
+
+                    if ($headId !== null && !isset($lookups['headEmpPairs'][$pairKey])) {
+                        $pivotRows[$pairKey]               = ['expense_head_id' => $headId, 'employee_id' => $employeeId];
                         $lookups['headEmpPairs'][$pairKey] = true;
                     }
+
                 }
+
             }
 
             if ($pivotRows !== []) {
                 DB::table('chevron_expense_head_employees')->insertOrIgnore(array_values($pivotRows));
             }
+
         });
 
         return $stats;
@@ -656,7 +639,7 @@ class CtgJobExpenseStatementImportController extends Controller
         };
     }
 
-    // ─── Persistence ──────────────────────────────────────────────────────────
+// ─── Persistence ──────────────────────────────────────────────────────────
 
     /**
      * @param  array<string, mixed>  $lookups
@@ -671,14 +654,23 @@ class CtgJobExpenseStatementImportController extends Controller
             return $stats;
         }
 
-        $expenseCounter = DB::transaction(fn () => (DB::table('chevron_job_expenses')
-            ->lockForUpdate()
-            ->max(DB::raw('CAST(SUBSTRING(expense_no, 4) AS UNSIGNED)')) ?? 0) + 1
+        $expenseCounter = DB::transaction(fn() => (DB::table('chevron_job_expenses')
+                ->lockForUpdate()
+                ->max(DB::raw('CAST(SUBSTRING(expense_no, 4) AS UNSIGNED)')) ?? 0) + 1
         );
 
         $now = now();
 
-        foreach (array_chunk($groups, self::CHUNK_SIZE) as $chunk) {
+        // Keep every group of one job + date in the same transaction (see class docblock).
+        $buckets = [];
+
+        foreach ($groups as $group) {
+            $buckets[$this->jobDateKey($group)][] = $group;
+        }
+
+        foreach (array_chunk($buckets, self::CHUNK_SIZE) as $bucketChunk) {
+            $chunk = array_merge(...$bucketChunk);
+
             DB::transaction(function () use ($chunk, &$lookups, &$stats, &$expenseCounter, $now) {
                 $itemRows = [];
 
@@ -686,7 +678,7 @@ class CtgJobExpenseStatementImportController extends Controller
                     $totalAmount = round(array_sum(array_column($group['items'], 'amount')), 2);
 
                     $expenseId = DB::table('chevron_job_expenses')->insertGetId([
-                        'expense_no'            => 'EXP'.str_pad((string) $expenseCounter++, 6, '0', STR_PAD_LEFT),
+                        'expense_no'            => 'EXP' . str_pad((string) $expenseCounter++, 6, '0', STR_PAD_LEFT),
                         'branch_id'             => self::BRANCH_ID,
                         'job_id'                => $lookups['jobs'][strtolower($group['job_no'])] ?? null,
                         'job_no'                => $group['job_no'],
@@ -714,18 +706,20 @@ class CtgJobExpenseStatementImportController extends Controller
                         ];
                         $stats['inserted_items']++;
                     }
+
                 }
 
                 if ($itemRows !== []) {
                     DB::table('chevron_job_expense_items')->insert($itemRows);
                 }
+
             });
         }
 
         return $stats;
     }
 
-    // ─── Helpers ──────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────
 
     /**
      * Lower-case, dot-free, whitespace-collapsed name without honorific or "_dk" suffix, used to match employees.
@@ -738,6 +732,7 @@ class CtgJobExpenseStatementImportController extends Controller
             if (str_starts_with($normalized, $prefix)) {
                 $normalized = trim(substr($normalized, strlen($prefix)));
             }
+
         }
 
         return trim(preg_replace('/_dk$/', '', $normalized) ?? $normalized);
@@ -769,6 +764,7 @@ class CtgJobExpenseStatementImportController extends Controller
             } catch (\Exception) {
                 $date = null;
             }
+
         } else {
             foreach (['Y-m-d', 'd/M/Y', 'd-M-Y', 'd/m/Y'] as $format) {
                 try {
@@ -778,7 +774,9 @@ class CtgJobExpenseStatementImportController extends Controller
                 } catch (\Exception) {
                     continue;
                 }
+
             }
+
         }
 
         $year = $date === null ? 0 : (int) substr($date, 0, 4);
@@ -805,4 +803,5 @@ class CtgJobExpenseStatementImportController extends Controller
             'message' => 'The server is missing the PHP "zip" extension required to read .xlsx files.',
         ], 500);
     }
+
 }

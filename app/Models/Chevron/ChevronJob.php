@@ -106,6 +106,88 @@ class ChevronJob extends Model
         return $this->belongsTo(ChevronItem::class, 'item_id');
     }
 
+    public function parent()
+    {
+        return $this->belongsTo(self::class, 'parent_job_id');
+    }
+
+    public function partials()
+    {
+        return $this->hasMany(self::class, 'parent_job_id')->orderBy('partial_seq');
+    }
+
+    public function isPartial(): bool
+    {
+        return $this->parent_job_id !== null;
+    }
+
+    /**
+     * First partial is "{job_no}_PJ", the next ones are "{job_no}_PJ1", "{job_no}_PJ2", ...
+     */
+    public function partialJobNo(int $seq): string
+    {
+        return $this->job_no.'_PJ'.($seq > 1 ? $seq - 1 : '');
+    }
+
+    /**
+     * Sequence of the next partial job. Looks at the linked partials and also at any job number that
+     * already uses this job's "_PJ" pattern (imported partials may have no parent link), so the next
+     * number always continues after the highest one in use.
+     */
+    public function nextPartialSeq(): int
+    {
+        $highest = (int) static::where('parent_job_id', $this->id)->max('partial_seq');
+        $pattern = '/^'.preg_quote($this->job_no, '/').'_PJ(\d*)$/';
+
+        $usedJobNos = static::where('job_no', 'like', $this->job_no.'_PJ%')->pluck('job_no');
+
+        foreach ($usedJobNos as $usedJobNo) {
+            if (preg_match($pattern, $usedJobNo, $match)) {
+                $highest = max($highest, $match[1] === '' ? 1 : ((int) $match[1]) + 1);
+            }
+        }
+
+        $seq = $highest + 1;
+
+        while (static::where('job_no', $this->partialJobNo($seq))->exists()) {
+            $seq++;
+        }
+
+        return $seq;
+    }
+
+    public function nextPartialJobNo(): string
+    {
+        return $this->partialJobNo($this->nextPartialSeq());
+    }
+
+    /**
+     * Clone this job as its next partial job. Only the job row is copied (no bills, no expenses).
+     * Call inside a DB transaction.
+     *
+     * @throws \LogicException when this job is already a partial job
+     */
+    public function createPartialJob(): self
+    {
+        $parent = static::lockForUpdate()->findOrFail($this->id);
+
+        if ($parent->isPartial()) {
+            throw new \LogicException('A partial job cannot have its own partial jobs.');
+        }
+
+        $seq = $parent->nextPartialSeq();
+
+        $partial = $parent->replicate(['job_no', 'parent_job_id', 'partial_seq']);
+        $partial->forceFill([
+            'job_no'        => $parent->partialJobNo($seq),
+            'parent_job_id' => $parent->id,
+            'partial_seq'   => $seq,
+        ]);
+        $partial->save();
+
+        return $partial;
+    }
+
     public static function generateJobNo(int $jobTypeId, int $branchId): string
     {
         $jobType = ChevronJobType::find($jobTypeId);
@@ -117,6 +199,7 @@ class ChevronJob extends Model
         $prefix = "CF_{$typeCode}{$branchCode}-{$year}-";
 
         $last = static::lockForUpdate()
+            ->whereNull('parent_job_id')
             ->where('job_no', 'like', 'CF\\_'.$typeCode.$branchCode.'-'.$year.'-%')
             ->max(DB::raw('CAST(SUBSTRING_INDEX(job_no, \'-\', -1) AS UNSIGNED)'));
 

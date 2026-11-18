@@ -9,10 +9,12 @@ return new class extends Migration
 
     public function up(): void
     {
+        $security = DB::getDriverName() === 'mysql' ? 'SQL SECURITY INVOKER ' : '';
+
         DB::statement('DROP VIEW IF EXISTS '.self::VIEW);
 
         DB::statement('
-            CREATE VIEW '.self::VIEW.' AS
+            CREATE '.$security.'VIEW '.self::VIEW.' AS
             SELECT
                 i.id                AS id,
                 b.id                AS bill_id,

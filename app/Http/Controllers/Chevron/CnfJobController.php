@@ -10,19 +10,24 @@ use App\Http\Requests\Chevron\Job\IndexJobRequest;
 use App\Http\Requests\Chevron\Job\PrintJobRequest;
 use App\Http\Requests\Chevron\Job\ShowJobRequest;
 use App\Http\Requests\Chevron\Job\StoreJobRequest;
+use App\Http\Requests\Chevron\Job\StorePartialJobRequest;
 use App\Http\Requests\Chevron\Job\UpdateJobRequest;
 use App\Models\Chevron\ChevronCustomer;
 use App\Models\Chevron\ChevronItem;
 use App\Models\Chevron\ChevronJob;
+use App\Models\Chevron\ChevronJobExpense;
 use App\Models\Chevron\ChevronJobType;
 use App\Models\Chevron\ChevronPort;
 use App\Models\Chevron\ChevronService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Yajra\DataTables\Facades\DataTables;
 
 class CnfJobController extends Controller
 {
+    private const DELETE_BLOCKER_LIST_LIMIT = 10;
+
     private function formData(): array
     {
         return [
@@ -125,8 +130,26 @@ class CnfJobController extends Controller
             ->with('success', 'Job '.$job->job_no.' created successfully.');
     }
 
+    public function storePartial(StorePartialJobRequest $request, ChevronJob $job)
+    {
+        abort_if((int) $job->branch_id !== (int) session('active_branch_id'), 404);
+
+        if ($job->isPartial()) {
+            return redirect()->route('chevron.cnf.jobs.show', $job->id)
+                ->with('error', 'Job '.$job->job_no.' is already a partial job. Create the partial from its parent job.');
+        }
+
+        $partial = DB::transaction(fn () => $job->createPartialJob());
+        $partialCount = $job->partials()->count();
+
+        return redirect()->route('chevron.cnf.jobs.edit', $partial->id)
+            ->with('success', 'Partial job '.$partial->job_no.' created. '.$job->job_no.' now has '
+                .$partialCount.' '.Str::plural('partial job', $partialCount).'. Review and adjust the amounts.');
+    }
+
     public function show(ShowJobRequest $request, ChevronJob $job)
     {
+        $this->loadPartialRelations($job);
         $job->load(['jobType', 'port', 'customer', 'item']);
 
         return view('chevron.cnf.jobs.show', compact('job'));
@@ -141,6 +164,8 @@ class CnfJobController extends Controller
 
     public function edit(EditJobRequest $request, ChevronJob $job)
     {
+        $this->loadPartialRelations($job);
+
         return view('chevron.cnf.jobs.create', array_merge($this->formData(), ['job' => $job]));
     }
 
@@ -155,6 +180,15 @@ class CnfJobController extends Controller
 
     public function destroy(DestroyJobRequest $request, ChevronJob $job)
     {
+        $blockers = $this->deleteBlockers($job);
+
+        if ($blockers !== []) {
+            return response()->json([
+                'message'  => 'Job '.$job->job_no.' cannot be deleted because it is still in use.',
+                'blockers' => $blockers,
+            ], 422);
+        }
+
         $job->delete();
 
         return response()->json(['message' => 'Job '.$job->job_no.' deleted.']);
@@ -197,9 +231,67 @@ class CnfJobController extends Controller
         return response()->json($results);
     }
 
+    /**
+     * Everything that still points at the job and so blocks its deletion: its partial jobs and the job
+     * expenses booked against it (matched by id, or by job number for imported rows without a job id).
+     * Each blocker lists at most DELETE_BLOCKER_LIST_LIMIT records; "total" is the full count.
+     *
+     * @return list<array{type: string, title: string, total: int, items: list<array{label: string, detail: string}>}>
+     */
+    private function deleteBlockers(ChevronJob $job): array
+    {
+        $blockers = [];
+
+        $partials = $job->partials();
+        $partialTotal = $partials->count();
+
+        if ($partialTotal > 0) {
+            $blockers[] = [
+                'type'  => 'partial_jobs',
+                'title' => 'Partial jobs',
+                'total' => $partialTotal,
+                'items' => $partials->limit(self::DELETE_BLOCKER_LIST_LIMIT)->get(['id', 'job_no', 'status'])
+                    ->map(fn (ChevronJob $partial) => [
+                        'label'  => $partial->job_no,
+                        'detail' => 'Status: '.($partial->status ?: '—'),
+                    ])->all(),
+            ];
+        }
+
+        $expenses = ChevronJobExpense::where(fn ($q) => $q->where('job_id', $job->id)->orWhere('job_no', $job->job_no));
+        $expenseTotal = $expenses->count();
+
+        if ($expenseTotal > 0) {
+            $blockers[] = [
+                'type'  => 'job_expenses',
+                'title' => 'Job expenses',
+                'total' => $expenseTotal,
+                'items' => $expenses->orderBy('id')->limit(self::DELETE_BLOCKER_LIST_LIMIT)
+                    ->get(['id', 'expense_no', 'date', 'status', 'total_expense_amount'])
+                    ->map(fn (ChevronJobExpense $expense) => [
+                        'label'  => $expense->expense_no,
+                        'detail' => ($expense->date?->format('d M Y') ?? '—').' · '.($expense->status ?: '—')
+                            .' · '.number_format((float) $expense->total_expense_amount, 2),
+                    ])->all(),
+            ];
+        }
+
+        return $blockers;
+    }
+
+    private function loadPartialRelations(ChevronJob $job): void
+    {
+        $columns = ['id', 'job_no', 'parent_job_id', 'partial_seq', 'job_date', 'status', 'net_payable_1', 'net_payable_2'];
+
+        $job->load([
+            'parent:id,job_no',
+            'partials' => fn ($q) => $q->select($columns),
+        ]);
+    }
+
     private function prepareData(Request $request): array
     {
-        $data = $request->except(['_token', '_method']);
+        $data = $request->except(['_token', '_method', 'job_no', 'parent_job_id', 'partial_seq']);
 
         // Null-ify empty strings for date / numeric fields
         $nullable = [

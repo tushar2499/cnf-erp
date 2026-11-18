@@ -277,11 +277,44 @@ class JobBillReportTest extends TestCase
         $this->assertSame(0, $json['total_jobs']);
     }
 
+    #[Test]
+    public function view_exposes_entry_date_from_bill_created_at(): void
+    {
+        $job = $this->createJob('JOB-001', 'ACME TRADING');
+        $bill = $this->createBill($job, [150, 50], '2026-10-01');
+
+        DB::table('chevron_bills')->where('id', $bill->id)->update(['created_at' => '2026-10-05 23:30:00']);
+
+        $rows = DB::table('chevron_job_bill_view')->get();
+
+        $this->assertCount(2, $rows);
+
+        foreach ($rows as $row) {
+            $this->assertSame('2026-10-05', $row->entry_date);
+            $this->assertStringStartsWith('2026-10-01', $row->bill_date);
+        }
+    }
+
+    #[Test]
+    public function view_entry_date_is_null_when_bill_created_at_is_null(): void
+    {
+        $job = $this->createJob('JOB-001', 'ACME TRADING');
+        $bill = $this->createBill($job, [150]);
+
+        DB::table('chevron_bills')->where('id', $bill->id)->update(['created_at' => null]);
+
+        $this->assertNull(DB::table('chevron_job_bill_view')->value('entry_date'));
+    }
+
     private function createJobBillView(): void
     {
         $migration = require glob(database_path('migrations/*_create_chevron_job_bill_view.php'))[0];
 
         $migration->up();
+
+        $entryDateMigration = require glob(database_path('migrations/*_add_entry_date_to_chevron_report_views.php'))[0];
+
+        $entryDateMigration->up();
     }
 
     private function dataTable(array $filters = [], array $columnSearches = []): array

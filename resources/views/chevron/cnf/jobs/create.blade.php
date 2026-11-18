@@ -262,11 +262,22 @@
             </h6>
             @if ($job)
                 <span class="badge bg-primary ms-1">{{ $job->job_no }}</span>
+                @if ($job->isPartial())
+                    <span class="badge bg-warning text-dark text-nowrap">PJ</span>
+                    <a href="{{ route('chevron.cnf.jobs.show', $job->parent_job_id) }}" class="small text-nowrap">
+                        <i class="fa fa-level-up-alt me-1" aria-hidden="true"></i>Parent {{ $job->parent?->job_no }}
+                    </a>
+                @endif
             @endif
         </div>
-        <a href="{{ route('chevron.cnf.jobs.index') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="fa fa-arrow-left me-1"></i> Back to List
-        </a>
+        <div class="d-flex gap-2 flex-wrap">
+            @if ($job)
+                @include('chevron.cnf.jobs._partial-job-button', ['job' => $job, 'isEditPage' => true])
+            @endif
+            <a href="{{ route('chevron.cnf.jobs.index') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="fa fa-arrow-left me-1"></i> Back to List
+            </a>
+        </div>
     </div>
 
     @if ($errors->any())
@@ -364,6 +375,10 @@
                         </div>
                     </div>
                 </div>
+
+                @if ($job)
+                    @include('chevron.cnf.jobs._partial-job-panel', ['job' => $job])
+                @endif
 
                 {{-- 2. Party & Goods --}}
                 <div class="job-card ac-green">

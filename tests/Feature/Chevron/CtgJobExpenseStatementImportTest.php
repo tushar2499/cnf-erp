@@ -64,12 +64,6 @@ class CtgJobExpenseStatementImportTest extends TestCase
             $table->timestamps();
         });
 
-        Schema::create('chevron_employees', function (Blueprint $table) {
-            $table->id();
-            $table->string('employee_id', 30)->nullable();
-            $table->string('name');
-        });
-
         Schema::create('chevron_expense_categories', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -286,9 +280,9 @@ class CtgJobExpenseStatementImportTest extends TestCase
         $this->assertSame(2, DB::table('chevron_job_expense_items')->count());
     }
 
-    public function test_expense_saved_earlier_with_legacy_employee_id_is_not_duplicated(): void
+    public function test_job_and_date_already_in_db_is_skipped_whatever_the_stored_employee_id(): void
     {
-        DB::table('chevron_employees')->insert(['id' => 7, 'employee_id' => 'EMP-0007', 'name' => 'Mezbah Uddin']);
+        // employee_id 7 points at nothing in "employees" (older rows were saved with other ids).
         DB::table('chevron_job_expenses')->insert([
             'expense_no'  => 'EXP000001',
             'branch_id'   => 6,
@@ -300,16 +294,22 @@ class CtgJobExpenseStatementImportTest extends TestCase
 
         $file = $this->makeXlsx([
             $this->row('CF_IMCTG-2026-000612', 'ODESSA FASHIONS LTD.', '2026-04-19', 'MEZBAH UDDIN', 'DELIVERY SECTION', 'SEAL', 'NO', 40),
+            $this->row('CF_IMCTG-2026-000612', 'ODESSA FASHIONS LTD.', '2026-04-20', 'MEZBAH UDDIN', 'DELIVERY SECTION', 'SEAL', 'NO', 50),
         ]);
+
+        $this->postJson(self::PREVIEW_URL, ['file' => $file])
+            ->assertOk()
+            ->assertJsonPath('summary.existing_expenses', 1)
+            ->assertJsonPath('summary.expenses_to_insert', 1);
 
         $this->postJson(self::IMPORT_URL, ['file' => $file])
             ->assertOk()
-            ->assertJsonPath('inserted_expenses', 0)
+            ->assertJsonPath('inserted_expenses', 1)
             ->assertJsonPath('skipped_existing', 1)
-            ->assertJsonPath('new_employees', 0);
+            ->assertJsonPath('new_employees', 1);
 
-        $this->assertSame(1, DB::table('chevron_job_expenses')->count());
-        $this->assertSame(0, Employee::count());
+        $this->assertSame(2, DB::table('chevron_job_expenses')->count());
+        $this->assertDatabaseHas('chevron_job_expenses', ['job_no' => 'CF_IMCTG-2026-000612', 'date' => '2026-04-20']);
     }
 
     public function test_employee_name_variants_merge_and_dk_suffix_matches_existing_employee(): void
@@ -332,15 +332,13 @@ class CtgJobExpenseStatementImportTest extends TestCase
         $this->assertDatabaseHas('chevron_job_expenses', ['job_no' => 'CF_IMCTG-2026-000613', 'employee_id' => $existing->id]);
     }
 
-    public function test_new_employee_reuses_code_from_legacy_chevron_employee(): void
+    public function test_all_employees_of_one_job_and_date_are_imported_in_the_same_upload(): void
     {
-        DB::table('chevron_employees')->insert(['id' => 1, 'employee_id' => 'EMP-0100', 'name' => 'Rahul Deb']);
-        $this->seedEmployee('R. Deb Central', 'EMP-0200');
-        DB::table('chevron_employees')->insert(['id' => 2, 'employee_id' => 'EMP-0200', 'name' => 'Sujal Kanti']);
+        $existing = $this->seedEmployee('Liton Sen');
 
         $file = $this->makeXlsx([
-            $this->row('CF_IMCTG-2026-000612', 'ACME LTD.', '2026-04-19', 'rahul deb', 'DELIVERY SECTION', 'SEAL', 'NO', 40),
-            $this->row('CF_IMCTG-2026-000613', 'ACME LTD.', '2026-04-19', 'sujal kanti', 'DELIVERY SECTION', 'SEAL', 'NO', 40),
+            $this->row('CF_IMCTG-2026-000612', 'ACME LTD.', '2026-04-19', 'LITON SEN', 'DELIVERY SECTION', 'SEAL', 'NO', 40),
+            $this->row('CF_IMCTG-2026-000612', 'ACME LTD.', '2026-04-19', 'haq transport', 'TRANSPORTATION', 'TRUCK', 'NO', 9000),
         ]);
 
         $this->postJson(self::IMPORT_URL, ['file' => $file])
@@ -348,12 +346,12 @@ class CtgJobExpenseStatementImportTest extends TestCase
             ->assertJsonPath('inserted_expenses', 2)
             ->assertJsonPath('new_employees', 1);
 
-        $this->assertDatabaseHas('employees', ['name' => 'rahul deb', 'code' => 'EMP-0100']);
-        $this->assertSame(1, Employee::where('code', 'EMP-0200')->count());
+        $this->assertDatabaseHas('chevron_job_expenses', ['job_no' => 'CF_IMCTG-2026-000612', 'employee_id' => $existing->id]);
         $this->assertDatabaseHas('chevron_job_expenses', [
-            'job_no'      => 'CF_IMCTG-2026-000613',
-            'employee_id' => Employee::where('code', 'EMP-0200')->value('id'),
+            'job_no'      => 'CF_IMCTG-2026-000612',
+            'employee_id' => Employee::where('name', 'haq transport')->value('id'),
         ]);
+        $this->assertNull(Employee::where('name', 'haq transport')->value('code'));
     }
 
     public function test_bad_rows_are_skipped_and_reported_by_reason(): void

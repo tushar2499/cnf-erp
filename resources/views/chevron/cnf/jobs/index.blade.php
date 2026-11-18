@@ -450,13 +450,62 @@
                                     });
                                     table.ajax.reload();
                                 })
-                                .fail(() => Swal.fire({
-                                    icon: 'error',
-                                    title: 'Delete failed.'
-                                }));
+                                .fail(xhr => {
+                                    const res = xhr.responseJSON || {};
+
+                                    if (xhr.status === 422 && res.blockers?.length) {
+                                        showDeleteBlockers(name, res);
+                                        return;
+                                    }
+
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: res.message || 'Delete failed.'
+                                    });
+                                });
                         }
                     });
             });
+
+            const blockerIcons = {
+                partial_jobs: 'fa-sitemap',
+                job_expenses: 'fa-file-invoice-dollar'
+            };
+
+            function escapeHtml(value) {
+                return $('<div>').text(value ?? '').html();
+            }
+
+            function showDeleteBlockers(jobNo, res) {
+                const sections = res.blockers.map(b => {
+                    const rows = b.items.map(i =>
+                        '<li class="list-group-item d-flex justify-content-between gap-3 px-2 py-1">' +
+                        '<span class="fw-semibold">' + escapeHtml(i.label) + '</span>' +
+                        '<span class="text-muted">' + escapeHtml(i.detail) + '</span></li>'
+                    ).join('');
+                    const more = b.total > b.items.length ?
+                        '<div class="small text-muted mt-1">and ' + (b.total - b.items.length) +
+                        ' more not shown.</div>' : '';
+
+                    return '<section class="mb-3 text-start">' +
+                        '<h3 class="h6 mb-1"><i class="fa ' + (blockerIcons[b.type] || 'fa-circle-info') +
+                        ' me-1" aria-hidden="true"></i>' + escapeHtml(b.title) +
+                        ' <span class="badge bg-danger">' + b.total + '</span></h3>' +
+                        '<ul class="list-group list-group-flush small border rounded">' + rows + '</ul>' +
+                        more + '</section>';
+                }).join('');
+
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Cannot delete job "' + escapeHtml(jobNo) + '"',
+                    html: '<p class="text-start mb-3">This job is still used in the records below. ' +
+                        'Delete or move them first, then try again.</p>' +
+                        '<div style="max-height:50vh;overflow-y:auto">' + sections + '</div>',
+                    confirmButtonText: 'Got it',
+                    width: 560,
+                    focusConfirm: true
+                });
+            }
         });
     </script>
 @endpush

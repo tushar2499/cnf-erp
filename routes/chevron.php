@@ -32,6 +32,7 @@ Route::prefix('cnf')->name('cnf.')->group(function () {
         Route::get('/create', [CnfJobController::class, 'create'])->name('create');
         Route::get('/', [CnfJobController::class, 'index'])->name('index');
         Route::post('/', [CnfJobController::class, 'store'])->name('store');
+        Route::post('/{job}/partial', [CnfJobController::class, 'storePartial'])->name('partial.store');
         Route::get('/{job}/edit', [CnfJobController::class, 'edit'])->name('edit');
         Route::get('/{job}/print', [CnfJobController::class, 'print'])->name('print');
         Route::get('/{job}', [CnfJobController::class, 'show'])->name('show');
