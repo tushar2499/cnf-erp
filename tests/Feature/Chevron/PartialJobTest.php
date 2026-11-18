@@ -55,6 +55,9 @@ class PartialJobTest extends TestCase
             $table->string('bill_no')->nullable();
             $table->unsignedBigInteger('job_id')->nullable();
             $table->string('job_no')->nullable();
+            $table->date('bill_date')->nullable();
+            $table->string('status')->nullable();
+            $table->decimal('net_payable', 15, 2)->default(0);
             $table->timestamps();
         });
 
@@ -390,6 +393,30 @@ class PartialJobTest extends TestCase
     }
 
     #[Test]
+    public function a_job_used_in_bills_cannot_be_deleted_and_the_bills_are_listed(): void
+    {
+        $job = $this->createJob('JOB-A');
+        DB::table('chevron_bills')->insert([
+            ['bill_no' => 'BIL000001', 'job_id' => $job->id, 'job_no' => 'JOB-A', 'bill_date' => '2026-10-08', 'status' => 'Submitted', 'net_payable' => 2500.75],
+            ['bill_no' => 'BIL000002', 'job_id' => null, 'job_no' => 'JOB-A', 'bill_date' => null, 'status' => 'Draft', 'net_payable' => 0],
+            ['bill_no' => 'BIL000003', 'job_id' => 999, 'job_no' => 'JOB-OTHER', 'bill_date' => '2026-10-09', 'status' => 'Draft', 'net_payable' => 1],
+        ]);
+
+        $response = (new CnfJobController)->destroy(DestroyJobRequest::create('/', 'DELETE'), $job);
+
+        $this->assertSame(422, $response->getStatusCode());
+        $this->assertDatabaseHas('chevron_jobs', ['id' => $job->id]);
+
+        $blockers = $response->getData(true)['blockers'];
+        $this->assertCount(1, $blockers);
+        $this->assertSame('bills', $blockers[0]['type']);
+        $this->assertSame(2, $blockers[0]['total']);
+        $this->assertSame(['BIL000001', 'BIL000002'], array_column($blockers[0]['items'], 'label'));
+        $this->assertSame('08 Oct 2026 · Submitted · 2,500.75', $blockers[0]['items'][0]['detail']);
+        $this->assertSame('— · Draft · 0.00', $blockers[0]['items'][1]['detail']);
+    }
+
+    #[Test]
     public function every_blocker_is_reported_together_and_long_lists_are_capped(): void
     {
         $parent = $this->createJob('JOB-A');
@@ -399,9 +426,11 @@ class PartialJobTest extends TestCase
             DB::table('chevron_job_expenses')->insert(['expense_no' => 'EXP'.$n, 'job_id' => $parent->id, 'job_no' => 'JOB-A']);
         }
 
+        DB::table('chevron_bills')->insert(['bill_no' => 'BIL000001', 'job_id' => $parent->id, 'job_no' => 'JOB-A']);
+
         $blockers = (new CnfJobController)->destroy(DestroyJobRequest::create('/', 'DELETE'), $parent)->getData(true)['blockers'];
 
-        $this->assertSame(['partial_jobs', 'job_expenses'], array_column($blockers, 'type'));
+        $this->assertSame(['partial_jobs', 'job_expenses', 'bills'], array_column($blockers, 'type'));
         $this->assertSame(12, $blockers[1]['total']);
         $this->assertCount(10, $blockers[1]['items']);
     }
@@ -412,6 +441,7 @@ class PartialJobTest extends TestCase
         $job = $this->createJob('JOB-A');
         $this->createJob('JOB-AB');
         DB::table('chevron_job_expenses')->insert(['expense_no' => 'EXP000001', 'job_id' => 999, 'job_no' => 'JOB-B']);
+        DB::table('chevron_bills')->insert(['bill_no' => 'BIL000001', 'job_id' => 999, 'job_no' => 'JOB-B']);
 
         $response = (new CnfJobController)->destroy(DestroyJobRequest::create('/', 'DELETE'), $job);
 

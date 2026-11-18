@@ -116,6 +116,8 @@
                             <th>Net Payable</th>
                             <th>Advance</th>
                             <th>Due Amount</th>
+                            <th>Received</th>
+                            <th>Balance</th>
                             <th>Delivery Date</th>
                             <th>Status</th>
                         </tr>
@@ -129,6 +131,8 @@
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th></th>
+                            <th></th>
                             <th></th>
                             <th></th>
                             <th></th>
@@ -235,6 +239,19 @@
                         className: 'text-end'
                     },
                     {
+                        data: 'received_amount_fmt',
+                        name: 'received_amount',
+                        searchable: false,
+                        className: 'text-end'
+                    },
+                    {
+                        data: 'balance_fmt',
+                        name: 'balance',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-end fw-semibold'
+                    },
+                    {
                         data: 'delivery_date',
                         name: 'delivery_date',
                         searchable: false
@@ -312,9 +329,9 @@
                                     });
                                     table.ajax.reload();
                                 })
-                                .fail(() => Swal.fire({
+                                .fail(xhr => Swal.fire({
                                     icon: 'error',
-                                    title: 'Delete failed.'
+                                    title: (xhr.responseJSON && xhr.responseJSON.message) || 'Delete failed.'
                                 }));
                         }
                     });

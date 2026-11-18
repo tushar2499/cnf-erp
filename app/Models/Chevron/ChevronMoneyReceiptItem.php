@@ -20,4 +20,9 @@ class ChevronMoneyReceiptItem extends Model
     {
         return $this->belongsTo(ChevronAccount::class, 'account_id');
     }
+
+    public function receipt()
+    {
+        return $this->belongsTo(ChevronMoneyReceipt::class, 'receipt_id');
+    }
 }

@@ -89,7 +89,7 @@
 
     @php
         $user               = auth()->user();
-        $cnfOpsActive       = request()->routeIs('chevron.cnf.jobs.*', 'chevron.cnf.job-expenses.*', 'chevron.cnf.bills.*', 'chevron.cnf.money-receipts.*');
+        $cnfOpsActive       = request()->routeIs('chevron.cnf.jobs.*', 'chevron.cnf.job-expenses.*', 'chevron.cnf.bills.*', 'chevron.cnf.money-receipts.*', 'chevron.cnf.advance-balances.*');
         $stakeholdersActive = request()->routeIs('chevron.stakeholders.*');
         $settingsActive     = request()->routeIs('chevron.settings.*');
 
@@ -159,6 +159,10 @@
             <a href="{{ route('chevron.cnf.money-receipts.index') }}"
                class="nav-link ps-4 {{ request()->routeIs('chevron.cnf.money-receipts.*') ? 'active' : '' }}">
                 <i class="fa fa-money-bill-wave"></i> Money Receipts
+            </a>
+            <a href="{{ route('chevron.cnf.advance-balances.index') }}"
+               class="nav-link ps-4 {{ request()->routeIs('chevron.cnf.advance-balances.*') ? 'active' : '' }}">
+                <i class="fa fa-wallet"></i> Advance Balances
             </a>
             @endif
         </div>
@@ -290,6 +294,7 @@
         @endif
         @if($canSeeReceipt)
         { label: 'Money Receipts',     section: 'C&F Operations',   url: '{{ route("chevron.cnf.money-receipts.index") }}',              icon: 'fa-money-bill-wave' },
+        { label: 'Advance Balances',   section: 'C&F Operations',   url: '{{ route("chevron.cnf.advance-balances.index") }}',            icon: 'fa-wallet' },
         @endif
         @if($canSeeJobExpenseSummary)
         { label: 'Expense Summary',    section: 'Reports',          url: '{{ route("chevron.reports.job-expense-summary") }}',           icon: 'fa-chart-line' },

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Chevron\AccountController;
+use App\Http\Controllers\Chevron\AdvanceBalanceController;
 use App\Http\Controllers\Chevron\BillController;
 use App\Http\Controllers\Chevron\BranchController;
 use App\Http\Controllers\Chevron\BranchSelectController;
@@ -53,13 +54,22 @@ Route::prefix('cnf')->name('cnf.')->group(function () {
 
     Route::prefix('money-receipts')->name('money-receipts.')->group(function () {
         Route::get('/search-parties', [MoneyReceiptController::class, 'searchParties'])->name('search-parties');
-        Route::get('/party-payable', [MoneyReceiptController::class, 'getPartyPayable'])->name('party-payable');
+        Route::get('/party-bills', [MoneyReceiptController::class, 'partyBills'])->name('party-bills');
+        Route::get('/party-jobs', [MoneyReceiptController::class, 'partyJobs'])->name('party-jobs');
+        Route::get('/party-advance', [MoneyReceiptController::class, 'partyAdvance'])->name('party-advance');
         Route::get('/create', [MoneyReceiptController::class, 'create'])->name('create');
         Route::get('/', [MoneyReceiptController::class, 'index'])->name('index');
         Route::post('/', [MoneyReceiptController::class, 'store'])->name('store');
         Route::get('/{moneyReceipt}/edit', [MoneyReceiptController::class, 'edit'])->name('edit');
+        Route::get('/{moneyReceipt}/print', [MoneyReceiptController::class, 'printView'])->name('print');
+        Route::get('/{moneyReceipt}', [MoneyReceiptController::class, 'show'])->name('show');
         Route::put('/{moneyReceipt}', [MoneyReceiptController::class, 'update'])->name('update');
         Route::delete('/{moneyReceipt}', [MoneyReceiptController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('advance-balances')->name('advance-balances.')->group(function () {
+        Route::get('/', [AdvanceBalanceController::class, 'index'])->name('index');
+        Route::get('/{customer}', [AdvanceBalanceController::class, 'show'])->name('show');
     });
 
     Route::prefix('bills')->name('bills.')->group(function () {

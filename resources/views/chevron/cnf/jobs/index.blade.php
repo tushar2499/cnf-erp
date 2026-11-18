@@ -469,7 +469,8 @@
 
             const blockerIcons = {
                 partial_jobs: 'fa-sitemap',
-                job_expenses: 'fa-file-invoice-dollar'
+                job_expenses: 'fa-file-invoice-dollar',
+                bills: 'fa-file-invoice'
             };
 
             function escapeHtml(value) {

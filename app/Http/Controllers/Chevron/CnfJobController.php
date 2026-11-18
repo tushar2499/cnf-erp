@@ -12,6 +12,7 @@ use App\Http\Requests\Chevron\Job\ShowJobRequest;
 use App\Http\Requests\Chevron\Job\StoreJobRequest;
 use App\Http\Requests\Chevron\Job\StorePartialJobRequest;
 use App\Http\Requests\Chevron\Job\UpdateJobRequest;
+use App\Models\Chevron\ChevronBill;
 use App\Models\Chevron\ChevronCustomer;
 use App\Models\Chevron\ChevronItem;
 use App\Models\Chevron\ChevronJob;
@@ -232,8 +233,8 @@ class CnfJobController extends Controller
     }
 
     /**
-     * Everything that still points at the job and so blocks its deletion: its partial jobs and the job
-     * expenses booked against it (matched by id, or by job number for imported rows without a job id).
+     * Everything that still points at the job and so blocks its deletion: its partial jobs, and the job
+     * expenses and bills booked against it (matched by id, or by job number for imported rows without a job id).
      * Each blocker lists at most DELETE_BLOCKER_LIST_LIMIT records; "total" is the full count.
      *
      * @return list<array{type: string, title: string, total: int, items: list<array{label: string, detail: string}>}>
@@ -272,6 +273,24 @@ class CnfJobController extends Controller
                         'label'  => $expense->expense_no,
                         'detail' => ($expense->date?->format('d M Y') ?? '—').' · '.($expense->status ?: '—')
                             .' · '.number_format((float) $expense->total_expense_amount, 2),
+                    ])->all(),
+            ];
+        }
+
+        $bills = ChevronBill::where(fn ($q) => $q->where('job_id', $job->id)->orWhere('job_no', $job->job_no));
+        $billTotal = $bills->count();
+
+        if ($billTotal > 0) {
+            $blockers[] = [
+                'type'  => 'bills',
+                'title' => 'Bills',
+                'total' => $billTotal,
+                'items' => $bills->orderBy('id')->limit(self::DELETE_BLOCKER_LIST_LIMIT)
+                    ->get(['id', 'bill_no', 'bill_date', 'status', 'net_payable'])
+                    ->map(fn (ChevronBill $bill) => [
+                        'label'  => $bill->bill_no,
+                        'detail' => ($bill->bill_date?->format('d M Y') ?? '—').' · '.($bill->status ?: '—')
+                            .' · '.number_format((float) $bill->net_payable, 2),
                     ])->all(),
             ];
         }

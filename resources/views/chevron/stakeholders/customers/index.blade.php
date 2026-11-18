@@ -158,6 +158,7 @@
                             <th>Mobile</th>
                             <th>Branch</th>
                             <th>Pay Type</th>
+                            <th class="text-end">Advance Balance</th>
                             <th>Status</th>
                         </tr>
                         <tr>
@@ -168,6 +169,7 @@
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                         </tr>
                     </thead>
@@ -472,6 +474,16 @@
                                             <input type="number" id="cusMaturityDays"
                                                 class="form-control form-control-sm" value="0" min="0">
                                         </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label" for="cusAdvanceBalance">Total Advance</label>
+                                            <input type="text" id="cusAdvanceBalance"
+                                                class="form-control form-control-sm text-end bg-light fw-semibold"
+                                                value="0.00" readonly tabindex="-1">
+                                            @if (auth()->user()->hasPermission('cnf.money-receipt.list'))
+                                                <a href="#" id="cusAdvanceLink" class="small d-none" target="_blank"
+                                                    rel="noopener">View statement</a>
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
 
@@ -586,6 +598,12 @@
                         name: 'pay_type'
                     },
                     {
+                        data: 'advance_balance',
+                        name: 'advance_balance',
+                        searchable: false,
+                        className: 'text-end'
+                    },
+                    {
                         data: 'status_badge',
                         name: 'status',
                         searchable: false
@@ -659,6 +677,8 @@
                 $('#cusTaxscope').val('Exempted');
                 $('#cusDiscount, #cusCommission').val('0');
                 $('#cusCreditLimit, #cusLimitDays, #cusSecurityDeposit, #cusMaturityDays').val('0');
+                $('#cusAdvanceBalance').val('0.00');
+                $('#cusAdvanceLink').addClass('d-none').attr('href', '#');
                 $('.is-invalid').removeClass('is-invalid');
                 $('.invalid-feedback').remove();
                 $('#customerTabs a:first').tab('show');
@@ -708,6 +728,11 @@
                     $('#cusLimitDays').val(r.limit_days);
                     $('#cusSecurityDeposit').val(r.security_deposit);
                     $('#cusMaturityDays').val(r.maturity_days);
+                    $('#cusAdvanceBalance').val(parseFloat(r.advance_balance || 0).toLocaleString('en-BD', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }));
+                    $('#cusAdvanceLink').attr('href', '{{ route('chevron.cnf.advance-balances.show', '__ID__') }}'.replace('__ID__', r.id)).removeClass('d-none');
                     $('#cusPassword, #cusPasswordConfirm').val('');
                     $('.is-invalid').removeClass('is-invalid');
                     $('.invalid-feedback').remove();

@@ -3,12 +3,20 @@
 namespace App\Models\Chevron;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 
 class ChevronMoneyReceipt extends Model
 {
+    public const TYPE_ADVANCE = 'Advance';
+
+    public const TYPE_BILL = 'Bill';
+
+    public const ADVANCE_ADJUSTMENT = 'Advance Adjustment';
+
     protected $fillable = [
-        'receipt_no', 'branch_id', 'receipt_date', 'party_id', 'party_name',
+        'receipt_no', 'branch_id', 'receipt_date', 'receipt_type', 'party_id', 'party_name',
         'pay_type', 'payable_amount', 'total_amount', 'description', 'status',
     ];
 
@@ -20,6 +28,29 @@ class ChevronMoneyReceipt extends Model
     public function items()
     {
         return $this->hasMany(ChevronMoneyReceiptItem::class, 'receipt_id');
+    }
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(ChevronBranch::class, 'branch_id');
+    }
+
+    public function allocations(): HasMany
+    {
+        return $this->hasMany(ChevronMoneyReceiptAllocation::class, 'receipt_id');
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function receiptTypes(): array
+    {
+        return [self::TYPE_ADVANCE, self::TYPE_BILL];
+    }
+
+    public function isEditable(): bool
+    {
+        return $this->status === 'Active';
     }
 
     public static function generateReceiptNo(): string
@@ -34,7 +65,46 @@ class ChevronMoneyReceipt extends Model
 
     public static function payTypes(): array
     {
-        return ['Cash', 'Cheque', 'Bank Transfer', 'Mobile Banking', 'Card', 'Mixed'];
+        return ['Cash', 'Cheque', 'Bank Transfer', 'Mobile Banking', 'Card', 'Mixed', self::ADVANCE_ADJUSTMENT];
+    }
+
+    /**
+     * Advance money received from a customer (Advance receipts) in a branch, optionally ignoring one receipt.
+     */
+    public static function advanceReceived(int $branchId, int $partyId, ?int $exceptReceiptId = null): float
+    {
+        return round((float) static::query()
+            ->where('branch_id', $branchId)
+            ->where('party_id', $partyId)
+            ->where('receipt_type', self::TYPE_ADVANCE)
+            ->when($exceptReceiptId, fn ($q) => $q->where('id', '!=', $exceptReceiptId))
+            ->sum('total_amount'), 2);
+    }
+
+    /**
+     * Advance already used to settle bills ("Advance Adjustment" payment rows of Bill receipts).
+     */
+    public static function advanceAdjusted(int $branchId, int $partyId, ?int $exceptReceiptId = null): float
+    {
+        return round((float) ChevronMoneyReceiptItem::query()
+            ->where('payment_type', self::ADVANCE_ADJUSTMENT)
+            ->whereHas('receipt', fn ($q) => $q
+                ->where('branch_id', $branchId)
+                ->where('party_id', $partyId)
+                ->where('receipt_type', self::TYPE_BILL)
+                ->when($exceptReceiptId, fn ($q) => $q->where('id', '!=', $exceptReceiptId)))
+            ->sum('amount'), 2);
+    }
+
+    /**
+     * Advance still available for a customer: received minus adjusted against bills.
+     */
+    public static function advanceBalance(int $branchId, int $partyId, ?int $exceptReceiptId = null): float
+    {
+        return round(
+            static::advanceReceived($branchId, $partyId, $exceptReceiptId) - static::advanceAdjusted($branchId, $partyId, $exceptReceiptId),
+            2
+        );
     }
 
     public static function rowPayTypes(): array
