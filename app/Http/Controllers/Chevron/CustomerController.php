@@ -22,6 +22,7 @@ class CustomerController extends Controller
             return DataTables::of(ChevronCustomer::with('branch'))
                 ->addIndexColumn()
                 ->addColumn('branch_name', fn ($r) => $r->branch?->name ?? '-')
+                ->editColumn('advance_balance', fn ($r) => number_format((float) $r->advance_balance, 2))
                 ->addColumn('status_badge', fn ($r) => $r->status === 'Active'
                     ? '<span class="badge bg-success">Active</span>'
                     : '<span class="badge bg-danger">Inactive</span>')

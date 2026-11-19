@@ -17,6 +17,7 @@ use App\Models\Chevron\ChevronExpenseHead;
 use App\Models\Chevron\ChevronJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Yajra\DataTables\Facades\DataTables;
 
 class BillController extends Controller
@@ -51,6 +52,8 @@ class BillController extends Controller
                 ->addColumn('sub_total_fmt', fn ($r) => number_format($r->sub_total, 2))
                 ->addColumn('net_payable_fmt', fn ($r) => number_format($r->net_payable, 2))
                 ->addColumn('due_amount_fmt', fn ($r) => number_format($r->due_amount, 2))
+                ->addColumn('received_amount_fmt', fn ($r) => number_format($r->received_amount, 2))
+                ->addColumn('balance_fmt', fn ($r) => number_format($r->balance, 2))
                 ->addColumn('status_badge', fn ($r) => match ($r->status) {
                     'Submitted' => '<span class="badge bg-warning text-dark">Submitted</span>',
                     'Approved'  => '<span class="badge bg-success">Approved</span>',
@@ -123,7 +126,16 @@ class BillController extends Controller
     {
 
         DB::transaction(function () use ($request, $bill) {
-            $bill->update($this->prepareData($request));
+            $bill = ChevronBill::lockForUpdate()->findOrFail($bill->id);
+            $data = $this->prepareData($request);
+
+            if (round($data['due_amount'] - (float) $bill->received_amount, 2) < 0) {
+                throw ValidationException::withMessages([
+                    'advance_amount' => 'Due amount cannot be lower than '.number_format((float) $bill->received_amount, 2).', already received through money receipts.',
+                ]);
+            }
+
+            $bill->update($data);
             $bill->items()->delete();
             $this->saveItems($bill, $request->rows);
         });
@@ -134,6 +146,10 @@ class BillController extends Controller
 
     public function destroy(DestroyBillRequest $request, ChevronBill $bill)
     {
+        if ($bill->allocations()->exists()) {
+            return response()->json(['message' => 'Bill has money receipts collected against it. Delete those receipts first.'], 422);
+        }
+
         $bill->delete();
 
         return response()->json(['message' => 'Bill deleted.']);

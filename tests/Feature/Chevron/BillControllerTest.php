@@ -58,7 +58,7 @@ class BillControllerTest extends TestCase
         $dataTable = \Mockery::mock();
         $dataTable->shouldReceive('addIndexColumn')->once()->andReturnSelf();
         $dataTable->shouldReceive('editColumn')->twice()->andReturnSelf();
-        $dataTable->shouldReceive('addColumn')->times(5)->andReturnSelf();
+        $dataTable->shouldReceive('addColumn')->times(7)->andReturnSelf();
         $dataTable->shouldReceive('rawColumns')->once()->andReturnSelf();
         $dataTable->shouldReceive('make')->once()->with(true)->andReturn(response()->json([]));
         DataTables::shouldReceive('of')

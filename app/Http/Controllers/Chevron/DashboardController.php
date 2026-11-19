@@ -9,6 +9,8 @@ use App\Models\Chevron\ChevronEmployee;
 use App\Models\Chevron\ChevronJob;
 use App\Models\Chevron\ChevronJobExpense;
 use App\Models\Chevron\ChevronMoneyReceipt;
+use App\Models\Chevron\ChevronMoneyReceiptItem;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -31,11 +33,22 @@ class DashboardController extends Controller
         $closedJobs = $canJob ? ChevronJob::where('branch_id', $branchId)->where('status', 'Closed')->count() : null;
 
         $totalBills = $canBill ? ChevronBill::where('branch_id', $branchId)->count() : null;
-        $totalReceivable = $canBill ? ChevronBill::where('branch_id', $branchId)->sum('due_amount') : null;
+        $totalReceivable = $canBill ? ChevronBill::where('branch_id', $branchId)->sum(DB::raw('due_amount - received_amount')) : null;
         $totalNetPayable = $canBill ? ChevronBill::where('branch_id', $branchId)->sum('net_payable') : null;
 
-        $totalReceipts = $canReceipt ? ChevronMoneyReceipt::where('branch_id', $branchId)->sum('total_amount') : null;
-        $receiptsThisMonth = $canReceipt ? ChevronMoneyReceipt::where('branch_id', $branchId)->whereMonth('receipt_date', now()->month)->whereYear('receipt_date', now()->year)->sum('total_amount') : null;
+        // Money actually received: advance adjustments only move money already counted when the advance came in.
+        $cashReceived = fn (?callable $receiptScope = null) => ChevronMoneyReceiptItem::where('payment_type', '!=', ChevronMoneyReceipt::ADVANCE_ADJUSTMENT)
+            ->whereHas('receipt', function ($q) use ($branchId, $receiptScope) {
+                $q->where('branch_id', $branchId);
+
+                if ($receiptScope) {
+                    $receiptScope($q);
+                }
+            })
+            ->sum('amount');
+
+        $totalReceipts = $canReceipt ? $cashReceived() : null;
+        $receiptsThisMonth = $canReceipt ? $cashReceived(fn ($q) => $q->whereMonth('receipt_date', now()->month)->whereYear('receipt_date', now()->year)) : null;
 
         $totalCustomers = $canCustomer ? ChevronCustomer::count() : null;
         $totalEmployees = ChevronEmployee::where('branch_id', $branchId)->count();

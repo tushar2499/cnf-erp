@@ -63,11 +63,16 @@
 @section('content')
     <div class="page-header">
         <h4><i class="fa fa-money-bill-wave me-2 text-primary"></i> Money Receipts</h4>
-        @if (auth()->user()->hasPermission('cnf.money-receipt.create'))
-            <a href="{{ route('chevron.cnf.money-receipts.create') }}" class="btn btn-sm btn-primary">
-                <i class="fa fa-plus me-1"></i> New Receipt
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ route('chevron.cnf.advance-balances.index') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="fa fa-wallet me-1"></i> Advance Balances
             </a>
-        @endif
+            @if (auth()->user()->hasPermission('cnf.money-receipt.create'))
+                <a href="{{ route('chevron.cnf.money-receipts.create') }}" class="btn btn-sm btn-primary">
+                    <i class="fa fa-plus me-1"></i> New Receipt
+                </a>
+            @endif
+        </div>
     </div>
 
     <div class="card">
@@ -107,7 +112,9 @@
                             <th>Receipt No</th>
                             <th>Date</th>
                             <th>Party Name</th>
-                            <th>Pay Type</th>
+                            <th>Type</th>
+                            <th>Reference</th>
+                            <th>Payment Method</th>
                             <th>Payable Amt</th>
                             <th>Total Amt</th>
                             <th>Status</th>
@@ -118,6 +125,8 @@
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
+                            <th></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="Bill / Job no..."></th>
                             <th><input type="text" class="form-control form-control-sm" placeholder="Search..."></th>
                             <th></th>
                             <th></th>
@@ -159,7 +168,7 @@
                         name: 'action',
                         orderable: false,
                         searchable: false,
-                        width: '90px',
+                        width: '130px',
                         className: 'text-center'
                     },
                     {
@@ -173,6 +182,18 @@
                     {
                         data: 'party_name',
                         name: 'party_name'
+                    },
+                    {
+                        data: 'type_badge',
+                        name: 'receipt_type',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
+                        data: 'reference',
+                        name: 'reference',
+                        orderable: false,
+                        searchable: true
                     },
                     {
                         data: 'pay_type',
@@ -263,9 +284,9 @@
                                     });
                                     table.ajax.reload();
                                 })
-                                .fail(() => Swal.fire({
+                                .fail(xhr => Swal.fire({
                                     icon: 'error',
-                                    title: 'Delete failed.'
+                                    title: (xhr.responseJSON && xhr.responseJSON.message) || 'Delete failed.'
                                 }));
                         }
                     });

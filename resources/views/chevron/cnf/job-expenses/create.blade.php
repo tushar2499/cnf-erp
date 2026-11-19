@@ -238,7 +238,8 @@ $(function () {
     $('#jobSelect').select2({
         theme: 'bootstrap-5', width: '100%',
         placeholder: 'Enter minimum 3 characters',
-        allowClear: true, minimumInputLength: 1,
+        allowClear: true,
+        minimumInputLength: 1,
         ajax: {
             url: SEARCH_JOBS, dataType: 'json', delay: 250,
             data: p => ({ q: p.term }),

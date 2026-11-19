@@ -23,6 +23,28 @@ class ChevronCustomer extends Model
         return $this->belongsTo(ChevronBranch::class, 'branch_id');
     }
 
+    /**
+     * Recalculate the stored `advance_balance` (total advance across all branches: Advance receipts minus
+     * "Advance Adjustment" rows used on Bill receipts). The column is maintained by the system only, so it is
+     * deliberately not mass assignable. Call inside the transaction that changed the receipts.
+     */
+    public static function refreshAdvanceBalance(int $customerId): float
+    {
+        $received = (float) ChevronMoneyReceipt::where('party_id', $customerId)
+            ->where('receipt_type', ChevronMoneyReceipt::TYPE_ADVANCE)
+            ->sum('total_amount');
+
+        $adjusted = (float) ChevronMoneyReceiptItem::where('payment_type', ChevronMoneyReceipt::ADVANCE_ADJUSTMENT)
+            ->whereHas('receipt', fn ($q) => $q->where('party_id', $customerId)->where('receipt_type', ChevronMoneyReceipt::TYPE_BILL))
+            ->sum('amount');
+
+        $balance = round($received - $adjusted, 2);
+
+        static::whereKey($customerId)->update(['advance_balance' => $balance]);
+
+        return $balance;
+    }
+
     public static function generateCustomerId(string $prefix): string
     {
         $last = static::where('id_prefix', $prefix)->lockForUpdate()->max(

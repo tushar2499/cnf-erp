@@ -337,11 +337,49 @@ class JobExpenseReportTest extends TestCase
         $this->assertSame(0, $json['total_jobs']);
     }
 
+    #[Test]
+    public function view_exposes_entry_date_from_expense_created_at(): void
+    {
+        $job = $this->createJob('JOB-001', 'ACME TRADING');
+        $expense = $this->createExpense($job, [
+            ['receiptable' => true, 'expense_amount' => 100, 'expense_date' => '2026-10-01'],
+            ['receiptable' => false, 'expense_amount' => 50, 'expense_date' => '2026-10-02'],
+        ]);
+
+        DB::table('chevron_job_expenses')->where('id', $expense->id)->update(['created_at' => '2026-10-05 23:30:00']);
+
+        $rows = DB::table('chevron_job_expense_view')->orderBy('id')->get();
+
+        $this->assertCount(2, $rows);
+
+        foreach ($rows as $row) {
+            $this->assertSame('2026-10-05', $row->entry_date);
+        }
+
+        $this->assertStringStartsWith('2026-10-01', $rows[0]->expense_date);
+        $this->assertStringStartsWith('2026-10-02', $rows[1]->expense_date);
+    }
+
+    #[Test]
+    public function view_entry_date_is_null_when_expense_created_at_is_null(): void
+    {
+        $job = $this->createJob('JOB-001', 'ACME TRADING');
+        $expense = $this->createExpense($job, [['receiptable' => true, 'expense_amount' => 100]]);
+
+        DB::table('chevron_job_expenses')->where('id', $expense->id)->update(['created_at' => null]);
+
+        $this->assertNull(DB::table('chevron_job_expense_view')->value('entry_date'));
+    }
+
     private function createExpenseReportView(): void
     {
         $migration = require glob(database_path('migrations/*_create_chevron_job_expense_view.php'))[0];
 
         $migration->up();
+
+        $entryDateMigration = require glob(database_path('migrations/*_add_entry_date_to_chevron_report_views.php'))[0];
+
+        $entryDateMigration->up();
     }
 
     private function dataTable(array $filters = [], array $columnSearches = []): array

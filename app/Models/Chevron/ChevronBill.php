@@ -2,7 +2,9 @@
 
 namespace App\Models\Chevron;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 
 class ChevronBill extends Model
@@ -20,7 +22,7 @@ class ChevronBill extends Model
         'currency_type', 'currency_rate', 'remarks',
         'sub_total', 'commission_on', 'commission_rate', 'commission_amount',
         'total_payable', 'less_customs_duty_tax', 'income_tax_cnf_com',
-        'net_payable', 'advance_amount', 'due_amount', 'status',
+        'net_payable', 'advance_amount', 'due_amount', 'received_amount', 'status',
     ];
 
     protected function casts(): array
@@ -59,5 +61,26 @@ class ChevronBill extends Model
     public function items()
     {
         return $this->hasMany(ChevronBillItem::class, 'bill_id');
+    }
+
+    public function allocations(): HasMany
+    {
+        return $this->hasMany(ChevronMoneyReceiptAllocation::class, 'bill_id');
+    }
+
+    /**
+     * Amount still collectable on this bill: due at billing time minus money receipts allocated to it.
+     */
+    protected function balance(): Attribute
+    {
+        return Attribute::get(fn () => round((float) $this->due_amount - (float) $this->received_amount, 2));
+    }
+
+    /**
+     * Recalculate the cached received amount from the money receipt allocations (the source of truth).
+     */
+    public function syncReceivedAmount(): void
+    {
+        $this->update(['received_amount' => round((float) $this->allocations()->sum('amount'), 2)]);
     }
 }

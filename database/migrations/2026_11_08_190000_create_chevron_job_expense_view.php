@@ -11,11 +11,13 @@ return new class extends Migration
 
     public function up(): void
     {
+        $security = DB::getDriverName() === 'mysql' ? 'SQL SECURITY INVOKER ' : '';
+
         DB::statement('DROP VIEW IF EXISTS '.self::OLD_VIEW);
         DB::statement('DROP VIEW IF EXISTS '.self::VIEW);
 
         DB::statement('
-            CREATE VIEW '.self::VIEW.' AS
+            CREATE '.$security.'VIEW '.self::VIEW.' AS
             SELECT
                 i.id                AS id,
                 je.id               AS job_expense_id,
@@ -43,10 +45,12 @@ return new class extends Migration
 
     public function down(): void
     {
+        $security = DB::getDriverName() === 'mysql' ? 'SQL SECURITY INVOKER ' : '';
+
         DB::statement('DROP VIEW IF EXISTS '.self::VIEW);
 
         DB::statement('
-            CREATE VIEW '.self::OLD_VIEW.' AS
+            CREATE '.$security.'VIEW '.self::OLD_VIEW.' AS
             SELECT
                 i.id                AS id,
                 je.id               AS job_expense_id,
