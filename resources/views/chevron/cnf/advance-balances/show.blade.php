@@ -63,7 +63,7 @@
                     <tr>
                         <th style="width:44px">#</th>
                         <th>Date</th>
-                        <th>Receipt No</th>
+                        <th>Document</th>
                         <th>Type</th>
                         <th>Reference</th>
                         <th class="num">Received</th>
@@ -77,9 +77,15 @@
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $entry['date']?->format('d-M-Y') }}</td>
                             <td>
-                                <a href="{{ route('chevron.cnf.money-receipts.show', $entry['receipt']->id) }}" class="fw-semibold text-decoration-none">
-                                    {{ $entry['receipt']->receipt_no }}
-                                </a>
+                                @if ($entry['receipt'])
+                                    <a href="{{ route('chevron.cnf.money-receipts.show', $entry['receipt']->id) }}" class="fw-semibold text-decoration-none">
+                                        {{ $entry['receipt']->receipt_no }}
+                                    </a>
+                                @else
+                                    <a href="{{ route('chevron.cnf.bills.print', $entry['bill']->id) }}" target="_blank" class="fw-semibold text-decoration-none">
+                                        {{ $entry['bill']->bill_no }}
+                                    </a>
+                                @endif
                             </td>
                             <td>
                                 @if ($entry['kind'] === 'Received')

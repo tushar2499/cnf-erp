@@ -221,6 +221,7 @@ class BillControllerTest extends TestCase
             }
 
             $table->unsignedBigInteger('branch_id')->nullable();
+            $table->unsignedBigInteger('customer_id')->nullable();
             $table->timestamps();
         });
     }

@@ -11,8 +11,30 @@ body {
     font-size: 11px;
     color: #000;
     background: #fff;
-    padding: 20px 30px;
 }
+
+/* Screen toolbar */
+.no-print {
+    padding: 8px 16px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: #f1f5f9;
+    border-bottom: 1px solid #cbd5e1;
+}
+.no-print button {
+    padding: 5px 20px;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-weight: 600;
+}
+.btn-print { background: #1a4a6b; color: #fff; border: 1px solid #1a4a6b; }
+.btn-back  { background: #fff;    color: #374151; border: 1px solid #9ca3af; }
+.btn-print:focus-visible, .btn-back:focus-visible { outline: 2px solid #1a4a6b; outline-offset: 2px; }
+
+.page { padding: 20px 30px; }
+
 .bill-title {
     text-align: center;
     font-size: 16px;
@@ -118,12 +140,20 @@ body {
 .sig-line { border-top: 1px solid #000; width: 160px; margin: 0 auto 4px; }
 
 @media print {
-    body { padding: 10px 18px; }
+    .no-print { display: none !important; }
+    .page { padding: 10px 18px; }
     @page { size: A4 portrait; margin: 10mm 12mm; }
 }
 </style>
 </head>
 <body>
+
+<div class="no-print">
+    <button type="button" class="btn-print" onclick="window.print()">&#128424;&nbsp; Print</button>
+    <button type="button" class="btn-back" onclick="window.close()">&#10005;&nbsp; Close</button>
+</div>
+
+<div class="page">
 
 <div class="bill-title">C &amp; F BILL</div>
 
@@ -274,6 +304,19 @@ body {
             <td class="amount"><strong>{{ number_format($bill->income_tax_cnf_com, 2) }}</strong></td>
         </tr>
         @endif
+        @if((float) $bill->advance_amount > 0)
+        <tr class="less-row">
+            <td>
+                <strong>LESS ADVANCE PAYMENT</strong>
+                @foreach($advanceCollections as $advance)
+                <div style="color:#555;font-size:9.5px;font-weight:normal;padding-left:12px;">
+                    Received {{ $advance['receipt_date']?->format('d M Y') }} &mdash; {{ $advance['receipt_no'] }}: {{ number_format($advance['amount'], 2) }}
+                </div>
+                @endforeach
+            </td>
+            <td class="amount"><strong>{{ number_format($bill->advance_amount, 2) }}</strong></td>
+        </tr>
+        @endif
         <tr class="balance-row">
             <td style="text-align:right;"><strong>BALANCE</strong></td>
             <td class="amount"><strong>{{ number_format($bill->due_amount, 2) }}</strong></td>
@@ -296,11 +339,6 @@ body {
     </div>
 </div>
 
-<script>
-window.onload = function () {
-    window.print();
-    window.addEventListener('afterprint', function () { window.close(); });
-};
-</script>
+</div>
 </body>
 </html>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Chevron;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Chevron\MoneyReceipt\IndexMoneyReceiptRequest;
+use App\Models\Chevron\ChevronBill;
 use App\Models\Chevron\ChevronCustomer;
 use App\Models\Chevron\ChevronMoneyReceipt;
 use App\Models\Chevron\ChevronMoneyReceiptItem;
@@ -12,8 +13,8 @@ use Yajra\DataTables\Facades\DataTables;
 
 /**
  * Customer-wise advance balance: advance received through Advance money receipts, minus the part
- * already adjusted against bills ("Advance Adjustment" payment rows). Both sides are read straight from
- * the receipts, so the balance can never drift from the documents behind it.
+ * already used on bills ("Advance Adjustment" payment rows of Bill receipts and advance applied directly
+ * on bills). Both sides are read straight from the documents, so the balance can never drift from them.
  */
 class AdvanceBalanceController extends Controller
 {
@@ -36,10 +37,16 @@ class AdvanceBalanceController extends Controller
                 ->where('adjusting.receipt_type', ChevronMoneyReceipt::TYPE_BILL)
                 ->where('chevron_money_receipt_items.payment_type', ChevronMoneyReceipt::ADVANCE_ADJUSTMENT);
 
+            $appliedOnBills = ChevronBill::query()
+                ->selectRaw('COALESCE(SUM(chevron_bills.advance_amount), 0)')
+                ->whereColumn('chevron_bills.customer_id', 'chevron_customers.id')
+                ->where('chevron_bills.branch_id', $branchId);
+
             $query = ChevronCustomer::query()
                 ->select(['chevron_customers.id', 'chevron_customers.customer_id', 'chevron_customers.name'])
                 ->selectSub($received, 'advance_received')
-                ->selectSub($adjusted, 'advance_adjusted')
+                ->selectSub($adjusted, 'advance_adjusted_receipts')
+                ->selectSub($appliedOnBills, 'advance_adjusted_bills')
                 ->whereExists(fn ($q) => $q->selectRaw('1')
                     ->from('chevron_money_receipts as advance_receipts')
                     ->whereColumn('advance_receipts.party_id', 'chevron_customers.id')
@@ -49,11 +56,11 @@ class AdvanceBalanceController extends Controller
             return DataTables::of($query)
                 ->addIndexColumn()
                 ->editColumn('advance_received', fn ($r) => number_format($r->advance_received, 2))
-                ->editColumn('advance_adjusted', fn ($r) => number_format($r->advance_adjusted, 2))
-                ->addColumn('balance', fn ($r) => number_format($r->advance_received - $r->advance_adjusted, 2))
+                ->addColumn('advance_adjusted', fn ($r) => number_format($r->advance_adjusted_receipts + $r->advance_adjusted_bills, 2))
+                ->addColumn('balance', fn ($r) => number_format($r->advance_received - $r->advance_adjusted_receipts - $r->advance_adjusted_bills, 2))
                 ->addColumn('action', fn ($r) => '<a href="'.route('chevron.cnf.advance-balances.show', $r->id).'" class="btn btn-sm btn-outline-info py-0 px-2" title="View statement"><i class="fa fa-file-lines me-1"></i>Statement</a>')
                 ->orderColumn('advance_received', 'advance_received $1')
-                ->orderColumn('advance_adjusted', 'advance_adjusted $1')
+                ->orderColumn('advance_adjusted', '(advance_adjusted_receipts + advance_adjusted_bills) $1')
                 ->rawColumns(['action'])
                 ->make(true);
         }
@@ -65,6 +72,7 @@ class AdvanceBalanceController extends Controller
         $adjusted = (float) ChevronMoneyReceiptItem::where('payment_type', ChevronMoneyReceipt::ADVANCE_ADJUSTMENT)
             ->whereHas('receipt', fn ($q) => $q->where('branch_id', $branchId)->where('receipt_type', ChevronMoneyReceipt::TYPE_BILL))
             ->sum('amount');
+        $adjusted += (float) ChevronBill::where('branch_id', $branchId)->whereNotNull('customer_id')->sum('advance_amount');
 
         return view('chevron.cnf.advance-balances.index', [
             'received' => round($received, 2),
@@ -109,6 +117,7 @@ class AdvanceBalanceController extends Controller
                     'sort'      => $receipt->receipt_date?->format('Y-m-d').'-'.str_pad((string) $receipt->id, 10, '0', STR_PAD_LEFT).'-0',
                     'date'      => $receipt->receipt_date,
                     'receipt'   => $receipt,
+                    'bill'      => null,
                     'kind'      => 'Received',
                     'reference' => $jobNos !== '' ? $jobNos : 'General advance',
                     'credit'    => (float) $receipt->total_amount,
@@ -130,6 +139,7 @@ class AdvanceBalanceController extends Controller
                     'sort'      => $receipt->receipt_date?->format('Y-m-d').'-'.str_pad((string) $receipt->id, 10, '0', STR_PAD_LEFT).'-1',
                     'date'      => $receipt->receipt_date,
                     'receipt'   => $receipt,
+                    'bill'      => null,
                     'kind'      => 'Adjusted',
                     'reference' => $receipt->allocations->pluck('bill.bill_no')->filter()->implode(', ') ?: '—',
                     'credit'    => 0.0,
@@ -137,9 +147,24 @@ class AdvanceBalanceController extends Controller
                 ];
             });
 
+        $billDebits = ChevronBill::where('branch_id', $branchId)
+            ->where('customer_id', $partyId)
+            ->where('advance_amount', '>', 0)
+            ->get()
+            ->map(fn (ChevronBill $bill) => [
+                'sort'      => $bill->bill_date?->format('Y-m-d').'-'.str_pad((string) $bill->id, 10, '0', STR_PAD_LEFT).'-1',
+                'date'      => $bill->bill_date,
+                'receipt'   => null,
+                'bill'      => $bill,
+                'kind'      => 'Adjusted',
+                'reference' => $bill->job_no ?: '—',
+                'credit'    => 0.0,
+                'debit'     => (float) $bill->advance_amount,
+            ]);
+
         $running = 0.0;
 
-        return $credits->concat($debits)
+        return $credits->concat($debits)->concat($billDebits)
             ->sortBy('sort')
             ->values()
             ->map(function (array $entry) use (&$running) {

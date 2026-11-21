@@ -9,12 +9,16 @@ use App\Http\Requests\Chevron\Bill\DestroyBillRequest;
 use App\Http\Requests\Chevron\Bill\EditBillRequest;
 use App\Http\Requests\Chevron\Bill\IndexBillRequest;
 use App\Http\Requests\Chevron\Bill\PrintBillRequest;
+use App\Http\Requests\Chevron\Bill\ShowBillRequest;
 use App\Http\Requests\Chevron\Bill\StoreBillRequest;
 use App\Http\Requests\Chevron\Bill\UpdateBillRequest;
 use App\Models\Chevron\ChevronBill;
+use App\Models\Chevron\ChevronCustomer;
 use App\Models\Chevron\ChevronExpenseCategory;
 use App\Models\Chevron\ChevronExpenseHead;
 use App\Models\Chevron\ChevronJob;
+use App\Models\Chevron\ChevronMoneyReceipt;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -60,7 +64,7 @@ class BillController extends Controller
                     default     => '<span class="badge bg-primary">Active</span>',
                 })
                 ->addColumn('action', function ($r) use ($request) {
-                    $html = '';
+                    $html = '<a href="'.route('chevron.cnf.bills.show', $r->id).'" class="btn btn-sm btn-outline-info py-0 px-1" title="View"><i class="fa fa-eye"></i></a> ';
                     if ($request->user()->hasPermission('cnf.bill.print')) {
                         $html .= '<a href="'.route('chevron.cnf.bills.print', $r->id).'" target="_blank" class="btn btn-sm btn-outline-secondary py-0 px-1" title="Print"><i class="fa fa-print"></i></a> ';
                     }
@@ -91,12 +95,15 @@ class BillController extends Controller
 
     public function store(StoreBillRequest $request)
     {
-
         DB::transaction(function () use ($request) {
-            $bill = ChevronBill::create(array_merge($this->prepareData($request), [
+            $data = $this->reserveAdvance($this->prepareData($request), $request);
+
+            $bill = ChevronBill::create(array_merge($data, [
                 'bill_no' => ChevronBill::generateBillNo(),
             ]));
             $this->saveItems($bill, $request->rows);
+
+            $this->refreshAdvanceBalances([$bill->customer_id]);
         });
 
         return redirect()->route('chevron.cnf.bills.index')
@@ -126,8 +133,10 @@ class BillController extends Controller
     {
 
         DB::transaction(function () use ($request, $bill) {
+            $previousCustomerId = $bill->customer_id;
+            $data = $this->reserveAdvance($this->prepareData($request), $request, $bill);
+
             $bill = ChevronBill::lockForUpdate()->findOrFail($bill->id);
-            $data = $this->prepareData($request);
 
             if (round($data['due_amount'] - (float) $bill->received_amount, 2) < 0) {
                 throw ValidationException::withMessages([
@@ -138,6 +147,8 @@ class BillController extends Controller
             $bill->update($data);
             $bill->items()->delete();
             $this->saveItems($bill, $request->rows);
+
+            $this->refreshAdvanceBalances([$previousCustomerId, $bill->customer_id]);
         });
 
         return redirect()->route('chevron.cnf.bills.index')
@@ -150,9 +161,33 @@ class BillController extends Controller
             return response()->json(['message' => 'Bill has money receipts collected against it. Delete those receipts first.'], 422);
         }
 
-        $bill->delete();
+        DB::transaction(function () use ($bill) {
+            $this->lockCustomers([$bill->customer_id]);
+
+            $bill->delete();
+
+            $this->refreshAdvanceBalances([$bill->customer_id]);
+        });
 
         return response()->json(['message' => 'Bill deleted.']);
+    }
+
+    public function show(ShowBillRequest $request, ChevronBill $bill)
+    {
+        abort_unless((int) $bill->branch_id === (int) session('active_branch_id'), 404);
+
+        $bill->load(['items.expenseCategory', 'items.expenseHead', 'job', 'branch']);
+
+        return view('chevron.cnf.bills.show', [
+            'bill'               => $bill,
+            'grouped'            => $bill->items->groupBy(fn ($i) => $i->expenseCategory?->name ?? 'OTHER'),
+            'inWords'            => NumberHelper::amountInWords((float) $bill->due_amount),
+            'advanceCollections' => $bill->advanceCollections(),
+            'receiptCollections' => $bill->receiptCollections(),
+            'canEdit'            => (bool) $request->user()?->hasPermission('cnf.bill.edit'),
+            'canPrint'           => (bool) $request->user()?->hasPermission('cnf.bill.print'),
+            'canOpenReceipts'    => (bool) $request->user()?->hasPermission('cnf.money-receipt.list'),
+        ]);
     }
 
     public function print(PrintBillRequest $request, ChevronBill $bill)
@@ -160,8 +195,43 @@ class BillController extends Controller
         $bill->load(['items.expenseCategory', 'items.expenseHead', 'job']);
         $grouped = $bill->items->groupBy(fn ($i) => $i->expenseCategory?->name ?? 'OTHER');
         $inWords = NumberHelper::amountInWords((float) $bill->due_amount);
+        $advanceCollections = (float) $bill->advance_amount > 0 ? $bill->advanceCollections() : collect();
 
-        return view('chevron.cnf.bills.print', compact('bill', 'grouped', 'inWords'));
+        return view('chevron.cnf.bills.print', compact('bill', 'grouped', 'inWords', 'advanceCollections'));
+    }
+
+    /**
+     * Customer advance for the bill form: what was collected for the selected job, the customer's total
+     * advance balance and how much of it this bill may use. When editing, `bill_id` hands the bill's own
+     * advance back so it can be re-applied.
+     */
+    public function advanceInfo(IndexBillRequest $request): JsonResponse
+    {
+        $branchId = (int) session('active_branch_id');
+        $job = $request->filled('job_id') ? ChevronJob::find($request->integer('job_id')) : null;
+        $bill = $request->filled('bill_id')
+            ? ChevronBill::where('branch_id', $branchId)->find($request->integer('bill_id'))
+            : null;
+        $customer = $this->resolveCustomer($job);
+        $jobCollections = $customer && $job
+            ? ChevronMoneyReceipt::advanceCollectionsForJob($branchId, $customer->id, $job->id)
+            : collect();
+        $canOpenReceipts = (bool) $request->user()?->hasPermission('cnf.money-receipt.list');
+
+        return response()->json([
+            'customer_id'     => $customer?->id,
+            'customer_name'   => $customer?->name,
+            'job_collections' => $jobCollections->map(fn (array $row) => [
+                'date'        => $row['receipt_date']?->format('d-M-Y'),
+                'receipt_no'  => $row['receipt_no'],
+                'receipt_url' => $canOpenReceipts ? route('chevron.cnf.money-receipts.show', $row['receipt_id']) : null,
+                'amount'      => $row['amount'],
+            ])->all(),
+            'job_advance'   => round((float) $jobCollections->sum('amount'), 2),
+            'total_advance' => $customer ? max(ChevronMoneyReceipt::advanceBalance($branchId, $customer->id, null, $bill?->id), 0.0) : 0.0,
+            'available'     => $this->availableAdvance($customer?->id, $bill),
+            'statement_url' => $customer ? route('chevron.cnf.advance-balances.show', $customer->id) : null,
+        ]);
     }
 
     public function searchJobs(IndexBillRequest $request)
@@ -213,6 +283,101 @@ class BillController extends Controller
             'currency_type'     => $j->currency_type,
             'currency_rate'     => $j->currency_rate,
         ]));
+    }
+
+    /**
+     * The customer a job's bill belongs to: the job's linked customer, else the one customer carrying the party name.
+     */
+    private function resolveCustomer(?ChevronJob $job): ?ChevronCustomer
+    {
+        if (! $job) {
+            return null;
+        }
+
+        if ($job->customer_id) {
+            return ChevronCustomer::find($job->customer_id);
+        }
+
+        if (trim((string) $job->party_name) === '') {
+            return null;
+        }
+
+        $matches = ChevronCustomer::where('name', $job->party_name)->limit(2)->get();
+
+        return $matches->count() === 1 ? $matches->first() : null;
+    }
+
+    /**
+     * Advance this bill may draw: the customer's balance in the active branch (the bill's own advance counts as
+     * available again). Without a linked customer only advance already entered by hand on an old bill stays valid.
+     */
+    private function availableAdvance(?int $customerId, ?ChevronBill $bill): float
+    {
+        if ($customerId) {
+            return max(ChevronMoneyReceipt::advanceBalance((int) session('active_branch_id'), $customerId, null, $bill?->id), 0.0);
+        }
+
+        return $bill && ! $bill->customer_id ? (float) $bill->advance_amount : 0.0;
+    }
+
+    /**
+     * Checks the advance on a bill against the customer's balance and the bill's net payable, and links the
+     * bill to its customer. Locks the customer rows first, the same order money receipts use.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function reserveAdvance(array $data, Request $request, ?ChevronBill $bill = null): array
+    {
+        $job = $request->filled('job_id') ? ChevronJob::find($request->integer('job_id')) : null;
+        $customer = $this->resolveCustomer($job);
+
+        $this->lockCustomers([$bill?->customer_id, $customer?->id]);
+
+        $advance = (float) $data['advance_amount'];
+        $netPayable = max((float) $data['net_payable'], 0.0);
+        $available = $this->availableAdvance($customer?->id, $bill);
+
+        if ($advance < 0) {
+            throw ValidationException::withMessages(['advance_amount' => 'Advance amount cannot be negative.']);
+        }
+
+        if (round($advance - $netPayable, 2) > 0) {
+            throw ValidationException::withMessages([
+                'advance_amount' => 'Advance ('.number_format($advance, 2).') cannot exceed the bill\'s net payable amount ('.number_format($netPayable, 2).').',
+            ]);
+        }
+
+        if (round($advance - $available, 2) > 0) {
+            throw ValidationException::withMessages([
+                'advance_amount' => $customer
+                    ? 'Advance ('.number_format($advance, 2).') exceeds the available advance balance of '.$customer->name.' ('.number_format($available, 2).').'
+                    : 'Advance can only be applied from a customer\'s advance balance, and this job has no linked customer.',
+            ]);
+        }
+
+        return $data + ['customer_id' => $customer?->id];
+    }
+
+    /**
+     * @param  array<int, int|string|null>  $customerIds
+     */
+    private function lockCustomers(array $customerIds): void
+    {
+        $ids = collect($customerIds)->filter()->map(fn ($id) => (int) $id)->unique()->sort()->values();
+
+        if ($ids->isNotEmpty()) {
+            ChevronCustomer::whereIn('id', $ids)->orderBy('id')->lockForUpdate()->get();
+        }
+    }
+
+    /**
+     * @param  array<int, int|string|null>  $customerIds
+     */
+    private function refreshAdvanceBalances(array $customerIds): void
+    {
+        collect($customerIds)->filter()->map(fn ($id) => (int) $id)->unique()
+            ->each(fn (int $id) => ChevronCustomer::refreshAdvanceBalance($id));
     }
 
     private function prepareData(Request $request): array

@@ -138,8 +138,169 @@
             pointer-events: none;
         }
 
+        /* ── Customer advance panel ── */
+        .advance-panel {
+            margin: .45rem .65rem;
+            border: 1px solid #b2d8c8;
+            border-radius: .35rem;
+            background: #f4faf7;
+            min-height: 6.5rem;
+        }
+
+        .advance-panel-head {
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+            padding: .3rem .6rem;
+            border-bottom: 1px solid #d6ebe2;
+            color: #0a4f3c;
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: .03em;
+            text-transform: uppercase;
+        }
+
+        .advance-note {
+            padding: .55rem .6rem;
+            color: #495057;
+            font-size: .72rem;
+        }
+
+        .advance-note.is-error {
+            color: #b42318;
+        }
+
+        .advance-line {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: .5rem;
+            padding: .22rem .6rem;
+            font-size: .72rem;
+        }
+
+        .advance-line dt {
+            margin: 0;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .advance-line dd {
+            margin: 0;
+            text-align: right;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .advance-collections {
+            margin: .25rem .6rem .35rem;
+            border: 1px solid #d6ebe2;
+            border-radius: .3rem;
+            background: #fff;
+        }
+
+        .advance-collections-title {
+            padding: .25rem .5rem;
+            border-bottom: 1px solid #d6ebe2;
+            background: #eaf5f0;
+            color: #0a4f3c;
+            font-size: .66rem;
+            font-weight: 700;
+            letter-spacing: .03em;
+            text-transform: uppercase;
+        }
+
+        .advance-collections-scroll {
+            max-height: 8.5rem;
+            overflow-y: auto;
+        }
+
+        .advance-collections-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .7rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .advance-collections-table th,
+        .advance-collections-table td {
+            padding: .2rem .5rem;
+            white-space: nowrap;
+        }
+
+        .advance-collections-table thead th {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            border-bottom: 1px solid #e3efe9;
+            color: #4b5563;
+            font-weight: 600;
+        }
+
+        .advance-collections-table tbody tr+tr td {
+            border-top: 1px solid #f0f5f2;
+        }
+
+        .advance-collections-table tfoot th,
+        .advance-collections-table tfoot td {
+            border-top: 1px solid #d6ebe2;
+            background: #f4faf7;
+            font-weight: 700;
+        }
+
+        .advance-collections-table a {
+            color: #0a4f3c;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .advance-collections-table a:hover,
+        .advance-collections-table a:focus-visible {
+            text-decoration: underline;
+        }
+
+        .advance-line-max {
+            border-top: 1px solid #d6ebe2;
+            background: #e8f5f0;
+        }
+
+        .advance-line-max dt,
+        .advance-line-max dd {
+            color: #0a4f3c;
+            font-weight: 700;
+        }
+
+        .advance-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: .35rem;
+            padding: .4rem .6rem .5rem;
+        }
+
+        .advance-feedback {
+            min-height: 1.35rem;
+            padding: .1rem .65rem .35rem;
+            color: #495057;
+            font-size: .68rem;
+        }
+
+        .advance-feedback.is-error {
+            color: #b42318;
+            font-weight: 600;
+        }
+
+        .advance-feedback.is-warning {
+            color: #8a5300;
+            font-weight: 600;
+        }
+
         /* ── Responsive ── */
         @media (max-width: 575.98px) {
+            .advance-actions .btn {
+                min-height: 38px;
+            }
+
             .bill-input {
                 height: 38px;
                 font-size: .8rem;
@@ -280,8 +441,10 @@
                     <div class="col-md-4">
                         <div class="bill-form-label">Job No <span class="text-danger">*</span></div>
                         <select name="job_id" id="jobSelect" class="form-select bill-input" style="width:100%">
-                            @if ($bill?->job_id)
-                                <option value="{{ $bill->job_id }}" selected>{{ $bill->job_no }} — {{ $bill->party_name }}
+                            @php($selectedJobId = old('job_id', $bill?->job_id))
+                            @if ($selectedJobId)
+                                <option value="{{ $selectedJobId }}" selected>
+                                    {{ old('job_no', $bill?->job_no) }} — {{ old('party_name', $bill?->party_name) }}
                                 </option>
                             @endif
                         </select>
@@ -547,13 +710,77 @@
                                 class="form-control totals-input text-end fw-bold" step="0.01"
                                 value="{{ old('net_payable', $bill?->net_payable ?? 0) }}" readonly>
                         </div>
+                        <hr class="totals-divider">
+                        {{-- Customer advance: job-wise collection, total balance, and what this bill may use --}}
+                        <div class="advance-panel" id="advancePanel" aria-live="polite" aria-busy="false">
+                            <div class="advance-panel-head">
+                                <i class="fa fa-wallet" aria-hidden="true"></i> Customer Advance
+                                <span id="advanceSpinner" class="spinner-border spinner-border-sm ms-auto d-none"
+                                    role="status"><span class="visually-hidden">Loading advance</span></span>
+                            </div>
+                            <div class="advance-note" id="advanceNote">Select a job to see the customer's advance.</div>
+                            <div class="d-none" id="advanceStats">
+                                <dl class="mb-0">
+                                    <div class="advance-line">
+                                        <dt>Customer</dt>
+                                        <dd id="advCustomer">—</dd>
+                                    </div>
+                                </dl>
+                                {{-- Date-wise advance collected for the selected job; hidden when there is none --}}
+                                <div class="advance-collections d-none" id="advJobSection" role="region"
+                                    aria-labelledby="advJobTitle">
+                                    <div class="advance-collections-title" id="advJobTitle">Advance collected for this job
+                                    </div>
+                                    <div class="advance-collections-scroll" tabindex="0">
+                                        <table class="advance-collections-table">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col">Date</th>
+                                                    <th scope="col">Receipt</th>
+                                                    <th scope="col" class="text-end">Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="advJobRows"></tbody>
+                                            <tfoot>
+                                                <tr>
+                                                    <th scope="row" colspan="2">Total collected</th>
+                                                    <td class="text-end" id="advJobTotal">0.00</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+                                <dl class="mb-0">
+                                    <div class="advance-line">
+                                        <dt>Total advance balance</dt>
+                                        <dd id="advTotal">0.00</dd>
+                                    </div>
+                                    <div class="advance-line advance-line-max">
+                                        <dt>Can apply to this bill</dt>
+                                        <dd id="advMax">0.00</dd>
+                                    </div>
+                                </dl>
+                            </div>
+                            <div class="advance-actions d-none" id="advanceActions">
+                                <button type="button" class="btn btn-sm btn-outline-success py-0 px-2"
+                                    id="useJobAdvance">Use job advance</button>
+                                <button type="button" class="btn btn-sm btn-outline-success py-0 px-2"
+                                    id="useMaxAdvance">Use maximum</button>
+                                <a href="#" class="btn btn-sm btn-link py-0 px-1 d-none" id="advanceStatement"
+                                    target="_blank" rel="noopener">View statement</a>
+                            </div>
+                        </div>
                         {{-- Advance --}}
                         <div class="totals-row">
-                            <span class="totals-label">Advance Amount</span>
+                            <label class="totals-label" for="advanceAmount">Advance Amount</label>
                             <input type="number" name="advance_amount" id="advanceAmount"
-                                class="form-control totals-input text-end" step="0.01"
+                                class="form-control totals-input text-end {{ $errors->has('advance_amount') ? 'is-invalid' : '' }}"
+                                step="0.01" min="0" aria-describedby="advanceFeedback"
+                                aria-invalid="{{ $errors->has('advance_amount') ? 'true' : 'false' }}"
                                 value="{{ old('advance_amount', $bill?->advance_amount ?? 0) }}" placeholder="0.00">
                         </div>
+                        <div class="advance-feedback {{ $errors->has('advance_amount') ? 'is-error' : '' }}"
+                            id="advanceFeedback" role="status">{{ $errors->first('advance_amount') }}</div>
                         <hr class="totals-divider">
                         {{-- Due Amount --}}
                         <div class="totals-row due-row">
@@ -630,6 +857,183 @@
     <script>
         var allHeads = @json($expenseHeadsJson);
         var existingRows = @json($existingRows);
+        var billId = @json($bill?->id);
+        var advanceInfoUrl = @json(route('chevron.cnf.bills.advance-info'));
+        var advanceSeq = 0;
+        var advanceState = emptyAdvance('idle');
+
+        function emptyAdvance(status) {
+            return {
+                status: status, // idle | loading | ready | error
+                customerId: null,
+                customerName: '',
+                jobCollections: [],
+                jobAdvance: 0,
+                totalAdvance: 0,
+                available: 0,
+                statementUrl: null
+            };
+        }
+
+        // Date-wise advance receipts of the selected job; the whole section stays hidden when there are none.
+        function renderJobCollections(collections, total) {
+            var $rows = $('#advJobRows').empty();
+
+            collections.forEach(function(c) {
+                $rows.append(
+                    $('<tr>').append(
+                        $('<td>').text(c.date || '—'),
+                        $('<td>').append(c.receipt_url ?
+                            $('<a>', {
+                                href: c.receipt_url,
+                                target: '_blank',
+                                rel: 'noopener',
+                                text: c.receipt_no
+                            }) :
+                            document.createTextNode(c.receipt_no)),
+                        $('<td class="text-end">').text(money(c.amount))
+                    )
+                );
+            });
+
+            $('#advJobTotal').text(money(total));
+            $('#advJobSection').toggleClass('d-none', collections.length === 0);
+        }
+
+        function money(v) {
+            return (parseFloat(v) || 0).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        // Most advance this bill can use: the customer's available advance, never more than the net payable.
+        function advanceCap() {
+            var net = parseFloat($('#netPayable').val()) || 0;
+            return Math.max(0, Math.min(advanceState.available, net));
+        }
+
+        function loadAdvance(jobId) {
+            var seq = ++advanceSeq;
+
+            if (!jobId) {
+                advanceState = emptyAdvance('idle');
+                renderAdvance();
+                return;
+            }
+
+            advanceState = emptyAdvance('loading');
+            renderAdvance();
+
+            $.getJSON(advanceInfoUrl, { job_id: jobId, bill_id: billId || '' })
+                .done(function(d) {
+                    if (seq !== advanceSeq) return;
+                    advanceState = {
+                        status: 'ready',
+                        customerId: d.customer_id,
+                        customerName: d.customer_name || '',
+                        jobCollections: d.job_collections || [],
+                        jobAdvance: parseFloat(d.job_advance) || 0,
+                        totalAdvance: parseFloat(d.total_advance) || 0,
+                        available: parseFloat(d.available) || 0,
+                        statementUrl: d.statement_url
+                    };
+                })
+                .fail(function() {
+                    if (seq !== advanceSeq) return;
+                    advanceState = emptyAdvance('error');
+                })
+                .always(function() {
+                    if (seq !== advanceSeq) return;
+                    renderAdvance();
+                });
+        }
+
+        function renderAdvance() {
+            var s = advanceState;
+            var cap = advanceCap();
+            var loading = s.status === 'loading';
+            var linked = s.status === 'ready' && s.customerId;
+            var note = '';
+            var noteIsError = false;
+
+            if (s.status === 'idle') {
+                note = 'Select a job to see the customer\'s advance.';
+            } else if (loading) {
+                note = 'Checking the customer\'s advance…';
+            } else if (s.status === 'error') {
+                note = 'Could not load the customer\'s advance. Select the job again to retry.';
+                noteIsError = true;
+            } else if (!s.customerId) {
+                note = 'This job has no linked customer, so no advance can be applied.';
+            }
+
+            $('#advancePanel').attr('aria-busy', loading ? 'true' : 'false');
+            $('#advanceSpinner').toggleClass('d-none', !loading);
+            $('#advanceNote').text(note).toggleClass('d-none', !!linked).toggleClass('is-error', noteIsError);
+            $('#advanceStats').toggleClass('d-none', !linked);
+            $('#advanceActions').toggleClass('d-none', !linked);
+
+            if (linked) {
+                $('#advCustomer').text(s.customerName || '—');
+                renderJobCollections(s.jobCollections, s.jobAdvance);
+                $('#advTotal').text(money(s.totalAdvance));
+                $('#advMax').text(money(cap));
+                $('#useJobAdvance')
+                    .toggleClass('d-none', s.jobCollections.length === 0)
+                    .prop('disabled', Math.min(s.jobAdvance, cap) <= 0);
+                $('#useMaxAdvance').prop('disabled', cap <= 0);
+                $('#advanceStatement').toggleClass('d-none', !s.statementUrl).attr('href', s.statementUrl || '#');
+            }
+
+            validateAdvance();
+        }
+
+        // Inline check of the advance field; returns false while it holds an amount the bill cannot use.
+        function validateAdvance(warning) {
+            var s = advanceState;
+            var $input = $('#advanceAmount');
+            var $feedback = $('#advanceFeedback');
+            var value = parseFloat($input.val()) || 0;
+            var net = parseFloat($('#netPayable').val()) || 0;
+            var error = '';
+            var hint = '';
+
+            if (s.status === 'loading') {
+                hint = 'Checking available advance…';
+            } else if (s.status === 'idle') {
+                if (value > 0) {
+                    error = 'Select a job before applying advance.';
+                }
+            } else if (s.status === 'ready') {
+                if (value < 0) {
+                    error = 'Advance cannot be negative.';
+                } else if (value - Math.max(net, 0) > 0.004) {
+                    error = 'Advance cannot exceed the net payable (BDT ' + money(net) + ').';
+                } else if (value - s.available > 0.004) {
+                    error = s.customerId ?
+                        'Only BDT ' + money(s.available) + ' of advance is available for this customer.' :
+                        'No customer advance is available for this job.';
+                } else {
+                    hint = advanceCap() > 0 ?
+                        'You can apply up to BDT ' + money(advanceCap()) + ' on this bill.' :
+                        'No advance available to apply.';
+                }
+            }
+
+            $input.toggleClass('is-invalid', !!error).attr('aria-invalid', error ? 'true' : 'false');
+            $feedback
+                .toggleClass('is-error', !!error)
+                .toggleClass('is-warning', !error && !!warning)
+                .text(error || warning || hint);
+
+            return !error;
+        }
+
+        function setAdvance(amount) {
+            $('#advanceAmount').val((Math.max(0, amount)).toFixed(2));
+            recalcAll();
+        }
 
         function initRowSelects($row) {
             $row.find('.cat-select').select2({ theme: 'bootstrap-5', width: '100%', placeholder: '-- Category --' });
@@ -680,6 +1084,8 @@
                 $('#invoiceValue').val(d.invoice_value || '');
                 $('#currencyType').val(d.currency_type || '');
                 $('#currencyRate').val(d.currency_rate || '');
+                $('#advanceAmount').val('0.00'); // advance belongs to the previous job's customer
+                loadAdvance(d.id);
                 recalcAll();
             });
 
@@ -737,6 +1143,30 @@
             // Less duty, income tax, advance change
             $('#lessDutyTax, #incomeTax, #advanceAmount').on('input', recalcAll);
 
+            // Advance: quick fills, limit to what the bill can use on blur, block submit when over the limit
+            $('#useJobAdvance').on('click', function() {
+                setAdvance(Math.min(advanceState.jobAdvance, advanceCap()));
+            });
+            $('#useMaxAdvance').on('click', function() {
+                setAdvance(advanceCap());
+            });
+            $('#advanceAmount').on('change', function() {
+                var value = parseFloat($(this).val()) || 0;
+                var cap = advanceCap();
+
+                if (advanceState.status === 'ready' && value - cap > 0.004) {
+                    $(this).val(cap.toFixed(2));
+                    recalcAll();
+                    validateAdvance('Limited to BDT ' + money(cap) + ', the most this bill can use.');
+                }
+            });
+            $('#advanceAmount').closest('form').on('submit', function(e) {
+                if (!validateAdvance()) {
+                    e.preventDefault();
+                    $('#advanceAmount').trigger('focus');
+                }
+            });
+
             // Category filter heads
             $(document).on('change', '.cat-select', function() {
                 filterHeads($(this).closest('tr'));
@@ -755,6 +1185,7 @@
             });
 
             recalcAll();
+            loadAdvance($('#jobSelect').val());
         });
 
         function addRow(data) {
@@ -835,6 +1266,13 @@
             var advance = parseFloat($('#advanceAmount').val()) || 0;
             var dueAmount = netPayable - advance;
             $('#dueAmount').val(dueAmount.toFixed(2));
+
+            // The net payable caps the advance, so keep the panel and field check in step with it
+            if (advanceState.status === 'ready') {
+                renderAdvance();
+            } else {
+                validateAdvance();
+            }
         }
     </script>
 @endpush

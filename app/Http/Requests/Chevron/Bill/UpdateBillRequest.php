@@ -19,6 +19,7 @@ class UpdateBillRequest extends FormRequest
         return [
             'bill_date'                  => ['required', 'date'],
             'job_no'                     => ['required', 'string'],
+            'advance_amount'             => ['nullable', 'numeric', 'min:0'],
             'rows'                       => ['required', 'array', 'min:1'],
             'rows.*.expense_category_id' => ['required'],
             'rows.*.expense_head_id'     => ['nullable', Rule::exists('chevron_expense_heads', 'id')->where('is_bill', true)],

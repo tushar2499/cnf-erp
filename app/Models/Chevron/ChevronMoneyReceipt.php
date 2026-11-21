@@ -5,6 +5,8 @@ namespace App\Models\Chevron;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class ChevronMoneyReceipt extends Model
@@ -82,29 +84,60 @@ class ChevronMoneyReceipt extends Model
     }
 
     /**
-     * Advance already used to settle bills ("Advance Adjustment" payment rows of Bill receipts).
+     * Advance already used to settle bills: "Advance Adjustment" payment rows of Bill receipts, plus the
+     * advance applied directly on bills. Optionally ignores one receipt and/or one bill.
      */
-    public static function advanceAdjusted(int $branchId, int $partyId, ?int $exceptReceiptId = null): float
+    public static function advanceAdjusted(int $branchId, int $partyId, ?int $exceptReceiptId = null, ?int $exceptBillId = null): float
     {
-        return round((float) ChevronMoneyReceiptItem::query()
+        $viaReceipts = (float) ChevronMoneyReceiptItem::query()
             ->where('payment_type', self::ADVANCE_ADJUSTMENT)
             ->whereHas('receipt', fn ($q) => $q
                 ->where('branch_id', $branchId)
                 ->where('party_id', $partyId)
                 ->where('receipt_type', self::TYPE_BILL)
                 ->when($exceptReceiptId, fn ($q) => $q->where('id', '!=', $exceptReceiptId)))
-            ->sum('amount'), 2);
+            ->sum('amount');
+
+        return round($viaReceipts + ChevronBill::advanceApplied($branchId, $partyId, $exceptBillId), 2);
     }
 
     /**
      * Advance still available for a customer: received minus adjusted against bills.
      */
-    public static function advanceBalance(int $branchId, int $partyId, ?int $exceptReceiptId = null): float
+    public static function advanceBalance(int $branchId, int $partyId, ?int $exceptReceiptId = null, ?int $exceptBillId = null): float
     {
         return round(
-            static::advanceReceived($branchId, $partyId, $exceptReceiptId) - static::advanceAdjusted($branchId, $partyId, $exceptReceiptId),
+            static::advanceReceived($branchId, $partyId, $exceptReceiptId) - static::advanceAdjusted($branchId, $partyId, $exceptReceiptId, $exceptBillId),
             2
         );
+    }
+
+    /**
+     * Advance collected through Advance receipts against one job (the job-wise part of the customer's advance),
+     * one entry per receipt, oldest first.
+     *
+     * @return Collection<int, array{receipt_id: int, receipt_no: string, receipt_date: ?Carbon, amount: float}>
+     */
+    public static function advanceCollectionsForJob(int $branchId, int $partyId, int $jobId): Collection
+    {
+        return ChevronMoneyReceiptAllocation::query()
+            ->with('receipt:id,receipt_no,receipt_date')
+            ->whereNull('bill_id')
+            ->where('job_id', $jobId)
+            ->whereHas('receipt', fn ($q) => $q
+                ->where('branch_id', $branchId)
+                ->where('party_id', $partyId)
+                ->where('receipt_type', self::TYPE_ADVANCE))
+            ->get()
+            ->groupBy('receipt_id')
+            ->map(fn (Collection $rows) => [
+                'receipt_id'   => (int) $rows->first()->receipt_id,
+                'receipt_no'   => (string) $rows->first()->receipt->receipt_no,
+                'receipt_date' => $rows->first()->receipt->receipt_date,
+                'amount'       => round((float) $rows->sum('amount'), 2),
+            ])
+            ->sortBy(fn (array $row) => ($row['receipt_date']?->format('Y-m-d') ?? '').'-'.str_pad((string) $row['receipt_id'], 10, '0', STR_PAD_LEFT))
+            ->values();
     }
 
     public static function rowPayTypes(): array

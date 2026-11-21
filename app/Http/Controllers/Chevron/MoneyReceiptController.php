@@ -30,7 +30,8 @@ class MoneyReceiptController extends Controller
     {
         if ($request->ajax()) {
             $query = ChevronMoneyReceipt::with(['allocations.bill:id,bill_no', 'allocations.job:id,job_no'])
-                ->where('branch_id', session('active_branch_id'));
+                ->where('branch_id', session('active_branch_id'))
+                ->orderByDesc('id');
 
             return DataTables::of($query)
                 ->addIndexColumn()

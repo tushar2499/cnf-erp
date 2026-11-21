@@ -410,6 +410,15 @@ class MoneyReceiptTest extends TestCase
         $this->assertEqualsCanonicalizing(['BIL000042 (JOB-777)', 'JOB-777', 'General advance'], $this->listReferences(''));
     }
 
+    public function test_receipt_list_shows_the_newest_receipt_first(): void
+    {
+        foreach ([100, 200, 300] as $amount) {
+            $this->storeReceipt($this->advancePayload($amount));
+        }
+
+        $this->assertSame(['MR000003', 'MR000002', 'MR000001'], array_column($this->listReceipts(''), 'receipt_no'));
+    }
+
     public function test_receipt_list_offers_view_and_print_for_every_status_and_edit_only_when_active(): void
     {
         $this->storeReceipt($this->advancePayload(100));
@@ -1222,6 +1231,7 @@ class MoneyReceiptTest extends TestCase
             $table->string('bill_no')->nullable();
             $table->string('bill_date')->nullable();
             $table->string('job_id')->nullable();
+            $table->unsignedBigInteger('customer_id')->nullable();
             $table->string('job_no')->nullable();
             $table->string('party_name')->nullable();
             $table->text('sub_total')->nullable();
