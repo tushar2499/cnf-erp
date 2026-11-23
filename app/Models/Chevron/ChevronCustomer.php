@@ -25,7 +25,7 @@ class ChevronCustomer extends Model
 
     /**
      * Recalculate the stored `advance_balance` (total advance across all branches: Advance receipts minus
-     * "Advance Adjustment" rows used on Bill receipts). The column is maintained by the system only, so it is
+     * "Advance Adjustment" rows used on Bill receipts and advance applied directly on bills). The column is maintained by the system only, so it is
      * deliberately not mass assignable. Call inside the transaction that changed the receipts.
      */
     public static function refreshAdvanceBalance(int $customerId): float
@@ -38,7 +38,9 @@ class ChevronCustomer extends Model
             ->whereHas('receipt', fn ($q) => $q->where('party_id', $customerId)->where('receipt_type', ChevronMoneyReceipt::TYPE_BILL))
             ->sum('amount');
 
-        $balance = round($received - $adjusted, 2);
+        $appliedOnBills = (float) ChevronBill::where('customer_id', $customerId)->sum('advance_amount');
+
+        $balance = round($received - $adjusted - $appliedOnBills, 2);
 
         static::whereKey($customerId)->update(['advance_balance' => $balance]);
 

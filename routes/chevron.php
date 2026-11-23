@@ -74,11 +74,13 @@ Route::prefix('cnf')->name('cnf.')->group(function () {
 
     Route::prefix('bills')->name('bills.')->group(function () {
         Route::get('/search-jobs', [BillController::class, 'searchJobs'])->name('search-jobs');
+        Route::get('/advance-info', [BillController::class, 'advanceInfo'])->name('advance-info');
         Route::get('/create', [BillController::class, 'create'])->name('create');
         Route::get('/', [BillController::class, 'index'])->name('index');
         Route::post('/', [BillController::class, 'store'])->name('store');
         Route::get('/{bill}/print', [BillController::class, 'print'])->name('print');
         Route::get('/{bill}/edit', [BillController::class, 'edit'])->name('edit');
+        Route::get('/{bill}', [BillController::class, 'show'])->name('show');
         Route::put('/{bill}', [BillController::class, 'update'])->name('update');
         Route::delete('/{bill}', [BillController::class, 'destroy'])->name('destroy');
     });
