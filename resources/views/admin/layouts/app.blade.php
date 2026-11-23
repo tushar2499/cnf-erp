@@ -140,6 +140,103 @@
                 @endif
             </div>
         @endif
+
+        @if (auth()->user()->hasPermission('admin.accounting.coa.list') ||
+                auth()->user()->hasPermission('admin.accounting.mapping.list') ||
+                auth()->user()->hasPermission('admin.accounting.posting.list') ||
+                auth()->user()->hasPermission('admin.accounting.voucher.list'))
+            <div class="nav-item-group">
+                <div class="nav-section">Accounts</div>
+
+                @if (auth()->user()->hasPermission('admin.accounting.coa.list'))
+                    <a href="{{ route('admin.accounting.accounts.index') }}"
+                        class="nav-link {{ request()->routeIs('admin.accounting.accounts.*') ? 'active' : '' }}">
+                        <i class="fa fa-sitemap"></i> Chart of Accounts
+                    </a>
+                @endif
+
+                @if (auth()->user()->hasPermission('admin.accounting.mapping.list'))
+                    <a href="{{ route('admin.accounting.mappings.index') }}"
+                        class="nav-link {{ request()->routeIs('admin.accounting.mappings.*') ? 'active' : '' }}">
+                        <i class="fa fa-shuffle"></i> Transaction Mapping
+                    </a>
+                @endif
+
+                @if (auth()->user()->hasPermission('admin.accounting.posting.list'))
+                    <a href="{{ route('admin.accounting.posting.index') }}"
+                        class="nav-link {{ request()->routeIs('admin.accounting.posting.*') ? 'active' : '' }}">
+                        <i class="fa fa-file-import"></i> Voucher Posting
+                    </a>
+                @endif
+
+                @if (auth()->user()->hasPermission('admin.accounting.voucher.create'))
+                    <a href="{{ route('admin.accounting.vouchers.create') }}"
+                        class="nav-link {{ request()->routeIs('admin.accounting.vouchers.create') ? 'active' : '' }}">
+                        <i class="fa fa-pen-to-square"></i> Voucher Entry
+                    </a>
+                @endif
+
+                @if (auth()->user()->hasPermission('admin.accounting.voucher.list'))
+                    <a href="{{ route('admin.accounting.vouchers.index') }}"
+                        class="nav-link {{ request()->routeIs('admin.accounting.vouchers.*') && ! request()->routeIs('admin.accounting.vouchers.create') ? 'active' : '' }}">
+                        <i class="fa fa-file-invoice-dollar"></i> Vouchers
+                    </a>
+                @endif
+            </div>
+        @endif
+
+        @if (auth()->user()->hasPermission('admin.accounting.report.ledger') ||
+                auth()->user()->hasPermission('admin.accounting.report.trial-balance') ||
+                auth()->user()->hasPermission('admin.accounting.report.profit-loss') ||
+                auth()->user()->hasPermission('admin.accounting.report.balance-sheet') ||
+                auth()->user()->hasPermission('admin.accounting.report.day-book') ||
+                auth()->user()->hasPermission('admin.accounting.report.cash-book'))
+            <div class="nav-item-group">
+                <div class="nav-section">Accounting Reports</div>
+
+                @if (auth()->user()->hasPermission('admin.accounting.report.ledger'))
+                    <a href="{{ route('admin.accounting.reports.ledger') }}"
+                        class="nav-link {{ request()->routeIs('admin.accounting.reports.ledger') ? 'active' : '' }}">
+                        <i class="fa fa-book"></i> Ledger
+                    </a>
+                @endif
+
+                @if (auth()->user()->hasPermission('admin.accounting.report.trial-balance'))
+                    <a href="{{ route('admin.accounting.reports.trial-balance') }}"
+                        class="nav-link {{ request()->routeIs('admin.accounting.reports.trial-balance') ? 'active' : '' }}">
+                        <i class="fa fa-scale-balanced"></i> Trial Balance
+                    </a>
+                @endif
+
+                @if (auth()->user()->hasPermission('admin.accounting.report.profit-loss'))
+                    <a href="{{ route('admin.accounting.reports.profit-loss') }}"
+                        class="nav-link {{ request()->routeIs('admin.accounting.reports.profit-loss') ? 'active' : '' }}">
+                        <i class="fa fa-chart-line"></i> Profit &amp; Loss
+                    </a>
+                @endif
+
+                @if (auth()->user()->hasPermission('admin.accounting.report.balance-sheet'))
+                    <a href="{{ route('admin.accounting.reports.balance-sheet') }}"
+                        class="nav-link {{ request()->routeIs('admin.accounting.reports.balance-sheet') ? 'active' : '' }}">
+                        <i class="fa fa-landmark"></i> Balance Sheet
+                    </a>
+                @endif
+
+                @if (auth()->user()->hasPermission('admin.accounting.report.day-book'))
+                    <a href="{{ route('admin.accounting.reports.day-book') }}"
+                        class="nav-link {{ request()->routeIs('admin.accounting.reports.day-book') ? 'active' : '' }}">
+                        <i class="fa fa-calendar-day"></i> Day Book
+                    </a>
+                @endif
+
+                @if (auth()->user()->hasPermission('admin.accounting.report.cash-book'))
+                    <a href="{{ route('admin.accounting.reports.cash-book') }}"
+                        class="nav-link {{ request()->routeIs('admin.accounting.reports.cash-book') ? 'active' : '' }}">
+                        <i class="fa fa-money-bill-wave"></i> Cash / Bank Book
+                    </a>
+                @endif
+            </div>
+        @endif
     </div>
 @endsection
 
@@ -162,6 +259,39 @@
         @endif
         @if (auth()->user()->hasPermission('admin.designations.list'))
         { label: 'Designations', section: 'Settings', url: '{{ route("admin.designations.index") }}', icon: 'fa-id-badge' },
+        @endif
+        @if (auth()->user()->hasPermission('admin.accounting.coa.list'))
+        { label: 'Chart of Accounts', section: 'Accounts', url: '{{ route("admin.accounting.accounts.index") }}', icon: 'fa-sitemap' },
+        @endif
+        @if (auth()->user()->hasPermission('admin.accounting.mapping.list'))
+        { label: 'Transaction Mapping', section: 'Accounts', url: '{{ route("admin.accounting.mappings.index") }}', icon: 'fa-shuffle' },
+        @endif
+        @if (auth()->user()->hasPermission('admin.accounting.posting.list'))
+        { label: 'Voucher Posting', section: 'Accounts', url: '{{ route("admin.accounting.posting.index") }}', icon: 'fa-file-import' },
+        @endif
+        @if (auth()->user()->hasPermission('admin.accounting.voucher.create'))
+        { label: 'Voucher Entry', section: 'Accounts', url: '{{ route("admin.accounting.vouchers.create") }}', icon: 'fa-pen-to-square' },
+        @endif
+        @if (auth()->user()->hasPermission('admin.accounting.voucher.list'))
+        { label: 'Vouchers', section: 'Accounts', url: '{{ route("admin.accounting.vouchers.index") }}', icon: 'fa-file-invoice-dollar' },
+        @endif
+        @if (auth()->user()->hasPermission('admin.accounting.report.ledger'))
+        { label: 'Ledger', section: 'Accounting Reports', url: '{{ route("admin.accounting.reports.ledger") }}', icon: 'fa-book' },
+        @endif
+        @if (auth()->user()->hasPermission('admin.accounting.report.trial-balance'))
+        { label: 'Trial Balance', section: 'Accounting Reports', url: '{{ route("admin.accounting.reports.trial-balance") }}', icon: 'fa-scale-balanced' },
+        @endif
+        @if (auth()->user()->hasPermission('admin.accounting.report.profit-loss'))
+        { label: 'Profit & Loss', section: 'Accounting Reports', url: '{{ route("admin.accounting.reports.profit-loss") }}', icon: 'fa-chart-line' },
+        @endif
+        @if (auth()->user()->hasPermission('admin.accounting.report.balance-sheet'))
+        { label: 'Balance Sheet', section: 'Accounting Reports', url: '{{ route("admin.accounting.reports.balance-sheet") }}', icon: 'fa-landmark' },
+        @endif
+        @if (auth()->user()->hasPermission('admin.accounting.report.day-book'))
+        { label: 'Day Book', section: 'Accounting Reports', url: '{{ route("admin.accounting.reports.day-book") }}', icon: 'fa-calendar-day' },
+        @endif
+        @if (auth()->user()->hasPermission('admin.accounting.report.cash-book'))
+        { label: 'Cash / Bank Book', section: 'Accounting Reports', url: '{{ route("admin.accounting.reports.cash-book") }}', icon: 'fa-money-bill-wave' },
         @endif
     ];
 

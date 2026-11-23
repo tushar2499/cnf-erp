@@ -45,6 +45,30 @@ class PermissionSeeder extends Seeder
             ['company_id' => null, 'module' => 'Designations', 'name' => 'admin.designations.edit', 'sorting_order' => 52],
             ['company_id' => null, 'module' => 'Designations', 'name' => 'admin.designations.delete', 'sorting_order' => 53],
 
+            // Accounting — Chart of Accounts
+            ['company_id' => null, 'module' => 'Chart of Accounts', 'name' => 'admin.accounting.coa.list', 'sorting_order' => 60],
+            ['company_id' => null, 'module' => 'Chart of Accounts', 'name' => 'admin.accounting.coa.create', 'sorting_order' => 61],
+            ['company_id' => null, 'module' => 'Chart of Accounts', 'name' => 'admin.accounting.coa.edit', 'sorting_order' => 62],
+            ['company_id' => null, 'module' => 'Chart of Accounts', 'name' => 'admin.accounting.coa.delete', 'sorting_order' => 63],
+            ['company_id' => null, 'module' => 'Chart of Accounts', 'name' => 'admin.accounting.coa.import', 'sorting_order' => 64],
+            ['company_id' => null, 'module' => 'Transaction Mapping', 'name' => 'admin.accounting.mapping.list', 'sorting_order' => 65],
+            ['company_id' => null, 'module' => 'Transaction Mapping', 'name' => 'admin.accounting.mapping.create', 'sorting_order' => 66],
+            ['company_id' => null, 'module' => 'Transaction Mapping', 'name' => 'admin.accounting.mapping.edit', 'sorting_order' => 67],
+            ['company_id' => null, 'module' => 'Transaction Mapping', 'name' => 'admin.accounting.mapping.delete', 'sorting_order' => 68],
+            ['company_id' => null, 'module' => 'Voucher Posting', 'name' => 'admin.accounting.posting.list', 'sorting_order' => 70],
+            ['company_id' => null, 'module' => 'Voucher Posting', 'name' => 'admin.accounting.posting.post', 'sorting_order' => 71],
+            ['company_id' => null, 'module' => 'Vouchers', 'name' => 'admin.accounting.voucher.list', 'sorting_order' => 72],
+            ['company_id' => null, 'module' => 'Vouchers', 'name' => 'admin.accounting.voucher.view', 'sorting_order' => 73],
+            ['company_id' => null, 'module' => 'Vouchers', 'name' => 'admin.accounting.voucher.create', 'sorting_order' => 74],
+            ['company_id' => null, 'module' => 'Vouchers', 'name' => 'admin.accounting.voucher.edit', 'sorting_order' => 75],
+            ['company_id' => null, 'module' => 'Vouchers', 'name' => 'admin.accounting.voucher.cancel', 'sorting_order' => 76],
+            ['company_id' => null, 'module' => 'Accounting Reports', 'name' => 'admin.accounting.report.ledger', 'sorting_order' => 80],
+            ['company_id' => null, 'module' => 'Accounting Reports', 'name' => 'admin.accounting.report.trial-balance', 'sorting_order' => 81],
+            ['company_id' => null, 'module' => 'Accounting Reports', 'name' => 'admin.accounting.report.profit-loss', 'sorting_order' => 82],
+            ['company_id' => null, 'module' => 'Accounting Reports', 'name' => 'admin.accounting.report.balance-sheet', 'sorting_order' => 83],
+            ['company_id' => null, 'module' => 'Accounting Reports', 'name' => 'admin.accounting.report.day-book', 'sorting_order' => 84],
+            ['company_id' => null, 'module' => 'Accounting Reports', 'name' => 'admin.accounting.report.cash-book', 'sorting_order' => 85],
+
             // ── Chevron Lines (C&F) — company_id = 1 ──────────────────────
 
             // Jobs
